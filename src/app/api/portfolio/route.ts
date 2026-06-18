@@ -13,9 +13,9 @@ export async function GET(request: NextRequest) {
       .where('nailistProfileId', '==', profileId)
       .get()
 
-    const photos = snap.docs
-      .map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) }))
-      .sort((a, b) => ((a.displayOrder as number) ?? 0) - ((b.displayOrder as number) ?? 0))
+    const photos = (snap.docs
+      .map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown>>)
+      .sort((a, b) => ((a['displayOrder'] as number) ?? 0) - ((b['displayOrder'] as number) ?? 0))
 
     return NextResponse.json({ data: photos })
   } catch {

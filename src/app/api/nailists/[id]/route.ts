@@ -41,9 +41,9 @@ export async function GET(
         id: snap.id,
         ...snap.data(),
         services: servicesSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
-        portfolio: portfolioSnap.docs
-          .map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) }))
-          .sort((a, b) => ((a.displayOrder as number) ?? 0) - ((b.displayOrder as number) ?? 0)),
+        portfolio: (portfolioSnap.docs
+          .map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown>>)
+          .sort((a, b) => ((a['displayOrder'] as number) ?? 0) - ((b['displayOrder'] as number) ?? 0)),
         workingHours: hoursSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
         reviews: reviewsSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
       },
