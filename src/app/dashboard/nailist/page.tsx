@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 import { TrendingUp, Clock, CheckCircle2, Circle } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
@@ -14,14 +14,16 @@ const stats = [
 ]
 
 const quickActions = [
-  { label: 'הגדרת שעות עבודה', icon: '⏰', href: '/dashboard/nailist/settings' },
+  { label: 'הגדרת שעות עבודה', icon: '⏰', href: '/dashboard/nailist/hours' },
   { label: 'הוספת שירות חדש', icon: '✂️', href: '/dashboard/nailist/services' },
   { label: 'צפייה בפרופיל ציבורי', icon: '👁️', href: '/search' },
 ]
 
 interface NailistProfile {
+  id?: string
   businessName?: string
   city?: string
+  address?: string
   bio?: string
   instagramUrl?: string
   tiktokUrl?: string
@@ -32,19 +34,47 @@ export default function NailistDashboard() {
   const { user } = useAuth()
   const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
   const [profile, setProfile] = useState<NailistProfile | null>(null)
+  const [hasPhotos, setHasPhotos] = useState(false)
+  const [hasServices, setHasServices] = useState(false)
+  const [hasHours, setHasHours] = useState(false)
 
   useEffect(() => {
     fetch('/api/me/nailist-profile')
       .then(r => r.ok ? r.json() : null)
-      .then(json => { if (json?.data) setProfile(json.data) })
+      .then(async (json) => {
+        if (!json?.data) return
+        setProfile(json.data)
+        const profileId = json.data.id
+
+        // Fetch portfolio, services, and working hours in parallel
+        const [portfolioRes, servicesRes, hoursRes] = await Promise.all([
+          fetch(`/api/portfolio?profileId=${profileId}`),
+          fetch(`/api/services?nailistProfileId=${profileId}`),
+          fetch('/api/working-hours'),
+        ])
+
+        if (portfolioRes.ok) {
+          const { data } = await portfolioRes.json()
+          setHasPhotos((data ?? []).length > 0)
+        }
+        if (servicesRes.ok) {
+          const { data } = await servicesRes.json()
+          setHasServices((data ?? []).length > 0)
+        }
+        if (hoursRes.ok) {
+          const { data } = await hoursRes.json()
+          const active = (data ?? []).filter((h: { isActive: boolean }) => h.isActive)
+          setHasHours(active.length > 0)
+        }
+      })
       .catch(() => {})
   }, [])
 
   const checklist = [
-    { label: 'פרטי עסק (שם + עיר)', done: !!(profile?.businessName && profile?.city) },
-    { label: 'הוסיפי שירותים ומחירים', done: false },
-    { label: 'העלי תמונות לפורטפוליו', done: false },
-    { label: 'הגדירי שעות עבודה', done: false },
+    { label: 'פרטי עסק (שם + כתובת)', done: !!(profile?.businessName && (profile?.city || profile?.address)) },
+    { label: 'הוסיפי שירותים ומחירים', done: hasServices },
+    { label: 'העלי תמונות לפורטפוליו', done: hasPhotos },
+    { label: 'הגדירי שעות עבודה', done: hasHours },
     { label: 'הוסיפי קישורי רשתות חברתיות', done: !!(profile?.instagramUrl || profile?.tiktokUrl) },
     { label: 'פרסמי פרופיל לחיפוש', done: !!profile?.isActive },
   ]
@@ -53,29 +83,16 @@ export default function NailistDashboard() {
 
   return (
     <div className="p-4 md:p-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-6 md:mb-8"
-      >
-        <div className="flex items-center gap-3 mb-1">
-          <h1 className="text-2xl md:text-3xl font-black text-gray-800">שלום, {firstName}! 👋</h1>
-        </div>
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-black text-gray-800">שלום, {firstName}! 👋</h1>
         <p className="text-gray-400 font-medium">הנה סקירה של העסק שלך</p>
       </motion.div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
         {stats.map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: i * 0.08 }}
-            className={`rounded-3xl border-2 ${stat.border} bg-gradient-to-br ${stat.bg} p-6`}
-          >
+          <motion.div key={stat.label} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: i * 0.08 }}
+            className={`rounded-3xl border-2 ${stat.border} bg-gradient-to-br ${stat.bg} p-6`}>
             <div className="flex items-center justify-between mb-4">
               <span className="text-2xl">{stat.icon}</span>
               <TrendingUp className="h-4 w-4 text-gray-300" />
@@ -89,12 +106,8 @@ export default function NailistDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5">
         {/* Upcoming appointments */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+          className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="text-lg font-black text-gray-800">תורים קרובים</h3>
@@ -103,28 +116,19 @@ export default function NailistDashboard() {
             <span className="text-2xl">📅</span>
           </div>
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center text-3xl mb-4">
-              📭
-            </div>
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center text-3xl mb-4">📭</div>
             <p className="text-sm font-bold text-gray-400 mb-4">אין תורים קרובים</p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl border-gray-200 font-bold hover:border-pink-300 hover:text-pink-600"
-            >
-              <Clock className="h-4 w-4 ml-2" />
+            <Link href="/dashboard/nailist/hours"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:border-pink-300 hover:text-pink-600 transition-colors">
+              <Clock className="h-4 w-4" />
               הגדרי זמינות
-            </Button>
+            </Link>
           </div>
         </motion.div>
 
         {/* Recent reviews */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+          className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="text-lg font-black text-gray-800">ביקורות אחרונות</h3>
@@ -133,21 +137,15 @@ export default function NailistDashboard() {
             <span className="text-2xl">⭐</span>
           </div>
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center text-3xl mb-4">
-              💭
-            </div>
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center text-3xl mb-4">💭</div>
             <p className="text-sm font-bold text-gray-400 mb-1">אין ביקורות עדיין</p>
             <p className="text-xs text-gray-300 font-medium">השלימי תורים כדי לקבל ביקורות</p>
           </div>
         </motion.div>
 
         {/* Profile completion */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45 }}
-          className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+          className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="text-lg font-black text-gray-800">השלמת פרופיל</h3>
@@ -157,29 +155,16 @@ export default function NailistDashboard() {
           </div>
           <div className="mb-4">
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${completionPct}%` }}
-                transition={{ duration: 1, delay: 0.6 }}
-                className="h-full bg-gradient-to-r from-pink-500 to-purple-600 rounded-full"
-              />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${completionPct}%` }} transition={{ duration: 1, delay: 0.6 }}
+                className="h-full bg-gradient-to-r from-pink-500 to-purple-600 rounded-full" />
             </div>
             <p className="text-xs text-gray-400 font-medium mt-1">{completionPct}% הושלם</p>
           </div>
           <div className="space-y-3">
             {checklist.map((item, i) => (
-              <motion.div
-                key={item.label}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 + i * 0.05 }}
-                className="flex items-center gap-3 text-sm"
-              >
-                {item.done ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                ) : (
-                  <Circle className="w-5 h-5 text-gray-200 shrink-0" />
-                )}
+              <motion.div key={item.label} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 + i * 0.05 }}
+                className="flex items-center gap-3 text-sm">
+                {item.done ? <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" /> : <Circle className="w-5 h-5 text-gray-200 shrink-0" />}
                 <span className={item.done ? 'text-gray-400 line-through' : 'text-gray-600 font-medium'}>{item.label}</span>
               </motion.div>
             ))}
@@ -187,12 +172,8 @@ export default function NailistDashboard() {
         </motion.div>
 
         {/* Quick actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+          className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="text-lg font-black text-gray-800">פעולות מהירות</h3>
@@ -202,15 +183,9 @@ export default function NailistDashboard() {
           </div>
           <div className="space-y-3">
             {quickActions.map((action, i) => (
-              <motion.a
-                key={action.label}
-                href={action.href}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.55 + i * 0.07 }}
-                whileHover={{ x: -4 }}
-                className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-gray-100 text-sm font-bold text-gray-600 hover:border-pink-200 hover:text-pink-600 hover:bg-pink-50/50 transition-all"
-              >
+              <motion.a key={action.label} href={action.href} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.55 + i * 0.07 }} whileHover={{ x: -4 }}
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-gray-100 text-sm font-bold text-gray-600 hover:border-pink-200 hover:text-pink-600 hover:bg-pink-50/50 transition-all">
                 <span className="text-lg">{action.icon}</span>
                 {action.label}
               </motion.a>

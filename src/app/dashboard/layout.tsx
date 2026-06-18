@@ -4,13 +4,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Sparkles, LayoutDashboard, Calendar, Scissors, Image, Settings, Star, LogOut } from 'lucide-react'
+import { Sparkles, LayoutDashboard, Calendar, Scissors, Image, Settings, Star, Clock, LogOut } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 const navLinks = [
   { href: '/dashboard/nailist', label: 'סקירה', icon: LayoutDashboard, emoji: '📊' },
   { href: '/dashboard/nailist/appointments', label: 'תורים', icon: Calendar, emoji: '📅' },
   { href: '/dashboard/nailist/services', label: 'שירותים', icon: Scissors, emoji: '✂️' },
+  { href: '/dashboard/nailist/hours', label: 'שעות', icon: Clock, emoji: '⏰' },
   { href: '/dashboard/nailist/portfolio', label: 'פורטפוליו', icon: Image, emoji: '🎨' },
   { href: '/dashboard/nailist/reviews', label: 'ביקורות', icon: Star, emoji: '⭐' },
   { href: '/dashboard/nailist/settings', label: 'הגדרות', icon: Settings, emoji: '⚙️' },
