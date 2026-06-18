@@ -3,8 +3,7 @@
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   GoogleAuthProvider,
   signOut,
   updateProfile,
@@ -31,14 +30,8 @@ export async function signUpWithEmail(email: string, password: string, displayNa
   return cred
 }
 
-// Initiates Google redirect — navigates away, returns nothing useful
 export async function signInWithGoogle() {
-  return signInWithRedirect(await requireAuth(), googleProvider)
-}
-
-// Call this on page mount to retrieve the result after the redirect returns
-export async function getGoogleRedirectResult() {
-  return getRedirectResult(await requireAuth())
+  return signInWithPopup(await requireAuth(), googleProvider)
 }
 
 export async function signOutUser() {

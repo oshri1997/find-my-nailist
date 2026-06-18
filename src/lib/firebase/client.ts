@@ -18,28 +18,18 @@ export let storage: FirebaseStorage | null = null
 let _clients: FirebaseClients | null = null
 let _promise: Promise<FirebaseClients | null> | null = null
 
-function withProxiedAuthDomain(config: FirebaseOptions): FirebaseOptions {
-  // Use the app's own origin as authDomain so Firebase OAuth redirects go through
-  // our Next.js proxy (/__/auth/*) instead of firebaseapp.com. This prevents
-  // iOS Safari ITP from blocking cross-origin sessionStorage during the OAuth flow.
-  if (typeof window !== 'undefined') {
-    return { ...config, authDomain: window.location.hostname }
-  }
-  return config
-}
-
 async function loadConfig(): Promise<FirebaseOptions | null> {
   // Fast path: NEXT_PUBLIC_ vars baked in at build time
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
   if (apiKey) {
-    return withProxiedAuthDomain({
+    return {
       apiKey,
       authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
       appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-    })
+    }
   }
   // Runtime fallback: fetch config from the server API
   try {
@@ -47,7 +37,7 @@ async function loadConfig(): Promise<FirebaseOptions | null> {
     if (!res.ok) return null
     const config = await res.json()
     if (!config.apiKey) return null
-    return withProxiedAuthDomain(config)
+    return config
   } catch {
     return null
   }
