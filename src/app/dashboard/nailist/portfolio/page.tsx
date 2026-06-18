@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { ImagePlus, X, Loader2, AlertCircle } from 'lucide-react'
+import { ImagePlus, X, Loader2, AlertCircle, Star } from 'lucide-react'
 
 interface Photo {
   id: string
@@ -15,6 +15,7 @@ interface Photo {
 export default function PortfolioPage() {
   const [profileId, setProfileId] = useState<string | null>(null)
   const [photos, setPhotos] = useState<Photo[]>([])
+  const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -31,6 +32,7 @@ export default function PortfolioPage() {
         }
         const { data } = await res.json()
         setProfileId(data.id)
+        setCoverPhotoUrl(data.coverPhotoUrl ?? null)
         const photosRes = await fetch(`/api/portfolio?profileId=${data.id}`)
         if (photosRes.ok) {
           const { data: photos } = await photosRes.json()
@@ -92,8 +94,24 @@ export default function PortfolioPage() {
       }
       await fetch(`/api/portfolio/${photo.id}`, { method: 'DELETE' })
       setPhotos((prev) => prev.filter((p) => p.id !== photo.id))
+      if (coverPhotoUrl === photo.url) setCoverPhotoUrl(null)
     } catch {
       setError('שגיאה במחיקה')
+    }
+  }
+
+  async function handleSetCover(photo: Photo) {
+    if (!profileId) return
+    const newUrl = coverPhotoUrl === photo.url ? null : photo.url
+    try {
+      await fetch(`/api/nailists/${profileId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ coverPhotoUrl: newUrl }),
+      })
+      setCoverPhotoUrl(newUrl)
+    } catch {
+      setError('שגיאה בהגדרת תמונת רקע')
     }
   }
 
@@ -104,6 +122,10 @@ export default function PortfolioPage() {
           <div>
             <h1 className="text-3xl font-black text-gray-800 mb-1">פורטפוליו 🎨</h1>
             <p className="text-gray-400 font-medium">העלי תמונות של עבודות שלך</p>
+            <p className="text-xs text-amber-500 font-medium mt-0.5 flex items-center gap-1">
+              <Star className="h-3 w-3 fill-amber-400" />
+              לחצי על ⭐ בתמונה כדי להגדיר אותה כתמונת הרקע של הכרטיס שלך
+            </p>
           </div>
           <Button
             onClick={() => fileInputRef.current?.click()}
@@ -178,11 +200,34 @@ export default function PortfolioPage() {
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+
+                {/* Cover badge (always visible when set) */}
+                {coverPhotoUrl === photo.url && (
+                  <div className="absolute top-2 left-2 bg-amber-400 text-white rounded-full px-2 py-0.5 text-xs font-black flex items-center gap-1 shadow">
+                    <Star className="h-3 w-3 fill-white" />
+                    רקע
+                  </div>
+                )}
+
+                {/* Delete */}
                 <button
                   onClick={() => handleDelete(photo)}
                   className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-500 shadow-sm"
                 >
                   <X className="h-4 w-4" />
+                </button>
+
+                {/* Set/unset cover */}
+                <button
+                  onClick={() => handleSetCover(photo)}
+                  title={coverPhotoUrl === photo.url ? 'הסרי תמונת רקע' : 'הגדרי כתמונת רקע לכרטיס'}
+                  className={`absolute bottom-2 left-2 w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm ${
+                    coverPhotoUrl === photo.url
+                      ? 'bg-amber-400 text-white'
+                      : 'bg-white/90 hover:bg-amber-50 hover:text-amber-500'
+                  }`}
+                >
+                  <Star className={`h-4 w-4 ${coverPhotoUrl === photo.url ? 'fill-white' : ''}`} />
                 </button>
               </motion.div>
             ))}

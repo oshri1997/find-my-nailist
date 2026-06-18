@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/layout/navbar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +22,7 @@ interface Nailist {
   reviewCount: number
   whatsappPhone?: string
   distanceKm?: number
+  coverPhotoUrl?: string
 }
 
 type SortKey = 'distance' | 'rating'
@@ -38,6 +40,7 @@ const EMOJIS = ['🌸', '✨', '💜', '💅', '🌙', '💎']
 const filterTags = ['הכל', 'ג\'ל', 'נייל ארט', 'אקריל', 'מניקור', 'פדיקור', 'אקסטנשן']
 
 export default function SearchPage() {
+  const router = useRouter()
   const [nailists, setNailists] = useState<Nailist[]>([])
   const [loading, setLoading] = useState(true)
   const [locating, setLocating] = useState(false)
@@ -229,12 +232,21 @@ export default function SearchPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: Math.min(i * 0.07, 0.5) }}
                   whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                  onClick={() => router.push(`/nailists/${nailist.id}`)}
                   className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:shadow-pink-100/50 transition-shadow cursor-pointer group border border-gray-100"
                 >
-                  <div className={`h-44 bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}>
-                    <motion.span whileHover={{ scale: 1.3, rotate: 15 }} className="text-6xl">{emoji}</motion.span>
+                  <div className={`h-44 relative flex items-center justify-center overflow-hidden ${nailist.coverPhotoUrl ? '' : `bg-gradient-to-br ${gradient}`}`}>
+                    {nailist.coverPhotoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={nailist.coverPhotoUrl} alt={nailist.businessName} className="w-full h-full object-cover" />
+                    ) : (
+                      <motion.span whileHover={{ scale: 1.3, rotate: 15 }} className="text-6xl">{emoji}</motion.span>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                    <button className="absolute top-3 left-3 w-9 h-9 bg-white/20 backdrop-blur rounded-full flex items-center justify-center hover:bg-white/40 transition-colors">
+                    <button
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute top-3 left-3 w-9 h-9 bg-white/20 backdrop-blur rounded-full flex items-center justify-center hover:bg-white/40 transition-colors"
+                    >
                       <Heart className="h-4 w-4 text-white" />
                     </button>
                     {nailist.distanceKm != null && (
@@ -291,7 +303,7 @@ export default function SearchPage() {
                           וואטסאפ
                         </motion.a>
                       )}
-                      <Link href={`/nailists/${nailist.id}`}>
+                      <Link href={`/nailists/${nailist.id}`} onClick={(e) => e.stopPropagation()}>
                         <Button
                           size="sm"
                           className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl shadow-md shadow-pink-200 font-bold"
