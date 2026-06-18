@@ -2,28 +2,105 @@
 
 @theme {
   --color-background: hsl(0, 0%, 100%);
-  --color-foreground: hsl(222.2, 84%, 4.9%);
+  --color-foreground: hsl(240, 10%, 8%);
   --color-card: hsl(0, 0%, 100%);
-  --color-card-foreground: hsl(222.2, 84%, 4.9%);
+  --color-card-foreground: hsl(240, 10%, 8%);
   --color-popover: hsl(0, 0%, 100%);
-  --color-popover-foreground: hsl(222.2, 84%, 4.9%);
-  --color-primary: hsl(329, 86%, 56%);
+  --color-popover-foreground: hsl(240, 10%, 8%);
+  --color-primary: hsl(326, 100%, 55%);
   --color-primary-foreground: hsl(0, 0%, 100%);
-  --color-secondary: hsl(210, 40%, 96.1%);
-  --color-secondary-foreground: hsl(222.2, 47.4%, 11.2%);
-  --color-muted: hsl(210, 40%, 96.1%);
-  --color-muted-foreground: hsl(215.4, 16.3%, 46.9%);
-  --color-accent: hsl(329, 86%, 96%);
-  --color-accent-foreground: hsl(329, 86%, 30%);
-  --color-destructive: hsl(0, 84.2%, 60.2%);
-  --color-destructive-foreground: hsl(210, 40%, 98%);
-  --color-border: hsl(214.3, 31.8%, 91.4%);
-  --color-input: hsl(214.3, 31.8%, 91.4%);
-  --color-ring: hsl(329, 86%, 56%);
-  --radius: 0.5rem;
+  --color-secondary: hsl(270, 60%, 96%);
+  --color-secondary-foreground: hsl(270, 50%, 30%);
+  --color-muted: hsl(240, 5%, 96%);
+  --color-muted-foreground: hsl(240, 5%, 50%);
+  --color-accent: hsl(326, 100%, 96%);
+  --color-accent-foreground: hsl(326, 80%, 35%);
+  --color-destructive: hsl(0, 84%, 60%);
+  --color-destructive-foreground: hsl(0, 0%, 100%);
+  --color-border: hsl(240, 6%, 90%);
+  --color-input: hsl(240, 6%, 90%);
+  --color-ring: hsl(326, 100%, 55%);
+  --radius: 1rem;
+
+  /* Brand gradient colors */
+  --color-brand-pink: hsl(326, 100%, 55%);
+  --color-brand-purple: hsl(271, 91%, 65%);
+  --color-brand-violet: hsl(250, 95%, 68%);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, hsl(326, 100%, 55%) 0%, hsl(271, 91%, 65%) 50%, hsl(250, 95%, 68%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass card utility */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.glass-dark {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Animated gradient background */
+.bg-mesh {
+  background-color: #fff;
+  background-image:
+    radial-gradient(at 20% 10%, hsla(326, 100%, 80%, 0.35) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsla(271, 91%, 80%, 0.25) 0px, transparent 50%),
+    radial-gradient(at 5% 80%, hsla(326, 100%, 75%, 0.2) 0px, transparent 50%),
+    radial-gradient(at 90% 70%, hsla(250, 95%, 80%, 0.2) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, hsla(0, 0%, 100%, 1) 0px, transparent 100%);
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.6) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+.float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Pulse glow */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px hsla(326, 100%, 55%, 0.3); }
+  50% { box-shadow: 0 0 40px hsla(326, 100%, 55%, 0.6); }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }

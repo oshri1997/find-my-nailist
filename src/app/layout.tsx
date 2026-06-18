@@ -1,26 +1,25 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Heebo } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 
-const inter = Inter({ subsets: ['latin'] })
+const heebo = Heebo({ subsets: ['hebrew', 'latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
 
 export const metadata: Metadata = {
-  title: 'Find My Nailist | Discover Nail Technicians Near You',
-  description:
-    'Book appointments with talented nail technicians near you. Browse portfolios, compare prices, and schedule your next nail appointment.',
-  keywords: ['nail technician', 'nail salon', 'nail art', 'gel nails', 'booking'],
+  title: 'מצאי נייליסטית | גלי מומחיות ציפורניים קרוב אלייך',
+  description: 'הזמיני תור אצל מומחיות ציפורניים מוכשרות בקרבתך. עיצוב ג\'ל, נייל ארט, ומניקור מקצועי.',
+  keywords: ['נייליסטית', 'ציפורניים', 'ג\'ל', 'נייל ארט', 'מניקור', 'תור'],
   openGraph: {
-    title: 'Find My Nailist',
-    description: 'Discover and book nail technicians near you',
+    title: 'מצאי נייליסטית',
+    description: 'גלי מומחיות ציפורניים קרוב אלייך',
     type: 'website',
   },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+    <html lang="he" dir="rtl" suppressHydrationWarning>
+      <body className={heebo.className}>
         <Providers>{children}</Providers>
       </body>
     </html>
