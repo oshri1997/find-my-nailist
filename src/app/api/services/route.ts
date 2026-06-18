@@ -4,6 +4,29 @@ import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue } from 'firebase-admin/firestore'
 
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const nailistProfileId = searchParams.get('nailistProfileId')
+    if (!nailistProfileId) {
+      return NextResponse.json({ error: 'nailistProfileId is required' }, { status: 400 })
+    }
+
+    const db = adminDb()
+    const snap = await db
+      .collection(COLLECTIONS.SERVICES)
+      .where('nailistProfileId', '==', nailistProfileId)
+      .where('isActive', '==', true)
+      .get()
+
+    const services = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    return NextResponse.json({ data: services })
+  } catch (error) {
+    console.error('GET /api/services error:', error)
+    return NextResponse.json({ error: 'Failed to fetch services' }, { status: 500 })
+  }
+}
+
 const createSchema = z.object({
   nailistProfileId: z.string(),
   name: z.string().min(1),

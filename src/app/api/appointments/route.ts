@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebase/admin'
+import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
+import { sendAppointmentConfirmation } from '@/lib/email'
 
 const createSchema = z.object({
   nailistProfileId: z.string(),
@@ -54,6 +55,27 @@ export async function POST(request: NextRequest) {
       updatedAt: now,
     })
 
+    // Fire-and-forget email confirmation
+    const db2 = adminDb()
+    const [nailistSnap, clientSnap] = await Promise.all([
+      db2.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).get(),
+      db2.collection(COLLECTIONS.CLIENT_PROFILES).doc(data.clientProfileId).get(),
+    ])
+    const nailist = nailistSnap.data()
+    const client = clientSnap.data()
+    if (nailist?.email && client?.email) {
+      sendAppointmentConfirmation({
+        clientEmail: client.email,
+        nailistEmail: nailist.email,
+        clientName: client.displayName ?? client.email,
+        nailistBusinessName: nailist.businessName,
+        serviceName: service.name,
+        startTime,
+        price: service.price,
+        currency: service.currency,
+      }).catch(() => {})
+    }
+
     return NextResponse.json({ data: { id: appointmentRef.id } }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -61,5 +83,61 @@ export async function POST(request: NextRequest) {
     }
     console.error('POST /api/appointments error:', error)
     return NextResponse.json({ error: 'Failed to create appointment' }, { status: 500 })
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const token = request.cookies.get('auth-token')?.value
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const decoded = await adminAuth().verifyIdToken(token)
+
+    const { searchParams } = new URL(request.url)
+    const role = searchParams.get('role') ?? 'nailist'
+    const db = adminDb()
+
+    let profileId: string | null = null
+    if (role === 'nailist') {
+      const snap = await db
+        .collection(COLLECTIONS.NAILIST_PROFILES)
+        .where('userId', '==', decoded.uid)
+        .limit(1)
+        .get()
+      profileId = snap.empty ? null : snap.docs[0].id
+    } else {
+      const snap = await db
+        .collection(COLLECTIONS.CLIENT_PROFILES)
+        .where('userId', '==', decoded.uid)
+        .limit(1)
+        .get()
+      profileId = snap.empty ? null : snap.docs[0].id
+    }
+
+    if (!profileId) return NextResponse.json({ data: [] })
+
+    const field = role === 'nailist' ? 'nailistProfileId' : 'clientProfileId'
+    const appointmentsSnap = await db
+      .collection(COLLECTIONS.APPOINTMENTS)
+      .where(field, '==', profileId)
+      .orderBy('startTime', 'desc')
+      .limit(50)
+      .get()
+
+    const appointments = appointmentsSnap.docs.map((d) => {
+      const data = d.data()
+      return {
+        id: d.id,
+        ...data,
+        startTime: data.startTime?.toDate?.()?.toISOString() ?? data.startTime,
+        endTime: data.endTime?.toDate?.()?.toISOString() ?? data.endTime,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() ?? data.createdAt,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() ?? data.updatedAt,
+      }
+    })
+
+    return NextResponse.json({ data: appointments })
+  } catch (error) {
+    console.error('GET /api/appointments error:', error)
+    return NextResponse.json({ error: 'Failed to fetch appointments' }, { status: 500 })
   }
 }

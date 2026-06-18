@@ -5,8 +5,12 @@ import { motion } from 'framer-motion'
 import { Navbar } from '@/components/layout/navbar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { MapPin, Search, Star, SlidersHorizontal, Heart, MessageCircle, Loader2, LocateFixed } from 'lucide-react'
+import { MapPin, Search, Star, SlidersHorizontal, Heart, MessageCircle, Loader2, LocateFixed, Map as MapIcon, LayoutGrid } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
+import Link from 'next/link'
+import dynamic from 'next/dynamic'
+
+const NailistMap = dynamic(() => import('@/components/search/NailistMap'), { ssr: false })
 
 interface Nailist {
   id: string
@@ -41,6 +45,7 @@ export default function SearchPage() {
   const [locationLabel, setLocationLabel] = useState('')
   const [sortBy, setSortBy] = useState<SortKey>('rating')
   const [activeFilter, setActiveFilter] = useState('הכל')
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
 
   const fetchNailists = useCallback(async (lat?: number, lng?: number) => {
     setLoading(true)
@@ -156,6 +161,13 @@ export default function SearchPage() {
             )}
           </p>
           <div className="flex gap-2">
+            <button
+              onClick={() => setViewMode(viewMode === 'grid' ? 'map' : 'grid')}
+              className="rounded-xl px-3 py-1.5 text-sm font-semibold border border-gray-200 text-gray-400 hover:border-pink-200 hover:text-pink-500 transition-all flex items-center gap-1.5"
+            >
+              {viewMode === 'grid' ? <MapIcon className="h-3.5 w-3.5" /> : <LayoutGrid className="h-3.5 w-3.5" />}
+              {viewMode === 'grid' ? 'מפה' : 'רשת'}
+            </button>
             {([['distance', 'מרחק'], ['rating', 'דירוג']] as [SortKey, string][]).map(([key, label]) => (
               <button
                 key={key}
@@ -178,6 +190,10 @@ export default function SearchPage() {
             <div className="text-5xl mb-4">🔍</div>
             <p className="font-black text-gray-400 text-lg mb-2">לא נמצאו נייליסטיות</p>
             <p className="text-sm text-gray-300 font-medium">נסי לחפש באזור אחר</p>
+          </div>
+        ) : viewMode === 'map' ? (
+          <div className="h-[70vh] rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+            <NailistMap nailists={sorted} center={coords ?? undefined} />
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -253,12 +269,14 @@ export default function SearchPage() {
                           וואטסאפ
                         </motion.a>
                       )}
-                      <Button
-                        size="sm"
-                        className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl shadow-md shadow-pink-200 font-bold"
-                      >
-                        לפרופיל
-                      </Button>
+                      <Link href={`/nailists/${nailist.id}`}>
+                        <Button
+                          size="sm"
+                          className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl shadow-md shadow-pink-200 font-bold"
+                        >
+                          לפרופיל
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </motion.div>

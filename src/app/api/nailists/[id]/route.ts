@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
+import { geocodeAddress } from '@/lib/geocoding'
 
 export async function GET(
   _request: NextRequest,
@@ -62,10 +63,20 @@ export async function PATCH(
     const db = adminDb()
     const { FieldValue } = await import('firebase-admin/firestore')
 
-    await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(id).update({
-      ...body,
-      updatedAt: FieldValue.serverTimestamp(),
-    })
+    const update: Record<string, unknown> = { ...body, updatedAt: FieldValue.serverTimestamp() }
+
+    const addressChanged = body.address || body.city
+    if (addressChanged) {
+      const addressStr = [body.address, body.city].filter(Boolean).join(', ')
+      const geo = await geocodeAddress(addressStr)
+      if (geo) {
+        update.latitude = geo.lat
+        update.longitude = geo.lng
+        update.geohash = geo.geohash
+      }
+    }
+
+    await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(id).update(update)
 
     return NextResponse.json({ message: 'Profile updated' })
   } catch (error) {
