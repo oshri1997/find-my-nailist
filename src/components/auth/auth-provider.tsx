@@ -34,8 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const clients = await initFirebase()
       if (!clients) { setLoading(false); return }
 
-      const { onAuthStateChanged } = await import('firebase/auth')
-      unsub = onAuthStateChanged(clients.auth, async (firebaseUser) => {
+      const { onIdTokenChanged } = await import('firebase/auth')
+      unsub = onIdTokenChanged(clients.auth, async (firebaseUser) => {
         setUser(firebaseUser)
         if (firebaseUser) {
           const token = await firebaseUser.getIdToken()

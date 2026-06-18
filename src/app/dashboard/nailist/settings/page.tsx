@@ -27,8 +27,12 @@ export default function NailistSettingsPage() {
 
   useEffect(() => {
     fetch('/api/me/nailist-profile')
-      .then((r) => r.json())
-      .then(({ data }) => {
+      .then(async (r) => {
+        if (!r.ok) {
+          setError(r.status === 401 ? 'פג תוקף ההתחברות — אנא התחברי מחדש' : 'שגיאה בטעינת הפרופיל')
+          return
+        }
+        const { data } = await r.json()
         if (!data) return
         setProfileId(data.id)
         setForm({
@@ -42,6 +46,7 @@ export default function NailistSettingsPage() {
           tiktokUrl: data.tiktokUrl ?? '',
         })
       })
+      .catch(() => setError('שגיאה בטעינת הפרופיל'))
       .finally(() => setLoading(false))
   }, [])
 

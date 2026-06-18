@@ -25,7 +25,10 @@ export default function PortfolioPage() {
     async function load() {
       try {
         const res = await fetch('/api/me/nailist-profile')
-        if (!res.ok) return
+        if (!res.ok) {
+          setError(res.status === 401 ? 'פג תוקף ההתחברות — אנא התחברי מחדש' : 'שגיאה בטעינת הפרופיל')
+          return
+        }
         const { data } = await res.json()
         setProfileId(data.id)
         const photosRes = await fetch(`/api/portfolio?profileId=${data.id}`)
@@ -33,6 +36,8 @@ export default function PortfolioPage() {
           const { data: photos } = await photosRes.json()
           setPhotos(photos)
         }
+      } catch {
+        setError('שגיאה בטעינת הפרופיל')
       } finally {
         setLoading(false)
       }

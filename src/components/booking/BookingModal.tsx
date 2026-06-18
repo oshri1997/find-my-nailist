@@ -175,8 +175,9 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                 <p className="font-bold text-gray-700 mb-4">בחרי תאריך ושעה</p>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-bold text-gray-600 block mb-1.5">תאריך</label>
+                    <label htmlFor="booking-date" className="text-sm font-bold text-gray-600 block mb-1.5">תאריך</label>
                     <Input
+                      id="booking-date"
                       type="date"
                       value={selectedDate}
                       min={minDate}
