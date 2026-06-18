@@ -163,8 +163,29 @@ export default function SearchPage() {
           </p>
           <div className="flex gap-2">
             <button
-              onClick={() => setViewMode(viewMode === 'grid' ? 'map' : 'grid')}
-              className="rounded-xl px-3 py-1.5 text-sm font-semibold border border-gray-200 text-gray-400 hover:border-pink-200 hover:text-pink-500 transition-all flex items-center gap-1.5"
+              onClick={() => {
+                const next = viewMode === 'grid' ? 'map' : 'grid'
+                setViewMode(next)
+                if (next === 'map' && !coords && navigator.geolocation) {
+                  setLocating(true)
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                      const { latitude, longitude } = pos.coords
+                      setCoords({ lat: latitude, lng: longitude })
+                      setLocationLabel('המיקום שלי')
+                      setSortBy('distance')
+                      void fetchNailists(latitude, longitude)
+                      setLocating(false)
+                    },
+                    () => setLocating(false)
+                  )
+                }
+              }}
+              className={`rounded-xl px-4 py-1.5 text-sm font-semibold border transition-all flex items-center gap-1.5 ${
+                viewMode === 'map'
+                  ? 'border-pink-300 text-pink-600 bg-pink-50'
+                  : 'border-gray-200 text-gray-400 hover:border-pink-200 hover:text-pink-500'
+              }`}
             >
               {viewMode === 'grid' ? <MapIcon className="h-3.5 w-3.5" /> : <LayoutGrid className="h-3.5 w-3.5" />}
               {viewMode === 'grid' ? 'מפה' : 'רשת'}

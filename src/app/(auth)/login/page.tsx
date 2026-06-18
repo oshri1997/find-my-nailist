@@ -18,12 +18,20 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Navigate to dashboard whenever auth state shows a signed-in user.
-  // This handles the Google redirect flow reliably — Firebase restores
-  // the session from localStorage even when getRedirectResult returns null.
+  // After Google sign-in, ensure the user exists in Firestore then redirect.
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace('/dashboard/nailist')
+      fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email ?? '',
+          displayName: user.displayName ?? '',
+          photoUrl: user.photoURL ?? undefined,
+          role: 'NAILIST',
+        }),
+      }).finally(() => router.replace('/dashboard/nailist'))
     }
   }, [user, authLoading, router])
 
