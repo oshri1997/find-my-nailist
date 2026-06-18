@@ -267,7 +267,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
                     {service.description && <p className="text-sm text-gray-400 mt-0.5">{service.description}</p>}
                     <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
                       <Clock className="h-3.5 w-3.5" />
-                      {service.durationMinutes} דק'
+                      {service.durationMinutes} {"דק'"}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0 mr-4">

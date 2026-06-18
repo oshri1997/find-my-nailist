@@ -203,7 +203,7 @@ export default function NailistServicesPage() {
                     <h3 className="font-black text-gray-800">{service.name}</h3>
                     {service.description && <p className="text-sm text-gray-400 mt-0.5">{service.description}</p>}
                     <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
-                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {service.durationMinutes} דק'</span>
+                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {service.durationMinutes} {"דק'"}</span>
                       <span className="font-black text-pink-600 text-sm">{service.currency === 'ILS' ? '₪' : '$'}{service.price}</span>
                     </div>
                   </div>

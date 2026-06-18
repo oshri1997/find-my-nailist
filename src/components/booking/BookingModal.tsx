@@ -151,7 +151,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                       <div>
                         <div className="font-bold text-gray-800">{s.name}</div>
                         {s.description && <div className="text-xs text-gray-400 mt-0.5">{s.description}</div>}
-                        <div className="text-xs text-gray-400 mt-1">{s.durationMinutes} דק'</div>
+                        <div className="text-xs text-gray-400 mt-1">{s.durationMinutes} {"דק'"}</div>
                       </div>
                       <div className="font-black text-pink-600 shrink-0 mr-4">
                         {s.currency === 'ILS' ? '₪' : '$'}{s.price}
@@ -251,7 +251,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">משך</span>
-                    <span className="font-bold text-gray-800">{selectedService.durationMinutes} דק'</span>
+                    <span className="font-bold text-gray-800">{selectedService.durationMinutes} {"דק'"}</span>
                   </div>
                   <div className="border-t border-pink-100 pt-3 flex justify-between">
                     <span className="font-bold text-gray-700">מחיר</span>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Loader2, CheckCircle2, XCircle, Clock, Star } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle, Star } from 'lucide-react'
 
 interface Appointment {
   id: string
@@ -38,19 +38,20 @@ export default function NailistAppointmentsPage() {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
 
-  async function load() {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/appointments?role=nailist')
-      if (!res.ok) return
-      const { data } = await res.json()
-      setAppointments(data ?? [])
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/appointments?role=nailist')
+        if (!res.ok) return
+        const { data } = await res.json()
+        setAppointments(data ?? [])
+      } finally {
+        setLoading(false)
+      }
     }
-  }
-
-  useEffect(() => { load() }, [])
+    void load()
+  }, [])
 
   async function updateStatus(id: string, status: Appointment['status']) {
     setUpdating(id)

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
-import { haversineDistanceKm } from '@/lib/utils'
+
 import { geohashQueryBounds, distanceBetween } from 'geofire-common'
 
 export async function GET(request: NextRequest) {
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      nailists.sort((a: any, b: any) => a.distanceKm - b.distanceKm)
+      (nailists as Array<{ distanceKm: number }>).sort((a, b) => a.distanceKm - b.distanceKm)
       return NextResponse.json({
         data: nailists.slice(0, pageSize),
         total: nailists.length,

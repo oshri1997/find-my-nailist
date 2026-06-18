@@ -66,7 +66,8 @@ export default function SearchPage() {
   }, [])
 
   useEffect(() => {
-    fetchNailists()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchNailists()
   }, [fetchNailists])
 
   function handleLocate() {
@@ -218,7 +219,7 @@ export default function SearchPage() {
                     {nailist.distanceKm != null && (
                       <div className="absolute top-3 right-3 bg-white/20 backdrop-blur rounded-full px-3 py-1 text-white text-xs font-bold flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {nailist.distanceKm.toFixed(1)} ק"מ
+                        {`${nailist.distanceKm.toFixed(1)} ק"מ`}
                       </div>
                     )}
                     {nailist.whatsappPhone && (
