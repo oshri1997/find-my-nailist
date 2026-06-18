@@ -1,57 +1,54 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Mail, Lock, User, ArrowLeft, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { signUpWithEmail, signInWithGoogle, getGoogleRedirectResult } from '@/lib/firebase/auth-helpers'
+import { signUpWithEmail, signInWithGoogle } from '@/lib/firebase/auth-helpers'
+import { useAuth } from '@/components/auth/auth-provider'
 
 type Role = 'client' | 'nailist'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const [role, setRole] = useState<Role>('client')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // Prevent the auth-state watcher from firing during an active form submission
+  const handlingFormRef = useRef(false)
 
-  // Handle Google redirect result when the page re-mounts after the redirect
+  // Navigate to dashboard when auth state shows a signed-in user.
+  // This handles Google redirect — Firebase restores the session from
+  // localStorage even when getRedirectResult returns null on iOS Safari.
   useEffect(() => {
-    async function checkRedirect() {
-      try {
-        const result = await getGoogleRedirectResult()
-        if (!result) return
-        setLoading(true)
-        // Retrieve role that was saved before the redirect
-        const savedRole = (sessionStorage.getItem('pendingRole') as Role | null) ?? 'client'
-        sessionStorage.removeItem('pendingRole')
-        await upsertFirestoreUser(
-          result.user.uid,
-          result.user.email ?? '',
-          result.user.displayName ?? '',
-          result.user.photoURL ?? undefined,
-          savedRole,
-        )
-        // Set session cookie before navigating so middleware sees it
-        const token = await result.user.getIdToken()
-        await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
-        })
-        router.push(savedRole === 'nailist' ? '/dashboard/nailist' : '/')
-      } catch (err: unknown) {
-        setError(friendlyError(err))
-        setLoading(false)
-      }
+    if (!authLoading && user && !handlingFormRef.current) {
+      // Create/upsert Firestore user with the role that was selected before
+      // the redirect (or default to 'client' for the login page flow).
+      const pendingRole = (sessionStorage.getItem('pendingRole') as Role | null) ?? 'client'
+      sessionStorage.removeItem('pendingRole')
+
+      fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoUrl: user.photoURL,
+          role: pendingRole === 'nailist' ? 'NAILIST' : 'CLIENT',
+        }),
+      }).finally(() => {
+        router.replace(pendingRole === 'nailist' ? '/dashboard/nailist' : '/')
+      })
     }
-    checkRedirect()
-  }, [router])
+  }, [user, authLoading, router])
 
   async function upsertFirestoreUser(
     uid: string,
@@ -77,18 +74,14 @@ export default function RegisterPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
+    handlingFormRef.current = true
     try {
       const cred = await signUpWithEmail(email, password, name)
       await upsertFirestoreUser(cred.user.uid, email, name, undefined, role)
-      const token = await cred.user.getIdToken()
-      await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      })
       router.push(role === 'nailist' ? '/dashboard/nailist' : '/')
     } catch (err: unknown) {
       setError(friendlyError(err))
+      handlingFormRef.current = false
     } finally {
       setLoading(false)
     }
@@ -97,9 +90,9 @@ export default function RegisterPage() {
   async function handleGoogle() {
     setError('')
     setLoading(true)
+    // Save role so the auth-state watcher can use it after the redirect
+    sessionStorage.setItem('pendingRole', role)
     try {
-      // Save role before redirect so we can use it when the page re-mounts
-      sessionStorage.setItem('pendingRole', role)
       await signInWithGoogle() // navigates away — page unmounts
     } catch (err: unknown) {
       setError(friendlyError(err))
@@ -218,7 +211,7 @@ export default function RegisterPage() {
               </div>
 
               <Button
-                type="submit" disabled={loading}
+                type="submit" disabled={loading || authLoading}
                 className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black text-base shadow-lg shadow-pink-200 gap-2 group disabled:opacity-60"
               >
                 {loading ? 'יוצרת חשבון...' : role === 'client' ? 'צרי חשבון' : 'הצטרפי כנייליסטית'}
@@ -237,7 +230,7 @@ export default function RegisterPage() {
           </div>
 
           <Button
-            type="button" variant="outline" disabled={loading} onClick={handleGoogle}
+            type="button" variant="outline" disabled={loading || authLoading} onClick={handleGoogle}
             className="w-full rounded-xl h-12 border-gray-200 font-bold gap-3 hover:border-pink-300 hover:text-pink-600 transition-colors disabled:opacity-60"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">

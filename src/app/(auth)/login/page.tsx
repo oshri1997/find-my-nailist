@@ -7,66 +7,35 @@ import { motion } from 'framer-motion'
 import { Sparkles, Mail, Lock, ArrowLeft, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { signInWithEmail, signInWithGoogle, getGoogleRedirectResult } from '@/lib/firebase/auth-helpers'
+import { signInWithEmail, signInWithGoogle } from '@/lib/firebase/auth-helpers'
+import { useAuth } from '@/components/auth/auth-provider'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Handle Google redirect result when the page re-mounts after redirect
+  // Navigate to dashboard whenever auth state shows a signed-in user.
+  // This handles the Google redirect flow reliably — Firebase restores
+  // the session from localStorage even when getRedirectResult returns null.
   useEffect(() => {
-    async function checkRedirect() {
-      try {
-        const result = await getGoogleRedirectResult()
-        if (!result) return
-        setLoading(true)
-        // Ensure user exists in Firestore
-        await fetch('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            uid: result.user.uid,
-            email: result.user.email,
-            displayName: result.user.displayName,
-            photoUrl: result.user.photoURL,
-            role: 'CLIENT',
-          }),
-        })
-        // Set session cookie explicitly before navigating so middleware sees it
-        const token = await result.user.getIdToken()
-        await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
-        })
-        router.push('/dashboard/nailist')
-      } catch (err: unknown) {
-        setError(friendlyError(err))
-        setLoading(false)
-      }
+    if (!authLoading && user) {
+      router.replace('/dashboard/nailist')
     }
-    checkRedirect()
-  }, [router])
+  }, [user, authLoading, router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const cred = await signInWithEmail(email, password)
-      const token = await cred.user.getIdToken()
-      await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      })
-      router.push('/dashboard/nailist')
+      await signInWithEmail(email, password)
+      // Navigation handled by the useEffect above once onAuthStateChanged fires
     } catch (err: unknown) {
       setError(friendlyError(err))
-    } finally {
       setLoading(false)
     }
   }
@@ -161,7 +130,7 @@ export default function LoginPage() {
             </div>
 
             <Button
-              type="submit" disabled={loading}
+              type="submit" disabled={loading || authLoading}
               className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black text-base shadow-lg shadow-pink-200 gap-2 group disabled:opacity-60"
             >
               {loading ? 'מתחברת...' : 'התחברי'}
@@ -179,7 +148,7 @@ export default function LoginPage() {
           </div>
 
           <Button
-            type="button" variant="outline" disabled={loading} onClick={handleGoogle}
+            type="button" variant="outline" disabled={loading || authLoading} onClick={handleGoogle}
             className="w-full rounded-xl h-12 border-gray-200 font-bold gap-3 hover:border-pink-300 hover:text-pink-600 transition-colors disabled:opacity-60"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
