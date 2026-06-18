@@ -39,3 +39,8 @@ export async function signOutUser() {
 export async function getIdToken(user: User) {
   return user.getIdToken()
 }
+
+export async function resetPassword(email: string) {
+  const { sendPasswordResetEmail } = await import('firebase/auth')
+  return sendPasswordResetEmail(requireAuth(), email)
+}

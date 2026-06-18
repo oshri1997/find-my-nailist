@@ -2,17 +2,74 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Mail, Lock, User, ArrowLeft } from 'lucide-react'
+import { Sparkles, Mail, Lock, User, ArrowLeft, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { signUpWithEmail, signInWithGoogle } from '@/lib/firebase/auth-helpers'
+
+type Role = 'client' | 'nailist'
 
 export default function RegisterPage() {
-  const [role, setRole] = useState<'client' | 'nailist'>('client')
+  const router = useRouter()
+  const [role, setRole] = useState<Role>('client')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function createFirestoreUser(uid: string, userEmail: string, displayName: string, photoUrl?: string) {
+    await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        uid,
+        email: userEmail,
+        displayName,
+        photoUrl,
+        role: role === 'nailist' ? 'NAILIST' : 'CLIENT',
+      }),
+    })
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const cred = await signUpWithEmail(email, password, name)
+      await createFirestoreUser(cred.user.uid, email, name)
+      router.push(role === 'nailist' ? '/dashboard/nailist' : '/')
+    } catch (err: unknown) {
+      setError(friendlyError(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleGoogle() {
+    setError('')
+    setLoading(true)
+    try {
+      const cred = await signInWithGoogle()
+      await createFirestoreUser(
+        cred.user.uid,
+        cred.user.email ?? '',
+        cred.user.displayName ?? '',
+        cred.user.photoURL ?? undefined,
+      )
+      router.push(role === 'nailist' ? '/dashboard/nailist' : '/')
+    } catch (err: unknown) {
+      setError(friendlyError(err))
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
-      {/* Animated background */}
       <div className="absolute inset-0 bg-mesh" />
       <motion.div
         animate={{ scale: [1, 1.2, 1], rotate: [0, 45, 0] }}
@@ -33,7 +90,6 @@ export default function RegisterPage() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-md relative z-10"
       >
-        {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 group">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg shadow-pink-200 group-hover:scale-110 transition-transform">
@@ -43,7 +99,6 @@ export default function RegisterPage() {
           </Link>
         </div>
 
-        {/* Card */}
         <div className="glass rounded-3xl p-8 shadow-2xl shadow-pink-100/50">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-black text-gray-800 mb-2">הצטרפי אלינו! 💅</h1>
@@ -54,9 +109,7 @@ export default function RegisterPage() {
           <div className="grid grid-cols-2 gap-3 mb-6">
             {(['client', 'nailist'] as const).map((r) => (
               <motion.button
-                key={r}
-                onClick={() => setRole(r)}
-                whileTap={{ scale: 0.97 }}
+                key={r} type="button" onClick={() => setRole(r)} whileTap={{ scale: 0.97 }}
                 className={`relative rounded-2xl p-4 text-center border-2 transition-all ${
                   role === r
                     ? 'border-transparent bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-200'
@@ -68,25 +121,29 @@ export default function RegisterPage() {
                 <div className={`text-xs mt-0.5 font-medium ${role === r ? 'text-white/80' : 'text-gray-400'}`}>
                   {r === 'client' ? 'מחפשת שירות' : 'מציעה שירות'}
                 </div>
-                {role === r && (
-                  <motion.div
-                    layoutId="role-indicator"
-                    className="absolute top-2 left-2 w-4 h-4 bg-white/30 rounded-full flex items-center justify-center"
-                  >
-                    <div className="w-2 h-2 bg-white rounded-full" />
-                  </motion.div>
-                )}
               </motion.button>
             ))}
           </div>
 
-          <AnimatePresence mode="wait">
+          {error && (
             <motion.div
-              key={role}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 rounded-xl px-4 py-3 text-sm font-semibold mb-5"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {error}
+            </motion.div>
+          )}
+
+          <AnimatePresence mode="wait">
+            <motion.form
+              key={role}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18 }}
+              onSubmit={handleSubmit}
               className="space-y-4"
             >
               <div className="space-y-2">
@@ -95,12 +152,9 @@ export default function RegisterPage() {
                 </label>
                 <div className="relative">
                   <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-pink-400" />
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder={role === 'client' ? 'שרה לוי' : 'סטודיו שרה'}
-                    className="pr-10 rounded-xl border-gray-200 focus:border-pink-300 h-12"
-                  />
+                  <Input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)}
+                    placeholder={role === 'client' ? 'שרה לוי' : 'סטודיו שרה'} required
+                    className="pr-10 rounded-xl border-gray-200 focus:border-pink-300 h-12" />
                 </div>
               </div>
 
@@ -108,12 +162,9 @@ export default function RegisterPage() {
                 <label className="text-sm font-bold text-gray-600" htmlFor="email">אימייל</label>
                 <div className="relative">
                   <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-pink-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    className="pr-10 rounded-xl border-gray-200 focus:border-pink-300 h-12"
-                  />
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com" required
+                    className="pr-10 rounded-xl border-gray-200 focus:border-pink-300 h-12" />
                 </div>
               </div>
 
@@ -121,23 +172,23 @@ export default function RegisterPage() {
                 <label className="text-sm font-bold text-gray-600" htmlFor="password">סיסמה</label>
                 <div className="relative">
                   <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-pink-400" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="לפחות 8 תווים"
-                    className="pr-10 rounded-xl border-gray-200 focus:border-pink-300 h-12"
-                  />
+                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                    placeholder="לפחות 8 תווים" minLength={8} required
+                    className="pr-10 rounded-xl border-gray-200 focus:border-pink-300 h-12" />
                 </div>
               </div>
 
-              <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black text-base shadow-lg shadow-pink-200 gap-2 group">
-                {role === 'client' ? 'צרי חשבון' : 'הצטרפי כנייליסטית'}
-                <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+              <Button
+                type="submit" disabled={loading}
+                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black text-base shadow-lg shadow-pink-200 gap-2 group disabled:opacity-60"
+              >
+                {loading ? 'יוצרת חשבון...' : role === 'client' ? 'צרי חשבון' : 'הצטרפי כנייליסטית'}
+                {!loading && <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />}
               </Button>
-            </motion.div>
+            </motion.form>
           </AnimatePresence>
 
-          <div className="relative my-4">
+          <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-gray-200" />
             </div>
@@ -147,8 +198,8 @@ export default function RegisterPage() {
           </div>
 
           <Button
-            variant="outline"
-            className="w-full rounded-xl h-12 border-gray-200 font-bold gap-3 hover:border-pink-300 hover:text-pink-600 transition-colors"
+            type="button" variant="outline" disabled={loading} onClick={handleGoogle}
+            className="w-full rounded-xl h-12 border-gray-200 font-bold gap-3 hover:border-pink-300 hover:text-pink-600 transition-colors disabled:opacity-60"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -161,12 +212,21 @@ export default function RegisterPage() {
 
           <p className="text-center text-sm text-gray-400 mt-6">
             כבר יש לך חשבון?{' '}
-            <Link href="/login" className="text-pink-500 hover:text-pink-600 font-black">
-              התחברי
-            </Link>
+            <Link href="/login" className="text-pink-500 hover:text-pink-600 font-black">התחברי</Link>
           </p>
         </div>
       </motion.div>
     </div>
   )
+}
+
+function friendlyError(err: unknown): string {
+  const code = (err as { code?: string })?.code ?? ''
+  const map: Record<string, string> = {
+    'auth/email-already-in-use': 'כתובת האימייל כבר קיימת במערכת',
+    'auth/weak-password': 'הסיסמה חלשה מדי — לפחות 8 תווים',
+    'auth/invalid-email': 'כתובת אימייל לא תקינה',
+    'auth/popup-closed-by-user': 'החלון נסגר לפני סיום ההתחברות',
+  }
+  return map[code] ?? 'שגיאה בהרשמה — נסי שוב'
 }
