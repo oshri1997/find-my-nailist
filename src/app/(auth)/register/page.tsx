@@ -1,13 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Mail, Lock, User, ArrowLeft, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { signUpWithEmail, signInWithGoogle } from '@/lib/firebase/auth-helpers'
+import { signUpWithEmail, signInWithGoogle, getGoogleRedirectResult } from '@/lib/firebase/auth-helpers'
 
 type Role = 'client' | 'nailist'
 
@@ -20,7 +20,46 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  async function createFirestoreUser(uid: string, userEmail: string, displayName: string, photoUrl?: string) {
+  // Handle Google redirect result when the page re-mounts after the redirect
+  useEffect(() => {
+    async function checkRedirect() {
+      try {
+        const result = await getGoogleRedirectResult()
+        if (!result) return
+        setLoading(true)
+        // Retrieve role that was saved before the redirect
+        const savedRole = (sessionStorage.getItem('pendingRole') as Role | null) ?? 'client'
+        sessionStorage.removeItem('pendingRole')
+        await upsertFirestoreUser(
+          result.user.uid,
+          result.user.email ?? '',
+          result.user.displayName ?? '',
+          result.user.photoURL ?? undefined,
+          savedRole,
+        )
+        // Set session cookie before navigating so middleware sees it
+        const token = await result.user.getIdToken()
+        await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        })
+        router.push(savedRole === 'nailist' ? '/dashboard/nailist' : '/')
+      } catch (err: unknown) {
+        setError(friendlyError(err))
+        setLoading(false)
+      }
+    }
+    checkRedirect()
+  }, [router])
+
+  async function upsertFirestoreUser(
+    uid: string,
+    userEmail: string,
+    displayName: string,
+    photoUrl: string | undefined,
+    userRole: Role,
+  ) {
     await fetch('/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -29,7 +68,7 @@ export default function RegisterPage() {
         email: userEmail,
         displayName,
         photoUrl,
-        role: role === 'nailist' ? 'NAILIST' : 'CLIENT',
+        role: userRole === 'nailist' ? 'NAILIST' : 'CLIENT',
       }),
     })
   }
@@ -40,7 +79,13 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       const cred = await signUpWithEmail(email, password, name)
-      await createFirestoreUser(cred.user.uid, email, name)
+      await upsertFirestoreUser(cred.user.uid, email, name, undefined, role)
+      const token = await cred.user.getIdToken()
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      })
       router.push(role === 'nailist' ? '/dashboard/nailist' : '/')
     } catch (err: unknown) {
       setError(friendlyError(err))
@@ -53,17 +98,11 @@ export default function RegisterPage() {
     setError('')
     setLoading(true)
     try {
-      const cred = await signInWithGoogle()
-      await createFirestoreUser(
-        cred.user.uid,
-        cred.user.email ?? '',
-        cred.user.displayName ?? '',
-        cred.user.photoURL ?? undefined,
-      )
-      router.push(role === 'nailist' ? '/dashboard/nailist' : '/')
+      // Save role before redirect so we can use it when the page re-mounts
+      sessionStorage.setItem('pendingRole', role)
+      await signInWithGoogle() // navigates away — page unmounts
     } catch (err: unknown) {
       setError(friendlyError(err))
-    } finally {
       setLoading(false)
     }
   }

@@ -1,13 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Sparkles, Mail, Lock, ArrowLeft, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { signInWithEmail, signInWithGoogle } from '@/lib/firebase/auth-helpers'
+import { signInWithEmail, signInWithGoogle, getGoogleRedirectResult } from '@/lib/firebase/auth-helpers'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -16,12 +16,53 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // Handle Google redirect result when the page re-mounts after redirect
+  useEffect(() => {
+    async function checkRedirect() {
+      try {
+        const result = await getGoogleRedirectResult()
+        if (!result) return
+        setLoading(true)
+        // Ensure user exists in Firestore
+        await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: result.user.displayName,
+            photoUrl: result.user.photoURL,
+            role: 'CLIENT',
+          }),
+        })
+        // Set session cookie explicitly before navigating so middleware sees it
+        const token = await result.user.getIdToken()
+        await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        })
+        router.push('/dashboard/nailist')
+      } catch (err: unknown) {
+        setError(friendlyError(err))
+        setLoading(false)
+      }
+    }
+    checkRedirect()
+  }, [router])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      await signInWithEmail(email, password)
+      const cred = await signInWithEmail(email, password)
+      const token = await cred.user.getIdToken()
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      })
       router.push('/dashboard/nailist')
     } catch (err: unknown) {
       setError(friendlyError(err))
@@ -34,23 +75,9 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const cred = await signInWithGoogle()
-      // Ensure user exists in Firestore
-      await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uid: cred.user.uid,
-          email: cred.user.email,
-          displayName: cred.user.displayName,
-          photoUrl: cred.user.photoURL,
-          role: 'CLIENT',
-        }),
-      })
-      router.push('/dashboard/nailist')
+      await signInWithGoogle() // navigates away — page unmounts
     } catch (err: unknown) {
       setError(friendlyError(err))
-    } finally {
       setLoading(false)
     }
   }
