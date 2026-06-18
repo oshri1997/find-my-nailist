@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    // ── users ──────────────────────────────────────────────────────────
+    // Only the owner can read their own document.
+    // All writes go through the Admin SDK (API routes) — blocked here.
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // ── nailistProfiles ────────────────────────────────────────────────
+    // Publicly readable for search and profile pages.
+    // avgRating / reviewCount are computed server-side — never written by clients.
+    match /nailistProfiles/{profileId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── clientProfiles ─────────────────────────────────────────────────
+    // Only the owner can read their own profile.
+    match /clientProfiles/{profileId} {
+      allow read: if isAuthed() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // ── services ───────────────────────────────────────────────────────
+    // Publicly readable (shown on nailist profile pages).
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── portfolioPhotos ────────────────────────────────────────────────
+    match /portfolioPhotos/{photoId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── workingHours ───────────────────────────────────────────────────
+    match /workingHours/{hoursId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── appointments ───────────────────────────────────────────────────
+    // Sensitive — served only via Admin SDK API routes.
+    match /appointments/{appointmentId} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // ── reviews ────────────────────────────────────────────────────────
+    // Publicly readable. Written server-side only (requires COMPLETED appointment check).
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+  }
+}
