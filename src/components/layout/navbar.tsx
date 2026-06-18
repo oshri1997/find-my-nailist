@@ -1,11 +1,21 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, LogOut, LayoutDashboard } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useAuth } from '@/components/auth/auth-provider'
 
 export function Navbar() {
+  const { user, loading, signOut } = useAuth()
+  const router = useRouter()
+
+  async function handleSignOut() {
+    await signOut()
+    router.push('/')
+  }
+
   return (
     <motion.nav
       initial={{ y: -100, opacity: 0 }}
@@ -33,16 +43,58 @@ export function Navbar() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Link href="/login">
-                <Button variant="ghost" size="sm" className="font-semibold text-gray-600 hover:text-gray-900">
-                  התחברות
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button size="sm" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 shadow-md shadow-pink-200 font-bold rounded-xl px-5">
-                  הצטרפי עכשיו
-                </Button>
-              </Link>
+              {loading ? (
+                // Skeleton while auth state resolves
+                <div className="h-9 w-24 rounded-xl bg-gray-100 animate-pulse" />
+              ) : user ? (
+                // Logged-in state
+                <>
+                  <div className="hidden sm:flex items-center gap-2 text-sm font-bold text-gray-600">
+                    {user.photoURL ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={user.photoURL}
+                        alt={user.displayName ?? ''}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white text-xs font-black">
+                        {(user.displayName ?? user.email ?? '?')[0].toUpperCase()}
+                      </div>
+                    )}
+                    <span className="max-w-[120px] truncate">
+                      {user.displayName?.split(' ')[0] ?? user.email?.split('@')[0]}
+                    </span>
+                  </div>
+                  <Link href="/dashboard/nailist">
+                    <Button size="sm" variant="ghost" className="font-semibold text-gray-600 hover:text-gray-900 gap-2">
+                      <LayoutDashboard className="h-4 w-4" />
+                      <span className="hidden sm:inline">דשבורד</span>
+                    </Button>
+                  </Link>
+                  <Button
+                    size="sm" variant="ghost" onClick={handleSignOut}
+                    className="font-semibold text-gray-400 hover:text-red-500 gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span className="hidden sm:inline">התנתקי</span>
+                  </Button>
+                </>
+              ) : (
+                // Logged-out state
+                <>
+                  <Link href="/login">
+                    <Button variant="ghost" size="sm" className="font-semibold text-gray-600 hover:text-gray-900">
+                      התחברות
+                    </Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button size="sm" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 shadow-md shadow-pink-200 font-bold rounded-xl px-5">
+                      הצטרפי עכשיו
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
