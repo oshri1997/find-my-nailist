@@ -15,11 +15,12 @@ const EMPTY_FORM = {
   whatsappPhone: '',
   instagramUrl: '',
   tiktokUrl: '',
+  isActive: false,
 }
 
 export default function NailistSettingsPage() {
   const [profileId, setProfileId] = useState<string | null>(null)
-  const [form, setForm] = useState(EMPTY_FORM)
+  const [form, setForm] = useState<typeof EMPTY_FORM>(EMPTY_FORM)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -44,6 +45,7 @@ export default function NailistSettingsPage() {
           whatsappPhone: data.whatsappPhone ?? '',
           instagramUrl: data.instagramUrl ?? '',
           tiktokUrl: data.tiktokUrl ?? '',
+          isActive: data.isActive ?? false,
         })
       })
       .catch(() => setError('שגיאה בטעינת הפרופיל'))
@@ -92,6 +94,33 @@ export default function NailistSettingsPage() {
       </motion.div>
 
       <form onSubmit={handleSave} className="space-y-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
+          className={`rounded-3xl border p-6 shadow-sm ${form.isActive ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'}`}>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="font-black text-gray-800 text-base">פרסום פרופיל</h2>
+              <p className="text-sm text-gray-500 mt-0.5 font-medium">
+                {form.isActive
+                  ? 'הפרופיל שלך פעיל — לקוחות יכולות למצוא אותך בחיפוש ✅'
+                  : 'הפרופיל שלך מוסתר — לקוחות לא יכולות למצוא אותך עדיין'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm((prev) => ({ ...prev, isActive: !prev.isActive }))}
+              className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none shrink-0 ${
+                form.isActive ? 'bg-green-500' : 'bg-gray-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                  form.isActive ? 'translate-x-8' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        </motion.div>
+
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
           className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm space-y-4">
           <h2 className="font-black text-gray-700 text-sm uppercase tracking-wider">פרטי עסק</h2>

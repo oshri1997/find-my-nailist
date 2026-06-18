@@ -1,23 +1,16 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Calendar, Users, Star, TrendingUp, Clock, CheckCircle2, Circle } from 'lucide-react'
+import { TrendingUp, Clock, CheckCircle2, Circle } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 const stats = [
-  { label: 'תורים', value: '0', icon: '📅', change: '+0 החודש', gradient: 'from-pink-500 to-rose-500', bg: 'from-pink-50 to-rose-50', border: 'border-pink-100' },
-  { label: 'לקוחות', value: '0', icon: '👥', change: '+0 החודש', gradient: 'from-purple-500 to-violet-500', bg: 'from-purple-50 to-violet-50', border: 'border-purple-100' },
-  { label: 'הכנסות', value: '₪0', icon: '💰', change: '+₪0 החודש', gradient: 'from-violet-500 to-blue-500', bg: 'from-violet-50 to-blue-50', border: 'border-violet-100' },
-  { label: 'דירוג ממוצע', value: '—', icon: '⭐', change: 'אין ביקורות עדיין', gradient: 'from-amber-500 to-orange-500', bg: 'from-amber-50 to-orange-50', border: 'border-amber-100' },
-]
-
-const profileChecklist = [
-  { label: 'פרטי עסק', done: false },
-  { label: 'הוסיפי שירותים ומחירים', done: false },
-  { label: 'העלי תמונות לפורטפוליו', done: false },
-  { label: 'הגדירי שעות עבודה', done: false },
-  { label: 'הוסיפי קישורי רשתות חברתיות', done: false },
+  { label: 'תורים', value: '0', icon: '📅', change: '+0 החודש', bg: 'from-pink-50 to-rose-50', border: 'border-pink-100' },
+  { label: 'לקוחות', value: '0', icon: '👥', change: '+0 החודש', bg: 'from-purple-50 to-violet-50', border: 'border-purple-100' },
+  { label: 'הכנסות', value: '₪0', icon: '💰', change: '+₪0 החודש', bg: 'from-violet-50 to-blue-50', border: 'border-violet-100' },
+  { label: 'דירוג ממוצע', value: '—', icon: '⭐', change: 'אין ביקורות עדיין', bg: 'from-amber-50 to-orange-50', border: 'border-amber-100' },
 ]
 
 const quickActions = [
@@ -26,9 +19,37 @@ const quickActions = [
   { label: 'צפייה בפרופיל ציבורי', icon: '👁️', href: '/search' },
 ]
 
+interface NailistProfile {
+  businessName?: string
+  city?: string
+  bio?: string
+  instagramUrl?: string
+  tiktokUrl?: string
+  isActive?: boolean
+}
+
 export default function NailistDashboard() {
   const { user } = useAuth()
   const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
+  const [profile, setProfile] = useState<NailistProfile | null>(null)
+
+  useEffect(() => {
+    fetch('/api/me/nailist-profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(json => { if (json?.data) setProfile(json.data) })
+      .catch(() => {})
+  }, [])
+
+  const checklist = [
+    { label: 'פרטי עסק (שם + עיר)', done: !!(profile?.businessName && profile?.city) },
+    { label: 'הוסיפי שירותים ומחירים', done: false },
+    { label: 'העלי תמונות לפורטפוליו', done: false },
+    { label: 'הגדירי שעות עבודה', done: false },
+    { label: 'הוסיפי קישורי רשתות חברתיות', done: !!(profile?.instagramUrl || profile?.tiktokUrl) },
+    { label: 'פרסמי פרופיל לחיפוש', done: !!profile?.isActive },
+  ]
+  const doneCount = checklist.filter(c => c.done).length
+  const completionPct = Math.round((doneCount / checklist.length) * 100)
 
   return (
     <div className="p-4 md:p-8">
@@ -138,15 +159,15 @@ export default function NailistDashboard() {
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: '5%' }}
+                animate={{ width: `${completionPct}%` }}
                 transition={{ duration: 1, delay: 0.6 }}
                 className="h-full bg-gradient-to-r from-pink-500 to-purple-600 rounded-full"
               />
             </div>
-            <p className="text-xs text-gray-400 font-medium mt-1">0% הושלם</p>
+            <p className="text-xs text-gray-400 font-medium mt-1">{completionPct}% הושלם</p>
           </div>
           <div className="space-y-3">
-            {profileChecklist.map((item, i) => (
+            {checklist.map((item, i) => (
               <motion.div
                 key={item.label}
                 initial={{ opacity: 0, x: 20 }}
