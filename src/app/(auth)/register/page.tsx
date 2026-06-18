@@ -222,11 +222,17 @@ export default function RegisterPage() {
 
 function friendlyError(err: unknown): string {
   const code = (err as { code?: string })?.code ?? ''
+  const message = (err as { message?: string })?.message ?? ''
+  if (message.includes('not initialized') || message.includes('environment variables')) {
+    return 'שגיאת תצורה — פנה לתמיכה'
+  }
   const map: Record<string, string> = {
     'auth/email-already-in-use': 'כתובת האימייל כבר קיימת במערכת',
     'auth/weak-password': 'הסיסמה חלשה מדי — לפחות 8 תווים',
     'auth/invalid-email': 'כתובת אימייל לא תקינה',
     'auth/popup-closed-by-user': 'החלון נסגר לפני סיום ההתחברות',
+    'auth/network-request-failed': 'בעיית חיבור — בדקי את האינטרנט',
+    'auth/operation-not-allowed': 'שיטת הרשמה זו אינה מאופשרת',
   }
   return map[code] ?? 'שגיאה בהרשמה — נסי שוב'
 }

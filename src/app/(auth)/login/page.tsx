@@ -176,6 +176,10 @@ export default function LoginPage() {
 
 function friendlyError(err: unknown): string {
   const code = (err as { code?: string })?.code ?? ''
+  const message = (err as { message?: string })?.message ?? ''
+  if (message.includes('not initialized') || message.includes('environment variables')) {
+    return 'שגיאת תצורה — פנה לתמיכה'
+  }
   const map: Record<string, string> = {
     'auth/user-not-found': 'לא נמצא חשבון עם כתובת אימייל זו',
     'auth/wrong-password': 'סיסמה שגויה',
@@ -183,6 +187,8 @@ function friendlyError(err: unknown): string {
     'auth/too-many-requests': 'יותר מדי ניסיונות — נסי שוב מאוחר יותר',
     'auth/user-disabled': 'החשבון הושבת',
     'auth/popup-closed-by-user': 'החלון נסגר לפני סיום ההתחברות',
+    'auth/network-request-failed': 'בעיית חיבור — בדקי את האינטרנט',
+    'auth/operation-not-allowed': 'שיטת התחברות זו אינה מאופשרת',
   }
   return map[code] ?? 'שגיאה בהתחברות — נסי שוב'
 }
