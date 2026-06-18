@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Calendar, Users, Star, TrendingUp, Clock, CheckCircle2, Circle } from 'lucide-react'
+import { useAuth } from '@/components/auth/auth-provider'
 
 const stats = [
   { label: 'תורים', value: '0', icon: '📅', change: '+0 החודש', gradient: 'from-pink-500 to-rose-500', bg: 'from-pink-50 to-rose-50', border: 'border-pink-100' },
@@ -26,23 +27,26 @@ const quickActions = [
 ]
 
 export default function NailistDashboard() {
+  const { user } = useAuth()
+  const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
+
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="mb-8"
+        className="mb-6 md:mb-8"
       >
         <div className="flex items-center gap-3 mb-1">
-          <h1 className="text-3xl font-black text-gray-800">שלום, נייליסטית! 👋</h1>
+          <h1 className="text-2xl md:text-3xl font-black text-gray-800">שלום, {firstName}! 👋</h1>
         </div>
         <p className="text-gray-400 font-medium">הנה סקירה של העסק שלך</p>
       </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
         {stats.map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -62,7 +66,7 @@ export default function NailistDashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5">
         {/* Upcoming appointments */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
