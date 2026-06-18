@@ -1,48 +1,95 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
+
+const EMPTY_FORM = {
+  businessName: '',
+  bio: '',
+  city: '',
+  address: '',
+  phoneNumber: '',
+  whatsappPhone: '',
+  instagramUrl: '',
+  tiktokUrl: '',
+}
 
 export default function NailistSettingsPage() {
+  const [profileId, setProfileId] = useState<string | null>(null)
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [form, setForm] = useState({
-    businessName: '',
-    bio: '',
-    city: '',
-    address: '',
-    phoneNumber: '',
-    whatsappPhone: '',
-    instagramUrl: '',
-    tiktokUrl: '',
-  })
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetch('/api/me/nailist-profile')
+      .then((r) => r.json())
+      .then(({ data }) => {
+        if (!data) return
+        setProfileId(data.id)
+        setForm({
+          businessName: data.businessName ?? '',
+          bio: data.bio ?? '',
+          city: data.city ?? '',
+          address: data.address ?? '',
+          phoneNumber: data.phoneNumber ?? '',
+          whatsappPhone: data.whatsappPhone ?? '',
+          instagramUrl: data.instagramUrl ?? '',
+          tiktokUrl: data.tiktokUrl ?? '',
+        })
+      })
+      .finally(() => setLoading(false))
+  }, [])
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    // TODO: save to Firestore
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    if (!profileId) return
+    setError('')
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/nailists/${profileId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error()
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch {
+      setError('שגיאה בשמירה — נסי שוב')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center gap-3 text-gray-400 font-medium">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        טוענת פרופיל...
+      </div>
+    )
   }
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="p-4 md:p-8 max-w-2xl">
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
         <h1 className="text-3xl font-black text-gray-800 mb-1">הגדרות פרופיל ⚙️</h1>
         <p className="text-gray-400 font-medium">עדכני את פרטי העסק שלך</p>
       </motion.div>
 
       <form onSubmit={handleSave} className="space-y-6">
-        {/* Business info */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
           className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm space-y-4">
           <h2 className="font-black text-gray-700 text-sm uppercase tracking-wider">פרטי עסק</h2>
-
           <Field label="שם העסק" name="businessName" value={form.businessName} onChange={handleChange} placeholder="סטודיו שרה" />
           <Field label="עיר" name="city" value={form.city} onChange={handleChange} placeholder="תל אביב" />
           <Field label="כתובת" name="address" value={form.address} onChange={handleChange} placeholder="רחוב הרצל 12" />
@@ -59,14 +106,10 @@ export default function NailistSettingsPage() {
           </div>
         </motion.div>
 
-        {/* Contact */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
           className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm space-y-4">
           <h2 className="font-black text-gray-700 text-sm uppercase tracking-wider">יצירת קשר</h2>
-
           <Field label="טלפון" name="phoneNumber" value={form.phoneNumber} onChange={handleChange} placeholder="0501234567" type="tel" />
-
-          {/* WhatsApp — highlighted */}
           <div>
             <label className="text-sm font-bold text-gray-600 block mb-1.5 flex items-center gap-2">
               <svg viewBox="0 0 24 24" className="h-4 w-4 fill-[#25D366]">
@@ -74,23 +117,18 @@ export default function NailistSettingsPage() {
               </svg>
               מספר WhatsApp
             </label>
-            <div className="relative">
-              <Input
-                name="whatsappPhone"
-                value={form.whatsappPhone}
-                onChange={handleChange}
-                placeholder="0501234567"
-                type="tel"
-                className="rounded-xl border-[#25D366]/40 focus:border-[#25D366] h-11 pl-3 pr-3"
-              />
-            </div>
-            <p className="text-xs text-gray-400 mt-1 font-medium">
-              לקוחות יוכלו לשלוח לך הודעה ישירה עם הודעה מוכנה מראש 💬
-            </p>
+            <Input
+              name="whatsappPhone"
+              value={form.whatsappPhone}
+              onChange={handleChange}
+              placeholder="0501234567"
+              type="tel"
+              className="rounded-xl border-[#25D366]/40 focus:border-[#25D366] h-11"
+            />
+            <p className="text-xs text-gray-400 mt-1 font-medium">לקוחות יוכלו לשלוח לך הודעה ישירה 💬</p>
           </div>
         </motion.div>
 
-        {/* Social */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm space-y-4">
           <h2 className="font-black text-gray-700 text-sm uppercase tracking-wider">רשתות חברתיות</h2>
@@ -98,12 +136,21 @@ export default function NailistSettingsPage() {
           <Field label="TikTok" name="tiktokUrl" value={form.tiktokUrl} onChange={handleChange} placeholder="https://tiktok.com/@youraccount" />
         </motion.div>
 
+        {error && (
+          <div className="flex items-center gap-2 text-red-500 text-sm font-semibold">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
+          </div>
+        )}
+
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }} className="flex items-center gap-3">
           <Button
             type="submit"
-            className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 px-8 font-black shadow-lg shadow-pink-200 gap-2"
+            disabled={saving || !profileId}
+            className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 px-8 font-black shadow-lg shadow-pink-200 gap-2 disabled:opacity-60"
           >
-            שמרי שינויים
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+            {saving ? 'שומרת...' : 'שמרי שינויים'}
           </Button>
           {saved && (
             <motion.div

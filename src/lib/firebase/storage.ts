@@ -1,9 +1,10 @@
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject, type FirebaseStorage } from 'firebase/storage'
-import { storage as _storage } from './client'
+import { initFirebase } from './client'
 
-function requireStorage(): FirebaseStorage {
-  if (!_storage) throw new Error('Firebase Storage is not initialized. Check your Firebase env vars.')
-  return _storage
+async function getStorage(): Promise<FirebaseStorage> {
+  const clients = await initFirebase()
+  if (!clients?.storage) throw new Error('Firebase Storage is not initialized. Check your Firebase env vars.')
+  return clients.storage
 }
 
 export async function uploadPortfolioPhoto(
@@ -11,7 +12,7 @@ export async function uploadPortfolioPhoto(
   file: File,
   onProgress?: (percent: number) => void
 ): Promise<{ url: string; storageKey: string }> {
-  const storage = requireStorage()
+  const storage = await getStorage()
   const ext = file.name.split('.').pop() ?? 'jpg'
   const storageKey = `portfolio/${nailistId}/${Date.now()}.${ext}`
   const storageRef = ref(storage, storageKey)
@@ -37,7 +38,7 @@ export async function uploadProfilePhoto(
   userId: string,
   file: File
 ): Promise<{ url: string; storageKey: string }> {
-  const storage = requireStorage()
+  const storage = await getStorage()
   const ext = file.name.split('.').pop() ?? 'jpg'
   const storageKey = `avatars/${userId}/profile.${ext}`
   const storageRef = ref(storage, storageKey)
@@ -47,5 +48,6 @@ export async function uploadProfilePhoto(
 }
 
 export async function deleteStorageFile(storageKey: string) {
-  await deleteObject(ref(requireStorage(), storageKey))
+  const storage = await getStorage()
+  await deleteObject(ref(storage, storageKey))
 }
