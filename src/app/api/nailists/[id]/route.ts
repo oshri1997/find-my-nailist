@@ -66,14 +66,20 @@ export async function PATCH(
 
     const update: Record<string, unknown> = { ...body, updatedAt: FieldValue.serverTimestamp() }
 
-    const addressChanged = body.address || body.city
-    if (addressChanged) {
-      const addressStr = [body.address, body.city].filter(Boolean).join(', ')
-      const geo = await geocodeAddress(addressStr)
-      if (geo) {
-        update.latitude = geo.lat
-        update.longitude = geo.lng
-        update.geohash = geo.geohash
+    if (body.latitude != null && body.longitude != null) {
+      // Coordinates supplied directly from Places Autocomplete — compute geohash only
+      const { geohashForLocation } = await import('geofire-common')
+      update.geohash = geohashForLocation([body.latitude as number, body.longitude as number])
+    } else {
+      const addressChanged = body.address || body.city
+      if (addressChanged) {
+        const addressStr = [body.address, body.city].filter(Boolean).join(', ')
+        const geo = await geocodeAddress(addressStr)
+        if (geo) {
+          update.latitude = geo.lat
+          update.longitude = geo.lng
+          update.geohash = geo.geohash
+        }
       }
     }
 

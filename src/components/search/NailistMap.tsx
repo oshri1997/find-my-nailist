@@ -13,6 +13,7 @@ interface Nailist {
   latitude?: number
   longitude?: number
   distanceKm?: number
+  photoUrl?: string
 }
 
 interface Props {
@@ -21,6 +22,33 @@ interface Props {
 }
 
 const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 } // Tel Aviv
+
+function NailistPin({ nailist }: { nailist: Nailist }) {
+  const initials = nailist.businessName
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+
+  return (
+    <div className="flex flex-col items-center cursor-pointer group">
+      <div className="w-11 h-11 rounded-full overflow-hidden border-[3px] border-white shadow-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+        {nailist.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={nailist.photoUrl} alt={nailist.businessName} className="w-full h-full object-cover" />
+        ) : (
+          <span className="text-white text-sm font-black">{initials}</span>
+        )}
+      </div>
+      <div className="bg-white text-xs font-bold text-gray-700 px-2.5 py-1 rounded-full shadow-md mt-1 whitespace-nowrap max-w-[120px] truncate opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+        {nailist.businessName}
+      </div>
+      {/* Pin tail */}
+      <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-white -mt-0.5 drop-shadow-sm" />
+    </div>
+  )
+}
 
 export default function NailistMap({ nailists, center }: Props) {
   const [apiKey, setApiKey] = useState<string | null>(
@@ -32,7 +60,7 @@ export default function NailistMap({ nailists, center }: Props) {
     if (apiKey) return
     fetch('/api/maps-config')
       .then((r) => r.json())
-      .then(({ key }) => { if (key) setApiKey(key) })
+      .then(({ key }: { key?: string }) => { if (key) setApiKey(key) })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [apiKey])
@@ -66,11 +94,14 @@ export default function NailistMap({ nailists, center }: Props) {
         disableDefaultUI={false}
         className="w-full h-full rounded-2xl overflow-hidden"
       >
+        {/* User location dot */}
         {center && (
           <AdvancedMarker position={center}>
-            <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-md" />
+            <div className="w-5 h-5 rounded-full bg-blue-500 border-2 border-white shadow-lg ring-4 ring-blue-200" />
           </AdvancedMarker>
         )}
+
+        {/* Nailist pins */}
         {pinned.map((n) => (
           <AdvancedMarker
             key={n.id}
@@ -78,12 +109,7 @@ export default function NailistMap({ nailists, center }: Props) {
             title={n.businessName}
           >
             <Link href={`/nailists/${n.id}`}>
-              <div className="flex flex-col items-center cursor-pointer group">
-                <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-black px-2.5 py-1 rounded-full shadow-lg group-hover:scale-110 transition-transform whitespace-nowrap">
-                  💅 {n.businessName}
-                </div>
-                <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-pink-500 mt-0" />
-              </div>
+              <NailistPin nailist={n} />
             </Link>
           </AdvancedMarker>
         ))}

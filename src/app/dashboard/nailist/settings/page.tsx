@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
 
 const EMPTY_FORM = {
@@ -16,6 +17,8 @@ const EMPTY_FORM = {
   instagramUrl: '',
   tiktokUrl: '',
   isActive: false,
+  latitude: undefined as number | undefined,
+  longitude: undefined as number | undefined,
 }
 
 export default function NailistSettingsPage() {
@@ -46,6 +49,8 @@ export default function NailistSettingsPage() {
           instagramUrl: data.instagramUrl ?? '',
           tiktokUrl: data.tiktokUrl ?? '',
           isActive: data.isActive ?? false,
+          latitude: data.latitude,
+          longitude: data.longitude,
         })
       })
       .catch(() => setError('שגיאה בטעינת הפרופיל'))
@@ -54,6 +59,16 @@ export default function NailistSettingsPage() {
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  function handlePlaceSelect(result: PlaceResult) {
+    setForm((prev) => ({
+      ...prev,
+      address: result.address,
+      city: result.city || prev.city,
+      latitude: result.lat,
+      longitude: result.lng,
+    }))
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -112,11 +127,7 @@ export default function NailistSettingsPage() {
                 form.isActive ? 'bg-green-500' : 'bg-gray-300'
               }`}
             >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                  form.isActive ? 'translate-x-8' : 'translate-x-1'
-                }`}
-              />
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${form.isActive ? 'translate-x-8' : 'translate-x-1'}`} />
             </button>
           </div>
         </motion.div>
@@ -125,8 +136,30 @@ export default function NailistSettingsPage() {
           className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm space-y-4">
           <h2 className="font-black text-gray-700 text-sm uppercase tracking-wider">פרטי עסק</h2>
           <Field label="שם העסק" name="businessName" value={form.businessName} onChange={handleChange} placeholder="סטודיו שרה" />
-          <Field label="עיר" name="city" value={form.city} onChange={handleChange} placeholder="תל אביב" />
-          <Field label="כתובת" name="address" value={form.address} onChange={handleChange} placeholder="רחוב הרצל 12" />
+
+          <div>
+            <label className="text-sm font-bold text-gray-600 block mb-1.5">כתובת</label>
+            <PlacesInput
+              value={form.address}
+              onChange={(val) => setForm((prev) => ({ ...prev, address: val }))}
+              onPlaceSelect={handlePlaceSelect}
+              placeholder="רחוב הרצל 12, תל אביב"
+            />
+            {form.latitude && (
+              <p className="text-xs text-green-600 mt-1 font-medium">📍 מיקום נשמר מגוגל</p>
+            )}
+          </div>
+
+          <div>
+            <label className="text-sm font-bold text-gray-600 block mb-1.5">עיר</label>
+            <PlacesInput
+              value={form.city}
+              onChange={(val) => setForm((prev) => ({ ...prev, city: val }))}
+              onPlaceSelect={(r) => setForm((prev) => ({ ...prev, city: r.city || r.address, latitude: r.lat, longitude: r.lng }))}
+              placeholder="תל אביב"
+            />
+          </div>
+
           <div>
             <label className="text-sm font-bold text-gray-600 block mb-1.5">תיאור עסק</label>
             <textarea
@@ -151,14 +184,7 @@ export default function NailistSettingsPage() {
               </svg>
               מספר WhatsApp
             </label>
-            <Input
-              name="whatsappPhone"
-              value={form.whatsappPhone}
-              onChange={handleChange}
-              placeholder="0501234567"
-              type="tel"
-              className="rounded-xl border-[#25D366]/40 focus:border-[#25D366] h-11"
-            />
+            <Input name="whatsappPhone" value={form.whatsappPhone} onChange={handleChange} placeholder="0501234567" type="tel" className="rounded-xl border-[#25D366]/40 focus:border-[#25D366] h-11" />
             <p className="text-xs text-gray-400 mt-1 font-medium">לקוחות יוכלו לשלוח לך הודעה ישירה 💬</p>
           </div>
         </motion.div>
@@ -187,11 +213,7 @@ export default function NailistSettingsPage() {
             {saving ? 'שומרת...' : 'שמרי שינויים'}
           </Button>
           {saved && (
-            <motion.div
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-1.5 text-green-600 font-bold text-sm"
-            >
+            <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1.5 text-green-600 font-bold text-sm">
               <CheckCircle2 className="h-4 w-4" />
               נשמר בהצלחה!
             </motion.div>
@@ -202,27 +224,15 @@ export default function NailistSettingsPage() {
   )
 }
 
-function Field({
-  label, name, value, onChange, placeholder, type = 'text',
-}: {
-  label: string
-  name: string
-  value: string
+function Field({ label, name, value, onChange, placeholder, type = 'text' }: {
+  label: string; name: string; value: string
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  placeholder?: string
-  type?: string
+  placeholder?: string; type?: string
 }) {
   return (
     <div>
       <label className="text-sm font-bold text-gray-600 block mb-1.5">{label}</label>
-      <Input
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        type={type}
-        className="rounded-xl border-gray-200 focus:border-pink-300 h-11"
-      />
+      <Input name={name} value={value} onChange={onChange} placeholder={placeholder} type={type} className="rounded-xl border-gray-200 focus:border-pink-300 h-11" />
     </div>
   )
 }
