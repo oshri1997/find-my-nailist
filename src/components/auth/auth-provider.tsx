@@ -30,11 +30,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let unsub: (() => void) | undefined
 
     async function init() {
-      const { auth } = await import('@/lib/firebase/client')
-      if (!auth) { setLoading(false); return }
+      const { initFirebase } = await import('@/lib/firebase/client')
+      const clients = await initFirebase()
+      if (!clients) { setLoading(false); return }
 
       const { onAuthStateChanged } = await import('firebase/auth')
-      unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      unsub = onAuthStateChanged(clients.auth, async (firebaseUser) => {
         setUser(firebaseUser)
         if (firebaseUser) {
           const token = await firebaseUser.getIdToken()
