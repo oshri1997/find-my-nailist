@@ -34,7 +34,9 @@ export default function PortfolioPage() {
         const photosRes = await fetch(`/api/portfolio?profileId=${data.id}`)
         if (photosRes.ok) {
           const { data: photos } = await photosRes.json()
-          setPhotos(photos)
+          setPhotos(photos ?? [])
+        } else {
+          setError('שגיאה בטעינת התמונות')
         }
       } catch {
         setError('שגיאה בטעינת הפרופיל')
@@ -71,6 +73,8 @@ export default function PortfolioPage() {
       if (res.ok) {
         const { data } = await res.json()
         setPhotos((prev) => [...prev, data])
+      } else {
+        setError('שגיאה בשמירת התמונה — נסי שוב')
       }
     } catch {
       setError('שגיאה בהעלאה — ודאי ש-Storage מופעל ב-Firebase Console')

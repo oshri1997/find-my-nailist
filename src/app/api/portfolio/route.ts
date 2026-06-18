@@ -11,10 +11,13 @@ export async function GET(request: NextRequest) {
     const snap = await adminDb()
       .collection(COLLECTIONS.PORTFOLIO_PHOTOS)
       .where('nailistProfileId', '==', profileId)
-      .orderBy('displayOrder')
       .get()
 
-    return NextResponse.json({ data: snap.docs.map((d) => ({ id: d.id, ...d.data() })) })
+    const photos = snap.docs
+      .map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) }))
+      .sort((a, b) => ((a.displayOrder as number) ?? 0) - ((b.displayOrder as number) ?? 0))
+
+    return NextResponse.json({ data: photos })
   } catch {
     return NextResponse.json({ error: 'Failed to fetch portfolio' }, { status: 500 })
   }
