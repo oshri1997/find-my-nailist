@@ -29,6 +29,7 @@ export interface NailistProfileDoc {
   geohash?: string
   instagramUrl?: string
   tiktokUrl?: string
+  whatsappPhone?: string   // Israeli format: 0501234567 or +972501234567
   isVerified: boolean
   isActive: boolean
   avgRating: number
