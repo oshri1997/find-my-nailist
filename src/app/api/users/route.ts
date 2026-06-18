@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
       await db.collection(COLLECTIONS.NAILIST_PROFILES).add({
         userId: data.uid,
         businessName: data.displayName ?? 'My Nail Studio',
-        isActive: true,
+        photoUrl: data.photoUrl ?? null,
+        isActive: false,
         isVerified: false,
         avgRating: 0,
         reviewCount: 0,

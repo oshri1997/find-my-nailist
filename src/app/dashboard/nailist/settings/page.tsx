@@ -65,7 +65,7 @@ export default function NailistSettingsPage() {
     setForm((prev) => ({
       ...prev,
       address: result.address,
-      city: result.city || prev.city,
+      city: result.city,
       latitude: result.lat,
       longitude: result.lng,
     }))
@@ -138,7 +138,7 @@ export default function NailistSettingsPage() {
           <Field label="שם העסק" name="businessName" value={form.businessName} onChange={handleChange} placeholder="סטודיו שרה" />
 
           <div>
-            <label className="text-sm font-bold text-gray-600 block mb-1.5">כתובת</label>
+            <label className="text-sm font-bold text-gray-600 block mb-1.5">כתובת מלאה</label>
             <PlacesInput
               value={form.address}
               onChange={(val) => setForm((prev) => ({ ...prev, address: val }))}
@@ -148,16 +148,6 @@ export default function NailistSettingsPage() {
             {form.latitude && (
               <p className="text-xs text-green-600 mt-1 font-medium">📍 מיקום נשמר מגוגל</p>
             )}
-          </div>
-
-          <div>
-            <label className="text-sm font-bold text-gray-600 block mb-1.5">עיר</label>
-            <PlacesInput
-              value={form.city}
-              onChange={(val) => setForm((prev) => ({ ...prev, city: val }))}
-              onPlaceSelect={(r) => setForm((prev) => ({ ...prev, city: r.city || r.address, latitude: r.lat, longitude: r.lng }))}
-              placeholder="תל אביב"
-            />
           </div>
 
           <div>

@@ -19,35 +19,34 @@ export async function GET(request: NextRequest) {
 
     if (!snap.empty) {
       const doc = snap.docs[0]
-      return NextResponse.json({ data: { id: doc.id, ...doc.data() } })
+      const data = doc.data()
+      // Back-fill photoUrl from auth token for Google users who signed up earlier
+      if (!data.photoUrl && decoded.picture) {
+        await doc.ref.update({ photoUrl: decoded.picture, updatedAt: FieldValue.serverTimestamp() })
+        data.photoUrl = decoded.picture
+      }
+      return NextResponse.json({ data: { id: doc.id, ...data } })
     }
 
     // Auto-create a minimal profile for users who signed in with Google
     // without going through the register flow
     const now = FieldValue.serverTimestamp()
-    const ref = await db.collection(COLLECTIONS.NAILIST_PROFILES).add({
+    const profileData = {
       userId: decoded.uid,
       businessName: decoded.name ?? decoded.email?.split('@')[0] ?? 'My Nail Studio',
       email: decoded.email ?? '',
+      photoUrl: decoded.picture ?? null,
       isActive: false,
       isVerified: false,
       avgRating: 0,
       reviewCount: 0,
       createdAt: now,
       updatedAt: now,
-    })
+    }
+    const ref = await db.collection(COLLECTIONS.NAILIST_PROFILES).add(profileData)
 
     return NextResponse.json({
-      data: {
-        id: ref.id,
-        userId: decoded.uid,
-        businessName: decoded.name ?? decoded.email?.split('@')[0] ?? 'My Nail Studio',
-        email: decoded.email ?? '',
-        isActive: false,
-        isVerified: false,
-        avgRating: 0,
-        reviewCount: 0,
-      },
+      data: { id: ref.id, ...profileData },
     }, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
