@@ -1,7 +1,9 @@
 'use client'
 
-import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps'
+import { useEffect, useState } from 'react'
+import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps'
 import Link from 'next/link'
+import { Loader2 } from 'lucide-react'
 
 interface Nailist {
   id: string
@@ -21,7 +23,28 @@ interface Props {
 const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 } // Tel Aviv
 
 export default function NailistMap({ nailists, center }: Props) {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+  const [apiKey, setApiKey] = useState<string | null>(
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? null
+  )
+  const [loading, setLoading] = useState(!apiKey)
+
+  useEffect(() => {
+    if (apiKey) return
+    fetch('/api/maps-config')
+      .then((r) => r.json())
+      .then(({ key }) => { if (key) setApiKey(key) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [apiKey])
+
+  if (loading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-2xl">
+        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      </div>
+    )
+  }
+
   if (!apiKey) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-2xl" dir="rtl">
