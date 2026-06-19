@@ -24,7 +24,6 @@ export default function ForgotPasswordPage() {
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? ''
       if (code === 'auth/user-not-found') {
-        // Don't reveal whether the email exists
         setSent(true)
       } else {
         setError('שגיאה בשליחת המייל — נסי שוב')
@@ -35,47 +34,40 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
-      <div className="absolute inset-0 bg-mesh" />
+    <div className="min-h-screen flex items-center justify-center bg-background p-6">
       <motion.div
-        animate={{ scale: [1, 1.2, 1] }}
-        transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-        className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] rounded-full opacity-25"
-        style={{ background: 'radial-gradient(circle, hsl(326,100%,75%) 0%, transparent 70%)' }}
-      />
-
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md relative z-10"
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-sm"
       >
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg shadow-pink-200 group-hover:scale-110 transition-transform">
+        {/* Logo */}
+        <div className="text-center mb-10">
+          <Link href="/" className="inline-flex items-center gap-2.5 group mb-8">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-[0_4px_16px_rgba(236,72,153,0.35)] group-hover:scale-105 transition-transform">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
-            <span className="text-2xl font-black gradient-text">מצאי נייליסטית</span>
+            <span className="text-xl font-black gradient-text">מצאי נייליסטית</span>
           </Link>
         </div>
 
-        <div className="glass rounded-3xl p-8 shadow-2xl shadow-pink-100/50">
+        <div className="bg-white rounded-2xl p-8 border border-border shadow-[0_4px_24px_rgba(236,72,153,0.08)]">
           {sent ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-4"
+              className="text-center py-2"
             >
-              <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                <CheckCircle2 className="h-8 w-8 text-green-500" />
+              <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                <CheckCircle2 className="h-8 w-8 text-emerald-500" />
               </div>
-              <h2 className="text-2xl font-black text-gray-800 mb-3">המייל נשלח! 📬</h2>
-              <p className="text-gray-400 text-sm leading-relaxed mb-6">
+              <h2 className="text-2xl font-black text-foreground mb-3">המייל נשלח!</h2>
+              <p className="text-muted-foreground text-sm leading-relaxed mb-6">
                 אם הכתובת קיימת במערכת, שלחנו לך מייל עם קישור לאיפוס הסיסמה.
                 <br />בדקי גם את תיקיית הספאם.
               </p>
               <Link href="/login">
-                <Button className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-11 font-black shadow-lg shadow-pink-200 gap-2">
+                <Button className="bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-11 font-bold shadow-[0_4px_16px_rgba(236,72,153,0.25)] gap-2 cursor-pointer">
                   <ArrowRight className="h-4 w-4" />
                   חזרי להתחברות
                 </Button>
@@ -84,13 +76,14 @@ export default function ForgotPasswordPage() {
           ) : (
             <>
               <div className="text-center mb-8">
-                <h1 className="text-3xl font-black text-gray-800 mb-2">שכחתי סיסמה 🔑</h1>
-                <p className="text-gray-400 text-sm">הכניסי את האימייל שלך ונשלח לך קישור לאיפוס</p>
+                <h1 className="text-2xl font-black text-foreground mb-2">שכחתי סיסמה</h1>
+                <p className="text-muted-foreground text-sm">הכניסי את האימייל שלך ונשלח לך קישור לאיפוס</p>
               </div>
 
               {error && (
                 <motion.div
-                  initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 rounded-xl px-4 py-3 text-sm font-semibold mb-5"
                 >
                   <AlertCircle className="h-4 w-4 shrink-0" />
@@ -98,30 +91,35 @@ export default function ForgotPasswordPage() {
                 </motion.div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-600" htmlFor="email">אימייל</label>
+                  <label className="text-sm font-bold text-foreground" htmlFor="email">אימייל</label>
                   <div className="relative">
-                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-pink-400" />
+                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                     <Input
-                      id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com" required
-                      className="pr-10 rounded-xl border-gray-200 focus:border-pink-300 h-12"
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-white"
                     />
                   </div>
                 </div>
 
                 <Button
-                  type="submit" disabled={loading}
-                  className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black text-base shadow-lg shadow-pink-200 disabled:opacity-60"
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black text-base shadow-[0_4px_16px_rgba(236,72,153,0.25)] cursor-pointer disabled:opacity-60"
                 >
                   {loading ? 'שולחת...' : 'שלחי לי קישור לאיפוס'}
                 </Button>
               </form>
 
-              <p className="text-center text-sm text-gray-400 mt-6">
+              <p className="text-center text-sm text-muted-foreground mt-6">
                 נזכרת?{' '}
-                <Link href="/login" className="text-pink-500 hover:text-pink-600 font-black">חזרי להתחברות</Link>
+                <Link href="/login" className="text-primary hover:text-primary/80 font-black">חזרי להתחברות</Link>
               </p>
             </>
           )}

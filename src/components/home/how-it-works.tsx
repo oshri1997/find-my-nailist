@@ -1,40 +1,39 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { useInView } from 'framer-motion'
+import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { MapPin, Star, Calendar } from 'lucide-react'
 
 const steps = [
   {
-    icon: MapPin,
-    emoji: '📍',
+    Icon: MapPin,
     step: '01',
     title: 'גלי נייליסטיות בקרבתך',
     desc: 'השתמשי במיקום שלך כדי לגלות מאות מומחיות ציפורניים באזורך.',
-    color: 'from-pink-500 to-rose-500',
-    bg: 'from-pink-50 to-rose-50',
+    iconBg: 'bg-pink-500',
+    cardBg: 'bg-pink-50',
     border: 'border-pink-100',
+    stepColor: 'text-pink-400',
   },
   {
-    icon: Star,
-    emoji: '✨',
+    Icon: Star,
     step: '02',
     title: 'עיצוב ופורטפוליו',
-    desc: 'עיצובים ׳before & after׳, ביקורות אמיתיות ומחירים שקופים.',
-    color: 'from-purple-500 to-violet-500',
-    bg: 'from-purple-50 to-violet-50',
-    border: 'border-purple-100',
+    desc: 'עיצובים before & after, ביקורות אמיתיות ומחירים שקופים.',
+    iconBg: 'bg-violet-500',
+    cardBg: 'bg-violet-50',
+    border: 'border-violet-100',
+    stepColor: 'text-violet-400',
   },
   {
-    icon: Calendar,
-    emoji: '🗓️',
+    Icon: Calendar,
     step: '03',
     title: 'הזמיני תור בקליק',
     desc: 'בחרי שירות, תאריך ושעה — בלי שיחות, בלי המתנה.',
-    color: 'from-violet-500 to-blue-500',
-    bg: 'from-violet-50 to-blue-50',
-    border: 'border-violet-100',
+    iconBg: 'bg-purple-500',
+    cardBg: 'bg-purple-50',
+    border: 'border-purple-100',
+    stepColor: 'text-purple-400',
   },
 ]
 
@@ -43,49 +42,44 @@ export function HowItWorksSection() {
   const isInView = useInView(ref, { once: true, margin: '-80px' })
 
   return (
-    <section ref={ref} className="py-24 bg-white overflow-hidden">
+    <section ref={ref} className="py-24 bg-background">
       <div className="container mx-auto max-w-7xl px-6">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.4 }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-2 bg-purple-50 text-purple-600 rounded-full px-4 py-2 text-sm font-bold mb-5">
-            ✨ פשוט כמו 1, 2, 3
+          <div className="inline-flex items-center gap-2 bg-violet-50 text-violet-600 border border-violet-100 rounded-full px-4 py-2 text-sm font-semibold mb-5">
+            פשוט כמו 1, 2, 3
           </div>
-          <h2 className="text-4xl md:text-5xl font-black mb-4">
+          <h2 className="text-4xl md:text-5xl font-black mb-4 text-foreground">
             איך זה <span className="gradient-text">עובד?</span>
           </h2>
-          <p className="text-xl text-gray-400 max-w-lg mx-auto">
+          <p className="text-lg text-muted-foreground max-w-lg mx-auto">
             מ״חיפוש״ ל״תור מאושר״ — פחות מ-60 שניות
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
           {/* Connector line */}
-          <div className="hidden md:block absolute top-16 right-[calc(33%+2rem)] left-[calc(33%+2rem)] h-0.5 bg-gradient-to-l from-purple-200 via-pink-200 to-rose-200" />
+          <div className="hidden md:block absolute top-14 right-[calc(33%+2rem)] left-[calc(33%+2rem)] h-px bg-border" />
 
           {steps.map((step, i) => (
             <motion.div
               key={step.step}
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 24 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: i * 0.15 }}
-              whileHover={{ y: -6, transition: { duration: 0.2 } }}
-              className={`relative rounded-3xl border-2 ${step.border} bg-gradient-to-br ${step.bg} p-8 cursor-default`}
+              transition={{ duration: 0.4, delay: i * 0.1 }}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className={`relative rounded-2xl border ${step.border} ${step.cardBg} p-8 cursor-default`}
             >
-              <div className="absolute top-6 left-6 text-5xl font-black opacity-10 text-gray-900">{step.step}</div>
-
-              <motion.div
-                whileHover={{ rotate: 10, scale: 1.1 }}
-                className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center mb-6 shadow-lg text-2xl`}
-              >
-                {step.emoji}
-              </motion.div>
-
-              <h3 className="text-xl font-black text-gray-800 mb-3">{step.title}</h3>
-              <p className="text-gray-500 leading-relaxed">{step.desc}</p>
+              <div className={`w-12 h-12 rounded-xl ${step.iconBg} flex items-center justify-center mb-6 shadow-[0_4px_12px_rgba(0,0,0,0.14)]`}>
+                <step.Icon className="w-6 h-6 text-white" />
+              </div>
+              <div className={`text-xs font-black ${step.stepColor} mb-2 tracking-widest`}>{step.step}</div>
+              <h3 className="text-lg font-black text-foreground mb-3">{step.title}</h3>
+              <p className="text-muted-foreground leading-relaxed text-sm">{step.desc}</p>
             </motion.div>
           ))}
         </div>

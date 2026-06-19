@@ -1,31 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: hsl(0, 0%, 100%);
-  --color-foreground: hsl(240, 10%, 8%);
-  --color-card: hsl(0, 0%, 100%);
-  --color-card-foreground: hsl(240, 10%, 8%);
-  --color-popover: hsl(0, 0%, 100%);
-  --color-popover-foreground: hsl(240, 10%, 8%);
-  --color-primary: hsl(326, 100%, 55%);
-  --color-primary-foreground: hsl(0, 0%, 100%);
-  --color-secondary: hsl(270, 60%, 96%);
-  --color-secondary-foreground: hsl(270, 50%, 30%);
-  --color-muted: hsl(240, 5%, 96%);
-  --color-muted-foreground: hsl(240, 5%, 50%);
-  --color-accent: hsl(326, 100%, 96%);
-  --color-accent-foreground: hsl(326, 80%, 35%);
-  --color-destructive: hsl(0, 84%, 60%);
-  --color-destructive-foreground: hsl(0, 0%, 100%);
-  --color-border: hsl(240, 6%, 90%);
-  --color-input: hsl(240, 6%, 90%);
-  --color-ring: hsl(326, 100%, 55%);
-  --radius: 1rem;
-
-  /* Brand gradient colors */
-  --color-brand-pink: hsl(326, 100%, 55%);
-  --color-brand-purple: hsl(271, 91%, 65%);
-  --color-brand-violet: hsl(250, 95%, 68%);
+  /* Luxe Soft — Beauty Marketplace Palette */
+  --color-background: #FDF2F8;
+  --color-foreground: #1A0A12;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #1A0A12;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #1A0A12;
+  --color-primary: #EC4899;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #F5EEF8;
+  --color-secondary-foreground: #831843;
+  --color-muted: #F5EEF8;
+  --color-muted-foreground: #9C6B82;
+  --color-accent: #8B5CF6;
+  --color-accent-foreground: #FFFFFF;
+  --color-destructive: #DC2626;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: #F3D5E8;
+  --color-input: #F5EEF8;
+  --color-ring: #EC4899;
+  --radius: 0.75rem;
 }
 
 * {
@@ -39,20 +35,32 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Gradient text utility */
+/* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, hsl(326, 100%, 55%) 0%, hsl(271, 91%, 65%) 50%, hsl(250, 95%, 68%) 100%);
+  background: linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Glass card utility */
+/* Soft card */
+.card-soft {
+  background: #FFFFFF;
+  border: 1px solid #F3D5E8;
+  box-shadow: 0 4px 20px rgba(236, 72, 153, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* Subtle page background variant */
+.bg-section-alt {
+  background: linear-gradient(160deg, #FFFFFF 0%, #FDF2F8 100%);
+}
+
+/* Glass — kept for compatibility, updated to feel cleaner */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid #F3D5E8;
 }
 
 .glass-dark {
@@ -62,45 +70,48 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* Animated gradient background */
+/* Subtle mesh background */
 .bg-mesh {
-  background-color: #fff;
+  background-color: #FDF2F8;
   background-image:
-    radial-gradient(at 20% 10%, hsla(326, 100%, 80%, 0.35) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, hsla(271, 91%, 80%, 0.25) 0px, transparent 50%),
-    radial-gradient(at 5% 80%, hsla(326, 100%, 75%, 0.2) 0px, transparent 50%),
-    radial-gradient(at 90% 70%, hsla(250, 95%, 80%, 0.2) 0px, transparent 50%),
-    radial-gradient(at 50% 50%, hsla(0, 0%, 100%, 1) 0px, transparent 100%);
+    radial-gradient(at 10% 10%, rgba(236, 72, 153, 0.07) 0px, transparent 50%),
+    radial-gradient(at 90% 80%, rgba(139, 92, 246, 0.05) 0px, transparent 50%);
 }
 
-/* Shimmer animation */
+/* Shimmer */
 @keyframes shimmer {
   0% { background-position: -200% center; }
   100% { background-position: 200% center; }
 }
 
 .shimmer {
-  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.6) 50%, transparent 75%);
+  background: linear-gradient(90deg, transparent 25%, rgba(255, 255, 255, 0.8) 50%, transparent 75%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
 
-/* Floating animation */
+/* Subtle float */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
+  50% { transform: translateY(-8px); }
 }
 
 .float {
-  animation: float 4s ease-in-out infinite;
+  animation: float 5s ease-in-out infinite;
 }
 
-/* Pulse glow */
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px hsla(326, 100%, 55%, 0.3); }
-  50% { box-shadow: 0 0 40px hsla(326, 100%, 55%, 0.6); }
+/* Soft pulse glow */
+@keyframes soft-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
+  50% { box-shadow: 0 0 20px 4px rgba(236, 72, 153, 0.15); }
 }
 
 .pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+  animation: soft-pulse 3s ease-in-out infinite;
+}
+
+/* Dot grid pattern for decorative sections */
+.dot-pattern {
+  background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0);
+  background-size: 28px 28px;
 }

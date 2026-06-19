@@ -23,7 +23,6 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      // Ensure the user record exists then redirect based on chosen role
       fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -64,54 +63,54 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
-      <div className="absolute inset-0 bg-mesh" />
-      <motion.div
-        animate={{ scale: [1, 1.2, 1], rotate: [0, 45, 0] }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-        className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full opacity-30"
-        style={{ background: 'radial-gradient(circle, hsl(326,100%,75%) 0%, transparent 70%)' }}
-      />
-      <motion.div
-        animate={{ scale: [1.2, 1, 1.2], rotate: [45, 0, 45] }}
-        transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-        className="absolute bottom-[-20%] left-[-10%] w-[400px] h-[400px] rounded-full opacity-30"
-        style={{ background: 'radial-gradient(circle, hsl(271,91%,75%) 0%, transparent 70%)' }}
-      />
-
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md relative z-10"
-      >
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg shadow-pink-200 group-hover:scale-110 transition-transform">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-2xl font-black gradient-text">מצאי נייליסטית</span>
-          </Link>
+    <div className="min-h-screen flex bg-background">
+      {/* Decorative left panel — desktop only */}
+      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-primary to-accent items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 dot-pattern pointer-events-none" />
+        <div className="relative z-10 text-white text-center px-12 max-w-sm">
+          <div className="w-20 h-20 rounded-3xl bg-white/20 flex items-center justify-center mx-auto mb-8">
+            <Sparkles className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-4xl font-black mb-4 leading-tight">ברוכה השבה!</h2>
+          <p className="text-white/75 text-lg leading-relaxed">
+            גלי את עולם הנייל המושלם — הזמיני תור בקליק אחד
+          </p>
         </div>
+      </div>
 
-        <div className="glass rounded-3xl p-8 shadow-2xl shadow-pink-100/50">
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-black text-gray-800 mb-2">ברוכה השבה! 👋</h1>
-            <p className="text-gray-400 font-medium">התחברי לחשבון שלך</p>
+      {/* Form panel */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="w-full max-w-md"
+        >
+          <div className="text-center mb-10">
+            <Link href="/" className="inline-flex items-center gap-2.5 group mb-8">
+              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-[0_4px_16px_rgba(236,72,153,0.35)] group-hover:scale-105 transition-transform">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-xl font-black gradient-text">מצאי נייליסטית</span>
+            </Link>
+            <h1 className="text-3xl font-black text-foreground mb-2">כניסה לחשבון</h1>
+            <p className="text-muted-foreground text-sm">התחברי כדי להמשיך</p>
           </div>
 
           {/* Role selector */}
-          <div className="flex rounded-2xl bg-gray-100 p-1 mb-6">
+          <div className="flex rounded-xl bg-muted p-1 mb-7">
             {(['nailist', 'client'] as Role[]).map((r) => (
               <button
-                key={r} type="button" onClick={() => setRole(r)}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black transition-all ${
+                key={r}
+                type="button"
+                onClick={() => setRole(r)}
+                className={`flex-1 flex items-center justify-center py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
                   role === r
-                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm'
-                    : 'text-gray-400 hover:text-gray-600'
+                    ? 'bg-white text-primary shadow-sm shadow-pink-100'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {r === 'nailist' ? '💅' : '🌸'} {r === 'nailist' ? 'נייליסטית' : 'לקוחה'}
+                {r === 'nailist' ? 'נייליסטית' : 'לקוחה'}
               </button>
             ))}
           </div>
@@ -127,59 +126,71 @@ export default function LoginPage() {
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-600" htmlFor="email">אימייל</label>
+              <label className="text-sm font-bold text-foreground" htmlFor="email">אימייל</label>
               <div className="relative">
-                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-pink-400" />
+                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                 <Input
-                  id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com" required
-                  className="pr-10 rounded-xl border-gray-200 focus:border-pink-300 h-12"
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-white"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-bold text-gray-600" htmlFor="password">סיסמה</label>
-                <Link href="/forgot-password" className="text-xs text-pink-500 hover:text-pink-600 font-semibold">
+                <label className="text-sm font-bold text-foreground" htmlFor="password">סיסמה</label>
+                <Link href="/forgot-password" className="text-xs text-primary hover:text-primary/80 font-semibold">
                   שכחתי סיסמה
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-pink-400" />
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                 <Input
-                  id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••" required
-                  className="pr-10 rounded-xl border-gray-200 focus:border-pink-300 h-12"
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-white"
                 />
               </div>
             </div>
 
             <Button
-              type="submit" disabled={loading || authLoading}
-              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black text-base shadow-lg shadow-pink-200 gap-2 group disabled:opacity-60"
+              type="submit"
+              disabled={loading || authLoading}
+              className="w-full bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black text-base shadow-[0_4px_16px_rgba(236,72,153,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
             >
               {loading ? 'מתחברת...' : role === 'nailist' ? 'כניסה כנייליסטית' : 'כניסה כלקוחה'}
               {!loading && <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />}
             </Button>
           </form>
 
-          <div className="relative my-5">
+          <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-200" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-white/80 px-3 text-gray-400 font-medium">או</span>
+              <span className="bg-background px-3 text-muted-foreground font-medium">או</span>
             </div>
           </div>
 
           <Button
-            type="button" variant="outline" disabled={loading || authLoading} onClick={handleGoogle}
-            className="w-full rounded-xl h-12 border-gray-200 font-bold gap-3 hover:border-pink-300 hover:text-pink-600 transition-colors disabled:opacity-60"
+            type="button"
+            variant="outline"
+            disabled={loading || authLoading}
+            onClick={handleGoogle}
+            className="w-full rounded-xl h-12 border-border font-semibold gap-3 hover:border-primary/40 hover:bg-pink-50/50 transition-colors cursor-pointer disabled:opacity-60 bg-white"
           >
-            <svg className="h-5 w-5" viewBox="0 0 24 24">
+            <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
@@ -188,12 +199,12 @@ export default function LoginPage() {
             המשיכי עם Google
           </Button>
 
-          <p className="text-center text-sm text-gray-400 mt-6">
+          <p className="text-center text-sm text-muted-foreground mt-6">
             אין לך חשבון עדיין?{' '}
-            <Link href="/register" className="text-pink-500 hover:text-pink-600 font-black">הרשמי עכשיו</Link>
+            <Link href="/register" className="text-primary hover:text-primary/80 font-black">הרשמי עכשיו</Link>
           </p>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   )
 }
