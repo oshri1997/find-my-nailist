@@ -3,8 +3,43 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { TrendingUp, Clock, CheckCircle2, Circle } from 'lucide-react'
+import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
+
+type AppStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'
+
+interface Appointment {
+  id: string
+  serviceName: string
+  startTime: string
+  endTime: string
+  status: AppStatus
+  price: number
+  currency: string
+}
+
+const STATUS_LABELS: Record<AppStatus, string> = {
+  PENDING: 'ממתין',
+  CONFIRMED: 'מאושר',
+  CANCELLED: 'בוטל',
+  COMPLETED: 'הושלם',
+  NO_SHOW: 'לא הגיע',
+}
+
+const STATUS_COLORS: Record<AppStatus, string> = {
+  PENDING: 'bg-amber-50 text-amber-600 border-amber-200',
+  CONFIRMED: 'bg-green-50 text-green-600 border-green-200',
+  CANCELLED: 'bg-red-50 text-red-500 border-red-200',
+  COMPLETED: 'bg-blue-50 text-blue-600 border-blue-200',
+  NO_SHOW: 'bg-gray-50 text-gray-400 border-gray-200',
+}
+
+function formatAppointmentTime(iso: string) {
+  const d = new Date(iso)
+  const day = d.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short' })
+  const time = d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+  return { day, time }
+}
 
 const stats = [
   { label: 'תורים', value: '0', icon: '📅', change: '+0 החודש', bg: 'from-pink-50 to-rose-50', border: 'border-pink-100' },
@@ -37,6 +72,7 @@ export default function NailistDashboard() {
   const [hasPhotos, setHasPhotos] = useState(false)
   const [hasServices, setHasServices] = useState(false)
   const [hasHours, setHasHours] = useState(false)
+  const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([])
 
   useEffect(() => {
     fetch('/api/me/nailist-profile')
@@ -46,11 +82,12 @@ export default function NailistDashboard() {
         setProfile(json.data)
         const profileId = json.data.id
 
-        // Fetch portfolio, services, and working hours in parallel
-        const [portfolioRes, servicesRes, hoursRes] = await Promise.all([
+        // Fetch everything in parallel
+        const [portfolioRes, servicesRes, hoursRes, appointmentsRes] = await Promise.all([
           fetch(`/api/portfolio?profileId=${profileId}`),
           fetch(`/api/services?nailistProfileId=${profileId}`),
           fetch('/api/working-hours'),
+          fetch('/api/appointments?role=nailist'),
         ])
 
         if (portfolioRes.ok) {
@@ -65,6 +102,15 @@ export default function NailistDashboard() {
           const { data } = await hoursRes.json()
           const active = (data ?? []).filter((h: { isActive: boolean }) => h.isActive)
           setHasHours(active.length > 0)
+        }
+        if (appointmentsRes.ok) {
+          const { data } = await appointmentsRes.json()
+          const now = new Date()
+          const upcoming = (data ?? [] as Appointment[])
+            .filter((a: Appointment) => ['PENDING', 'CONFIRMED'].includes(a.status) && new Date(a.startTime) >= now)
+            .sort((a: Appointment, b: Appointment) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+            .slice(0, 4)
+          setUpcomingAppointments(upcoming)
         }
       })
       .catch(() => {})
@@ -115,15 +161,56 @@ export default function NailistDashboard() {
             </div>
             <span className="text-2xl">📅</span>
           </div>
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center text-3xl mb-4">📭</div>
-            <p className="text-sm font-bold text-gray-400 mb-4">אין תורים קרובים</p>
-            <Link href="/dashboard/nailist/hours"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:border-pink-300 hover:text-pink-600 transition-colors">
-              <Clock className="h-4 w-4" />
-              הגדרי זמינות
-            </Link>
-          </div>
+
+          {upcomingAppointments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center text-3xl mb-4">📭</div>
+              <p className="text-sm font-bold text-gray-400 mb-4">אין תורים קרובים</p>
+              <Link href="/dashboard/nailist/hours"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:border-pink-300 hover:text-pink-600 transition-colors">
+                <Clock className="h-4 w-4" />
+                הגדרי זמינות
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {upcomingAppointments.map((apt, i) => {
+                const { day, time } = formatAppointmentTime(apt.startTime)
+                const symbol = apt.currency === 'ILS' ? '₪' : '$'
+                return (
+                  <motion.div
+                    key={apt.id}
+                    initial={{ opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 + i * 0.06 }}
+                    className="flex items-center gap-3 p-3 rounded-2xl border border-gray-100 hover:border-pink-100 hover:bg-pink-50/30 transition-all"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center text-lg shrink-0">
+                      💅
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-black text-gray-800 truncate">{apt.serviceName}</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${STATUS_COLORS[apt.status]}`}>
+                          {STATUS_LABELS[apt.status]}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-400 font-medium mt-0.5">
+                        {day} • {time} • {symbol}{apt.price}
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              })}
+              <Link
+                href="/dashboard/nailist/appointments"
+                className="flex items-center justify-center gap-1 text-sm font-bold text-pink-500 hover:text-pink-700 pt-1 transition-colors"
+              >
+                כל התורים
+                <ChevronLeft className="h-4 w-4" />
+              </Link>
+            </div>
+          )}
         </motion.div>
 
         {/* Recent reviews */}
