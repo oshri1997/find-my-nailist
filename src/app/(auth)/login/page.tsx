@@ -101,29 +101,23 @@ export default function LoginPage() {
           </div>
 
           {/* Role selector */}
-          <div className="flex rounded-2xl bg-gray-100 p-1 mb-6">
-            <button
-              type="button"
-              onClick={() => setRole('nailist')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black transition-all ${
-                role === 'nailist'
-                  ? 'bg-white shadow-sm text-gray-800'
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              💅 נייליסטית
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole('client')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black transition-all ${
-                role === 'client'
-                  ? 'bg-white shadow-sm text-gray-800'
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              🌸 לקוחה
-            </button>
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {(['nailist', 'client'] as Role[]).map((r) => (
+              <motion.button
+                key={r} type="button" onClick={() => setRole(r)} whileTap={{ scale: 0.97 }}
+                className={`relative rounded-2xl p-4 text-center border-2 transition-all ${
+                  role === r
+                    ? 'border-transparent bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-200'
+                    : 'border-gray-200 bg-white text-gray-500 hover:border-pink-200'
+                }`}
+              >
+                <div className="text-2xl mb-1">{r === 'client' ? '🛍️' : '💅'}</div>
+                <div className="font-black text-sm">{r === 'client' ? 'אני לקוחה' : 'אני נייליסטית'}</div>
+                <div className={`text-xs mt-0.5 font-medium ${role === r ? 'text-white/80' : 'text-gray-400'}`}>
+                  {r === 'client' ? 'מחפשת שירות' : 'מציעה שירות'}
+                </div>
+              </motion.button>
+            ))}
           </div>
 
           {error && (
