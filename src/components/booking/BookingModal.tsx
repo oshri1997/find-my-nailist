@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -22,19 +22,57 @@ interface Props {
   onClose: () => void
 }
 
+interface BookedSlot {
+  startTime: string
+  endTime: string
+}
+
+interface Availability {
+  workingDay: boolean
+  startTime?: string
+  endTime?: string
+  bookedSlots: BookedSlot[]
+}
+
 type Step = 'service' | 'datetime' | 'confirm' | 'done'
 
 function pad(n: number) {
   return String(n).padStart(2, '0')
 }
 
-function timeSlots(): string[] {
+function generateSlots(startTime: string, endTime: string): string[] {
+  const [sh, sm] = startTime.split(':').map(Number)
+  const [eh, em] = endTime.split(':').map(Number)
+  const start = sh * 60 + sm
+  const end = eh * 60 + em
   const slots: string[] = []
-  for (let h = 8; h < 20; h++) {
-    slots.push(`${pad(h)}:00`)
-    slots.push(`${pad(h)}:30`)
+  for (let m = start; m < end; m += 30) {
+    slots.push(`${pad(Math.floor(m / 60))}:${pad(m % 60)}`)
   }
   return slots
+}
+
+function isSlotUnavailable(
+  slot: string,
+  date: string,
+  durationMinutes: number,
+  endTime: string,
+  bookedSlots: BookedSlot[]
+): boolean {
+  const slotStart = new Date(`${date}T${slot}:00`)
+  const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60_000)
+
+  // Would service run past working hours end?
+  const [eh, em] = endTime.split(':').map(Number)
+  const workEnd = new Date(`${date}T${pad(eh)}:${pad(em)}:00`)
+  if (slotEnd > workEnd) return true
+
+  // Overlaps an existing appointment?
+  return bookedSlots.some((b) => {
+    const bStart = new Date(b.startTime)
+    const bEnd = new Date(b.endTime)
+    return bStart < slotEnd && bEnd > slotStart
+  })
 }
 
 export default function BookingModal({ nailistProfileId, businessName, services, onClose }: Props) {
@@ -47,12 +85,26 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   const [error, setError] = useState('')
   const [appointmentId, setAppointmentId] = useState('')
 
+  const [availability, setAvailability] = useState<Availability | null>(null)
+  const [loadingSlots, setLoadingSlots] = useState(false)
+
+  // Fetch availability whenever date changes
+  useEffect(() => {
+    if (!selectedDate) { setAvailability(null); return }
+    setLoadingSlots(true)
+    setSelectedTime('')
+    fetch(`/api/nailists/${nailistProfileId}/availability?date=${selectedDate}`)
+      .then((r) => r.json())
+      .then(({ data }) => setAvailability(data ?? null))
+      .catch(() => setAvailability(null))
+      .finally(() => setLoadingSlots(false))
+  }, [selectedDate, nailistProfileId])
+
   async function handleConfirm() {
     if (!selectedService || !selectedDate || !selectedTime) return
     setLoading(true)
     setError('')
     try {
-      // Get current user's client profile
       const meRes = await fetch('/api/me/client-profile')
       if (!meRes.ok) {
         setError('יש להתחבר לחשבון כדי להזמין תור')
@@ -94,6 +146,11 @@ export default function BookingModal({ nailistProfileId, businessName, services,
 
   const symbol = selectedService?.currency === 'ILS' ? '₪' : '$'
   const minDate = new Date().toISOString().split('T')[0]
+
+  const slots =
+    availability?.workingDay && availability.startTime && availability.endTime
+      ? generateSlots(availability.startTime, availability.endTime)
+      : []
 
   return (
     <div
@@ -185,26 +242,57 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                       className="rounded-xl border-gray-200 h-11"
                     />
                   </div>
+
                   {selectedDate && (
                     <div>
                       <label className="text-sm font-bold text-gray-600 block mb-1.5">שעה</label>
-                      <div className="grid grid-cols-4 gap-2 max-h-44 overflow-y-auto">
-                        {timeSlots().map((t) => (
-                          <button
-                            key={t}
-                            onClick={() => setSelectedTime(t)}
-                            className={`py-2 rounded-xl text-sm font-bold transition-all ${
-                              selectedTime === t
-                                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm'
-                                : 'bg-gray-50 text-gray-600 hover:bg-pink-50 hover:text-pink-600'
-                            }`}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
+
+                      {loadingSlots ? (
+                        <div className="flex items-center gap-2 text-gray-400 text-sm py-4">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          טוענת שעות פנויות...
+                        </div>
+                      ) : !availability?.workingDay ? (
+                        <div className="text-sm text-gray-500 bg-gray-50 rounded-xl p-4 text-center font-medium">
+                          😴 יום זה אינו יום עבודה — אנא בחרי תאריך אחר
+                        </div>
+                      ) : slots.length === 0 ? (
+                        <div className="text-sm text-gray-500 bg-gray-50 rounded-xl p-4 text-center font-medium">
+                          אין שעות פנויות ביום זה
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                          {slots.map((t) => {
+                            const unavailable = isSlotUnavailable(
+                              t,
+                              selectedDate,
+                              selectedService?.durationMinutes ?? 60,
+                              availability.endTime!,
+                              availability.bookedSlots
+                            )
+                            const isSelected = selectedTime === t
+                            return (
+                              <button
+                                key={t}
+                                disabled={unavailable}
+                                onClick={() => !unavailable && setSelectedTime(t)}
+                                className={`py-2 rounded-xl text-sm font-bold transition-all ${
+                                  isSelected
+                                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm'
+                                    : unavailable
+                                    ? 'bg-gray-100 text-gray-300 cursor-not-allowed line-through'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-pink-50 hover:text-pink-600'
+                                }`}
+                              >
+                                {t}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
+
                   <div>
                     <label className="text-sm font-bold text-gray-600 block mb-1.5">הערות (אופציונלי)</label>
                     <Input
