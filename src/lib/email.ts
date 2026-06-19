@@ -38,8 +38,8 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
   const symbol = p.currency === 'ILS' ? '₪' : '$'
   const dateStr = formatDate(p.startTime)
 
-  await Promise.all([
-    // To client — waiting for nailist confirmation
+  // Send independently so one failure doesn't cancel the other
+  await Promise.allSettled([
     resend.emails.send({
       from: FROM,
       to: p.clientEmail,
@@ -55,9 +55,9 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
         </div>
         <p>נשלח לך אישור ברגע שהנייליסטית תאשר את התור 🌸</p>
       </div>`,
-    }),
+    }).then((r) => console.log('Client email sent:', r.data?.id ?? r.error))
+      .catch((err) => console.error('Client email error:', err)),
 
-    // To nailist — one-time confirm button
     resend.emails.send({
       from: FROM,
       to: p.nailistEmail,
@@ -78,8 +78,9 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
         </div>
         <p style="color:#aaa;font-size:12px;text-align:center">הקישור תקף ל-7 ימים. לאחר לחיצה, הלקוחה תקבל אישור במייל.</p>
       </div>`,
-    }),
-  ]).catch((err) => console.error('Email send error:', err))
+    }).then((r) => console.log('Nailist email sent:', r.data?.id ?? r.error))
+      .catch((err) => console.error('Nailist email error:', err)),
+  ])
 }
 
 // Sent to client after nailist clicks confirm

@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       updatedAt: now,
     })
 
-    // Fire-and-forget email confirmation
+    // Fire-and-forget email — resolve emails for both parties
     const [nailistSnap, clientProfileSnap] = await Promise.all([
       db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).get(),
       db.collection(COLLECTIONS.CLIENT_PROFILES).doc(data.clientProfileId).get(),
@@ -76,22 +76,24 @@ export async function POST(request: NextRequest) {
     const nailist = nailistSnap.data()
     const clientProfile = clientProfileSnap.data()
 
-    // CLIENT_PROFILES may not have email — fall back to USERS collection
-    const clientUserId = clientProfile?.userId
-    const clientUserSnap = clientUserId
-      ? await db.collection(COLLECTIONS.USERS).doc(clientUserId).get()
-      : null
-    const clientEmail: string | undefined =
-      clientProfile?.email || clientUserSnap?.data()?.email
+    // Both nailist and client profiles may lack email — always fall back to USERS
+    const [nailistUserSnap, clientUserSnap] = await Promise.all([
+      nailist?.userId ? db.collection(COLLECTIONS.USERS).doc(nailist.userId).get() : Promise.resolve(null),
+      clientProfile?.userId ? db.collection(COLLECTIONS.USERS).doc(clientProfile.userId).get() : Promise.resolve(null),
+    ])
+    const nailistEmail: string | undefined = nailist?.email || nailistUserSnap?.data()?.email
+    const clientEmail: string | undefined = clientProfile?.email || clientUserSnap?.data()?.email
 
-    if (nailist?.email && clientEmail) {
+    console.log('Email lookup — nailistEmail:', nailistEmail, 'clientEmail:', clientEmail)
+
+    if (nailistEmail && clientEmail) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://find-my-nailist-production.up.railway.app'
       const confirmUrl = `${appUrl}/api/appointments/confirm?token=${confirmToken}`
       sendAppointmentRequest({
         clientEmail,
-        nailistEmail: nailist.email,
+        nailistEmail,
         clientName: clientProfile?.displayName ?? clientEmail,
-        nailistBusinessName: nailist.businessName,
+        nailistBusinessName: nailist?.businessName ?? '',
         serviceName: service.name,
         startTime,
         price: service.price,
@@ -99,7 +101,7 @@ export async function POST(request: NextRequest) {
         confirmUrl,
       }).catch((err) => console.error('Email send error:', err))
     } else {
-      console.warn('Skipping email — nailist.email:', nailist?.email, 'clientEmail:', clientEmail)
+      console.warn('Skipping email — nailistEmail:', nailistEmail, 'clientEmail:', clientEmail)
     }
 
     return NextResponse.json({ data: { id: appointmentRef.id } }, { status: 201 })

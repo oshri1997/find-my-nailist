@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
     if (data.role === 'NAILIST') {
       const profileData: Record<string, unknown> = {
         userId: data.uid,
+        email: data.email,
         businessName: data.displayName ?? 'My Nail Studio',
         photoUrl: data.photoUrl ?? null,
         isActive: false,
