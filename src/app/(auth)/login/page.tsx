@@ -10,17 +10,20 @@ import { Input } from '@/components/ui/input'
 import { signInWithEmail, signInWithGoogle } from '@/lib/firebase/auth-helpers'
 import { useAuth } from '@/components/auth/auth-provider'
 
+type Role = 'nailist' | 'client'
+
 export default function LoginPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const [role, setRole] = useState<Role>('nailist')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // After Google sign-in, ensure the user exists in Firestore then redirect.
   useEffect(() => {
     if (!authLoading && user) {
+      // Ensure the user record exists then redirect based on chosen role
       fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -29,11 +32,13 @@ export default function LoginPage() {
           email: user.email ?? '',
           displayName: user.displayName ?? '',
           photoUrl: user.photoURL ?? undefined,
-          role: 'NAILIST',
+          role: role === 'nailist' ? 'NAILIST' : 'CLIENT',
         }),
-      }).finally(() => router.replace('/dashboard/nailist'))
+      }).finally(() => {
+        router.replace(role === 'nailist' ? '/dashboard/nailist' : '/search')
+      })
     }
-  }, [user, authLoading, router])
+  }, [user, authLoading, router, role])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -41,7 +46,6 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await signInWithEmail(email, password)
-      // Navigation handled by the useEffect above once onAuthStateChanged fires
     } catch (err: unknown) {
       setError(friendlyError(err))
       setLoading(false)
@@ -52,7 +56,7 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      await signInWithGoogle() // navigates away — page unmounts
+      await signInWithGoogle()
     } catch (err: unknown) {
       setError(friendlyError(err))
       setLoading(false)
@@ -91,9 +95,35 @@ export default function LoginPage() {
         </div>
 
         <div className="glass rounded-3xl p-8 shadow-2xl shadow-pink-100/50">
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <h1 className="text-3xl font-black text-gray-800 mb-2">ברוכה השבה! 👋</h1>
-            <p className="text-gray-400">התחברי לחשבון שלך להמשך</p>
+            <p className="text-gray-400 font-medium">התחברי לחשבון שלך</p>
+          </div>
+
+          {/* Role selector */}
+          <div className="flex rounded-2xl bg-gray-100 p-1 mb-6">
+            <button
+              type="button"
+              onClick={() => setRole('nailist')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black transition-all ${
+                role === 'nailist'
+                  ? 'bg-white shadow-sm text-gray-800'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              💅 נייליסטית
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole('client')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black transition-all ${
+                role === 'client'
+                  ? 'bg-white shadow-sm text-gray-800'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              🌸 לקוחה
+            </button>
           </div>
 
           {error && (
@@ -141,7 +171,7 @@ export default function LoginPage() {
               type="submit" disabled={loading || authLoading}
               className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black text-base shadow-lg shadow-pink-200 gap-2 group disabled:opacity-60"
             >
-              {loading ? 'מתחברת...' : 'התחברי'}
+              {loading ? 'מתחברת...' : role === 'nailist' ? 'כניסה כנייליסטית' : 'כניסה כלקוחה'}
               {!loading && <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />}
             </Button>
           </form>
