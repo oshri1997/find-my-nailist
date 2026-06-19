@@ -3,7 +3,8 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
-import { sendAppointmentConfirmation } from '@/lib/email'
+import { sendAppointmentRequest } from '@/lib/email'
+import { randomUUID } from 'crypto'
 
 const createSchema = z.object({
   nailistProfileId: z.string(),
@@ -47,6 +48,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Time slot not available' }, { status: 409 })
     }
 
+    const confirmToken = randomUUID()
+    const confirmTokenExpiresAt = Timestamp.fromDate(
+      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    )
+
     const now = FieldValue.serverTimestamp()
     const appointmentRef = await db.collection(COLLECTIONS.APPOINTMENTS).add({
       ...data,
@@ -56,6 +62,8 @@ export async function POST(request: NextRequest) {
       price: service.price,
       currency: service.currency,
       serviceName: service.name,
+      confirmToken,
+      confirmTokenExpiresAt,
       createdAt: now,
       updatedAt: now,
     })
@@ -77,7 +85,9 @@ export async function POST(request: NextRequest) {
       clientProfile?.email || clientUserSnap?.data()?.email
 
     if (nailist?.email && clientEmail) {
-      sendAppointmentConfirmation({
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://find-my-nailist-production.up.railway.app'
+      const confirmUrl = `${appUrl}/api/appointments/confirm?token=${confirmToken}`
+      sendAppointmentRequest({
         clientEmail,
         nailistEmail: nailist.email,
         clientName: clientProfile?.displayName ?? clientEmail,
@@ -86,6 +96,7 @@ export async function POST(request: NextRequest) {
         startTime,
         price: service.price,
         currency: service.currency,
+        confirmUrl,
       }).catch((err) => console.error('Email send error:', err))
     } else {
       console.warn('Skipping email — nailist.email:', nailist?.email, 'clientEmail:', clientEmail)
