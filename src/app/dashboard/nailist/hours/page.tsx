@@ -113,6 +113,7 @@ export default function WorkingHoursPage() {
                 {/* Toggle */}
                 <button
                   type="button"
+                  dir="ltr"
                   onClick={() => toggle(day)}
                   className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${h.isActive ? 'bg-pink-500' : 'bg-gray-300'}`}
                 >

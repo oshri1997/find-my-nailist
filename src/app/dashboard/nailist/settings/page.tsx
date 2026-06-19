@@ -122,6 +122,7 @@ export default function NailistSettingsPage() {
             </div>
             <button
               type="button"
+              dir="ltr"
               onClick={() => setForm((prev) => ({ ...prev, isActive: !prev.isActive }))}
               className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none shrink-0 ${
                 form.isActive ? 'bg-green-500' : 'bg-gray-300'
