@@ -4,10 +4,11 @@ import { useState, useEffect, use } from 'react'
 import { motion } from 'framer-motion'
 import { Navbar } from '@/components/layout/navbar'
 import { Button } from '@/components/ui/button'
-import { MapPin, Star, Clock, MessageCircle, Navigation, ExternalLink, ChevronRight, Link2 } from 'lucide-react'
+import { MapPin, Star, Clock, MessageCircle, Navigation, ExternalLink, ChevronRight, Link2, Settings, ImageIcon } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
 import BookingModal from '@/components/booking/BookingModal'
 import Link from 'next/link'
+import { useAuth } from '@/components/auth/auth-provider'
 
 interface Service {
   id: string
@@ -45,6 +46,8 @@ interface NailistProfile {
   reviewCount: number
   latitude?: number
   longitude?: number
+  photoUrl?: string
+  coverPhotoUrl?: string
   services: Service[]
   portfolio: PortfolioPhoto[]
   reviews: Review[]
@@ -52,8 +55,10 @@ interface NailistProfile {
 
 export default function NailistProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const { user } = useAuth()
   const [profile, setProfile] = useState<NailistProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isOwner, setIsOwner] = useState(false)
   const [showBooking, setShowBooking] = useState(false)
   const [activeTab, setActiveTab] = useState<'portfolio' | 'services' | 'reviews'>('portfolio')
 
@@ -65,6 +70,14 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
       .finally(() => setLoading(false))
   }, [id])
 
+  useEffect(() => {
+    if (!user) return
+    fetch('/api/me/nailist-profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(json => { if (json?.data?.id === id) setIsOwner(true) })
+      .catch(() => {})
+  }, [user, id])
+
   function wazeUrl() {
     if (!profile?.latitude || !profile?.longitude) return null
     return `https://waze.com/ul?ll=${profile.latitude},${profile.longitude}&navigate=yes`
@@ -73,6 +86,10 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
   function googleMapsUrl() {
     if (!profile?.latitude || !profile?.longitude) return null
     return `https://maps.google.com/maps?q=${profile.latitude},${profile.longitude}`
+  }
+
+  function initials(name: string) {
+    return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   }
 
   if (loading) {
@@ -101,24 +118,54 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
     )
   }
 
-  // symbol is determined per-service; this is a fallback for non-service text
-  const symbol = '₪'
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50/50" dir="rtl">
       <Navbar />
 
       {/* Hero */}
-      <div className="bg-gradient-to-br from-pink-500 via-purple-600 to-violet-600 text-white">
-        <div className="container mx-auto max-w-4xl px-6 py-10">
+      <div className={`relative text-white overflow-hidden ${!profile.coverPhotoUrl ? 'bg-gradient-to-br from-pink-500 via-purple-600 to-violet-600' : ''}`}>
+        {profile.coverPhotoUrl && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={profile.coverPhotoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-br from-pink-900/60 via-purple-900/50 to-violet-900/60" />
+          </>
+        )}
+
+        {/* Owner edit buttons */}
+        {isOwner && (
+          <div className="absolute top-3 left-3 flex gap-2 z-10">
+            <Link href="/dashboard/nailist/portfolio">
+              <button className="bg-white/20 backdrop-blur text-white text-xs font-bold rounded-full px-3 py-1.5 hover:bg-white/35 transition-colors flex items-center gap-1.5 border border-white/20">
+                <ImageIcon className="h-3 w-3" />
+                שנאי רקע
+              </button>
+            </Link>
+            <Link href="/dashboard/nailist/settings">
+              <button className="bg-white/20 backdrop-blur text-white text-xs font-bold rounded-full px-3 py-1.5 hover:bg-white/35 transition-colors flex items-center gap-1.5 border border-white/20">
+                <Settings className="h-3 w-3" />
+                ערכי פרופיל
+              </button>
+            </Link>
+          </div>
+        )}
+
+        <div className="container mx-auto max-w-4xl px-6 py-10 relative z-10">
           <Link href="/search" className="flex items-center gap-1 text-white/70 text-sm mb-6 hover:text-white transition-colors w-fit">
             <ChevronRight className="h-4 w-4" />
             חזרה לחיפוש
           </Link>
           <div className="flex items-start gap-5">
-            <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-4xl shrink-0">
-              💅
+            {/* Avatar */}
+            <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur shrink-0 overflow-hidden flex items-center justify-center">
+              {profile.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profile.photoUrl} alt={profile.businessName} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-black text-white">{initials(profile.businessName)}</span>
+              )}
             </div>
+
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl font-black mb-1">{profile.businessName}</h1>
               {profile.city && (
@@ -238,6 +285,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
                     transition={{ delay: i * 0.05 }}
                     className="aspect-square rounded-2xl overflow-hidden bg-gray-100"
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={photo.url} alt={photo.caption ?? ''} className="w-full h-full object-cover" />
                   </motion.div>
                 ))}

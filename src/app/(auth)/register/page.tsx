@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Mail, Lock, User, ArrowLeft, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
 import { signUpWithEmail, signInWithGoogle } from '@/lib/firebase/auth-helpers'
 import { useAuth } from '@/components/auth/auth-provider'
 
@@ -19,6 +20,10 @@ export default function RegisterPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [address, setAddress] = useState('')
+  const [city, setCity] = useState('')
+  const [lat, setLat] = useState<number | undefined>()
+  const [lng, setLng] = useState<number | undefined>()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   // Prevent the auth-state watcher from firing during an active form submission
@@ -50,6 +55,13 @@ export default function RegisterPage() {
     }
   }, [user, authLoading, router])
 
+  function handlePlaceSelect(result: PlaceResult) {
+    setAddress(result.address)
+    setCity(result.city)
+    setLat(result.lat)
+    setLng(result.lng)
+  }
+
   async function upsertFirestoreUser(
     uid: string,
     userEmail: string,
@@ -66,6 +78,7 @@ export default function RegisterPage() {
         displayName,
         photoUrl,
         role: userRole === 'nailist' ? 'NAILIST' : 'CLIENT',
+        ...(userRole === 'nailist' && address ? { address, city, latitude: lat, longitude: lng } : {}),
       }),
     })
   }
@@ -189,6 +202,19 @@ export default function RegisterPage() {
                     className="pr-10 rounded-xl border-gray-200 focus:border-pink-300 h-12" />
                 </div>
               </div>
+
+              {role === 'nailist' && (
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-600">כתובת העסק</label>
+                  <PlacesInput
+                    value={address}
+                    onChange={setAddress}
+                    onPlaceSelect={handlePlaceSelect}
+                    placeholder="רחוב הרצל 12, תל אביב"
+                  />
+                  {lat && <p className="text-xs text-green-600 font-medium">📍 מיקום נשמר</p>}
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-600" htmlFor="email">אימייל</label>

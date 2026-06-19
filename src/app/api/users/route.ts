@@ -10,6 +10,10 @@ const createUserSchema = z.object({
   displayName: z.string().optional(),
   photoUrl: z.string().url().optional(),
   role: z.enum(['CLIENT', 'NAILIST']).default('CLIENT'),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -29,7 +33,7 @@ export async function POST(request: NextRequest) {
     await userRef.set({ ...data, createdAt: now, updatedAt: now })
 
     if (data.role === 'NAILIST') {
-      await db.collection(COLLECTIONS.NAILIST_PROFILES).add({
+      const profileData: Record<string, unknown> = {
         userId: data.uid,
         businessName: data.displayName ?? 'My Nail Studio',
         photoUrl: data.photoUrl ?? null,
@@ -39,7 +43,16 @@ export async function POST(request: NextRequest) {
         reviewCount: 0,
         createdAt: now,
         updatedAt: now,
-      })
+      }
+      if (data.address) profileData.address = data.address
+      if (data.city) profileData.city = data.city
+      if (data.latitude != null && data.longitude != null) {
+        profileData.latitude = data.latitude
+        profileData.longitude = data.longitude
+        const { geohashForLocation } = await import('geofire-common')
+        profileData.geohash = geohashForLocation([data.latitude, data.longitude])
+      }
+      await db.collection(COLLECTIONS.NAILIST_PROFILES).add(profileData)
     } else {
       await db.collection(COLLECTIONS.CLIENT_PROFILES).add({
         userId: data.uid,
