@@ -28,17 +28,22 @@ export async function POST(request: NextRequest) {
     const startTime = new Date(data.startTime)
     const endTime = new Date(startTime.getTime() + service.durationMinutes * 60 * 1000)
 
-    // Check for conflicts
+    // Check for conflicts — single-field query to avoid needing a composite index,
+    // then filter by time overlap and status in JS
     const conflictSnap = await db
       .collection(COLLECTIONS.APPOINTMENTS)
       .where('nailistProfileId', '==', data.nailistProfileId)
-      .where('status', 'in', ['PENDING', 'CONFIRMED'])
-      .where('startTime', '<', Timestamp.fromDate(endTime))
-      .where('endTime', '>', Timestamp.fromDate(startTime))
-      .limit(1)
       .get()
 
-    if (!conflictSnap.empty) {
+    const hasConflict = conflictSnap.docs.some((doc) => {
+      const apt = doc.data()
+      if (!['PENDING', 'CONFIRMED'].includes(apt.status)) return false
+      const aptStart: Date = apt.startTime?.toDate?.() ?? new Date(apt.startTime)
+      const aptEnd: Date = apt.endTime?.toDate?.() ?? new Date(apt.endTime)
+      return aptStart < endTime && aptEnd > startTime
+    })
+
+    if (hasConflict) {
       return NextResponse.json({ error: 'Time slot not available' }, { status: 409 })
     }
 
