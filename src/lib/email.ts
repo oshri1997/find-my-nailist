@@ -15,7 +15,10 @@ interface ConfirmationParams {
 
 export async function sendAppointmentConfirmation(p: ConfirmationParams): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) return
+  if (!apiKey) {
+    console.warn('RESEND_API_KEY not set — skipping email confirmation')
+    return
+  }
 
   const resend = new Resend(apiKey)
   const symbol = p.currency === 'ILS' ? '₪' : '$'

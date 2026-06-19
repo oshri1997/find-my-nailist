@@ -61,24 +61,34 @@ export async function POST(request: NextRequest) {
     })
 
     // Fire-and-forget email confirmation
-    const db2 = adminDb()
-    const [nailistSnap, clientSnap] = await Promise.all([
-      db2.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).get(),
-      db2.collection(COLLECTIONS.CLIENT_PROFILES).doc(data.clientProfileId).get(),
+    const [nailistSnap, clientProfileSnap] = await Promise.all([
+      db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).get(),
+      db.collection(COLLECTIONS.CLIENT_PROFILES).doc(data.clientProfileId).get(),
     ])
     const nailist = nailistSnap.data()
-    const client = clientSnap.data()
-    if (nailist?.email && client?.email) {
+    const clientProfile = clientProfileSnap.data()
+
+    // CLIENT_PROFILES may not have email — fall back to USERS collection
+    const clientUserId = clientProfile?.userId
+    const clientUserSnap = clientUserId
+      ? await db.collection(COLLECTIONS.USERS).doc(clientUserId).get()
+      : null
+    const clientEmail: string | undefined =
+      clientProfile?.email || clientUserSnap?.data()?.email
+
+    if (nailist?.email && clientEmail) {
       sendAppointmentConfirmation({
-        clientEmail: client.email,
+        clientEmail,
         nailistEmail: nailist.email,
-        clientName: client.displayName ?? client.email,
+        clientName: clientProfile?.displayName ?? clientEmail,
         nailistBusinessName: nailist.businessName,
         serviceName: service.name,
         startTime,
         price: service.price,
         currency: service.currency,
-      }).catch(() => {})
+      }).catch((err) => console.error('Email send error:', err))
+    } else {
+      console.warn('Skipping email — nailist.email:', nailist?.email, 'clientEmail:', clientEmail)
     }
 
     return NextResponse.json({ data: { id: appointmentRef.id } }, { status: 201 })
