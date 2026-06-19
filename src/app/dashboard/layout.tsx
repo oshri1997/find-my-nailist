@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Sparkles, LayoutDashboard, Calendar, Scissors, Image, Settings, Star, Clock, LogOut } from 'lucide-react'
+import { Sparkles, LayoutDashboard, Calendar, Scissors, Image, Settings, Star, Clock, LogOut, Loader2 } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 const navLinks = [
@@ -18,8 +19,25 @@ const navLinks = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { user, signOut } = useAuth()
+  const { user, signOut, loading: authLoading } = useAuth()
   const router = useRouter()
+  const [authorized, setAuthorized] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    if (authLoading) return
+    if (!user) { router.replace('/login'); return }
+
+    fetch('/api/me/role')
+      .then(r => r.json())
+      .then(({ role }) => {
+        if (role === 'NAILIST') {
+          setAuthorized(true)
+        } else {
+          router.replace('/search')
+        }
+      })
+      .catch(() => router.replace('/login'))
+  }, [user, authLoading, router])
 
   const displayName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
 
@@ -27,6 +45,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     await signOut()
     router.push('/')
   }
+
+  if (authLoading || authorized === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
+        <Loader2 className="h-8 w-8 animate-spin text-pink-400" />
+      </div>
+    )
+  }
+
+  if (!authorized) return null
 
   return (
     <div className="min-h-screen bg-background">

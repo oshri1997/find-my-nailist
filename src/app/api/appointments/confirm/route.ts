@@ -45,30 +45,44 @@ export async function GET(request: NextRequest) {
       updatedAt: FieldValue.serverTimestamp(),
     })
 
-    // Look up client email
-    const clientProfileSnap = await db.collection(COLLECTIONS.CLIENT_PROFILES).doc(apt.clientProfileId).get()
+    // Look up client email (CLIENT_PROFILES may lack email — fall back to USERS)
+    const [clientProfileSnap, nailistSnap] = await Promise.all([
+      db.collection(COLLECTIONS.CLIENT_PROFILES).doc(apt.clientProfileId).get(),
+      db.collection(COLLECTIONS.NAILIST_PROFILES).doc(apt.nailistProfileId).get(),
+    ])
     const clientProfile = clientProfileSnap.data()
+    const nailistBusinessName: string = nailistSnap.data()?.businessName ?? ''
+
     const clientUserId = clientProfile?.userId
     const clientUserSnap = clientUserId
       ? await db.collection(COLLECTIONS.USERS).doc(clientUserId).get()
       : null
     const clientEmail: string | undefined = clientProfile?.email || clientUserSnap?.data()?.email
 
-    // Look up nailist business name
-    const nailistSnap = await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(apt.nailistProfileId).get()
-    const nailistBusinessName: string = nailistSnap.data()?.businessName ?? ''
+    console.log('[confirm] clientProfileId:', apt.clientProfileId,
+      '| clientProfile.email:', clientProfile?.email,
+      '| clientUserId:', clientUserId,
+      '| userEmail:', clientUserSnap?.data()?.email,
+      '| resolved clientEmail:', clientEmail)
 
     if (clientEmail) {
       const startTime: Date = apt.startTime?.toDate?.() ?? new Date(apt.startTime)
-      await sendClientConfirmedEmail({
-        clientEmail,
-        clientName: clientProfile?.displayName ?? clientEmail,
-        nailistBusinessName,
-        serviceName: apt.serviceName,
-        startTime,
-        price: apt.price,
-        currency: apt.currency,
-      })
+      try {
+        await sendClientConfirmedEmail({
+          clientEmail,
+          clientName: clientProfile?.displayName ?? clientEmail,
+          nailistBusinessName,
+          serviceName: apt.serviceName,
+          startTime,
+          price: apt.price,
+          currency: apt.currency,
+        })
+        console.log('[confirm] client confirmation email sent to', clientEmail)
+      } catch (emailErr) {
+        console.error('[confirm] failed to send client email:', emailErr)
+      }
+    } else {
+      console.warn('[confirm] no clientEmail found — skipping confirmation email')
     }
 
     return NextResponse.redirect(`${appUrl}/appointments/confirmed`)
