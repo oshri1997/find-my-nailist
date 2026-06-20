@@ -156,11 +156,32 @@ export async function GET(request: NextRequest) {
       .limit(50)
       .get()
 
+    const now = new Date()
+
+    // Auto-complete past CONFIRMED appointments
+    const toComplete = appointmentsSnap.docs.filter((d) => {
+      const data = d.data()
+      if (data.status !== 'CONFIRMED') return false
+      const endTime: Date = data.endTime?.toDate?.() ?? new Date(data.endTime)
+      return endTime < now
+    })
+
+    if (toComplete.length > 0) {
+      const batch = db.batch()
+      toComplete.forEach((d) => {
+        batch.update(d.ref, { status: 'COMPLETED', updatedAt: FieldValue.serverTimestamp() })
+      })
+      await batch.commit()
+    }
+
+    const completedIds = new Set(toComplete.map((d) => d.id))
+
     const appointments = appointmentsSnap.docs.map((d) => {
       const data = d.data()
       return {
         id: d.id,
         ...data,
+        status: completedIds.has(d.id) ? 'COMPLETED' : data.status,
         startTime: data.startTime?.toDate?.()?.toISOString() ?? data.startTime,
         endTime: data.endTime?.toDate?.()?.toISOString() ?? data.endTime,
         createdAt: data.createdAt?.toDate?.()?.toISOString() ?? data.createdAt,

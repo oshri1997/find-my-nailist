@@ -45,9 +45,20 @@ export default function BookingModal({ nailistProfileId, businessName, services,
 
   const [availability, setAvailability] = useState<Availability | null>(null)
   const [loadingSlots, setLoadingSlots] = useState(false)
+  const [dateSummary, setDateSummary] = useState<Record<string, { workingDay: boolean; fullyBooked: boolean }>>({})
 
   const stripRef = useRef<HTMLDivElement>(null)
   const dateStrip = buildDateStrip(21)
+
+  // Fetch batch availability when service is selected
+  useEffect(() => {
+    if (!selectedService) { setDateSummary({}); return }
+    const from = toDateStr(dateStrip[0])
+    fetch(`/api/nailists/${nailistProfileId}/availability/batch?from=${from}&days=21&durationMinutes=${selectedService.durationMinutes}`)
+      .then((r) => r.json())
+      .then(({ data }) => setDateSummary(data ?? {}))
+      .catch(() => setDateSummary({}))
+  }, [selectedService, nailistProfileId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!selectedDate) { setAvailability(null); return }
@@ -226,32 +237,46 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                 </div>
                 <div ref={stripRef} className="flex gap-2 overflow-x-auto pb-2 px-6 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
                   {dateStrip.map((d) => {
-                    const isSelected = selectedDate && toDateStr(selectedDate) === toDateStr(d)
-                    const isToday = toDateStr(d) === toDateStr(new Date())
+                    const ds = toDateStr(d)
+                    const isSelected = selectedDate && toDateStr(selectedDate) === ds
+                    const isToday = ds === toDateStr(new Date())
                     const dayIdx = d.getDay()
                     const isWeekend = dayIdx === 5 || dayIdx === 6
+                    const summary = dateSummary[ds]
+                    const isClosed = summary ? !summary.workingDay : false
+                    const isFullyBooked = summary?.workingDay && summary.fullyBooked
+                    const isDisabled = isClosed
                     return (
                       <button
-                        key={toDateStr(d)}
-                        onClick={() => setSelectedDate(d)}
-                        className={`shrink-0 w-14 flex flex-col items-center py-2.5 rounded-2xl border-2 transition-all snap-start ${
-                          isSelected
+                        key={ds}
+                        onClick={() => !isDisabled && setSelectedDate(d)}
+                        disabled={isDisabled}
+                        className={`relative shrink-0 w-14 flex flex-col items-center py-2.5 rounded-2xl border-2 transition-all snap-start ${
+                          isDisabled
+                            ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-60'
+                            : isSelected
                             ? 'border-pink-500 bg-gradient-to-b from-pink-500 to-purple-600 text-white shadow-md shadow-pink-200'
                             : isWeekend
                             ? 'border-amber-100 bg-amber-50 text-amber-800 hover:border-amber-300'
                             : 'border-gray-100 bg-white text-gray-700 hover:border-pink-200'
                         }`}
                       >
-                        <span className={`text-[10px] font-bold mb-0.5 ${isSelected ? 'text-white/80' : isWeekend ? 'text-amber-500' : 'text-gray-400'}`}>
+                        <span className={`text-[10px] font-bold mb-0.5 ${isDisabled ? 'text-gray-300' : isSelected ? 'text-white/80' : isWeekend ? 'text-amber-500' : 'text-gray-400'}`}>
                           {HE_DAYS_SHORT[dayIdx]}
                         </span>
-                        <span className={`text-lg font-black leading-none ${isSelected ? 'text-white' : ''}`}>
+                        <span className={`text-lg font-black leading-none ${isDisabled ? 'text-gray-300' : isSelected ? 'text-white' : ''}`}>
                           {d.getDate()}
                         </span>
-                        <span className={`text-[10px] font-medium mt-0.5 ${isSelected ? 'text-white/70' : 'text-gray-400'}`}>
+                        <span className={`text-[10px] font-medium mt-0.5 ${isDisabled ? 'text-gray-300' : isSelected ? 'text-white/70' : 'text-gray-400'}`}>
                           {HE_MONTHS[d.getMonth()].slice(0, 3)}
                         </span>
-                        {isToday && (
+                        {isClosed && (
+                          <span className="text-[10px] font-black text-gray-300 mt-0.5">✕</span>
+                        )}
+                        {isFullyBooked && !isSelected && (
+                          <div className="w-1.5 h-1.5 rounded-full mt-0.5 bg-red-400" />
+                        )}
+                        {isToday && !isClosed && !isFullyBooked && (
                           <div className={`w-1 h-1 rounded-full mt-1 ${isSelected ? 'bg-white/60' : 'bg-pink-400'}`} />
                         )}
                       </button>
