@@ -98,7 +98,7 @@ export async function sendClientConfirmedEmail(p: {
   const symbol = p.currency === 'ILS' ? '₪' : '$'
   const dateStr = formatDate(p.startTime)
 
-  await resend.emails.send({
+  const result = await resend.emails.send({
     from: FROM,
     to: [p.clientEmail],
     subject: `✅ התור שלך אצל ${p.nailistBusinessName} אושר!`,
@@ -113,5 +113,11 @@ export async function sendClientConfirmedEmail(p: {
       </div>
       <p>מחכות לראותך! 🌸</p>
     </div>`,
-  }).catch(err => console.error('[confirm] email send error:', err))
+  })
+
+  if (result.error) {
+    throw new Error(`Resend error: ${result.error.message} (${result.error.name})`)
+  }
+
+  console.log('[email] client confirmed email sent, id:', result.data?.id)
 }

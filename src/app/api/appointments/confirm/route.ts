@@ -57,7 +57,8 @@ export async function GET(request: NextRequest) {
     const clientUserSnap = clientUserId
       ? await db.collection(COLLECTIONS.USERS).doc(clientUserId).get()
       : null
-    const clientEmail: string | undefined = clientProfile?.email || clientUserSnap?.data()?.email
+    const clientEmail: string | undefined =
+      (clientProfile?.email as string | undefined) || (clientUserSnap?.data()?.email as string | undefined)
 
     console.log('[confirm] clientProfileId:', apt.clientProfileId,
       '| clientProfile.email:', clientProfile?.email,
@@ -65,27 +66,31 @@ export async function GET(request: NextRequest) {
       '| userEmail:', clientUserSnap?.data()?.email,
       '| resolved clientEmail:', clientEmail)
 
+    let emailSent = false
     if (clientEmail) {
       const startTime: Date = apt.startTime?.toDate?.() ?? new Date(apt.startTime)
       try {
         await sendClientConfirmedEmail({
           clientEmail,
-          clientName: clientProfile?.displayName ?? clientEmail,
+          clientName: (clientProfile?.displayName as string | undefined) ?? clientEmail,
           nailistBusinessName,
           serviceName: apt.serviceName,
           startTime,
           price: apt.price,
           currency: apt.currency,
         })
-        console.log('[confirm] client confirmation email sent to', clientEmail)
+        emailSent = true
+        console.log('[confirm] ✅ confirmation email sent to', clientEmail)
       } catch (emailErr) {
-        console.error('[confirm] failed to send client email:', emailErr)
+        console.error('[confirm] ❌ email failed for', clientEmail, '—', emailErr)
       }
     } else {
-      console.warn('[confirm] no clientEmail found — skipping confirmation email')
+      console.warn('[confirm] ⚠️ no clientEmail found — clientProfileId:', apt.clientProfileId)
     }
 
-    return NextResponse.redirect(`${appUrl}/appointments/confirmed`)
+    const redirectUrl = new URL(`${appUrl}/appointments/confirmed`)
+    if (!emailSent) redirectUrl.searchParams.set('emailError', '1')
+    return NextResponse.redirect(redirectUrl.toString())
   } catch (err) {
     console.error('Confirm appointment error:', err)
     return NextResponse.redirect(`${appUrl}/appointments/confirmed?error=server`)

@@ -8,6 +8,7 @@ function Content() {
   const params = useSearchParams()
   const error = params.get('error')
   const already = params.get('already')
+  const emailError = params.get('emailError')
 
   if (error === 'invalid') {
     return (
@@ -53,7 +54,13 @@ function Content() {
     <div className="text-center">
       <div className="text-7xl mb-6 animate-bounce">💅</div>
       <h1 className="text-3xl font-black text-gray-800 mb-3">התור אושר!</h1>
-      <p className="text-gray-500 font-medium text-lg mb-2">הלקוחה קיבלה אישור במייל.</p>
+      {emailError ? (
+        <p className="text-amber-600 font-semibold text-sm bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-2">
+          ⚠️ התור אושר אך שליחת מייל ללקוחה נכשלה — בדקי את לוגי Railway
+        </p>
+      ) : (
+        <p className="text-gray-500 font-medium text-lg mb-2">הלקוחה קיבלה אישור במייל.</p>
+      )}
       <p className="text-gray-400 font-medium">תודה שאישרת — הכול מסודר! 🌸</p>
     </div>
   )
