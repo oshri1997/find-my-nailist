@@ -49,7 +49,7 @@ export function Navbar() {
                   {active && (
                     <motion.span
                       layoutId="nav-underline"
-                      className="absolute inset-x-0 -bottom-[18px] h-0.5 rounded-full bg-primary"
+                      className="absolute inset-x-0 -bottom-[6px] h-0.5 rounded-full bg-primary"
                     />
                   )}
                 </Link>
