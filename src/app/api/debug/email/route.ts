@@ -1,37 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
-import nodemailer from 'nodemailer'
+import { Resend } from 'resend'
 
-// Protected by a secret param — only for verifying Gmail credentials
+// Protected by a secret param — only for verifying Resend credentials
 export async function GET(request: NextRequest) {
   const secret = request.nextUrl.searchParams.get('secret')
   if (secret !== process.env.DEBUG_EMAIL_SECRET) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const user = process.env.GMAIL_USER
-  const pass = process.env.GMAIL_APP_PASSWORD
-
-  if (!user || !pass) {
-    return NextResponse.json({ error: 'GMAIL_USER or GMAIL_APP_PASSWORD not set' }, { status: 500 })
+  const key = process.env.RESEND_API_KEY
+  if (!key) {
+    return NextResponse.json({ error: 'RESEND_API_KEY not set' }, { status: 500 })
   }
 
+  const to = request.nextUrl.searchParams.get('to') ?? process.env.GMAIL_USER ?? 'test@example.com'
+
   try {
-    const transport = nodemailer.createTransport({ service: 'gmail', auth: { user, pass } })
-
-    await transport.verify()
-
-    await transport.sendMail({
-      from: `"מצאי נייליסטית" <${user}>`,
-      to: user,
+    const resend = new Resend(key)
+    const result = await resend.emails.send({
+      from: 'מצאי נייליסטית <onboarding@resend.dev>',
+      to: [to],
       subject: '✅ בדיקת מייל — מצאי נייליסטית',
       html: `<div dir="rtl" style="font-family:Arial,sans-serif">
         <h2 style="color:#d946a8">המייל עובד! 🎉</h2>
-        <p>Gmail מחובר בהצלחה — מעכשיו לקוחות ונייליסטיות יקבלו מיילים על תורים.</p>
-        <p style="color:#888;font-size:12px">נשלח מ: ${user}</p>
+        <p>Resend מחובר בהצלחה — מעכשיו לקוחות ונייליסטיות יקבלו מיילים על תורים.</p>
       </div>`,
     })
 
-    return NextResponse.json({ ok: true, message: `Test email sent to ${user}` })
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 500 })
+    }
+
+    return NextResponse.json({ ok: true, id: result.data?.id, sentTo: to })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('Debug email error:', msg)
