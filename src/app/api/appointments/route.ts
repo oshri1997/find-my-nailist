@@ -81,27 +81,32 @@ export async function POST(request: NextRequest) {
       nailist?.userId ? db.collection(COLLECTIONS.USERS).doc(nailist.userId).get() : Promise.resolve(null),
       clientProfile?.userId ? db.collection(COLLECTIONS.USERS).doc(clientProfile.userId).get() : Promise.resolve(null),
     ])
-    const nailistEmail: string | undefined = nailist?.email || nailistUserSnap?.data()?.email
-    const clientEmail: string | undefined = clientProfile?.email || clientUserSnap?.data()?.email
+    const nailistEmail: string | undefined = (nailist?.email as string | undefined) || (nailistUserSnap?.data()?.email as string | undefined) || undefined
+    const clientEmail: string | undefined = (clientProfile?.email as string | undefined) || (clientUserSnap?.data()?.email as string | undefined) || undefined
 
-    console.log('Email lookup — nailistEmail:', nailistEmail, 'clientEmail:', clientEmail)
+    console.log('[booking] email lookup — nailistEmail:', nailistEmail, 'clientEmail:', clientEmail)
 
     if (nailistEmail && clientEmail) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://find-my-nailist-production.up.railway.app'
       const confirmUrl = `${appUrl}/api/appointments/confirm?token=${confirmToken}`
-      sendAppointmentRequest({
-        clientEmail,
-        nailistEmail,
-        clientName: clientProfile?.displayName ?? clientEmail,
-        nailistBusinessName: nailist?.businessName ?? '',
-        serviceName: service.name,
-        startTime,
-        price: service.price,
-        currency: service.currency,
-        confirmUrl,
-      }).catch((err) => console.error('Email send error:', err))
+      try {
+        await sendAppointmentRequest({
+          clientEmail,
+          nailistEmail,
+          clientName: clientProfile?.displayName ?? clientEmail,
+          nailistBusinessName: nailist?.businessName ?? '',
+          serviceName: service.name,
+          startTime,
+          price: service.price,
+          currency: service.currency,
+          confirmUrl,
+        })
+        console.log('[booking] ✅ emails sent — nailist:', nailistEmail, '| client:', clientEmail)
+      } catch (emailErr) {
+        console.error('[booking] ❌ email failed — nailist:', nailistEmail, '| client:', clientEmail, '|', emailErr)
+      }
     } else {
-      console.warn('Skipping email — nailistEmail:', nailistEmail, 'clientEmail:', clientEmail)
+      console.warn('[booking] ⚠️ skipping email — nailistEmail:', nailistEmail, 'clientEmail:', clientEmail)
     }
 
     return NextResponse.json({ data: { id: appointmentRef.id } }, { status: 201 })
