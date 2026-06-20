@@ -62,14 +62,14 @@ export default function BookingModal({ nailistProfileId, businessName, services,
 
   useEffect(() => {
     if (!selectedDate) return
-    setLoadingSlots(true)
-    setSelectedTime('')
     const dateStr = toDateStr(selectedDate)
+    let cancelled = false
     fetch(`/api/nailists/${nailistProfileId}/availability?date=${dateStr}`)
       .then((r) => r.json())
-      .then(({ data }) => setAvailability(data ?? null))
-      .catch(() => setAvailability(null))
-      .finally(() => setLoadingSlots(false))
+      .then(({ data }) => { if (!cancelled) setAvailability(data ?? null) })
+      .catch(() => { if (!cancelled) setAvailability(null) })
+      .finally(() => { if (!cancelled) setLoadingSlots(false) })
+    return () => { cancelled = true }
   }, [selectedDate, nailistProfileId])
 
   async function handleConfirm() {
@@ -249,7 +249,13 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                     return (
                       <button
                         key={ds}
-                        onClick={() => !isDisabled && setSelectedDate(d)}
+                        onClick={() => {
+                          if (isDisabled) return
+                          setSelectedDate(d)
+                          setSelectedTime('')
+                          setLoadingSlots(true)
+                          setAvailability(null)
+                        }}
                         disabled={isDisabled}
                         className={`relative shrink-0 w-14 flex flex-col items-center py-2.5 rounded-2xl border-2 transition-all snap-start ${
                           isDisabled
