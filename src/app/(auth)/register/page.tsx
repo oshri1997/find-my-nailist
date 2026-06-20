@@ -4,10 +4,9 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Mail, Lock, User, ArrowLeft, AlertCircle, MapPin } from 'lucide-react'
+import { Sparkles, Mail, Lock, User, ArrowLeft, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
 import { signUpWithEmail, signInWithGoogle } from '@/lib/firebase/auth-helpers'
 import { useAuth } from '@/components/auth/auth-provider'
 
@@ -20,10 +19,6 @@ export default function RegisterPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [address, setAddress] = useState('')
-  const [city, setCity] = useState('')
-  const [lat, setLat] = useState<number | undefined>()
-  const [lng, setLng] = useState<number | undefined>()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const handlingFormRef = useRef(false)
@@ -43,17 +38,10 @@ export default function RegisterPage() {
           role: pendingRole === 'nailist' ? 'NAILIST' : 'CLIENT',
         }),
       }).finally(() => {
-        router.replace(pendingRole === 'nailist' ? '/dashboard/nailist' : '/')
+        router.replace(pendingRole === 'nailist' ? '/onboarding' : '/')
       })
     }
   }, [user, authLoading, router])
-
-  function handlePlaceSelect(result: PlaceResult) {
-    setAddress(result.address)
-    setCity(result.city)
-    setLat(result.lat)
-    setLng(result.lng)
-  }
 
   async function upsertFirestoreUser(
     uid: string,
@@ -71,7 +59,6 @@ export default function RegisterPage() {
         displayName,
         photoUrl,
         role: userRole === 'nailist' ? 'NAILIST' : 'CLIENT',
-        ...(userRole === 'nailist' && address ? { address, city, latitude: lat, longitude: lng } : {}),
       }),
     })
   }
@@ -84,7 +71,7 @@ export default function RegisterPage() {
     try {
       const cred = await signUpWithEmail(email, password, name)
       await upsertFirestoreUser(cred.user.uid, email, name, undefined, role)
-      router.push(role === 'nailist' ? '/dashboard/nailist' : '/')
+      router.push(role === 'nailist' ? '/onboarding' : '/')
     } catch (err: unknown) {
       setError(friendlyError(err))
       handlingFormRef.current = false
@@ -107,21 +94,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Decorative left panel — desktop only */}
-      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-accent to-primary items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 dot-pattern pointer-events-none" />
-        <div className="relative z-10 text-white text-center px-12 max-w-sm">
-          <div className="w-20 h-20 rounded-3xl bg-white/20 flex items-center justify-center mx-auto mb-8">
-            <Sparkles className="w-10 h-10 text-white" />
-          </div>
-          <h2 className="text-4xl font-black mb-4 leading-tight">הצטרפי אלינו!</h2>
-          <p className="text-white/75 text-lg leading-relaxed">
-            צרי חשבון חינמי וגלי את עולם הנייל המושלם
-          </p>
-        </div>
-      </div>
-
-      {/* Form panel */}
+      {/* Form panel — first in DOM = right side in RTL */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -197,24 +170,6 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {role === 'nailist' && (
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-foreground">כתובת העסק</label>
-                  <PlacesInput
-                    value={address}
-                    onChange={setAddress}
-                    onPlaceSelect={handlePlaceSelect}
-                    placeholder="רחוב הרצל 12, תל אביב"
-                  />
-                  {lat && (
-                    <p className="text-xs text-emerald-600 font-medium flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      מיקום נשמר
-                    </p>
-                  )}
-                </div>
-              )}
-
               <div className="space-y-2">
                 <label className="text-sm font-bold text-foreground" htmlFor="email">אימייל</label>
                 <div className="relative">
@@ -288,6 +243,32 @@ export default function RegisterPage() {
             כבר יש לך חשבון?{' '}
             <Link href="/login" className="text-primary hover:text-primary/80 font-black">התחברי</Link>
           </p>
+        </motion.div>
+      </div>
+
+      {/* Decorative panel — second in DOM = left side in RTL */}
+      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-purple-600 via-fuchsia-500 to-pink-500 items-center justify-center relative overflow-hidden">
+        <div className="absolute top-[-15%] right-[-15%] w-80 h-80 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-[-15%] left-[-15%] w-96 h-96 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute inset-0 dot-pattern pointer-events-none opacity-10" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
+          className="relative z-10 text-white text-center px-12 max-w-sm"
+        >
+          <div className="w-20 h-20 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-8 shadow-2xl">
+            <Sparkles className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-4xl font-black mb-4 leading-tight">הצטרפי אלינו!</h2>
+          <p className="text-white/80 text-lg leading-relaxed mb-8">
+            צרי חשבון חינמי וגלי<br />את עולם הנייל המושלם
+          </p>
+          <div className="flex justify-center gap-4 text-5xl">
+            <motion.span animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0 }}>💅</motion.span>
+            <motion.span animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.4 }}>🌸</motion.span>
+            <motion.span animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.8 }}>✨</motion.span>
+          </div>
         </motion.div>
       </div>
     </div>

@@ -64,21 +64,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Decorative left panel — desktop only */}
-      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-primary to-accent items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 dot-pattern pointer-events-none" />
-        <div className="relative z-10 text-white text-center px-12 max-w-sm">
-          <div className="w-20 h-20 rounded-3xl bg-white/20 flex items-center justify-center mx-auto mb-8">
-            <Sparkles className="w-10 h-10 text-white" />
-          </div>
-          <h2 className="text-4xl font-black mb-4 leading-tight">ברוכה השבה!</h2>
-          <p className="text-white/75 text-lg leading-relaxed">
-            גלי את עולם הנייל המושלם — הזמיני תור בקליק אחד
-          </p>
-        </div>
-      </div>
-
-      {/* Form panel */}
+      {/* Form panel — first in DOM = right side in RTL */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -203,6 +189,32 @@ export default function LoginPage() {
             אין לך חשבון עדיין?{' '}
             <Link href="/register" className="text-primary hover:text-primary/80 font-black">הרשמי עכשיו</Link>
           </p>
+        </motion.div>
+      </div>
+
+      {/* Decorative panel — second in DOM = left side in RTL */}
+      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-pink-500 via-fuchsia-500 to-purple-600 items-center justify-center relative overflow-hidden">
+        <div className="absolute top-[-15%] left-[-15%] w-80 h-80 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-[-15%] right-[-15%] w-96 h-96 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute inset-0 dot-pattern pointer-events-none opacity-10" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
+          className="relative z-10 text-white text-center px-12 max-w-sm"
+        >
+          <div className="w-20 h-20 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-8 shadow-2xl">
+            <Sparkles className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-4xl font-black mb-4 leading-tight">ברוכה השבה!</h2>
+          <p className="text-white/80 text-lg leading-relaxed mb-8">
+            גלי את עולם הנייל המושלם —<br />הזמיני תור בקליק אחד
+          </p>
+          <div className="flex justify-center gap-4 text-5xl">
+            <motion.span animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0 }}>💅</motion.span>
+            <motion.span animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.4 }}>🌸</motion.span>
+            <motion.span animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.8 }}>✨</motion.span>
+          </div>
         </motion.div>
       </div>
     </div>
