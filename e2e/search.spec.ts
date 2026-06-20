@@ -63,7 +63,6 @@ test.describe('Search page', () => {
     await mapBtn.click()
 
     // Map container or missing-API-key message should appear
-    const mapContainer = page.locator('[class*="rounded-2xl"]').filter({ hasText: /NEXT_PUBLIC_GOOGLE_MAPS_API_KEY|map/i })
     await expect(
       page.locator('div').filter({ hasText: /NEXT_PUBLIC_GOOGLE_MAPS_API_KEY/ }).first()
         .or(page.locator('[id*="map"], gmp-map, .gm-style').first())

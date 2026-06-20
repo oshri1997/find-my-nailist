@@ -50,7 +50,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   const dateStrip = buildDateStrip(21)
 
   useEffect(() => {
-    if (!selectedDate) { setAvailability(null); return }
+    if (!selectedDate) return
     setLoadingSlots(true)
     setSelectedTime('')
     const dateStr = toDateStr(selectedDate)
