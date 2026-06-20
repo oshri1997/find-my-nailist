@@ -1,15 +1,36 @@
-import { Resend } from 'resend'
+const FROM_EMAIL = process.env.BREVO_SENDER_EMAIL ?? 'noreply@example.com'
+const FROM_NAME = 'מצאי נייליסטית'
 
-function getResend() {
-  const key = process.env.RESEND_API_KEY
-  if (!key) {
-    console.warn('RESEND_API_KEY not set — skipping email')
-    return null
+async function sendBrevo(to: string, subject: string, html: string): Promise<void> {
+  const apiKey = process.env.BREVO_API_KEY
+  if (!apiKey) {
+    console.warn('BREVO_API_KEY not set — skipping email')
+    return
   }
-  return new Resend(key)
-}
 
-const FROM = 'מצאי נייליסטית <onboarding@resend.dev>'
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'api-key': apiKey,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { name: FROM_NAME, email: FROM_EMAIL },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Brevo error ${res.status}: ${body}`)
+  }
+
+  const data = await res.json() as { messageId?: string }
+  console.log('[email] sent to', to, '| messageId:', data.messageId)
+}
 
 function formatDate(d: Date) {
   return d.toLocaleString('he-IL', {
@@ -32,18 +53,14 @@ export interface AppointmentEmailParams {
 
 // Sent on booking creation: nailist gets action button, client gets "pending" notice
 export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise<void> {
-  const resend = getResend()
-  if (!resend) return
-
   const symbol = p.currency === 'ILS' ? '₪' : '$'
   const dateStr = formatDate(p.startTime)
 
   await Promise.allSettled([
-    resend.emails.send({
-      from: FROM,
-      to: [p.clientEmail],
-      subject: `⏳ בקשת תור אצל ${p.nailistBusinessName} נשלחה`,
-      html: `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+    sendBrevo(
+      p.clientEmail,
+      `⏳ בקשת תור אצל ${p.nailistBusinessName} נשלחה`,
+      `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
         <h2 style="color:#d946a8">בקשת התור שלך נשלחה! 💅</h2>
         <p>שלום ${p.clientName},</p>
         <p>בקשת התור שלך אצל <strong>${p.nailistBusinessName}</strong> התקבלה ומחכה לאישור.</p>
@@ -53,15 +70,13 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
           <p style="margin:4px 0"><strong>מחיר:</strong> ${symbol}${p.price}</p>
         </div>
         <p>נשלח לך אישור ברגע שהנייליסטית תאשר את התור 🌸</p>
-      </div>`,
-    }).then(r => console.log('Client pending email sent to', p.clientEmail, r.data?.id))
-      .catch(err => console.error('Client email error:', err)),
+      </div>`
+    ).catch(err => console.error('[email] client booking email error:', err)),
 
-    resend.emails.send({
-      from: FROM,
-      to: [p.nailistEmail],
-      subject: `📅 תור חדש מ-${p.clientName} — ממתין לאישורך`,
-      html: `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+    sendBrevo(
+      p.nailistEmail,
+      `📅 תור חדש מ-${p.clientName} — ממתין לאישורך`,
+      `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
         <h2 style="color:#d946a8">תור חדש מחכה לאישור! 📅</h2>
         <div style="background:#fdf4ff;border-radius:12px;padding:16px;margin:20px 0">
           <p style="margin:4px 0"><strong>לקוחה:</strong> ${p.clientName}</p>
@@ -76,9 +91,8 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
           </a>
         </div>
         <p style="color:#aaa;font-size:12px;text-align:center">הקישור תקף ל-7 ימים. לאחר לחיצה, הלקוחה תקבל אישור במייל.</p>
-      </div>`,
-    }).then(r => console.log('Nailist confirm email sent to', p.nailistEmail, r.data?.id))
-      .catch(err => console.error('Nailist email error:', err)),
+      </div>`
+    ).catch(err => console.error('[email] nailist booking email error:', err)),
   ])
 }
 
@@ -92,17 +106,13 @@ export async function sendClientConfirmedEmail(p: {
   price: number
   currency: string
 }): Promise<void> {
-  const resend = getResend()
-  if (!resend) return
-
   const symbol = p.currency === 'ILS' ? '₪' : '$'
   const dateStr = formatDate(p.startTime)
 
-  const result = await resend.emails.send({
-    from: FROM,
-    to: [p.clientEmail],
-    subject: `✅ התור שלך אצל ${p.nailistBusinessName} אושר!`,
-    html: `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+  await sendBrevo(
+    p.clientEmail,
+    `✅ התור שלך אצל ${p.nailistBusinessName} אושר!`,
+    `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
       <h2 style="color:#22c55e">התור שלך אושר! 🎉💅</h2>
       <p>שלום ${p.clientName},</p>
       <p><strong>${p.nailistBusinessName}</strong> אישרה את התור שלך!</p>
@@ -112,12 +122,6 @@ export async function sendClientConfirmedEmail(p: {
         <p style="margin:4px 0"><strong>מחיר:</strong> ${symbol}${p.price}</p>
       </div>
       <p>מחכות לראותך! 🌸</p>
-    </div>`,
-  })
-
-  if (result.error) {
-    throw new Error(`Resend error: ${result.error.message} (${result.error.name})`)
-  }
-
-  console.log('[email] client confirmed email sent, id:', result.data?.id)
+    </div>`
+  )
 }
