@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-[0_4px_16px_rgba(236,72,153,0.35)] group-hover:scale-105 transition-transform">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-black gradient-text">נייליסטיות</span>
+            <span className="text-xl font-black gradient-text">nailistiot</span>
           </Link>
         </div>
 

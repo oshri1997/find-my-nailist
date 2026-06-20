@@ -16,5 +16,5 @@ export function toWhatsAppUrl(phone: string, message?: string): string {
 }
 
 export function whatsAppBookingMessage(businessName: string): string {
-  return `היי ${businessName}, ראיתי את הפרופיל שלך ב-נייליסטיות ורציתי לתאם תור 💅`
+  return `היי ${businessName}, ראיתי את הפרופיל שלך ב-nailistiot ורציתי לתאם תור 💅`
 }
