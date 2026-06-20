@@ -13,6 +13,7 @@ const STEPS = [
   { label: 'כתובת העסק', emoji: '📍' },
   { label: 'תמונות עבודות', emoji: '🖼️' },
   { label: 'שירותים', emoji: '✂️' },
+  { label: 'רשתות חברתיות', emoji: '📱' },
   { label: 'שעות פעילות', emoji: '⏰' },
 ]
 
@@ -57,7 +58,11 @@ export default function OnboardingPage() {
   const [svcDuration, setSvcDuration] = useState(60)
   const [svcPrice, setSvcPrice] = useState('')
 
-  // Step 4 — working hours
+  // Step 4 — social links (optional)
+  const [instagramUrl, setInstagramUrl] = useState('')
+  const [tiktokUrl, setTiktokUrl] = useState('')
+
+  // Step 5 — working hours
   const [workingHours, setWorkingHours] = useState<DayHours[]>(defaultHours)
 
   useEffect(() => {
@@ -162,6 +167,28 @@ export default function OnboardingPage() {
 
   function updateTime(i: number, field: 'startTime' | 'endTime', value: string) {
     setWorkingHours(prev => prev.map((d, idx) => idx === i ? { ...d, [field]: value } : d))
+  }
+
+  async function saveSocialLinks() {
+    setError('')
+    setSaving(true)
+    try {
+      if ((instagramUrl.trim() || tiktokUrl.trim()) && profileId) {
+        await fetch(`/api/nailists/${profileId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...(instagramUrl.trim() && { instagramUrl: instagramUrl.trim() }),
+            ...(tiktokUrl.trim() && { tiktokUrl: tiktokUrl.trim() }),
+          }),
+        })
+      }
+      setStep(4)
+    } catch {
+      setError('שגיאה בשמירת הקישורים — נסי שוב')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function saveWorkingHours() {
@@ -415,6 +442,67 @@ export default function OnboardingPage() {
 
             {step === 3 && (
               <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-xl font-black text-gray-800">רשתות חברתיות</h2>
+                  <span className="text-xs font-bold bg-gray-100 text-gray-400 rounded-full px-2.5 py-0.5">אופציונלי</span>
+                </div>
+                <p className="text-gray-400 text-sm mb-6">הוסיפי קישורים לפרופיל שלך — לקוחות יוכלו לראות את העבודות שלך</p>
+
+                <div className="space-y-3 mb-6">
+                  {/* Instagram */}
+                  <div>
+                    <label className="text-xs font-black text-gray-500 flex items-center gap-1.5 mb-1.5">
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:'#E1306C'}}>
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                      </svg>
+                      Instagram
+                    </label>
+                    <Input
+                      value={instagramUrl}
+                      onChange={e => setInstagramUrl(e.target.value)}
+                      placeholder="https://instagram.com/youraccount"
+                      type="url"
+                      dir="ltr"
+                      className="rounded-xl border-gray-200 focus:border-pink-300 h-11 text-left placeholder:text-right"
+                    />
+                  </div>
+
+                  {/* TikTok */}
+                  <div>
+                    <label className="text-xs font-black text-gray-500 flex items-center gap-1.5 mb-1.5">
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-gray-700">
+                        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.22 8.22 0 004.81 1.54V6.78a4.86 4.86 0 01-1.04-.09z"/>
+                      </svg>
+                      TikTok
+                    </label>
+                    <Input
+                      value={tiktokUrl}
+                      onChange={e => setTiktokUrl(e.target.value)}
+                      placeholder="https://tiktok.com/@youraccount"
+                      type="url"
+                      dir="ltr"
+                      className="rounded-xl border-gray-200 focus:border-pink-300 h-11 text-left placeholder:text-right"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-gray-200">
+                    <ArrowRight className="h-4 w-4" /> חזרה
+                  </Button>
+                  <Button
+                    onClick={saveSocialLinks}
+                    disabled={saving}
+                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-pink-200 disabled:opacity-50"
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>המשיכי <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /></>}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 4 && (
+              <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                 <h2 className="text-xl font-black text-gray-800 mb-1">שעות פעילות</h2>
                 <p className="text-gray-400 text-sm mb-5">הגדירי באילו ימים ושעות את זמינה ללקוחות</p>
 
@@ -461,7 +549,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-gray-200">
+                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-gray-200">
                     <ArrowRight className="h-4 w-4" /> חזרה
                   </Button>
                   <Button
