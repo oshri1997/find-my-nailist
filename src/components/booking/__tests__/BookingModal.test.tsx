@@ -16,16 +16,19 @@ const defaultProps = {
 const mockFetch = jest.fn()
 global.fetch = mockFetch
 
+const mockAvailability = {
+  workingDay: true,
+  startTime: '08:00',
+  endTime: '18:00',
+  bookedSlots: [],
+}
+
 beforeEach(() => {
   mockFetch.mockReset()
+  // Default catch-all so batch-availability or other background fetches don't throw
+  mockFetch.mockResolvedValue({ ok: true, json: async () => ({ data: {} }) })
   defaultProps.onClose.mockReset()
 })
-
-function tomorrowDateStr() {
-  const d = new Date()
-  d.setDate(d.getDate() + 1)
-  return d.toISOString().split('T')[0]
-}
 
 async function navigateToStep2(serviceName = "מניקור ג'ל") {
   fireEvent.click(screen.getByText(serviceName))
@@ -34,17 +37,25 @@ async function navigateToStep2(serviceName = "מניקור ג'ל") {
 
 async function navigateToStep3() {
   await navigateToStep2()
-  const dateInput = screen.getByLabelText('תאריך')
-  fireEvent.change(dateInput, { target: { value: tomorrowDateStr() } })
+  // Override default with actual availability data for the per-date fetch
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ data: mockAvailability }),
+  })
+  // Date strip buttons all carry the "shrink-0" class; click the first one
+  const dateButtons = screen.getAllByRole('button').filter(btn =>
+    btn.classList.contains('shrink-0')
+  )
+  fireEvent.click(dateButtons[0])
   await waitFor(() => screen.getByText('08:00'))
   fireEvent.click(screen.getByText('08:00'))
   fireEvent.click(screen.getByRole('button', { name: /המשך/ }))
 }
 
 describe('BookingModal', () => {
-  it('renders the booking title and business name', () => {
+  it('renders step title and business name', () => {
     render(<BookingModal {...defaultProps} />)
-    expect(screen.getByText('הזמנת תור')).toBeInTheDocument()
+    expect(screen.getByText('בחרי שירות')).toBeInTheDocument()
     expect(screen.getByText('סטודיו שרה')).toBeInTheDocument()
   })
 
@@ -81,8 +92,14 @@ describe('BookingModal', () => {
   it('shows time slots after a date is selected', async () => {
     render(<BookingModal {...defaultProps} />)
     await navigateToStep2()
-    const dateInput = screen.getByLabelText('תאריך')
-    fireEvent.change(dateInput, { target: { value: tomorrowDateStr() } })
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: mockAvailability }),
+    })
+    const dateButtons = screen.getAllByRole('button').filter(btn =>
+      btn.classList.contains('shrink-0')
+    )
+    fireEvent.click(dateButtons[0])
     await waitFor(() => expect(screen.getByText('08:00')).toBeInTheDocument())
     expect(screen.getByText('09:00')).toBeInTheDocument()
   })
@@ -101,7 +118,7 @@ describe('BookingModal', () => {
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: { id: 'client1' } }) })
     mockFetch.mockResolvedValueOnce({ ok: false, status: 409, json: async () => ({ error: 'conflict' }) })
 
-    fireEvent.click(screen.getByRole('button', { name: /אישור הזמנה/ }))
+    fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
 
     await waitFor(() =>
       expect(screen.getByText(/השעה הזו כבר תפוסה/)).toBeInTheDocument()
@@ -115,7 +132,7 @@ describe('BookingModal', () => {
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: { id: 'client1' } }) })
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: { id: 'apt1' } }) })
 
-    fireEvent.click(screen.getByRole('button', { name: /אישור הזמנה/ }))
+    fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
 
     await waitFor(() =>
       expect(screen.getByText(/התור נקבע/)).toBeInTheDocument()
@@ -128,7 +145,7 @@ describe('BookingModal', () => {
 
     mockFetch.mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({}) })
 
-    fireEvent.click(screen.getByRole('button', { name: /אישור הזמנה/ }))
+    fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
 
     await waitFor(() =>
       expect(screen.getByText(/יש להתחבר לחשבון/)).toBeInTheDocument()
