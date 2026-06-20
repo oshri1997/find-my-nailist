@@ -210,7 +210,7 @@ export default function HowItWorksPage() {
                 חפשי נייליסטית 💅
               </Button>
             </Link>
-            <Link href="/register">
+            <Link href="/login?tab=register">
               <Button variant="outline" className="rounded-2xl h-12 px-7 font-bold border-gray-200 hover:border-pink-300 hover:text-pink-600">
                 הצטרפי כנייליסטית
               </Button>
@@ -300,7 +300,7 @@ export default function HowItWorksPage() {
           </div>
 
           <Section className="mt-10 text-center">
-            <Link href="/register">
+            <Link href="/login?tab=register">
               <Button className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 border-0 rounded-2xl h-11 px-8 font-bold shadow-md shadow-purple-200">
                 הצטרפי כנייליסטית חינם →
               </Button>
@@ -385,7 +385,7 @@ export default function HowItWorksPage() {
                 חפשי נייליסטית 🔍
               </Button>
             </Link>
-            <Link href="/register">
+            <Link href="/login?tab=register">
               <Button className="bg-white/20 hover:bg-white/30 text-white border border-white/30 rounded-2xl h-12 px-8 font-bold backdrop-blur">
                 הצטרפי חינם
               </Button>

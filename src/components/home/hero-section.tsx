@@ -71,7 +71,7 @@ export function HeroSection() {
                   <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Link href="/register?role=nailist">
+              <Link href="/login?tab=register">
                 <Button
                   size="lg"
                   variant="outline"

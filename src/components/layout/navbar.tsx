@@ -84,7 +84,7 @@ export function Navbar() {
                     התחברות
                   </Button>
                 </Link>
-                <Link href="/register">
+                <Link href="/login?tab=register">
                   <Button
                     size="sm"
                     className="bg-primary hover:bg-primary/90 text-white border-0 shadow-[0_2px_12px_rgba(236,72,153,0.30)] font-bold rounded-xl px-5 cursor-pointer"

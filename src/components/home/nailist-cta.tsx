@@ -56,7 +56,7 @@ export function NailistCtaSection() {
               ))}
             </div>
 
-            <Link href="/register?role=nailist">
+            <Link href="/login?tab=register">
               <Button
                 size="lg"
                 className="bg-white text-primary hover:bg-white/90 font-black text-base rounded-xl px-10 h-12 shadow-[0_8px_30px_rgba(0,0,0,0.20)] gap-2 group border-0 cursor-pointer"
