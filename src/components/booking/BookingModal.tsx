@@ -52,7 +52,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
 
   // Fetch batch availability when service is selected
   useEffect(() => {
-    if (!selectedService) { setDateSummary({}); return }
+    if (!selectedService) return
     const from = toDateStr(dateStrip[0])
     fetch(`/api/nailists/${nailistProfileId}/availability/batch?from=${from}&days=21&durationMinutes=${selectedService.durationMinutes}`)
       .then((r) => r.json())
@@ -61,7 +61,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   }, [selectedService, nailistProfileId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!selectedDate) { setAvailability(null); return }
+    if (!selectedDate) return
     setLoadingSlots(true)
     setSelectedTime('')
     const dateStr = toDateStr(selectedDate)

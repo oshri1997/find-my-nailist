@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
-import { MapPin, Star, Calendar, Camera, Clock, CreditCard, Shield, ChevronDown } from 'lucide-react'
+import { MapPin, Star, Calendar, Camera, Clock, CreditCard, ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 
 /* ── DATA ── */
