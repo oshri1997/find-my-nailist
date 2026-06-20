@@ -49,6 +49,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
+      - run: npm install --no-save semantic-release @semantic-release/git
       - name: Semantic Release
         id: sr
         run: npx semantic-release
