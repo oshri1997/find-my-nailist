@@ -27,6 +27,11 @@ interface Nailist {
 
 type SortKey = 'distance' | 'rating'
 
+function formatDistance(km: number): string {
+  if (km < 1) return `${Math.round(km * 1000)} מ׳`
+  return `${km.toFixed(1)} ק"מ`
+}
+
 const filterTags = ['הכל', "ג'ל", 'נייל ארט', 'אקריל', 'מניקור', 'פדיקור', 'אקסטנשן']
 
 export default function SearchPage() {
@@ -109,7 +114,7 @@ export default function SearchPage() {
               variant="outline"
               onClick={handleLocate}
               disabled={locating}
-              className="rounded-xl h-11 border-border gap-2 shrink-0 hover:border-primary/40 hover:bg-pink-50/50 cursor-pointer"
+              className="rounded-xl h-11 border-border gap-2 shrink-0 hover:border-primary/40 hover:bg-pink-50/50 hover:text-foreground cursor-pointer"
               title="השתמשי במיקום שלי"
             >
               {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4 text-primary" />}
@@ -246,7 +251,7 @@ export default function SearchPage() {
                   {nailist.distanceKm != null && (
                     <div className="absolute top-3 right-3 bg-white/90 rounded-full px-3 py-1 text-foreground text-xs font-bold flex items-center gap-1 shadow-sm">
                       <MapPin className="h-3 w-3 text-primary" />
-                      {`${nailist.distanceKm.toFixed(1)} ק"מ`}
+                      {formatDistance(nailist.distanceKm)}
                     </div>
                   )}
                   {nailist.whatsappPhone && (
