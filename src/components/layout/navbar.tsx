@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Sparkles, LogOut, LayoutDashboard } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -10,6 +10,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 export function Navbar() {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   async function handleSignOut() {
     await signOut()
@@ -33,12 +34,27 @@ export function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-semibold">
-            <Link href="/search" className="text-muted-foreground hover:text-foreground transition-colors duration-200">
-              חיפוש
-            </Link>
-            <Link href="/how-it-works" className="text-muted-foreground hover:text-foreground transition-colors duration-200">
-              איך זה עובד
-            </Link>
+            {[
+              { href: '/search', label: 'חיפוש' },
+              { href: '/how-it-works', label: 'איך זה עובד' },
+            ].map(({ href, label }) => {
+              const active = pathname === href || pathname.startsWith(href + '/')
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`relative py-1 transition-colors duration-200 ${active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  {label}
+                  {active && (
+                    <motion.span
+                      layoutId="nav-underline"
+                      className="absolute inset-x-0 -bottom-[18px] h-0.5 rounded-full bg-primary"
+                    />
+                  )}
+                </Link>
+              )
+            })}
           </div>
 
           <div className="flex items-center gap-3">
