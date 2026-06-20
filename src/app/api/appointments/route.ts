@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     console.log('[booking] email lookup — nailistEmail:', nailistEmail, 'clientEmail:', clientEmail)
 
     if (nailistEmail && clientEmail) {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://find-my-nailist-production.up.railway.app'
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://nailistiot.fun'
       const confirmUrl = `${appUrl}/api/appointments/confirm?token=${confirmToken}`
       try {
         await sendAppointmentRequest({

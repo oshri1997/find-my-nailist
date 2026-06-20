@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
   try {
     if (type === 'booking') {
-      const fakeConfirmUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://find-my-nailist-production.up.railway.app'}/api/appointments/confirm?token=TEST_TOKEN`
+      const fakeConfirmUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://nailistiot.fun'}/api/appointments/confirm?token=TEST_TOKEN`
       await sendAppointmentRequest({
         clientEmail: to,
         nailistEmail: to,

@@ -5,7 +5,7 @@ import { FieldValue } from 'firebase-admin/firestore'
 import { sendClientConfirmedEmail } from '@/lib/email'
 
 export async function GET(request: NextRequest) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://find-my-nailist-production.up.railway.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://nailistiot.fun'
   const { searchParams } = new URL(request.url)
   const token = searchParams.get('token')
 
