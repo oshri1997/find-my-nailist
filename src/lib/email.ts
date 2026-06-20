@@ -1,35 +1,33 @@
-const FROM_EMAIL = process.env.BREVO_SENDER_EMAIL ?? 'noreply@example.com'
-const FROM_NAME = 'מצאי נייליסטית'
+const FROM = 'מצאי נייליסטית <noreply@nailistiot.fun>'
 
-async function sendBrevo(to: string, subject: string, html: string): Promise<void> {
-  const apiKey = process.env.BREVO_API_KEY
+async function sendResend(to: string, subject: string, html: string): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
-    console.warn('BREVO_API_KEY not set — skipping email')
+    console.warn('RESEND_API_KEY not set — skipping email')
     return
   }
 
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+  const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      accept: 'application/json',
-      'api-key': apiKey,
-      'content-type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      sender: { name: FROM_NAME, email: FROM_EMAIL },
-      to: [{ email: to }],
+      from: FROM,
+      to: [to],
       subject,
-      htmlContent: html,
+      html,
     }),
   })
 
   if (!res.ok) {
     const body = await res.text()
-    throw new Error(`Brevo error ${res.status}: ${body}`)
+    throw new Error(`Resend error ${res.status}: ${body}`)
   }
 
-  const data = await res.json() as { messageId?: string }
-  console.log('[email] sent to', to, '| messageId:', data.messageId)
+  const data = await res.json() as { id?: string }
+  console.log('[email] sent to', to, '| id:', data.id)
 }
 
 function formatDate(d: Date) {
@@ -57,7 +55,7 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
   const dateStr = formatDate(p.startTime)
 
   const [clientResult, nailistResult] = await Promise.allSettled([
-    sendBrevo(
+    sendResend(
       p.clientEmail,
       `⏳ בקשת תור אצל ${p.nailistBusinessName} נשלחה`,
       `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
@@ -73,7 +71,7 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
       </div>`
     ),
 
-    sendBrevo(
+    sendResend(
       p.nailistEmail,
       `📅 תור חדש מ-${p.clientName} — ממתין לאישורך`,
       `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
@@ -119,7 +117,7 @@ export async function sendClientConfirmedEmail(p: {
   const symbol = p.currency === 'ILS' ? '₪' : '$'
   const dateStr = formatDate(p.startTime)
 
-  await sendBrevo(
+  await sendResend(
     p.clientEmail,
     `✅ התור שלך אצל ${p.nailistBusinessName} אושר!`,
     `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">

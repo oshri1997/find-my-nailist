@@ -11,11 +11,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  if (!process.env.BREVO_API_KEY) {
-    return NextResponse.json({ error: 'BREVO_API_KEY not set' }, { status: 500 })
+  if (!process.env.RESEND_API_KEY) {
+    return NextResponse.json({ error: 'RESEND_API_KEY not set' }, { status: 500 })
   }
 
-  const to = request.nextUrl.searchParams.get('to') ?? process.env.BREVO_SENDER_EMAIL ?? 'test@example.com'
+  const to = request.nextUrl.searchParams.get('to') ?? 'test@example.com'
   const type = request.nextUrl.searchParams.get('type') ?? 'ping'
 
   try {
