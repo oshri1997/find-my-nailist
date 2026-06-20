@@ -56,7 +56,7 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
   const symbol = p.currency === 'ILS' ? '₪' : '$'
   const dateStr = formatDate(p.startTime)
 
-  await Promise.allSettled([
+  const [clientResult, nailistResult] = await Promise.allSettled([
     sendBrevo(
       p.clientEmail,
       `⏳ בקשת תור אצל ${p.nailistBusinessName} נשלחה`,
@@ -71,7 +71,7 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
         </div>
         <p>נשלח לך אישור ברגע שהנייליסטית תאשר את התור 🌸</p>
       </div>`
-    ).catch(err => console.error('[email] client booking email error:', err)),
+    ),
 
     sendBrevo(
       p.nailistEmail,
@@ -92,8 +92,18 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
         </div>
         <p style="color:#aaa;font-size:12px;text-align:center">הקישור תקף ל-7 ימים. לאחר לחיצה, הלקוחה תקבל אישור במייל.</p>
       </div>`
-    ).catch(err => console.error('[email] nailist booking email error:', err)),
+    ),
   ])
+
+  if (clientResult.status === 'rejected') {
+    console.error('[email] client booking email error:', clientResult.reason)
+  }
+  if (nailistResult.status === 'rejected') {
+    console.error('[email] nailist booking email error:', nailistResult.reason)
+  }
+  if (clientResult.status === 'rejected' && nailistResult.status === 'rejected') {
+    throw nailistResult.reason
+  }
 }
 
 // Sent to client after nailist clicks confirm
