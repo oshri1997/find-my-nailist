@@ -66,7 +66,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(236,72,153,0.30)]">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
-            <span className="font-black text-base gradient-text">מצאי נייליסטית</span>
+            <span className="font-black text-base gradient-text">ניליסטיות</span>
           </Link>
 
           <div className="flex items-center gap-2">
@@ -98,7 +98,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(236,72,153,0.30)] group-hover:scale-105 transition-transform">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
-              <span className="font-black text-base gradient-text">מצאי נייליסטית</span>
+              <span className="font-black text-base gradient-text">ניליסטיות</span>
             </Link>
           </div>
 

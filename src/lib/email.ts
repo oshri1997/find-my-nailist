@@ -1,4 +1,4 @@
-const FROM = 'מצאי נייליסטית <noreply@nailistiot.fun>'
+const FROM = 'ניליסטיות <noreply@nailistiot.fun>'
 
 async function sendResend(to: string, subject: string, html: string): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY
