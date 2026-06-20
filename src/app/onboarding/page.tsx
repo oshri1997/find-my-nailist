@@ -19,6 +19,12 @@ const STEPS = [
 
 const DAYS_HE = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
 
+const TIME_OPTIONS: string[] = []
+for (let h = 7; h <= 23; h++) {
+  TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:00`)
+  if (h < 23) TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
+}
+
 interface Photo { id: string; url: string }
 interface Service { id: string; name: string; durationMinutes: number; price: number }
 interface DayHours { dayOfWeek: number; isActive: boolean; startTime: string; endTime: string }
@@ -419,7 +425,7 @@ export default function OnboardingPage() {
                     onClick={addService}
                     disabled={!svcName.trim() || !svcPrice || saving}
                     variant="outline"
-                    className="w-full rounded-xl h-10 font-bold border-pink-200 text-pink-600 hover:bg-pink-50 gap-2 disabled:opacity-50"
+                    className="w-full rounded-xl h-10 font-bold border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 gap-2 disabled:opacity-50"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4" /> הוסיפי שירות</>}
                   </Button>
@@ -525,19 +531,21 @@ export default function OnboardingPage() {
                         </span>
                         {day.isActive && (
                           <div className="flex items-center gap-2 flex-1">
-                            <input
-                              type="time"
+                            <select
                               value={day.startTime}
                               onChange={e => updateTime(i, 'startTime', e.target.value)}
-                              className="flex-1 h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs font-semibold focus:outline-none focus:border-pink-300 text-center"
-                            />
+                              className="flex-1 h-8 rounded-lg border border-gray-200 bg-white px-1 text-xs font-semibold focus:outline-none focus:border-pink-300 cursor-pointer"
+                            >
+                              {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
                             <span className="text-xs text-gray-400">—</span>
-                            <input
-                              type="time"
+                            <select
                               value={day.endTime}
                               onChange={e => updateTime(i, 'endTime', e.target.value)}
-                              className="flex-1 h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs font-semibold focus:outline-none focus:border-pink-300 text-center"
-                            />
+                              className="flex-1 h-8 rounded-lg border border-gray-200 bg-white px-1 text-xs font-semibold focus:outline-none focus:border-pink-300 cursor-pointer"
+                            >
+                              {TIME_OPTIONS.filter(t => t > day.startTime).map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
                           </div>
                         )}
                         {!day.isActive && (

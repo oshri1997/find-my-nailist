@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronRight, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { generateSlots, isSlotUnavailable, buildDateStrip, toDateStr, type BookedSlot } from '@/lib/booking-utils'
 
 interface Service {
   id: string
@@ -21,11 +22,6 @@ interface Props {
   onClose: () => void
 }
 
-interface BookedSlot {
-  startTime: string
-  endTime: string
-}
-
 interface Availability {
   workingDay: boolean
   startTime?: string
@@ -35,57 +31,8 @@ interface Availability {
 
 type Step = 'service' | 'datetime' | 'confirm' | 'done'
 
-function pad(n: number) {
-  return String(n).padStart(2, '0')
-}
-
-function generateSlots(startTime: string, endTime: string): string[] {
-  const [sh, sm] = startTime.split(':').map(Number)
-  const [eh, em] = endTime.split(':').map(Number)
-  const start = sh * 60 + sm
-  const end = eh * 60 + em
-  const slots: string[] = []
-  for (let m = start; m < end; m += 30) {
-    slots.push(`${pad(Math.floor(m / 60))}:${pad(m % 60)}`)
-  }
-  return slots
-}
-
-function isSlotUnavailable(
-  slot: string,
-  date: string,
-  durationMinutes: number,
-  endTime: string,
-  bookedSlots: BookedSlot[]
-): boolean {
-  const slotStart = new Date(`${date}T${slot}:00`)
-  const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60_000)
-  const [eh, em] = endTime.split(':').map(Number)
-  const workEnd = new Date(`${date}T${pad(eh)}:${pad(em)}:00`)
-  if (slotEnd > workEnd) return true
-  return bookedSlots.some((b) => {
-    const bStart = new Date(b.startTime)
-    const bEnd = new Date(b.endTime)
-    return bStart < slotEnd && bEnd > slotStart
-  })
-}
-
 const HE_DAYS_SHORT = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
 const HE_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר']
-
-function buildDateStrip(count = 21): Date[] {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return Array.from({ length: count }, (_, i) => {
-    const d = new Date(today)
-    d.setDate(today.getDate() + i)
-    return d
-  })
-}
-
-function toDateStr(d: Date) {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
 
 export default function BookingModal({ nailistProfileId, businessName, services, onClose }: Props) {
   const [step, setStep] = useState<Step>('service')

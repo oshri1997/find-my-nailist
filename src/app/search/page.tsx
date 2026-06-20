@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MapPin, Search, Star, Heart, MessageCircle, Loader2, LocateFixed, Map as MapIcon, LayoutGrid, Sparkles } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
+import { formatDistance } from '@/lib/format-utils'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
@@ -26,11 +27,6 @@ interface Nailist {
 }
 
 type SortKey = 'distance' | 'rating'
-
-function formatDistance(km: number): string {
-  if (km < 1) return `${Math.round(km * 1000)} מ׳`
-  return `${km.toFixed(1)} ק"מ`
-}
 
 const filterTags = ['הכל', "ג'ל", 'נייל ארט', 'אקריל', 'מניקור', 'פדיקור', 'אקסטנשן']
 
