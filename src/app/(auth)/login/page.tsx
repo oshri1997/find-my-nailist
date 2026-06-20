@@ -42,13 +42,14 @@ export default function AuthPage() {
   const [error, setError] = useState('')
   const handlingFormRef = useRef(false)
 
-  // Auth-state redirect (handles Google OAuth callback)
+  // Auth-state redirect (handles Google OAuth callback + email login)
   useEffect(() => {
     if (authLoading || !user || handlingFormRef.current) return
     const pendingRole = (sessionStorage.getItem('pendingRole') as Role | null) ?? role
     const pendingMode = (sessionStorage.getItem('pendingMode') as Mode | null) ?? mode
     sessionStorage.removeItem('pendingRole')
     sessionStorage.removeItem('pendingMode')
+
     fetch('/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -59,15 +60,40 @@ export default function AuthPage() {
         photoUrl: user.photoURL ?? undefined,
         role: pendingRole === 'nailist' ? 'NAILIST' : 'CLIENT',
       }),
-    }).finally(() => {
-      if (pendingMode === 'register' && pendingRole === 'nailist') {
-        router.replace('/onboarding')
-      } else if (pendingRole === 'nailist') {
-        router.replace('/dashboard/nailist')
-      } else {
-        router.replace('/search')
-      }
     })
+      .then(r => r.json())
+      .then(({ data }) => {
+        const actualRole: Role = data?.role === 'NAILIST' ? 'nailist' : 'client'
+
+        // Registering via Google but account already exists with a different role
+        if (pendingMode === 'register' && actualRole !== pendingRole) {
+          setError(
+            actualRole === 'nailist'
+              ? 'כתובת האימייל כבר רשומה כנייליסטית — אנא התחברי כנייליסטית'
+              : 'כתובת האימייל כבר רשומה כלקוחה — אנא התחברי כלקוחה'
+          )
+          handlingFormRef.current = false
+          setLoading(false)
+          return
+        }
+
+        // Redirect based on actual role stored in DB (ignores whatever was selected in the UI)
+        if (actualRole === 'nailist') {
+          router.replace(pendingMode === 'register' ? '/onboarding' : '/dashboard/nailist')
+        } else {
+          router.replace(pendingMode === 'register' ? '/' : '/search')
+        }
+      })
+      .catch(() => {
+        // Network failure fallback — use intended role
+        if (pendingMode === 'register' && pendingRole === 'nailist') {
+          router.replace('/onboarding')
+        } else if (pendingRole === 'nailist') {
+          router.replace('/dashboard/nailist')
+        } else {
+          router.replace('/search')
+        }
+      })
   }, [user, authLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function switchMode(m: Mode) {
@@ -86,7 +112,8 @@ export default function AuthPage() {
     try {
       if (mode === 'login') {
         await signInWithEmail(email, password)
-        // redirect handled by useEffect above
+        // Allow useEffect to run and redirect based on actual DB role
+        handlingFormRef.current = false
       } else {
         const cred = await signUpWithEmail(email, password, name)
         await fetch('/api/users', {
@@ -174,23 +201,25 @@ export default function AuthPage() {
                 </p>
               </div>
 
-              {/* Role selector */}
-              <div className="flex rounded-xl bg-muted p-1 mb-6">
-                {(['nailist', 'client'] as Role[]).map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setRole(r)}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
-                      role === r
-                        ? 'bg-white text-primary shadow-sm shadow-pink-100'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {r === 'nailist' ? '💅 נייליסטית' : '🌸 לקוחה'}
-                  </button>
-                ))}
-              </div>
+              {/* Role selector — only relevant when registering */}
+              {mode === 'register' && (
+                <div className="flex rounded-xl bg-muted p-1 mb-6">
+                  {(['nailist', 'client'] as Role[]).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setRole(r)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+                        role === r
+                          ? 'bg-white text-primary shadow-sm shadow-pink-100'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {r === 'nailist' ? '💅 נייליסטית' : '🌸 לקוחה'}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {error && (
                 <motion.div
@@ -264,7 +293,7 @@ export default function AuthPage() {
                   {loading
                     ? (mode === 'login' ? 'מתחברת...' : 'יוצרת חשבון...')
                     : mode === 'login'
-                    ? (role === 'nailist' ? 'כניסה כנייליסטית' : 'כניסה כלקוחה')
+                    ? 'התחברי'
                     : (role === 'nailist' ? 'הצטרפי כנייליסטית' : 'צרי חשבון')}
                   {!loading && <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />}
                 </Button>

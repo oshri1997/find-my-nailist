@@ -18,10 +18,10 @@ export async function GET(request: NextRequest) {
       const center: [number, number] = [Number(lat), Number(lng)]
       const bounds = geohashQueryBounds(center, radius * 1000)
 
+      // Filter isActive in JS to avoid requiring a composite (isActive, geohash) Firestore index
       const queries = bounds.map(([start, end]) =>
         db
           .collection(COLLECTIONS.NAILIST_PROFILES)
-          .where('isActive', '==', true)
           .where('geohash', '>=', start)
           .where('geohash', '<=', end)
           .get()
@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
           if (seen.has(doc.id)) continue
           seen.add(doc.id)
           const data = doc.data() as Record<string, unknown>
+          if (!data.isActive) continue
           if (data.latitude == null || data.longitude == null) continue
           const distKm = distanceBetween([data.latitude as number, data.longitude as number], center)
           if (distKm <= radius) {
