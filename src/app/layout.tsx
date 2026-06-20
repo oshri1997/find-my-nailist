@@ -6,11 +6,11 @@ import { Providers } from '@/components/providers'
 const heebo = Heebo({ subsets: ['hebrew', 'latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
 
 export const metadata: Metadata = {
-  title: 'ניליסטיות | גלי מומחיות ציפורניים קרוב אלייך',
+  title: 'נייליסטיות | גלי מומחיות ציפורניים קרוב אלייך',
   description: 'הזמיני תור אצל מומחיות ציפורניים מוכשרות בקרבתך. עיצוב ג\'ל, נייל ארט, ומניקור מקצועי.',
   keywords: ['נייליסטית', 'ציפורניים', 'ג\'ל', 'נייל ארט', 'מניקור', 'תור'],
   openGraph: {
-    title: 'ניליסטיות',
+    title: 'נייליסטיות',
     description: 'גלי מומחיות ציפורניים קרוב אלייך',
     type: 'website',
   },

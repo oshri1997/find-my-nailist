@@ -193,7 +193,7 @@ export default function HowItWorksPage() {
               ✨ פשוט כמו 1, 2, 3
             </div>
             <h1 className="text-4xl md:text-6xl font-black text-gray-800 mb-5 leading-tight">
-              איך <span className="gradient-text">ניליסטיות</span>
+              איך <span className="gradient-text">נייליסטיות</span>
               <br />עובד?
             </h1>
             <p className="text-lg md:text-xl text-gray-400 max-w-xl mx-auto leading-relaxed">
@@ -314,7 +314,7 @@ export default function HowItWorksPage() {
         <div className="container mx-auto max-w-5xl px-6">
           <Section className="text-center mb-12">
             <h2 className="text-3xl font-black text-gray-800 mb-3">
-              למה <span className="gradient-text">ניליסטיות?</span>
+              למה <span className="gradient-text">נייליסטיות?</span>
             </h2>
             <p className="text-gray-400 font-medium">היתרונות שמבדילים אותנו</p>
           </Section>

@@ -30,7 +30,7 @@ export function Navbar() {
             <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(236,72,153,0.35)]">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
-            <span className="gradient-text">ניליסטיות</span>
+            <span className="gradient-text">נייליסטיות</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-semibold">
