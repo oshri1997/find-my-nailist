@@ -168,12 +168,21 @@ export default function OnboardingPage() {
     setSaving(true)
     setError('')
     try {
-      const res = await fetch('/api/working-hours', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hours: workingHours }),
-      })
-      if (!res.ok) throw new Error()
+      const [hoursRes] = await Promise.all([
+        fetch('/api/working-hours', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hours: workingHours }),
+        }),
+        profileId
+          ? fetch(`/api/nailists/${profileId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ isActive: true }),
+            })
+          : Promise.resolve(),
+      ])
+      if (!hoursRes.ok) throw new Error()
       router.replace('/dashboard/nailist')
     } catch {
       setError('שגיאה בשמירת שעות עבודה — נסי שוב')

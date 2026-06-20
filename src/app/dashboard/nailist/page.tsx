@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft } from 'lucide-react'
+import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 type AppStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'
@@ -73,6 +73,7 @@ export default function NailistDashboard() {
   const [hasServices, setHasServices] = useState(false)
   const [hasHours, setHasHours] = useState(false)
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([])
+  const [activating, setActivating] = useState(false)
 
   useEffect(() => {
     fetch('/api/me/nailist-profile')
@@ -116,6 +117,21 @@ export default function NailistDashboard() {
       .catch(() => {})
   }, [])
 
+  async function activateProfile() {
+    if (!profile?.id) return
+    setActivating(true)
+    try {
+      const res = await fetch(`/api/nailists/${profile.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: true }),
+      })
+      if (res.ok) setProfile(prev => prev ? { ...prev, isActive: true } : prev)
+    } finally {
+      setActivating(false)
+    }
+  }
+
   const checklist = [
     { label: 'פרטי עסק (שם + כתובת)', done: !!(profile?.businessName && (profile?.city || profile?.address)) },
     { label: 'הוסיפי שירותים ומחירים', done: hasServices },
@@ -132,6 +148,31 @@ export default function NailistDashboard() {
         <h1 className="text-2xl md:text-3xl font-black text-gray-800">שלום, {firstName}! 👋</h1>
         <p className="text-gray-400 font-medium">הנה סקירה של העסק שלך</p>
       </motion.div>
+
+      {/* Hidden profile banner */}
+      {profile && !profile.isActive && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-4"
+        >
+          <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+            <EyeOff className="h-5 w-5 text-amber-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-black text-amber-800 text-sm">הפרופיל שלך מוסתר מלקוחות</p>
+            <p className="text-xs text-amber-600 font-medium mt-0.5">לקוחות לא יכולות למצוא אותך בחיפוש כרגע</p>
+          </div>
+          <button
+            onClick={activateProfile}
+            disabled={activating}
+            className="shrink-0 flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-black rounded-xl px-4 py-2 transition-colors disabled:opacity-60"
+          >
+            <Eye className="h-4 w-4" />
+            {activating ? 'מפרסמת...' : 'פרסמי עכשיו'}
+          </button>
+        </motion.div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
