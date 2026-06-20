@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         email: data.email,
         businessName: data.displayName ?? 'My Nail Studio',
         photoUrl: data.photoUrl ?? null,
-        isActive: false,
+        isActive: true,
         isVerified: false,
         avgRating: 0,
         reviewCount: 0,

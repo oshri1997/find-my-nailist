@@ -13,10 +13,23 @@ const STEPS = [
   { label: 'כתובת העסק', emoji: '📍' },
   { label: 'תמונות עבודות', emoji: '🖼️' },
   { label: 'שירותים', emoji: '✂️' },
+  { label: 'שעות פעילות', emoji: '⏰' },
 ]
+
+const DAYS_HE = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
 
 interface Photo { id: string; url: string }
 interface Service { id: string; name: string; durationMinutes: number; price: number }
+interface DayHours { dayOfWeek: number; isActive: boolean; startTime: string; endTime: string }
+
+function defaultHours(): DayHours[] {
+  return DAYS_HE.map((_, i) => ({
+    dayOfWeek: i,
+    isActive: i < 6,
+    startTime: '09:00',
+    endTime: '18:00',
+  }))
+}
 
 export default function OnboardingPage() {
   const { user, loading: authLoading } = useAuth()
@@ -43,6 +56,9 @@ export default function OnboardingPage() {
   const [svcName, setSvcName] = useState('')
   const [svcDuration, setSvcDuration] = useState(60)
   const [svcPrice, setSvcPrice] = useState('')
+
+  // Step 4 — working hours
+  const [workingHours, setWorkingHours] = useState<DayHours[]>(defaultHours)
 
   useEffect(() => {
     if (authLoading) return
@@ -135,6 +151,32 @@ export default function OnboardingPage() {
       }
     } catch {
       setError('שגיאה בהוספת שירות')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function toggleDay(i: number) {
+    setWorkingHours(prev => prev.map((d, idx) => idx === i ? { ...d, isActive: !d.isActive } : d))
+  }
+
+  function updateTime(i: number, field: 'startTime' | 'endTime', value: string) {
+    setWorkingHours(prev => prev.map((d, idx) => idx === i ? { ...d, [field]: value } : d))
+  }
+
+  async function saveWorkingHours() {
+    setSaving(true)
+    setError('')
+    try {
+      const res = await fetch('/api/working-hours', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hours: workingHours }),
+      })
+      if (!res.ok) throw new Error()
+      router.replace('/dashboard/nailist')
+    } catch {
+      setError('שגיאה בשמירת שעות עבודה — נסי שוב')
     } finally {
       setSaving(false)
     }
@@ -352,11 +394,73 @@ export default function OnboardingPage() {
                     <ArrowRight className="h-4 w-4" /> חזרה
                   </Button>
                   <Button
-                    onClick={() => router.replace('/dashboard/nailist')}
+                    onClick={() => { setError(''); setStep(3) }}
                     disabled={services.length === 0}
                     className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-pink-200 disabled:opacity-50"
                   >
-                    סיימתי! <Check className="h-4 w-4" />
+                    המשיכי <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 3 && (
+              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                <h2 className="text-xl font-black text-gray-800 mb-1">שעות פעילות</h2>
+                <p className="text-gray-400 text-sm mb-5">הגדירי באילו ימים ושעות את זמינה ללקוחות</p>
+
+                <div className="space-y-2 mb-5">
+                  {workingHours.map((day, i) => (
+                    <div
+                      key={i}
+                      className={`rounded-xl border px-4 py-3 transition-all ${day.isActive ? 'border-pink-200 bg-pink-50/40' : 'border-gray-100 bg-gray-50/50'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => toggleDay(i)}
+                          className={`w-9 h-5 rounded-full transition-all shrink-0 relative ${day.isActive ? 'bg-gradient-to-r from-pink-500 to-purple-600' : 'bg-gray-200'}`}
+                        >
+                          <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${day.isActive ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                        <span className={`text-sm font-bold w-12 ${day.isActive ? 'text-gray-800' : 'text-gray-400'}`}>
+                          {DAYS_HE[i]}
+                        </span>
+                        {day.isActive && (
+                          <div className="flex items-center gap-2 flex-1">
+                            <input
+                              type="time"
+                              value={day.startTime}
+                              onChange={e => updateTime(i, 'startTime', e.target.value)}
+                              className="flex-1 h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs font-semibold focus:outline-none focus:border-pink-300 text-center"
+                            />
+                            <span className="text-xs text-gray-400">—</span>
+                            <input
+                              type="time"
+                              value={day.endTime}
+                              onChange={e => updateTime(i, 'endTime', e.target.value)}
+                              className="flex-1 h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs font-semibold focus:outline-none focus:border-pink-300 text-center"
+                            />
+                          </div>
+                        )}
+                        {!day.isActive && (
+                          <span className="text-xs text-gray-400 font-medium">סגור</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-gray-200">
+                    <ArrowRight className="h-4 w-4" /> חזרה
+                  </Button>
+                  <Button
+                    onClick={saveWorkingHours}
+                    disabled={saving}
+                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-pink-200 disabled:opacity-50"
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>סיימתי! <Check className="h-4 w-4" /></>}
                   </Button>
                 </div>
               </motion.div>

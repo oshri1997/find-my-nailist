@@ -122,7 +122,6 @@ export default function NailistDashboard() {
     { label: 'העלי תמונות לפורטפוליו', done: hasPhotos },
     { label: 'הגדירי שעות עבודה', done: hasHours },
     { label: 'הוסיפי קישורי רשתות חברתיות', done: !!(profile?.instagramUrl || profile?.tiktokUrl) },
-    { label: 'פרסמי פרופיל לחיפוש', done: !!profile?.isActive },
   ]
   const doneCount = checklist.filter(c => c.done).length
   const completionPct = Math.round((doneCount / checklist.length) * 100)
