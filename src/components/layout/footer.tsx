@@ -11,7 +11,7 @@ export function Footer() {
               <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(236,72,153,0.3)]">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
-              <span className="gradient-text">nailistiot</span>
+              <span className="gradient-text">נייליסטיות</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
               הפלטפורמה המובילה לחיבור בין לקוחות ומומחיות ציפורניים ברחבי ישראל.
@@ -37,7 +37,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 pt-8 border-t border-border text-center text-sm text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap">
-          <span>© {new Date().getFullYear()} nailistiot. כל הזכויות שמורות. עשוי עם</span>
+          <span>© {new Date().getFullYear()} נייליסטיות. כל הזכויות שמורות. עשוי עם</span>
           <Heart className="w-3.5 h-3.5 fill-primary text-primary" />
           <span>בישראל</span>
         </div>
