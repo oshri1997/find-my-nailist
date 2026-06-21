@@ -1,6 +1,6 @@
 <div align="center">
 
-# נייליסטיות &nbsp;·&nbsp; Find My Nailist
+# Nailistiot
 
 **The booking platform connecting clients with nail artists across Israel**
 
