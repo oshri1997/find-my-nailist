@@ -52,7 +52,6 @@ export default function BookingModal({ nailistProfileId, businessName, services,
 
   useEffect(() => {
     if (!selectedService) return
-    setDateSummary(null)
     const from = toDateStr(new Date())
     fetch(
       `/api/nailists/${nailistProfileId}/availability/batch?from=${from}&days=21&durationMinutes=${selectedService.durationMinutes}`
@@ -183,7 +182,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                     return (
                       <button
                         key={s.id}
-                        onClick={() => setSelectedService(s)}
+                        onClick={() => { setSelectedService(s); setDateSummary(null) }}
                         className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-right transition-all ${
                           selected
                             ? 'border-pink-400 bg-gradient-to-r from-pink-50 to-purple-50 shadow-sm'
