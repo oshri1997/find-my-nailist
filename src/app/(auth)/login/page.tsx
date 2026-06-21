@@ -79,7 +79,7 @@ export default function AuthPage() {
 
         // Redirect based on actual role stored in DB (ignores whatever was selected in the UI)
         if (actualRole === 'nailist') {
-          router.replace(pendingMode === 'register' ? '/onboarding' : '/dashboard/nailist')
+          router.replace(pendingMode === 'register' ? '/onboarding' : '/')
         } else {
           router.replace(pendingMode === 'register' ? '/' : '/search')
         }
@@ -89,7 +89,7 @@ export default function AuthPage() {
         if (pendingMode === 'register' && pendingRole === 'nailist') {
           router.replace('/onboarding')
         } else if (pendingRole === 'nailist') {
-          router.replace('/dashboard/nailist')
+          router.replace('/')
         } else {
           router.replace('/search')
         }
