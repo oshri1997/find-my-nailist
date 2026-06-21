@@ -21,7 +21,7 @@
 
 ## Overview
 
-נייליסטיות is a full-stack booking platform for nail artists in Israel. Clients discover artists by location, browse portfolios, and book appointments in a few taps. Nail artists get a public profile page, an appointment dashboard, and automatic email notifications — no native app required.
+Nailistiot a full-stack booking platform for nail artists in Israel. Clients discover artists by location, browse portfolios, and book appointments in a few taps. Nail artists get a public profile page, an appointment dashboard, and automatic email notifications — no native app required.
 
 ## Features
 
