@@ -4,7 +4,6 @@
 
 **The booking platform connecting clients with nail artists across Israel**
 
-[![Release & Deploy](https://github.com/oshri1997/find-my-nailist/actions/workflows/railway.yml/badge.svg)](https://github.com/oshri1997/find-my-nailist/actions/workflows/railway.yml)
 [![CI](https://github.com/oshri1997/find-my-nailist/actions/workflows/ci.yml/badge.svg)](https://github.com/oshri1997/find-my-nailist/actions/workflows/ci.yml)
 [![Latest Release](https://img.shields.io/github/v/release/oshri1997/find-my-nailist?logo=github&label=release)](https://github.com/oshri1997/find-my-nailist/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
