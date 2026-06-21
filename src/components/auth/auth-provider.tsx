@@ -1,7 +1,8 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react'
 import type { User } from 'firebase/auth'
+import { Sparkles } from 'lucide-react'
 
 interface AuthContextValue {
   user: User | null
@@ -18,12 +19,17 @@ const AuthContext = createContext<AuthContextValue>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const skipCallbackRef = useRef(false)
 
   const signOut = useCallback(async () => {
+    setLoading(true)
+    skipCallbackRef.current = true
     const { signOutUser } = await import('@/lib/firebase/auth-helpers')
     await signOutUser()
     await fetch('/api/auth/session', { method: 'DELETE' })
     setUser(null)
+    skipCallbackRef.current = false
+    setLoading(false)
   }, [])
 
   useEffect(() => {
@@ -36,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { onIdTokenChanged } = await import('firebase/auth')
       unsub = onIdTokenChanged(clients.auth, async (firebaseUser) => {
+        if (skipCallbackRef.current) return
         setUser(firebaseUser)
         if (firebaseUser) {
           const token = await firebaseUser.getIdToken()
@@ -54,6 +61,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     init()
     return () => unsub?.()
   }, [])
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background">
+        <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shadow-[0_4px_32px_rgba(236,72,153,0.45)] animate-pulse">
+          <Sparkles className="h-7 w-7 text-white" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading, signOut }}>

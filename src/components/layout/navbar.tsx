@@ -2,20 +2,37 @@
 
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Sparkles, LogOut, LayoutDashboard } from 'lucide-react'
+import { Sparkles, LogOut, LayoutDashboard, ChevronDown } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
 
 export function Navbar() {
-  const { user, loading, signOut } = useAuth()
+  const { user, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
+  const [showMenu, setShowMenu] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showMenu) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showMenu])
 
   async function handleSignOut() {
+    setShowMenu(false)
     await signOut()
     router.push('/')
   }
+
+  const displayName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? ''
 
   return (
     <motion.nav
@@ -26,8 +43,11 @@ export function Navbar() {
     >
       <div className="container mx-auto max-w-7xl px-6">
         <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 font-black text-xl">
-            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(236,72,153,0.35)]">
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 font-black text-xl group"
+          >
+            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(236,72,153,0.35)] group-hover:scale-105 transition-transform">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
             <span className="gradient-text">נייליסטיות</span>
@@ -58,40 +78,55 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-3">
-            {loading ? (
-              <div className="h-9 w-24 rounded-xl bg-muted animate-pulse" />
-            ) : user ? (
+            {user ? (
               <>
-                <div className="hidden sm:flex items-center gap-2.5 text-sm font-semibold">
-                  {user.photoURL ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={user.photoURL}
-                      alt={user.displayName ?? ''}
-                      className="w-8 h-8 rounded-full object-cover ring-2 ring-pink-100"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-black">
-                      {(user.displayName ?? user.email ?? '?')[0].toUpperCase()}
-                    </div>
-                  )}
-                  <span className="max-w-[120px] truncate text-foreground/80">
-                    {user.displayName?.split(' ')[0] ?? user.email?.split('@')[0]}
-                  </span>
-                </div>
                 <Link href="/dashboard/nailist">
                   <Button size="sm" variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground gap-2 cursor-pointer">
                     <LayoutDashboard className="h-4 w-4" />
                     <span className="hidden sm:inline">דשבורד</span>
                   </Button>
                 </Link>
-                <Button
-                  size="sm" variant="ghost" onClick={handleSignOut}
-                  className="font-semibold text-muted-foreground hover:text-destructive gap-2 cursor-pointer"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span className="hidden sm:inline">התנתקי</span>
-                </Button>
+
+                {/* Profile dropdown */}
+                <div ref={menuRef} className="relative">
+                  <button
+                    onClick={() => setShowMenu(v => !v)}
+                    className="flex items-center gap-2 hover:bg-muted/60 px-2 py-1.5 rounded-xl transition-colors cursor-pointer"
+                  >
+                    {user.photoURL ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={user.photoURL}
+                        alt={displayName}
+                        className="w-8 h-8 rounded-full object-cover ring-2 ring-pink-100"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-black">
+                        {displayName[0]?.toUpperCase() ?? '?'}
+                      </div>
+                    )}
+                    <span className="hidden sm:block max-w-[100px] truncate text-sm font-semibold text-foreground/80">
+                      {displayName}
+                    </span>
+                    <ChevronDown className={`hidden sm:block h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${showMenu ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showMenu && (
+                    <div className="absolute top-full mt-2 end-0 w-52 bg-white rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-border p-1 z-50">
+                      <div className="px-3 py-2.5 border-b border-border mb-1">
+                        <p className="text-sm font-bold text-foreground truncate">{displayName}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      </div>
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm font-semibold text-destructive hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        התנתקי
+                      </button>
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <>

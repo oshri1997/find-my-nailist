@@ -3,28 +3,33 @@
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { Sparkles, LayoutDashboard, Calendar, Scissors, Image, Settings, Star, Clock, LogOut, Loader2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Sparkles, LayoutDashboard, Calendar, Scissors, Image, Settings, Star, Clock, LogOut, Loader2, Menu, X } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
-const navLinks = [
+const primaryNavLinks = [
   { href: '/dashboard/nailist', label: 'סקירה', Icon: LayoutDashboard },
   { href: '/dashboard/nailist/appointments', label: 'תורים', Icon: Calendar },
   { href: '/dashboard/nailist/services', label: 'שירותים', Icon: Scissors },
-  { href: '/dashboard/nailist/hours', label: 'שעות', Icon: Clock },
-  { href: '/dashboard/nailist/portfolio', label: 'פורטפוליו', Icon: Image },
-  { href: '/dashboard/nailist/reviews', label: 'ביקורות', Icon: Star },
   { href: '/dashboard/nailist/settings', label: 'הגדרות', Icon: Settings },
 ]
 
+const secondaryNavLinks = [
+  { href: '/dashboard/nailist/hours', label: 'שעות פעילות', Icon: Clock },
+  { href: '/dashboard/nailist/portfolio', label: 'פורטפוליו', Icon: Image },
+  { href: '/dashboard/nailist/reviews', label: 'ביקורות', Icon: Star },
+]
+
+const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks]
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { user, signOut, loading: authLoading } = useAuth()
+  const { user, signOut } = useAuth()
   const router = useRouter()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
+  const [showMoreSheet, setShowMoreSheet] = useState(false)
 
   useEffect(() => {
-    if (authLoading) return
     if (!user) { router.replace('/login'); return }
 
     fetch('/api/me/role')
@@ -37,16 +42,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
       })
       .catch(() => router.replace('/login'))
-  }, [user, authLoading, router])
+  }, [user, router])
 
   const displayName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
 
-  async function handleSignOut() {
-    await signOut()
+  function handleSignOut() {
     router.push('/')
+    signOut().catch(console.error)
   }
 
-  if (authLoading || authorized === null) {
+  const secondaryActive = secondaryNavLinks.some(l => pathname === l.href)
+
+  if (authorized === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
         <Loader2 className="h-8 w-8 animate-spin text-pink-400" />
@@ -62,8 +69,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Mobile header */}
       <header className="md:hidden sticky top-0 z-40 bg-white border-b border-border shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
         <div className="flex items-center justify-between px-4 h-14">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(236,72,153,0.30)]">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(236,72,153,0.30)] group-hover:scale-105 transition-transform">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
             <span className="font-black text-base gradient-text">נייליסטיות</span>
@@ -122,7 +129,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Nav links */}
           <nav className="flex-1 p-3 space-y-0.5">
-            {navLinks.map((link, i) => {
+            {allNavLinks.map((link, i) => {
               const isActive = pathname === link.href
               return (
                 <motion.div
@@ -165,16 +172,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
 
-      {/* Mobile bottom tab bar */}
+      {/* Mobile bottom tab bar — 4 primary + More */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
         <div className="flex items-stretch h-16">
-          {navLinks.map((link) => {
+          {primaryNavLinks.map((link) => {
             const isActive = pathname === link.href
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-colors ${
+                className={`flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-colors relative ${
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
@@ -189,8 +196,88 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Link>
             )
           })}
+
+          {/* More button */}
+          <button
+            onClick={() => setShowMoreSheet(v => !v)}
+            className={`flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-colors relative cursor-pointer ${
+              secondaryActive ? 'text-primary' : 'text-muted-foreground'
+            }`}
+          >
+            <Menu className="h-5 w-5" />
+            <span>עוד</span>
+            {secondaryActive && (
+              <motion.div
+                layoutId="bottomTab"
+                className="absolute bottom-0 w-8 h-0.5 bg-primary rounded-full"
+              />
+            )}
+          </button>
         </div>
       </nav>
+
+      {/* More sheet */}
+      <AnimatePresence>
+        {showMoreSheet && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="md:hidden fixed inset-0 z-40 bg-black/30"
+              onClick={() => setShowMoreSheet(false)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              className="md:hidden fixed bottom-16 inset-x-0 z-50 bg-white rounded-t-2xl shadow-[0_-8px_40px_rgba(0,0,0,0.14)] px-4 pt-4 pb-6"
+            >
+              {/* Handle bar */}
+              <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
+
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-black text-foreground">עוד אפשרויות</p>
+                <button onClick={() => setShowMoreSheet(false)} className="text-muted-foreground hover:text-foreground cursor-pointer">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {secondaryNavLinks.map((link) => {
+                  const isActive = pathname === link.href
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setShowMoreSheet(false)}
+                      className={`flex flex-col items-center gap-2 py-4 rounded-2xl text-xs font-bold transition-colors ${
+                        isActive
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <link.Icon className="h-5 w-5" />
+                      {link.label}
+                    </Link>
+                  )
+                })}
+              </div>
+
+              <div className="border-t border-border pt-3">
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-destructive hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <LogOut className="h-4 w-4" />
+                  יציאה מהחשבון
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
     </div>
   )
