@@ -20,8 +20,8 @@ jobs:
           ref: ${{ github.ref }}
       - name: Install Railway CLI
         run: npm install -g @railway/cli
-      - name: Deploy
-        run: railway up --detach --service find-my-nailist
+      - name: Deploy to production
+        run: railway up --detach --service find-my-nailist --environment production
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
