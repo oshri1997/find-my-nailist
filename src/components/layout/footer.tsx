@@ -40,6 +40,11 @@ export function Footer() {
           <span>© {new Date().getFullYear()} נייליסטיות. כל הזכויות שמורות. עשוי עם</span>
           <Heart className="w-3.5 h-3.5 fill-primary text-primary" />
           <span>בישראל</span>
+          {process.env.NEXT_PUBLIC_ENV !== 'staging' && process.env.NEXT_PUBLIC_APP_VERSION && (
+            <span className="text-xs text-muted-foreground/50 mr-2">
+              v{process.env.NEXT_PUBLIC_APP_VERSION}
+            </span>
+          )}
         </div>
       </div>
     </footer>
