@@ -34,7 +34,7 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
       - name: Deploy to staging
-        run: railway up --detach --service ${{ secrets.RAILWAY_SERVICE_STAGING }}
+        run: railway up --detach --service find-my-nailist --environment staging
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
@@ -87,7 +87,7 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
       - name: Deploy to production
-        run: railway up --detach --service find-my-nailist
+        run: railway up --detach --service find-my-nailist --environment production
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
