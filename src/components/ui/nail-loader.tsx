@@ -2,12 +2,31 @@
 
 import { motion } from 'framer-motion'
 
-const sparkles = [
-  { x: -38, y: -15, delay: 0.2, size: 9 },
-  { x: 38, y: -18, delay: 0.55, size: 7 },
-  { x: -28, y: 30, delay: 0.85, size: 8 },
-  { x: 32, y: 26, delay: 0.35, size: 6 },
-  { x: 2,  y: -34, delay: 0.7,  size: 10 },
+/*
+  Container (120 × 165 px):
+  • SVG finger placed at left=22, top=10 → size 76×145
+  • Nail in SVG coords: tip at (38,10), cuticle arch at y=68
+  • Nail in container coords: tip y=20, cuticle y=78
+  • Paint div: left=34, top=20, w=52, h=58 — clipped to nail shape
+  • Brush: bristle tip length ≈ 20px (from y=35 to y=55 in brush SVG)
+    • Brush div at top=23 → bristle starts at container y = 23+55 = 78 (cuticle) ✓
+    • Animating y from 0 → -58 moves bristle to container y = 78-58 = 20 (tip) ✓
+*/
+
+const SPARKLES = [
+  { x: -48, y: -28, delay: 0.10, size: 13 },
+  { x:  46, y: -30, delay: 0.40, size: 10 },
+  { x: -38, y:  12, delay: 0.75, size: 11 },
+  { x:  42, y:   8, delay: 0.25, size: 8  },
+  { x:   2, y: -46, delay: 0.60, size: 14 },
+  { x: -56, y:  -8, delay: 0.90, size: 8  },
+  { x:  54, y:  -6, delay: 0.15, size: 9  },
+  { x:  20, y: -38, delay: 0.50, size: 10 },
+]
+
+const SPARKLE_COLORS = [
+  '#f472b6', '#e879f9', '#c084fc', '#a78bfa',
+  '#818cf8', '#f9a8d4', '#d946ef', '#8b5cf6',
 ]
 
 interface NailLoaderProps {
@@ -20,221 +39,188 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
 
   return (
     <div
-      className="flex flex-col items-center gap-6"
+      className="flex flex-col items-center gap-5"
       style={{ transform: `scale(${scale})`, transformOrigin: 'center top' }}
     >
-      {/* ── main scene ── */}
-      <div className="relative" style={{ width: 120, height: 210 }}>
+      <div className="relative" style={{ width: 120, height: 165 }}>
 
-        {/* sparkles around the nail */}
-        {sparkles.map((s, i) => (
+        {/* sparkles */}
+        {SPARKLES.map((s, i) => (
           <motion.div
             key={i}
             className="absolute pointer-events-none"
-            style={{ left: `calc(50% + ${s.x}px)`, top: `calc(50% + ${s.y - 20}px)` }}
-            animate={{ opacity: [0, 1, 0], scale: [0, 1.3, 0], rotate: [0, 180, 360] }}
-            transition={{ duration: 1.8, delay: s.delay, repeat: Infinity, repeatDelay: 0.5 }}
+            style={{ left: `calc(50% + ${s.x}px)`, top: `${50 + s.y}px` }}
+            animate={{ opacity: [0, 1, 0], scale: [0, 1.5, 0], rotate: [0, 180, 360] }}
+            transition={{ duration: 1.9, delay: s.delay, repeat: Infinity, repeatDelay: 0.8 }}
           >
             <svg width={s.size} height={s.size} viewBox="0 0 10 10" fill="none">
-              <path d="M5 0L6 4L10 5L6 6L5 10L4 6L0 5L4 4Z" fill="url(#sp-g)" />
-              <defs>
-                <linearGradient id="sp-g" x1="0" y1="0" x2="10" y2="10">
-                  <stop offset="0%" stopColor="hsl(326,100%,65%)" />
-                  <stop offset="100%" stopColor="hsl(271,91%,65%)" />
-                </linearGradient>
-              </defs>
+              <path d="M5 0L6 4L10 5L6 6L5 10L4 6L0 5L4 4Z" fill={SPARKLE_COLORS[i]} />
             </svg>
           </motion.div>
         ))}
 
-        {/* ── SVG finger ── */}
-        {/*
-          Coordinate reference (viewBox 0 0 76 195):
-          • Fingertip peak  : (38, 10)
-          • Nail left/right : x=12 / x=64  at y≈68
-          • Cuticle arch    : M12,68  Q38,58  64,68
-          • Knuckle 1       : y≈125
-          • Knuckle 2       : y≈150
-          • Finger base     : y=192
-        */}
+        {/* ── finger SVG — shorter (145 px tall vs original 195 px) ── */}
         <svg
-          width="76"
-          height="195"
-          viewBox="0 0 76 195"
-          fill="none"
-          className="absolute"
-          style={{ left: 22, top: 8 }}
+          width="76" height="145" viewBox="0 0 76 145"
+          fill="none" className="absolute" style={{ left: 22, top: 10 }}
         >
           <defs>
-            {/* Side-to-side skin shading */}
-            <linearGradient id="skin-lr" x1="0" y1="0" x2="76" y2="0" gradientUnits="userSpaceOnUse">
-              <stop offset="0%"   stopColor="hsl(12,52%,74%)" />
-              <stop offset="22%"  stopColor="hsl(12,40%,86%)" />
-              <stop offset="78%"  stopColor="hsl(12,40%,86%)" />
-              <stop offset="100%" stopColor="hsl(12,52%,74%)" />
+            {/* left-right skin shading */}
+            <linearGradient id="nl-lr" x1="0" y1="0" x2="76" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%"   stopColor="hsl(14,50%,73%)" />
+              <stop offset="20%"  stopColor="hsl(14,38%,88%)" />
+              <stop offset="80%"  stopColor="hsl(14,38%,88%)" />
+              <stop offset="100%" stopColor="hsl(14,50%,73%)" />
             </linearGradient>
-
-            {/* Top-to-bottom soft shading on body */}
-            <linearGradient id="skin-tb" x1="0" y1="0" x2="0" y2="195" gradientUnits="userSpaceOnUse">
-              <stop offset="0%"   stopColor="hsl(12,38%,89%)" stopOpacity="0.9" />
-              <stop offset="40%"  stopColor="hsl(12,38%,89%)" stopOpacity="0" />
-              <stop offset="70%"  stopColor="hsl(12,45%,80%)" stopOpacity="0" />
-              <stop offset="100%" stopColor="hsl(12,48%,78%)" stopOpacity="0.5" />
+            {/* top-bottom depth */}
+            <linearGradient id="nl-tb" x1="0" y1="0" x2="0" y2="145" gradientUnits="userSpaceOnUse">
+              <stop offset="0%"   stopColor="hsl(14,36%,93%)" stopOpacity="0.9" />
+              <stop offset="35%"  stopColor="hsl(14,36%,93%)" stopOpacity="0"   />
+              <stop offset="80%"  stopColor="hsl(14,44%,80%)" stopOpacity="0"   />
+              <stop offset="100%" stopColor="hsl(14,48%,76%)" stopOpacity="0.55" />
             </linearGradient>
-
-            {/* Nail base colour */}
-            <linearGradient id="nail-bg" x1="12" y1="10" x2="64" y2="68" gradientUnits="userSpaceOnUse">
-              <stop offset="0%"   stopColor="hsl(0,0%,97%)" />
-              <stop offset="100%" stopColor="hsl(0,0%,92%)" />
+            {/* nail plate base */}
+            <linearGradient id="nl-nail" x1="38" y1="10" x2="38" y2="68" gradientUnits="userSpaceOnUse">
+              <stop offset="0%"   stopColor="#fafafa" />
+              <stop offset="100%" stopColor="#ebebeb" />
             </linearGradient>
-
-            {/* Clip the paint to the exact nail shape */}
-            <clipPath id="nail-clip">
-              <path d="M12,68 Q12,18 38,10 Q64,18 64,68 Q38,58 12,68 Z" />
-            </clipPath>
+            {/* nail left-side highlight */}
+            <linearGradient id="nl-hi" x1="18" y1="12" x2="40" y2="44" gradientUnits="userSpaceOnUse">
+              <stop offset="0%"   stopColor="rgba(255,255,255,0.92)" />
+              <stop offset="100%" stopColor="rgba(255,255,255,0)"    />
+            </linearGradient>
           </defs>
 
-          {/* ── finger body ── */}
+          {/* finger body */}
           <path
-            d="M10,192 Q10,194 38,194 Q66,194 66,192
-               L66,70
-               Q66,16 38,10
-               Q10,16 10,70
-               Z"
-            fill="url(#skin-lr)"
+            d="M10,142 Q10,144 38,144 Q66,144 66,142 L66,70 Q66,16 38,10 Q10,16 10,70 Z"
+            fill="url(#nl-lr)"
           />
-          {/* overlay top-to-bottom gradient for depth */}
+          {/* depth overlay */}
           <path
-            d="M10,192 Q10,194 38,194 Q66,194 66,192
-               L66,70
-               Q66,16 38,10
-               Q10,16 10,70
-               Z"
-            fill="url(#skin-tb)"
+            d="M10,142 Q10,144 38,144 Q66,144 66,142 L66,70 Q66,16 38,10 Q10,16 10,70 Z"
+            fill="url(#nl-tb)"
           />
 
-          {/* ── left & right edge shadows ── */}
-          <path d="M10,192 L10,70 Q10,16 38,10"
-            stroke="hsl(12,50%,68%)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <path d="M66,70 L66,192 Q66,194 38,194"
-            stroke="hsl(12,50%,68%)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          {/* edge shadows */}
+          <path d="M10,142 L10,70 Q10,16 38,10"
+            stroke="hsl(14,46%,67%)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d="M66,70 L66,142 Q66,144 38,144"
+            stroke="hsl(14,46%,67%)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
 
-          {/* ── knuckle folds ── */}
-          <path d="M16,125 Q38,132 60,125"
-            stroke="hsl(12,44%,73%)" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.75" />
-          <path d="M14,150 Q38,157 62,150"
-            stroke="hsl(12,44%,73%)" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.55" />
-          {/* subtle secondary line under each knuckle */}
-          <path d="M17,130 Q38,136 59,130"
-            stroke="hsl(12,44%,73%)" strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.35" />
+          {/* knuckle folds — repositioned for shorter finger */}
+          <path d="M16,92 Q38,99 60,92"
+            stroke="hsl(14,42%,72%)" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.75" />
+          <path d="M17,97 Q38,103 59,97"
+            stroke="hsl(14,42%,72%)" strokeWidth="1"   strokeLinecap="round" fill="none" opacity="0.35" />
+          <path d="M14,116 Q38,123 62,116"
+            stroke="hsl(14,42%,72%)" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.55" />
 
-          {/* ── nail plate background ── */}
+          {/* nail plate */}
           <path
             d="M12,68 Q12,18 38,10 Q64,18 64,68 Q38,58 12,68 Z"
-            fill="url(#nail-bg)"
+            fill="url(#nl-nail)"
           />
 
-          {/* ── cuticle arch ── */}
-          <path d="M12,68 Q38,58 64,68"
-            stroke="hsl(12,46%,72%)" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+          {/* lunula — white crescent at base of nail */}
+          <ellipse cx="38" cy="63" rx="18" ry="9" fill="rgba(255,255,255,0.60)" />
 
-          {/* ── nail border (subtle) ── */}
+          {/* left-side specular highlight */}
+          <path
+            d="M18,60 Q16,22 38,12 Q48,17 50,32 Q36,27 18,60 Z"
+            fill="url(#nl-hi)" opacity="0.75"
+          />
+
+          {/* cuticle arch */}
+          <path d="M12,68 Q38,58 64,68"
+            stroke="hsl(14,44%,70%)" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+
+          {/* nail border */}
           <path
             d="M12,68 Q12,18 38,10 Q64,18 64,68"
-            stroke="hsl(12,35%,80%)" strokeWidth="1" fill="none" opacity="0.8" />
+            stroke="rgba(195,175,185,0.5)" strokeWidth="1" fill="none" />
         </svg>
 
-        {/* ── animated paint fill (div clipped to nail shape) ── */}
-        {/*
-          The nail SVG path in container coords:
-            left edge at x = 22+12 = 34,  top y = 8+10 = 18
-            right edge at x = 22+64 = 86
-            cuticle y    = 8+68 = 76
-          We place the div at (34, 18), size 52 × 58
-          and re-express the nail path relative to that origin:
-            M0,58 Q0,8 26,0 Q52,8 52,58 Q26,48 0,58 Z
-        */}
+        {/* ── paint fill — grows from cuticle (bottom) up to tip ── */}
         <div
           className="absolute overflow-hidden"
           style={{
-            left: 34, top: 18,
-            width: 52, height: 60,
+            left: 34, top: 20, width: 52, height: 58,
             clipPath: 'path("M0,58 Q0,8 26,0 Q52,8 52,58 Q26,48 0,58 Z")',
           }}
         >
-          {/* paint sweep */}
+          {/* main colour — 0deg = bottom→top */}
           <motion.div
-            animate={{ scaleX: [0, 1, 1, 0] }}
+            animate={{ scaleY: [0, 1, 1, 0] }}
             transition={{
-              duration: 2.2,
-              times: [0, 0.44, 0.64, 1],
-              repeat: Infinity,
-              repeatDelay: 0.35,
+              duration: 2.8,
+              times: [0, 0.42, 0.65, 1],
+              repeat: Infinity, repeatDelay: 0.35,
               ease: [0.4, 0, 0.2, 1],
             }}
             style={{
               position: 'absolute', inset: 0,
-              background:
-                'linear-gradient(135deg, hsl(326,100%,62%) 0%, hsl(295,85%,62%) 40%, hsl(271,91%,65%) 70%, hsl(250,95%,68%) 100%)',
-              transformOrigin: 'right center',
+              background: 'linear-gradient(0deg, hsl(326,100%,60%) 0%, hsl(300,88%,58%) 38%, hsl(271,91%,62%) 70%, hsl(248,95%,65%) 100%)',
+              transformOrigin: 'center bottom',
             }}
           />
-          {/* gloss sweep */}
+          {/* gloss band sweeps upward */}
           <motion.div
-            animate={{ x: ['-140%', '240%'] }}
+            animate={{ y: ['115%', '-40%'] }}
             transition={{
-              duration: 1.9, repeat: Infinity,
-              repeatDelay: 0.35, delay: 0.55,
+              duration: 2.0, repeat: Infinity, repeatDelay: 0.4, delay: 0.65,
               ease: [0.4, 0, 0.6, 1],
             }}
             style={{
-              position: 'absolute', inset: 0,
-              width: '32%',
-              background:
-                'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.52) 50%, transparent 100%)',
-              transform: 'skewX(-12deg)',
+              position: 'absolute', left: 0, right: 0,
+              height: '36%',
+              background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.50) 50%, transparent 100%)',
             }}
           />
         </div>
 
-        {/* ── nail-polish brush ── */}
+        {/* ── brush — strokes bottom (cuticle) → top (tip) ── */}
         <motion.div
           className="absolute"
-          style={{ left: 'calc(50% - 10px)', top: -10 }}
-          animate={{ x: [30, -30, 30], opacity: [0, 1, 1, 0] }}
+          style={{ left: 'calc(50% - 11px)', top: 23 }}
+          animate={{
+            y:       [0,    0,    -58,  -58,  0  ],
+            opacity: [0,    1,    1,    0,    0  ],
+          }}
           transition={{
-            duration: 2.2,
-            times: [0, 0.07, 0.93, 1],
-            repeat: Infinity,
-            repeatDelay: 0.35,
+            duration: 2.8,
+            times:    [0, 0.03, 0.43, 0.47, 1],
+            repeat: Infinity, repeatDelay: 0.35,
             ease: [0.4, 0, 0.2, 1],
           }}
         >
           <svg width="22" height="56" viewBox="0 0 22 56" fill="none">
             {/* cap */}
-            <rect x="7" y="0" width="8" height="4" rx="2" fill="#b0b0bc" />
+            <rect x="7" y="0" width="8" height="4" rx="2" fill="#b4b4c4" />
             {/* handle */}
-            <rect x="8.5" y="3" width="5" height="30" rx="2" fill="#d4d4de" />
+            <rect x="8.5" y="3" width="5" height="28" rx="2.5" fill="#dcdce8" />
+            {/* sheen on handle */}
+            <rect x="9.5" y="5" width="1.5" height="23" rx="0.75" fill="rgba(255,255,255,0.65)" />
             {/* ferrule */}
-            <rect x="7.5" y="32" width="7" height="5" rx="1.5" fill="#a8a8b8" />
-            {/* bristles – tapered */}
-            <path d="M7.5,37 Q11,56 14.5,37 Z" fill="url(#br-g)" />
+            <rect x="7.5" y="30" width="7" height="5" rx="2" fill="#a8a8bc" />
+            {/* bristles */}
+            <path d="M8,35 Q11,55 14,35 Z" fill="url(#nl-br)" />
             <defs>
-              <linearGradient id="br-g" x1="7.5" y1="37" x2="14.5" y2="56" gradientUnits="userSpaceOnUse">
-                <stop offset="0%"   stopColor="hsl(326,100%,60%)" />
-                <stop offset="100%" stopColor="hsl(271,91%,65%)" />
+              <linearGradient id="nl-br" x1="8" y1="35" x2="14" y2="55" gradientUnits="userSpaceOnUse">
+                <stop offset="0%"   stopColor="hsl(326,100%,58%)" />
+                <stop offset="100%" stopColor="hsl(271,91%,63%)"  />
               </linearGradient>
             </defs>
           </svg>
         </motion.div>
+
       </div>
 
-      {/* label */}
       {text && (
         <motion.p
-          animate={{ opacity: [0.35, 1, 0.35] }}
+          animate={{ opacity: [0.4, 1, 0.4] }}
           transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-          className="text-sm font-bold text-gray-400 tracking-wide"
+          className="text-sm font-bold text-muted-foreground tracking-wide"
         >
           {text}
         </motion.p>
