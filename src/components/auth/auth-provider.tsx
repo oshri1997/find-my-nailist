@@ -44,17 +44,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsub = onIdTokenChanged(clients.auth, async (firebaseUser) => {
         if (skipCallbackRef.current) return
         setUser(firebaseUser)
-        if (firebaseUser) {
-          const token = await firebaseUser.getIdToken()
-          await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token }),
-          })
-        } else {
-          await fetch('/api/auth/session', { method: 'DELETE' })
+        try {
+          if (firebaseUser) {
+            const token = await firebaseUser.getIdToken()
+            await fetch('/api/auth/session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token }),
+            })
+          } else {
+            await fetch('/api/auth/session', { method: 'DELETE' })
+          }
+        } catch {
+          // session sync failed — auth state is still valid, don't block the UI
+        } finally {
+          setLoading(false)
         }
-        setLoading(false)
       })
     }
 

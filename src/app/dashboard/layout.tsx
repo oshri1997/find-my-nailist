@@ -32,16 +32,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (!user) { router.replace('/login'); return }
 
-    fetch('/api/me/role')
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8000)
+
+    fetch('/api/me/role', { signal: controller.signal })
       .then(r => r.json())
       .then(({ role }) => {
+        clearTimeout(timeout)
         if (role === 'NAILIST') {
           setAuthorized(true)
         } else {
           router.replace('/search')
         }
       })
-      .catch(() => router.replace('/login'))
+      .catch(() => {
+        clearTimeout(timeout)
+        router.replace('/login')
+      })
+
+    return () => { clearTimeout(timeout); controller.abort() }
   }, [user, router])
 
   const displayName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
