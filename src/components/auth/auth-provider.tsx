@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react'
 import type { User } from 'firebase/auth'
-import { Sparkles } from 'lucide-react'
+import { NailLoader } from '@/components/ui/nail-loader'
 
 interface AuthContextValue {
   user: User | null
@@ -70,9 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background">
-        <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shadow-[0_4px_32px_rgba(236,72,153,0.45)] animate-pulse">
-          <Sparkles className="h-7 w-7 text-white" />
-        </div>
+        <NailLoader />
       </div>
     )
   }

@@ -93,19 +93,19 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
 
           {/* finger body */}
           <path
-            d="M10,142 Q10,144 38,144 Q66,144 66,142 L66,70 Q66,16 38,10 Q10,16 10,70 Z"
+            d="M10,142 Q10,144 38,144 Q66,144 66,142 Q66,108 66,70 Q66,16 38,10 Q10,16 10,70 Q10,108 10,142 Z"
             fill="url(#nl-lr)"
           />
           {/* depth overlay */}
           <path
-            d="M10,142 Q10,144 38,144 Q66,144 66,142 L66,70 Q66,16 38,10 Q10,16 10,70 Z"
+            d="M10,142 Q10,144 38,144 Q66,144 66,142 Q66,108 66,70 Q66,16 38,10 Q10,16 10,70 Q10,108 10,142 Z"
             fill="url(#nl-tb)"
           />
 
           {/* edge shadows */}
-          <path d="M10,142 L10,70 Q10,16 38,10"
+          <path d="M10,142 Q10,108 10,70 Q10,16 38,10"
             stroke="hsl(14,46%,67%)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <path d="M66,70 L66,142 Q66,144 38,144"
+          <path d="M66,70 Q66,108 66,142 Q66,144 38,144"
             stroke="hsl(14,46%,67%)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
 
           {/* knuckle folds — repositioned for shorter finger */}
@@ -138,7 +138,7 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
           {/* nail border */}
           <path
             d="M12,68 Q12,18 38,10 Q64,18 64,68"
-            stroke="rgba(195,175,185,0.5)" strokeWidth="1" fill="none" />
+            stroke="rgba(195,175,185,0.2)" strokeWidth="0.5" fill="none" />
         </svg>
 
         {/* ── paint fill — grows from cuticle (bottom) up to tip ── */}
