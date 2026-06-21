@@ -104,6 +104,35 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
   }
 }
 
+// Sent to client when nailist cancels the appointment
+export async function sendCancellationEmail(p: {
+  clientEmail: string
+  clientName: string
+  nailistBusinessName: string
+  serviceName: string
+  startTime: Date
+}): Promise<void> {
+  const dateStr = formatDate(p.startTime)
+  await sendResend(
+    p.clientEmail,
+    `❌ התור שלך אצל ${p.nailistBusinessName} בוטל`,
+    `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);border-radius:16px 16px 0 0;padding:32px;text-align:center">
+        <h2 style="color:white;margin:0;font-size:24px">התור בוטל 😔</h2>
+      </div>
+      <div style="padding:24px;background:#fafafa;border-radius:0 0 16px 16px">
+        <p>שלום ${p.clientName},</p>
+        <p>לצערנו, <strong>${p.nailistBusinessName}</strong> ביטלה את התור הקרוב שלך.</p>
+        <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:20px 0">
+          <p style="margin:4px 0"><strong>שירות:</strong> ${p.serviceName}</p>
+          <p style="margin:4px 0"><strong>תאריך ושעה:</strong> ${dateStr}</p>
+        </div>
+        <p>ניתן לקבוע תור חדש דרך האתר בכל עת 💅</p>
+      </div>
+    </div>`
+  )
+}
+
 // Sent to client after nailist clicks confirm
 export async function sendClientConfirmedEmail(p: {
   clientEmail: string

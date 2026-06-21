@@ -156,11 +156,30 @@ export async function GET(request: NextRequest) {
       .limit(50)
       .get()
 
+    // Auto-complete CONFIRMED appointments whose end time has passed
+    const now = new Date()
+    const expired = appointmentsSnap.docs.filter((doc) => {
+      const data = doc.data()
+      if (data.status !== 'CONFIRMED') return false
+      const endTime: Date = data.endTime?.toDate?.() ?? new Date(data.endTime)
+      return endTime < now
+    })
+
+    if (expired.length > 0) {
+      const batch = db.batch()
+      expired.forEach((doc) => {
+        batch.update(doc.ref, { status: 'COMPLETED', updatedAt: FieldValue.serverTimestamp() })
+      })
+      await batch.commit()
+    }
+
+    const expiredIds = new Set(expired.map((d) => d.id))
     const appointments = appointmentsSnap.docs.map((d) => {
       const data = d.data()
       return {
         id: d.id,
         ...data,
+        status: expiredIds.has(d.id) ? 'COMPLETED' : data.status,
         startTime: data.startTime?.toDate?.()?.toISOString() ?? data.startTime,
         endTime: data.endTime?.toDate?.()?.toISOString() ?? data.endTime,
         createdAt: data.createdAt?.toDate?.()?.toISOString() ?? data.createdAt,

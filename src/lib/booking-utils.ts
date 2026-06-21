@@ -51,3 +51,34 @@ export function isSlotUnavailable(
     return bStart < slotEnd && bEnd > slotStart
   })
 }
+
+export interface WorkingHours {
+  startTime: string
+  endTime: string
+  isActive: boolean
+}
+
+export function computeDateAvailability(
+  date: string,
+  workingHours: WorkingHours | undefined,
+  durationMinutes: number,
+  appointments: BookedSlot[]
+): { workingDay: boolean; fullyBooked: boolean } {
+  if (!workingHours || !workingHours.isActive) {
+    return { workingDay: false, fullyBooked: false }
+  }
+  const slots = generateSlots(workingHours.startTime, workingHours.endTime)
+  const available = slots.filter(
+    (slot) => !isSlotUnavailable(slot, date, durationMinutes, workingHours.endTime, appointments)
+  )
+  return { workingDay: true, fullyBooked: available.length === 0 }
+}
+
+export function filterExpiredConfirmed(
+  appointments: Array<{ id: string; status: string; endTime: Date }>,
+  now: Date
+): string[] {
+  return appointments
+    .filter((a) => a.status === 'CONFIRMED' && a.endTime < now)
+    .map((a) => a.id)
+}

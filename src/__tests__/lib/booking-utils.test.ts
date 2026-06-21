@@ -1,4 +1,4 @@
-import { generateSlots, isSlotUnavailable, buildDateStrip, toDateStr } from '@/lib/booking-utils'
+import { generateSlots, isSlotUnavailable, buildDateStrip, toDateStr, computeDateAvailability, filterExpiredConfirmed } from '@/lib/booking-utils'
 
 describe('toDateStr', () => {
   it('formats a date as YYYY-MM-DD', () => {
@@ -109,5 +109,84 @@ describe('isSlotUnavailable', () => {
     expect(isSlotUnavailable('10:00', date, 60, '18:00', booked)).toBe(true)
     expect(isSlotUnavailable('13:00', date, 60, '18:00', booked)).toBe(false)
     expect(isSlotUnavailable('14:30', date, 60, '18:00', booked)).toBe(true)
+  })
+})
+
+describe('computeDateAvailability', () => {
+  const date = '2024-06-15'
+
+  it('returns workingDay:false when no working hours provided', () => {
+    expect(computeDateAvailability(date, undefined, 60, [])).toEqual({ workingDay: false, fullyBooked: false })
+  })
+
+  it('returns workingDay:false when isActive is false', () => {
+    const hours = { startTime: '09:00', endTime: '18:00', isActive: false }
+    expect(computeDateAvailability(date, hours, 60, [])).toEqual({ workingDay: false, fullyBooked: false })
+  })
+
+  it('returns workingDay:true and fullyBooked:false when no appointments', () => {
+    const hours = { startTime: '09:00', endTime: '18:00', isActive: true }
+    const result = computeDateAvailability(date, hours, 60, [])
+    expect(result.workingDay).toBe(true)
+    expect(result.fullyBooked).toBe(false)
+  })
+
+  it('returns fullyBooked:true when all slots are taken', () => {
+    const hours = { startTime: '09:00', endTime: '10:00', isActive: true }
+    // Only slot is 09:00–10:00, which is fully booked
+    const booked = [{ startTime: `${date}T09:00:00`, endTime: `${date}T10:00:00` }]
+    const result = computeDateAvailability(date, hours, 60, booked)
+    expect(result.workingDay).toBe(true)
+    expect(result.fullyBooked).toBe(true)
+  })
+
+  it('returns fullyBooked:false when at least one slot is free', () => {
+    const hours = { startTime: '09:00', endTime: '11:00', isActive: true }
+    // 09:00 is booked but 10:00 is free
+    const booked = [{ startTime: `${date}T09:00:00`, endTime: `${date}T10:00:00` }]
+    const result = computeDateAvailability(date, hours, 60, booked)
+    expect(result.workingDay).toBe(true)
+    expect(result.fullyBooked).toBe(false)
+  })
+
+  it('accounts for duration when checking fullyBooked', () => {
+    // 09:00–11:00 = slots: 09:00, 09:30, 10:00, 10:30
+    // with 90-min duration: 09:00 ok, 09:30 ok, 10:00 extends to 11:30 (over end) → unavailable
+    // 09:30 extends to 11:00 → exactly at end → available
+    const hours = { startTime: '09:00', endTime: '11:00', isActive: true }
+    const result = computeDateAvailability(date, hours, 90, [])
+    expect(result.workingDay).toBe(true)
+    expect(result.fullyBooked).toBe(false)
+  })
+})
+
+describe('filterExpiredConfirmed', () => {
+  const now = new Date('2024-06-15T12:00:00')
+
+  it('returns IDs of CONFIRMED appointments past their endTime', () => {
+    const appointments = [
+      { id: 'a1', status: 'CONFIRMED', endTime: new Date('2024-06-15T10:00:00') },
+      { id: 'a2', status: 'CONFIRMED', endTime: new Date('2024-06-15T14:00:00') },
+    ]
+    expect(filterExpiredConfirmed(appointments, now)).toEqual(['a1'])
+  })
+
+  it('ignores non-CONFIRMED appointments even if past endTime', () => {
+    const appointments = [
+      { id: 'a1', status: 'PENDING', endTime: new Date('2024-06-15T10:00:00') },
+      { id: 'a2', status: 'COMPLETED', endTime: new Date('2024-06-14T10:00:00') },
+    ]
+    expect(filterExpiredConfirmed(appointments, now)).toEqual([])
+  })
+
+  it('returns empty array when no appointments expired', () => {
+    const appointments = [
+      { id: 'a1', status: 'CONFIRMED', endTime: new Date('2024-06-15T14:00:00') },
+    ]
+    expect(filterExpiredConfirmed(appointments, now)).toEqual([])
+  })
+
+  it('handles empty list', () => {
+    expect(filterExpiredConfirmed([], now)).toEqual([])
   })
 })

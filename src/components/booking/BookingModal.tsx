@@ -45,9 +45,22 @@ export default function BookingModal({ nailistProfileId, businessName, services,
 
   const [availability, setAvailability] = useState<Availability | null>(null)
   const [loadingSlots, setLoadingSlots] = useState(false)
+  const [dateSummary, setDateSummary] = useState<Record<string, { workingDay: boolean; fullyBooked: boolean }> | null>(null)
 
   const stripRef = useRef<HTMLDivElement>(null)
   const dateStrip = buildDateStrip(21)
+
+  useEffect(() => {
+    if (!selectedService) return
+    setDateSummary(null)
+    const from = toDateStr(new Date())
+    fetch(
+      `/api/nailists/${nailistProfileId}/availability/batch?from=${from}&days=21&durationMinutes=${selectedService.durationMinutes}`
+    )
+      .then((r) => r.json())
+      .then(({ data }) => setDateSummary(data ?? null))
+      .catch(() => setDateSummary(null))
+  }, [selectedService, nailistProfileId])
 
   useEffect(() => {
     if (!selectedDate) return
@@ -230,9 +243,13 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                     const isToday = toDateStr(d) === toDateStr(new Date())
                     const dayIdx = d.getDay()
                     const isWeekend = dayIdx === 5 || dayIdx === 6
+                    const summary = dateSummary?.[toDateStr(d)]
+                    const isNonWorking = summary !== undefined && !summary.workingDay
+                    const isFullyBooked = summary?.workingDay && summary.fullyBooked
                     return (
                       <button
                         key={toDateStr(d)}
+                        disabled={isNonWorking}
                         onClick={() => {
                           setSelectedDate(d)
                           setSelectedTime('')
@@ -242,12 +259,14 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                         className={`shrink-0 w-14 flex flex-col items-center py-2.5 rounded-2xl border-2 transition-all snap-start ${
                           isSelected
                             ? 'border-pink-500 bg-gradient-to-b from-pink-500 to-purple-600 text-white shadow-md shadow-pink-200'
+                            : isNonWorking
+                            ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-50'
                             : isWeekend
                             ? 'border-amber-100 bg-amber-50 text-amber-800 hover:border-amber-300'
                             : 'border-gray-100 bg-white text-gray-700 hover:border-pink-200'
                         }`}
                       >
-                        <span className={`text-[10px] font-bold mb-0.5 ${isSelected ? 'text-white/80' : isWeekend ? 'text-amber-500' : 'text-gray-400'}`}>
+                        <span className={`text-[10px] font-bold mb-0.5 ${isSelected ? 'text-white/80' : isNonWorking ? 'text-gray-300' : isWeekend ? 'text-amber-500' : 'text-gray-400'}`}>
                           {HE_DAYS_SHORT[dayIdx]}
                         </span>
                         <span className={`text-lg font-black leading-none ${isSelected ? 'text-white' : ''}`}>
@@ -256,7 +275,13 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                         <span className={`text-[10px] font-medium mt-0.5 ${isSelected ? 'text-white/70' : 'text-gray-400'}`}>
                           {HE_MONTHS[d.getMonth()].slice(0, 3)}
                         </span>
-                        {isToday && (
+                        {isNonWorking && !isSelected && (
+                          <span className="text-[8px] text-gray-300 mt-0.5 leading-none">✕</span>
+                        )}
+                        {isFullyBooked && !isNonWorking && !isSelected && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-0.5" />
+                        )}
+                        {isToday && !isNonWorking && !isFullyBooked && (
                           <div className={`w-1 h-1 rounded-full mt-1 ${isSelected ? 'bg-white/60' : 'bg-pink-400'}`} />
                         )}
                       </button>
