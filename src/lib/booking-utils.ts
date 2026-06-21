@@ -16,6 +16,20 @@ export function buildDateStrip(count = 21): Date[] {
   })
 }
 
+export function buildMonthCalendar(): (Date | null)[] {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const year = today.getFullYear()
+  const month = today.getMonth()
+  const firstDay = new Date(year, month, 1)
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const days: (Date | null)[] = Array.from({ length: firstDay.getDay() }, () => null)
+  for (let d = 1; d <= daysInMonth; d++) {
+    days.push(new Date(year, month, d))
+  }
+  return days
+}
+
 export function generateSlots(startTime: string, endTime: string): string[] {
   const [sh, sm] = startTime.split(':').map(Number)
   const [eh, em] = endTime.split(':').map(Number)

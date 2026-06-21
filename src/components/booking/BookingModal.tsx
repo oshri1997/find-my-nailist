@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronRight, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { generateSlots, isSlotUnavailable, buildDateStrip, toDateStr, type BookedSlot } from '@/lib/booking-utils'
+import { generateSlots, isSlotUnavailable, buildMonthCalendar, toDateStr, type BookedSlot } from '@/lib/booking-utils'
 
 interface Service {
   id: string
@@ -47,14 +47,17 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [dateSummary, setDateSummary] = useState<Record<string, { workingDay: boolean; fullyBooked: boolean }> | null>(null)
 
-  const stripRef = useRef<HTMLDivElement>(null)
-  const dateStrip = buildDateStrip(21)
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  const monthDays = buildMonthCalendar()
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const daysRemaining = daysInMonth - now.getDate() + 1
 
   useEffect(() => {
     if (!selectedService) return
     const from = toDateStr(new Date())
     fetch(
-      `/api/nailists/${nailistProfileId}/availability/batch?from=${from}&days=21&durationMinutes=${selectedService.durationMinutes}`
+      `/api/nailists/${nailistProfileId}/availability/batch?from=${from}&days=${daysRemaining}&durationMinutes=${selectedService.durationMinutes}`
     )
       .then((r) => r.json())
       .then(({ data }) => setDateSummary(data ?? null))
@@ -230,62 +233,69 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   </div>
                 )}
 
-                {/* Date strip */}
+                {/* Month calendar */}
                 <div className="mb-1 px-6">
-                  <p className="text-xs font-black text-gray-500 flex items-center gap-1.5 mb-2">
+                  <p className="text-xs font-black text-gray-500 flex items-center gap-1.5 mb-3">
                     <Calendar className="h-3.5 w-3.5" /> בחרי תאריך
                   </p>
-                </div>
-                <div ref={stripRef} className="flex gap-2 overflow-x-auto pb-2 px-6 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
-                  {dateStrip.map((d) => {
-                    const isSelected = selectedDate && toDateStr(selectedDate) === toDateStr(d)
-                    const isToday = toDateStr(d) === toDateStr(new Date())
-                    const dayIdx = d.getDay()
-                    const isWeekend = dayIdx === 5 || dayIdx === 6
-                    const summary = dateSummary?.[toDateStr(d)]
-                    const isNonWorking = summary !== undefined && !summary.workingDay
-                    const isFullyBooked = summary?.workingDay && summary.fullyBooked
-                    return (
-                      <button
-                        key={toDateStr(d)}
-                        disabled={isNonWorking}
-                        onClick={() => {
-                          setSelectedDate(d)
-                          setSelectedTime('')
-                          setLoadingSlots(true)
-                          setAvailability(null)
-                        }}
-                        className={`shrink-0 w-14 flex flex-col items-center py-2.5 rounded-2xl border-2 transition-all snap-start ${
-                          isSelected
-                            ? 'border-pink-500 bg-gradient-to-b from-pink-500 to-purple-600 text-white shadow-md shadow-pink-200'
-                            : isNonWorking
-                            ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-50'
-                            : isWeekend
-                            ? 'border-amber-100 bg-amber-50 text-amber-800 hover:border-amber-300'
-                            : 'border-gray-100 bg-white text-gray-700 hover:border-pink-200'
-                        }`}
-                      >
-                        <span className={`text-[10px] font-bold mb-0.5 ${isSelected ? 'text-white/80' : isNonWorking ? 'text-gray-300' : isWeekend ? 'text-amber-500' : 'text-gray-400'}`}>
-                          {HE_DAYS_SHORT[dayIdx]}
-                        </span>
-                        <span className={`text-lg font-black leading-none ${isSelected ? 'text-white' : ''}`}>
-                          {d.getDate()}
-                        </span>
-                        <span className={`text-[10px] font-medium mt-0.5 ${isSelected ? 'text-white/70' : 'text-gray-400'}`}>
-                          {HE_MONTHS[d.getMonth()].slice(0, 3)}
-                        </span>
-                        {isNonWorking && !isSelected && (
-                          <span className="text-[8px] text-gray-300 mt-0.5 leading-none">✕</span>
-                        )}
-                        {isFullyBooked && !isNonWorking && !isSelected && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-0.5" />
-                        )}
-                        {isToday && !isNonWorking && !isFullyBooked && (
-                          <div className={`w-1 h-1 rounded-full mt-1 ${isSelected ? 'bg-white/60' : 'bg-pink-400'}`} />
-                        )}
-                      </button>
-                    )
-                  })}
+                  <p className="text-sm font-black text-center text-gray-700 mb-2">
+                    {HE_MONTHS[now.getMonth()]} {now.getFullYear()}
+                  </p>
+                  {/* Day-of-week headers */}
+                  <div className="grid grid-cols-7 gap-1 mb-1">
+                    {HE_DAYS_SHORT.map((d) => (
+                      <div key={d} className="text-center text-[10px] font-bold text-gray-400 py-0.5">{d}</div>
+                    ))}
+                  </div>
+                  {/* Day cells */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {monthDays.map((d, i) => {
+                      if (!d) return <div key={`e-${i}`} />
+                      const isPast = d < now
+                      const isSelected = selectedDate !== null && toDateStr(selectedDate) === toDateStr(d)
+                      const isToday = toDateStr(d) === toDateStr(now)
+                      const dayIdx = d.getDay()
+                      const isWeekend = dayIdx === 5 || dayIdx === 6
+                      const summary = dateSummary?.[toDateStr(d)]
+                      const isNonWorking = summary !== undefined && !summary.workingDay
+                      const isFullyBooked = summary?.workingDay && summary.fullyBooked
+                      const isDisabled = isPast || isNonWorking
+                      return (
+                        <button
+                          key={toDateStr(d)}
+                          disabled={isDisabled}
+                          onClick={() => {
+                            setSelectedDate(d)
+                            setSelectedTime('')
+                            setLoadingSlots(true)
+                            setAvailability(null)
+                          }}
+                          className={`flex flex-col items-center py-2 rounded-xl border-2 transition-all ${
+                            isSelected
+                              ? 'border-pink-500 bg-gradient-to-b from-pink-500 to-purple-600 text-white shadow-md shadow-pink-200'
+                              : isDisabled
+                              ? 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-35'
+                              : isWeekend
+                              ? 'border-amber-100 bg-amber-50 text-amber-800 hover:border-amber-300'
+                              : 'border-gray-100 bg-white text-gray-700 hover:border-pink-200'
+                          }`}
+                        >
+                          <span className={`text-sm font-black leading-none ${isSelected ? 'text-white' : isDisabled ? 'text-gray-300' : ''}`}>
+                            {d.getDate()}
+                          </span>
+                          {isNonWorking && !isSelected && !isPast && (
+                            <span className="text-[7px] text-gray-300 leading-none">✕</span>
+                          )}
+                          {isFullyBooked && !isNonWorking && !isSelected && !isPast && (
+                            <div className="w-1 h-1 rounded-full bg-red-400 mt-0.5" />
+                          )}
+                          {isToday && !isNonWorking && !isFullyBooked && (
+                            <div className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white/60' : 'bg-pink-400'}`} />
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 {/* Time slots */}
