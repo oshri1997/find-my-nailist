@@ -63,49 +63,48 @@ function MyAppointmentsInner() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [refetchKey, setRefetchKey] = useState(0)
   const [reviewModal, setReviewModal] = useState<ReviewModalState | null>(null)
 
-  async function load() {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch('/api/appointments?role=client')
-      if (res.status === 401) {
-        const redirectUrl = window.location.pathname + window.location.search
-        router.replace(`/login?redirect=${encodeURIComponent(redirectUrl)}`)
-        return
-      }
-      if (!res.ok) {
-        setError('שגיאה בטעינת התורים. נסי שוב.')
-        return
-      }
-      const { data } = await res.json()
-      const list: Appointment[] = data ?? []
-      setAppointments(list)
-
-      // Auto-open modal if ?review=<id> is in URL
-      const reviewId = searchParams.get('review')
-      if (reviewId) {
-        const apt = list.find((a) => a.id === reviewId)
-        if (apt && apt.status === 'COMPLETED' && !apt.hasReview) {
-          setReviewModal({
-            appointmentId: apt.id,
-            nailistProfileId: apt.nailistProfileId,
-            clientProfileId: apt.clientProfileId,
-            businessName: apt.nailistBusinessName,
-            serviceName: apt.serviceName,
-          })
-        }
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
+    async function load() {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch('/api/appointments?role=client')
+        if (res.status === 401) {
+          const redirectUrl = window.location.pathname + window.location.search
+          router.replace(`/login?redirect=${encodeURIComponent(redirectUrl)}`)
+          return
+        }
+        if (!res.ok) {
+          setError('שגיאה בטעינת התורים. נסי שוב.')
+          return
+        }
+        const { data } = await res.json()
+        const list: Appointment[] = data ?? []
+        setAppointments(list)
+
+        // Auto-open modal if ?review=<id> is in URL
+        const reviewId = searchParams.get('review')
+        if (reviewId) {
+          const apt = list.find((a) => a.id === reviewId)
+          if (apt && apt.status === 'COMPLETED' && !apt.hasReview) {
+            setReviewModal({
+              appointmentId: apt.id,
+              nailistProfileId: apt.nailistProfileId,
+              clientProfileId: apt.clientProfileId,
+              businessName: apt.nailistBusinessName,
+              serviceName: apt.serviceName,
+            })
+          }
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
     void load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
+  }, [searchParams, refetchKey, router])
 
   function openReview(apt: Appointment) {
     setReviewModal({
@@ -153,7 +152,7 @@ function MyAppointmentsInner() {
             <div className="text-5xl">😔</div>
             <h2 className="text-xl font-bold text-foreground">{error}</h2>
             <Button
-              onClick={() => void load()}
+              onClick={() => setRefetchKey((k) => k + 1)}
               className="mt-4 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold cursor-pointer"
             >
               נסי שוב
