@@ -62,37 +62,49 @@ function MyAppointmentsInner() {
   const router = useRouter()
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [reviewModal, setReviewModal] = useState<ReviewModalState | null>(null)
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true)
-      try {
-        const res = await fetch('/api/appointments?role=client')
-        if (!res.ok) return
-        const { data } = await res.json()
-        const list: Appointment[] = data ?? []
-        setAppointments(list)
-
-        // Auto-open modal if ?review=<id> is in URL
-        const reviewId = searchParams.get('review')
-        if (reviewId) {
-          const apt = list.find((a) => a.id === reviewId)
-          if (apt && apt.status === 'COMPLETED' && !apt.hasReview) {
-            setReviewModal({
-              appointmentId: apt.id,
-              nailistProfileId: apt.nailistProfileId,
-              clientProfileId: apt.clientProfileId,
-              businessName: apt.nailistBusinessName,
-              serviceName: apt.serviceName,
-            })
-          }
-        }
-      } finally {
-        setLoading(false)
+  async function load() {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/appointments?role=client')
+      if (res.status === 401) {
+        const redirectUrl = window.location.pathname + window.location.search
+        router.replace(`/login?redirect=${encodeURIComponent(redirectUrl)}`)
+        return
       }
+      if (!res.ok) {
+        setError('שגיאה בטעינת התורים. נסי שוב.')
+        return
+      }
+      const { data } = await res.json()
+      const list: Appointment[] = data ?? []
+      setAppointments(list)
+
+      // Auto-open modal if ?review=<id> is in URL
+      const reviewId = searchParams.get('review')
+      if (reviewId) {
+        const apt = list.find((a) => a.id === reviewId)
+        if (apt && apt.status === 'COMPLETED' && !apt.hasReview) {
+          setReviewModal({
+            appointmentId: apt.id,
+            nailistProfileId: apt.nailistProfileId,
+            clientProfileId: apt.clientProfileId,
+            businessName: apt.nailistBusinessName,
+            serviceName: apt.serviceName,
+          })
+        }
+      }
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
   function openReview(apt: Appointment) {
@@ -132,6 +144,21 @@ function MyAppointmentsInner() {
           <div className="flex justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
+        ) : error ? (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-20 space-y-4"
+          >
+            <div className="text-5xl">😔</div>
+            <h2 className="text-xl font-bold text-foreground">{error}</h2>
+            <Button
+              onClick={() => void load()}
+              className="mt-4 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold cursor-pointer"
+            >
+              נסי שוב
+            </Button>
+          </motion.div>
         ) : appointments.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 16 }}

@@ -48,6 +48,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Time slot not available' }, { status: 409 })
     }
 
+    // Fetch nailist + client profiles now (needed for denormalized fields + email)
+    const [nailistSnap, clientProfileSnap] = await Promise.all([
+      db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).get(),
+      db.collection(COLLECTIONS.CLIENT_PROFILES).doc(data.clientProfileId).get(),
+    ])
+    const nailist = nailistSnap.data()
+    const clientProfile = clientProfileSnap.data()
+
     const confirmToken = randomUUID()
     const confirmTokenExpiresAt = Timestamp.fromDate(
       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -62,19 +70,13 @@ export async function POST(request: NextRequest) {
       price: service.price,
       currency: service.currency,
       serviceName: service.name,
+      nailistBusinessName: nailist?.businessName ?? '',
+      clientDisplayName: clientProfile?.displayName ?? '',
       confirmToken,
       confirmTokenExpiresAt,
       createdAt: now,
       updatedAt: now,
     })
-
-    // Fire-and-forget email — resolve emails for both parties
-    const [nailistSnap, clientProfileSnap] = await Promise.all([
-      db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).get(),
-      db.collection(COLLECTIONS.CLIENT_PROFILES).doc(data.clientProfileId).get(),
-    ])
-    const nailist = nailistSnap.data()
-    const clientProfile = clientProfileSnap.data()
 
     // Both nailist and client profiles may lack email — always fall back to USERS
     const [nailistUserSnap, clientUserSnap] = await Promise.all([
@@ -143,7 +145,20 @@ export async function GET(request: NextRequest) {
         .where('userId', '==', decoded.uid)
         .limit(1)
         .get()
-      profileId = snap.empty ? null : snap.docs[0].id
+      if (!snap.empty) {
+        profileId = snap.docs[0].id
+      } else if (decoded.email) {
+        // Fallback: find profile by email (created before userId was linked)
+        const emailSnap = await db
+          .collection(COLLECTIONS.CLIENT_PROFILES)
+          .where('email', '==', decoded.email)
+          .limit(1)
+          .get()
+        if (!emailSnap.empty) {
+          profileId = emailSnap.docs[0].id
+          void emailSnap.docs[0].ref.update({ userId: decoded.uid })
+        }
+      }
     }
 
     if (!profileId) return NextResponse.json({ data: [] })
