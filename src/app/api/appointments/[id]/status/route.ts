@@ -19,6 +19,11 @@ export async function PATCH(
     const { status } = schema.parse(body)
     const db = adminDb()
 
+    // Fetch existing doc BEFORE update so we can check reviewRequested's old value
+    const existingSnap = await db.collection(COLLECTIONS.APPOINTMENTS).doc(id).get()
+    const existingData = existingSnap.data()
+    const alreadyRequested = existingData?.reviewRequested === true
+
     await db.collection(COLLECTIONS.APPOINTMENTS).doc(id).update({
       status,
       ...(status === 'COMPLETED' ? { reviewRequested: true } : {}),
@@ -28,13 +33,11 @@ export async function PATCH(
     if (status === 'COMPLETED') {
       void (async () => {
         try {
-          const apptSnap = await db.collection(COLLECTIONS.APPOINTMENTS).doc(id).get()
-          const appt = apptSnap.data()
-          if (!appt || appt.reviewRequested) return
+          if (alreadyRequested || !existingData) return
 
           const [clientProfileSnap, nailistSnap] = await Promise.all([
-            db.collection(COLLECTIONS.CLIENT_PROFILES).doc(appt.clientProfileId).get(),
-            db.collection(COLLECTIONS.NAILIST_PROFILES).doc(appt.nailistProfileId).get(),
+            db.collection(COLLECTIONS.CLIENT_PROFILES).doc(existingData.clientProfileId).get(),
+            db.collection(COLLECTIONS.NAILIST_PROFILES).doc(existingData.nailistProfileId).get(),
           ])
           const clientProfile = clientProfileSnap.data()
           const nailist = nailistSnap.data()
@@ -50,10 +53,10 @@ export async function PATCH(
 
           await sendReviewRequestEmail({
             clientEmail,
-            clientName: (appt.clientDisplayName as string | undefined) ?? clientEmail,
+            clientName: (existingData.clientDisplayName as string | undefined) ?? clientEmail,
             nailistBusinessName: (nailist?.businessName as string | undefined) ?? '',
-            serviceName: appt.serviceName as string,
-            startTime: appt.startTime?.toDate?.() ?? new Date(appt.startTime),
+            serviceName: existingData.serviceName as string,
+            startTime: existingData.startTime?.toDate?.() ?? new Date(existingData.startTime),
             appUrl: process.env.NEXT_PUBLIC_APP_URL,
           })
           console.log(`[complete] ✅ review request email sent to ${clientEmail}`)
