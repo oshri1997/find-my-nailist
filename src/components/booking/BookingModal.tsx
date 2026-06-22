@@ -263,6 +263,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                       return (
                         <button
                           key={toDateStr(d)}
+                          data-testid="date-btn"
                           disabled={isDisabled}
                           onClick={() => {
                             setSelectedDate(d)

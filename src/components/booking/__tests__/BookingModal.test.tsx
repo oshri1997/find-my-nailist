@@ -42,10 +42,8 @@ async function navigateToStep3() {
     ok: true,
     json: async () => ({ data: mockAvailability }),
   })
-  // Date strip buttons all carry the "shrink-0" class; click the first one
-  const dateButtons = screen.getAllByRole('button').filter(btn =>
-    btn.classList.contains('shrink-0')
-  )
+  // Click the first enabled date button in the month calendar
+  const dateButtons = screen.getAllByTestId('date-btn').filter(btn => !btn.hasAttribute('disabled'))
   fireEvent.click(dateButtons[0])
   await waitFor(() => screen.getByText('08:00'))
   fireEvent.click(screen.getByText('08:00'))
@@ -96,9 +94,7 @@ describe('BookingModal', () => {
       ok: true,
       json: async () => ({ data: mockAvailability }),
     })
-    const dateButtons = screen.getAllByRole('button').filter(btn =>
-      btn.classList.contains('shrink-0')
-    )
+    const dateButtons = screen.getAllByTestId('date-btn').filter(btn => !btn.hasAttribute('disabled'))
     fireEvent.click(dateButtons[0])
     await waitFor(() => expect(screen.getByText('08:00')).toBeInTheDocument())
     expect(screen.getByText('09:00')).toBeInTheDocument()
