@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue } from 'firebase-admin/firestore'
+import { sendNailistReviewEmail } from '@/lib/email'
 
 const createSchema = z.object({
   nailistProfileId: z.string(),
@@ -25,10 +26,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid or incomplete appointment' }, { status: 400 })
     }
 
+    // Prevent duplicate reviews for the same appointment
+    const dupSnap = await db
+      .collection(COLLECTIONS.REVIEWS)
+      .where('appointmentId', '==', data.appointmentId)
+      .limit(1)
+      .get()
+    if (!dupSnap.empty) {
+      return NextResponse.json({ error: 'Review already submitted for this appointment' }, { status: 409 })
+    }
+
     const now = FieldValue.serverTimestamp()
     const ref = await db.collection(COLLECTIONS.REVIEWS).add({
       ...data,
       createdAt: now,
+      updatedAt: now,
+    })
+
+    // Mark appointment as reviewed
+    await db.collection(COLLECTIONS.APPOINTMENTS).doc(data.appointmentId).update({
+      hasReview: true,
       updatedAt: now,
     })
 
@@ -46,6 +63,38 @@ export async function POST(request: NextRequest) {
       reviewCount: ratings.length,
       updatedAt: now,
     })
+
+    // Notify nailist via email (fire-and-forget)
+    void (async () => {
+      try {
+        const [nailistProfileSnap, apptData] = [
+          await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).get(),
+          apptSnap.data()!,
+        ]
+        const nailistProfile = nailistProfileSnap.data()
+        const nailistUserSnap = nailistProfile?.userId
+          ? await db.collection(COLLECTIONS.USERS).doc(nailistProfile.userId).get()
+          : null
+        const nailistEmail: string | undefined =
+          (nailistProfile?.email as string | undefined) ??
+          (nailistUserSnap?.data()?.email as string | undefined)
+
+        if (!nailistEmail) return
+
+        await sendNailistReviewEmail({
+          nailistEmail,
+          nailistName: (nailistProfile?.businessName as string | undefined) ?? nailistEmail,
+          clientName: data.clientDisplayName ?? (apptData.clientDisplayName as string | undefined) ?? 'לקוחה',
+          rating: data.rating,
+          comment: data.comment,
+          serviceName: (apptData.serviceName as string | undefined) ?? '',
+          appUrl: process.env.NEXT_PUBLIC_APP_URL,
+        })
+        console.log('[review] ✅ nailist review email sent to', nailistEmail)
+      } catch (err) {
+        console.error('[review] ❌ nailist review email failed:', err)
+      }
+    })()
 
     return NextResponse.json({ data: { id: ref.id } }, { status: 201 })
   } catch (error) {

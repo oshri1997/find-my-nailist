@@ -3,7 +3,7 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
-import { sendAppointmentRequest } from '@/lib/email'
+import { sendAppointmentRequest, sendReviewRequestEmail } from '@/lib/email'
 import { randomUUID } from 'crypto'
 
 const createSchema = z.object({
@@ -168,7 +168,45 @@ export async function GET(request: NextRequest) {
     if (expired.length > 0) {
       const batch = db.batch()
       expired.forEach((doc) => {
-        batch.update(doc.ref, { status: 'COMPLETED', updatedAt: FieldValue.serverTimestamp() })
+        const apt = doc.data()
+        batch.update(doc.ref, {
+          status: 'COMPLETED',
+          reviewRequested: true,
+          updatedAt: FieldValue.serverTimestamp(),
+        })
+
+        if (!apt.reviewRequested) {
+          void (async () => {
+            try {
+              const [clientProfileSnap, nailistProfileSnap] = await Promise.all([
+                db.collection(COLLECTIONS.CLIENT_PROFILES).doc(apt.clientProfileId).get(),
+                db.collection(COLLECTIONS.NAILIST_PROFILES).doc(apt.nailistProfileId).get(),
+              ])
+              const clientProfile = clientProfileSnap.data()
+              const nailistProfile = nailistProfileSnap.data()
+              const clientUserSnap = clientProfile?.userId
+                ? await db.collection(COLLECTIONS.USERS).doc(clientProfile.userId).get()
+                : null
+              const clientEmail: string | undefined =
+                (clientProfile?.email as string | undefined) ||
+                (clientUserSnap?.data()?.email as string | undefined) ||
+                undefined
+              if (clientEmail) {
+                await sendReviewRequestEmail({
+                  clientEmail,
+                  clientName: apt.clientDisplayName ?? clientEmail,
+                  nailistBusinessName: apt.nailistBusinessName ?? nailistProfile?.businessName ?? '',
+                  serviceName: apt.serviceName,
+                  startTime: apt.startTime?.toDate?.() ?? new Date(apt.startTime),
+                  appUrl: process.env.NEXT_PUBLIC_APP_URL,
+                })
+                console.log('[auto-complete] ✅ review request email sent to', clientEmail)
+              }
+            } catch (err) {
+              console.error('[auto-complete] ❌ review request email failed:', err)
+            }
+          })()
+        }
       })
       await batch.commit()
     }

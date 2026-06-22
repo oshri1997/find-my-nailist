@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Sparkles, LogOut, LayoutDashboard, ChevronDown } from 'lucide-react'
+import { Sparkles, LogOut, LayoutDashboard, ChevronDown, CalendarDays } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
 
@@ -117,6 +117,14 @@ export function Navbar() {
                         <p className="text-sm font-bold text-foreground truncate">{displayName}</p>
                         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                       </div>
+                      <Link
+                        href="/my-appointments"
+                        onClick={() => setShowMenu(false)}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm font-semibold text-foreground/80 hover:bg-muted/60 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <CalendarDays className="h-4 w-4" />
+                        ההזמנות שלי
+                      </Link>
                       <button
                         onClick={handleSignOut}
                         className="flex items-center gap-2 w-full px-3 py-2 text-sm font-semibold text-destructive hover:bg-red-50 rounded-lg transition-colors cursor-pointer"

@@ -92,6 +92,8 @@ export interface AppointmentDoc {
   serviceName: string
   nailistBusinessName: string
   clientDisplayName?: string
+  reviewRequested?: boolean
+  hasReview?: boolean
   createdAt: Timestamp
   updatedAt: Timestamp
 }

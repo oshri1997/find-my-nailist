@@ -133,6 +133,81 @@ export async function sendCancellationEmail(p: {
   )
 }
 
+// Sent to client after appointment is COMPLETED — asks for a review
+export async function sendReviewRequestEmail(p: {
+  clientEmail: string
+  clientName: string
+  nailistBusinessName: string
+  serviceName: string
+  startTime: Date
+  appUrl?: string
+}): Promise<void> {
+  const dateStr = formatDate(p.startTime)
+  const url = (p.appUrl ?? 'https://nailistiot.fun') + '/my-appointments'
+  await sendResend(
+    p.clientEmail,
+    `איך היה התור ב${p.nailistBusinessName}? ✨`,
+    `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);border-radius:16px 16px 0 0;padding:32px;text-align:center">
+        <h2 style="color:white;margin:0;font-size:24px">איך היה התור? 💅✨</h2>
+      </div>
+      <div style="padding:24px;background:#fafafa;border-radius:0 0 16px 16px">
+        <p>שלום ${p.clientName},</p>
+        <p>התור שלך אצל <strong>${p.nailistBusinessName}</strong> הסתיים. נשמח לשמוע מה חשבת!</p>
+        <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:20px 0">
+          <p style="margin:4px 0"><strong>שירות:</strong> ${p.serviceName}</p>
+          <p style="margin:4px 0"><strong>תאריך:</strong> ${dateStr}</p>
+        </div>
+        <div style="text-align:center;margin:32px 0">
+          <a href="${url}"
+            style="background:linear-gradient(135deg,#ec4899,#a855f7);color:white;text-decoration:none;padding:16px 40px;border-radius:50px;font-size:18px;font-weight:bold;display:inline-block">
+            ⭐ כתבי ביקורת
+          </a>
+        </div>
+        <p style="color:#aaa;font-size:12px;text-align:center">הביקורת שלך עוזרת לנייליסטיות אחרות לצמוח 🌸</p>
+      </div>
+    </div>`
+  )
+}
+
+// Sent to nailist when a client submits a review
+export async function sendNailistReviewEmail(p: {
+  nailistEmail: string
+  nailistName: string
+  clientName: string
+  rating: number
+  comment?: string
+  serviceName: string
+  appUrl?: string
+}): Promise<void> {
+  const stars = '⭐'.repeat(p.rating)
+  const url = (p.appUrl ?? 'https://nailistiot.fun') + '/dashboard/nailist/reviews'
+  const commentHtml = p.comment
+    ? `<div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:16px 0;font-style:italic">"${p.comment}"</div>`
+    : ''
+  await sendResend(
+    p.nailistEmail,
+    `ביקורת חדשה מ${p.clientName} ⭐`,
+    `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);border-radius:16px 16px 0 0;padding:32px;text-align:center">
+        <h2 style="color:white;margin:0;font-size:24px">ביקורת חדשה! ${stars}</h2>
+      </div>
+      <div style="padding:24px;background:#fafafa;border-radius:0 0 16px 16px">
+        <p>שלום ${p.nailistName},</p>
+        <p><strong>${p.clientName}</strong> השאירה ביקורת על <strong>${p.serviceName}</strong>:</p>
+        <div style="text-align:center;font-size:28px;margin:16px 0">${stars}</div>
+        ${commentHtml}
+        <div style="text-align:center;margin:32px 0">
+          <a href="${url}"
+            style="background:linear-gradient(135deg,#ec4899,#a855f7);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-size:16px;font-weight:bold;display:inline-block">
+            צפי בביקורת
+          </a>
+        </div>
+      </div>
+    </div>`
+  )
+}
+
 // Sent to client after nailist clicks confirm
 export async function sendClientConfirmedEmail(p: {
   clientEmail: string

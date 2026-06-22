@@ -3,7 +3,7 @@ import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue } from 'firebase-admin/firestore'
-import { sendCancellationEmail } from '@/lib/email'
+import { sendCancellationEmail, sendReviewRequestEmail } from '@/lib/email'
 
 const schema = z.object({
   status: z.enum(['CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW']),
@@ -21,8 +21,47 @@ export async function PATCH(
 
     await db.collection(COLLECTIONS.APPOINTMENTS).doc(id).update({
       status,
+      ...(status === 'COMPLETED' ? { reviewRequested: true } : {}),
       updatedAt: FieldValue.serverTimestamp(),
     })
+
+    if (status === 'COMPLETED') {
+      void (async () => {
+        try {
+          const apptSnap = await db.collection(COLLECTIONS.APPOINTMENTS).doc(id).get()
+          const appt = apptSnap.data()
+          if (!appt || appt.reviewRequested) return
+
+          const [clientProfileSnap, nailistSnap] = await Promise.all([
+            db.collection(COLLECTIONS.CLIENT_PROFILES).doc(appt.clientProfileId).get(),
+            db.collection(COLLECTIONS.NAILIST_PROFILES).doc(appt.nailistProfileId).get(),
+          ])
+          const clientProfile = clientProfileSnap.data()
+          const nailist = nailistSnap.data()
+
+          const clientUserSnap = clientProfile?.userId
+            ? await db.collection(COLLECTIONS.USERS).doc(clientProfile.userId).get()
+            : null
+          const clientEmail: string | undefined =
+            (clientProfile?.email as string | undefined) ??
+            (clientUserSnap?.data()?.email as string | undefined)
+
+          if (!clientEmail) return
+
+          await sendReviewRequestEmail({
+            clientEmail,
+            clientName: (appt.clientDisplayName as string | undefined) ?? clientEmail,
+            nailistBusinessName: (nailist?.businessName as string | undefined) ?? '',
+            serviceName: appt.serviceName as string,
+            startTime: appt.startTime?.toDate?.() ?? new Date(appt.startTime),
+            appUrl: process.env.NEXT_PUBLIC_APP_URL,
+          })
+          console.log(`[complete] ✅ review request email sent to ${clientEmail}`)
+        } catch (err) {
+          console.error('[complete] ❌ review request email failed', err)
+        }
+      })()
+    }
 
     if (status === 'CANCELLED') {
       // fire-and-forget — don't block the response
