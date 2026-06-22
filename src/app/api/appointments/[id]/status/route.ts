@@ -57,6 +57,7 @@ export async function PATCH(
             nailistBusinessName: (nailist?.businessName as string | undefined) ?? '',
             serviceName: existingData.serviceName as string,
             startTime: existingData.startTime?.toDate?.() ?? new Date(existingData.startTime),
+            appointmentId: id,
             appUrl: process.env.NEXT_PUBLIC_APP_URL,
           })
           console.log(`[complete] ✅ review request email sent to ${clientEmail}`)

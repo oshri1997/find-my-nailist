@@ -140,10 +140,11 @@ export async function sendReviewRequestEmail(p: {
   nailistBusinessName: string
   serviceName: string
   startTime: Date
+  appointmentId: string
   appUrl?: string
 }): Promise<void> {
   const dateStr = formatDate(p.startTime)
-  const url = (p.appUrl ?? 'https://nailistiot.fun') + '/my-appointments'
+  const url = (p.appUrl ?? 'https://nailistiot.fun') + `/my-appointments?review=${p.appointmentId}`
   await sendResend(
     p.clientEmail,
     `איך היה התור ב${p.nailistBusinessName}? ✨`,

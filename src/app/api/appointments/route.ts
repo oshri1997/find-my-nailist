@@ -198,6 +198,7 @@ export async function GET(request: NextRequest) {
                   nailistBusinessName: apt.nailistBusinessName ?? nailistProfile?.businessName ?? '',
                   serviceName: apt.serviceName,
                   startTime: apt.startTime?.toDate?.() ?? new Date(apt.startTime),
+                  appointmentId: doc.id,
                   appUrl: process.env.NEXT_PUBLIC_APP_URL,
                 })
                 console.log('[auto-complete] ✅ review request email sent to', clientEmail)

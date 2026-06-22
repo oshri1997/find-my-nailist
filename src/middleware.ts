@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PROTECTED_PREFIXES = ['/dashboard']
+const PROTECTED_PREFIXES = ['/dashboard', '/my-appointments']
 const AUTH_PATHS = ['/login']
 
 export function middleware(request: NextRequest) {
@@ -12,7 +12,9 @@ export function middleware(request: NextRequest) {
   const isAuth = AUTH_PATHS.some((p) => pathname.startsWith(p))
 
   if (isProtected && !token) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirect', pathname + request.nextUrl.search)
+    return NextResponse.redirect(loginUrl)
   }
 
   if (isAuth && token) {

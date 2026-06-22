@@ -31,6 +31,8 @@ export default function AuthPage() {
   const searchParams = useSearchParams()
   const { user, loading: authLoading } = useAuth()
 
+  const redirectTo = searchParams.get('redirect') ?? ''
+
   const [mode, setMode] = useState<Mode>(() =>
     searchParams.get('tab') === 'register' ? 'register' : 'login'
   )
@@ -78,7 +80,9 @@ export default function AuthPage() {
         }
 
         // Redirect based on actual role stored in DB (ignores whatever was selected in the UI)
-        if (actualRole === 'nailist') {
+        if (redirectTo) {
+          router.replace(redirectTo)
+        } else if (actualRole === 'nailist') {
           router.replace(pendingMode === 'register' ? '/onboarding' : '/')
         } else {
           router.replace(pendingMode === 'register' ? '/' : '/search')
@@ -86,7 +90,9 @@ export default function AuthPage() {
       })
       .catch(() => {
         // Network failure fallback — use intended role
-        if (pendingMode === 'register' && pendingRole === 'nailist') {
+        if (redirectTo) {
+          router.replace(redirectTo)
+        } else if (pendingMode === 'register' && pendingRole === 'nailist') {
           router.replace('/onboarding')
         } else if (pendingRole === 'nailist') {
           router.replace('/')
@@ -126,7 +132,7 @@ export default function AuthPage() {
             role: role === 'nailist' ? 'NAILIST' : 'CLIENT',
           }),
         })
-        router.push(role === 'nailist' ? '/onboarding' : '/')
+        router.push(redirectTo || (role === 'nailist' ? '/onboarding' : '/'))
       }
     } catch (err: unknown) {
       setError(friendlyError(err, mode))
