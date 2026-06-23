@@ -3,19 +3,28 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft, Eye, EyeOff } from 'lucide-react'
+import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft, Eye, EyeOff, Star } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 type AppStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'
 
 interface Appointment {
   id: string
+  clientProfileId: string
   serviceName: string
   startTime: string
   endTime: string
   status: AppStatus
   price: number
   currency: string
+}
+
+interface Review {
+  id: string
+  rating: number
+  comment?: string
+  clientDisplayName?: string
+  createdAt: string
 }
 
 const STATUS_LABELS: Record<AppStatus, string> = {
@@ -41,13 +50,6 @@ function formatAppointmentTime(iso: string) {
   return { day, time }
 }
 
-const stats = [
-  { label: 'תורים', value: '0', icon: '📅', change: '+0 החודש', bg: 'from-pink-50 to-rose-50', border: 'border-pink-100' },
-  { label: 'לקוחות', value: '0', icon: '👥', change: '+0 החודש', bg: 'from-purple-50 to-violet-50', border: 'border-purple-100' },
-  { label: 'הכנסות', value: '₪0', icon: '💰', change: '+₪0 החודש', bg: 'from-violet-50 to-blue-50', border: 'border-violet-100' },
-  { label: 'דירוג ממוצע', value: '—', icon: '⭐', change: 'אין ביקורות עדיין', bg: 'from-amber-50 to-orange-50', border: 'border-amber-100' },
-]
-
 const quickActions = [
   { label: 'הגדרת שעות עבודה', icon: '⏰', href: '/dashboard/nailist/hours' },
   { label: 'הוספת שירות חדש', icon: '✂️', href: '/dashboard/nailist/services' },
@@ -63,6 +65,8 @@ interface NailistProfile {
   instagramUrl?: string
   tiktokUrl?: string
   isActive?: boolean
+  avgRating?: number
+  reviewCount?: number
 }
 
 export default function NailistDashboard() {
@@ -72,7 +76,9 @@ export default function NailistDashboard() {
   const [hasPhotos, setHasPhotos] = useState(false)
   const [hasServices, setHasServices] = useState(false)
   const [hasHours, setHasHours] = useState(false)
+  const [allAppointments, setAllAppointments] = useState<Appointment[]>([])
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([])
+  const [recentReviews, setRecentReviews] = useState<Review[]>([])
   const [activating, setActivating] = useState(false)
 
   useEffect(() => {
@@ -83,12 +89,12 @@ export default function NailistDashboard() {
         setProfile(json.data)
         const profileId = json.data.id
 
-        // Fetch everything in parallel
-        const [portfolioRes, servicesRes, hoursRes, appointmentsRes] = await Promise.all([
+        const [portfolioRes, servicesRes, hoursRes, appointmentsRes, nailistRes] = await Promise.all([
           fetch(`/api/portfolio?profileId=${profileId}`),
           fetch(`/api/services?nailistProfileId=${profileId}`),
           fetch('/api/working-hours'),
           fetch('/api/appointments?role=nailist'),
+          fetch(`/api/nailists/${profileId}`),
         ])
 
         if (portfolioRes.ok) {
@@ -106,12 +112,24 @@ export default function NailistDashboard() {
         }
         if (appointmentsRes.ok) {
           const { data } = await appointmentsRes.json()
+          const all: Appointment[] = data ?? []
+          setAllAppointments(all)
           const now = new Date()
-          const upcoming = (data ?? [] as Appointment[])
-            .filter((a: Appointment) => ['PENDING', 'CONFIRMED'].includes(a.status) && new Date(a.startTime) >= now)
-            .sort((a: Appointment, b: Appointment) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+          const upcoming = all
+            .filter(a => ['PENDING', 'CONFIRMED'].includes(a.status) && new Date(a.startTime) >= now)
+            .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
             .slice(0, 4)
           setUpcomingAppointments(upcoming)
+        }
+        if (nailistRes.ok) {
+          const { data: nailistData } = await nailistRes.json()
+          setRecentReviews((nailistData.reviews ?? []).slice(0, 3))
+          // Sync avgRating / reviewCount into profile state
+          setProfile(prev => prev ? {
+            ...prev,
+            avgRating: nailistData.avgRating ?? prev.avgRating,
+            reviewCount: nailistData.reviewCount ?? prev.reviewCount,
+          } : prev)
         }
       })
       .catch(() => {})
@@ -141,6 +159,59 @@ export default function NailistDashboard() {
   ]
   const doneCount = checklist.filter(c => c.done).length
   const completionPct = Math.round((doneCount / checklist.length) * 100)
+
+  // Compute stats from live data
+  const now = new Date()
+  const active = allAppointments.filter(a => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW')
+  const thisMonthActive = active.filter(a => {
+    const d = new Date(a.startTime)
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+  })
+  const totalAppointments = active.length
+  const thisMonthAppointments = thisMonthActive.length
+  const uniqueClients = new Set(active.map(a => a.clientProfileId)).size
+  const thisMonthClients = new Set(thisMonthActive.map(a => a.clientProfileId)).size
+  const totalRevenue = allAppointments
+    .filter(a => a.status === 'COMPLETED')
+    .reduce((sum, a) => sum + (a.price ?? 0), 0)
+  const thisMonthRevenue = thisMonthActive
+    .filter(a => a.status === 'COMPLETED')
+    .reduce((sum, a) => sum + (a.price ?? 0), 0)
+
+  const computedStats = [
+    {
+      label: 'תורים',
+      value: String(totalAppointments),
+      icon: '📅',
+      change: `+${thisMonthAppointments} החודש`,
+      bg: 'from-pink-50 to-rose-50',
+      border: 'border-pink-100',
+    },
+    {
+      label: 'לקוחות',
+      value: String(uniqueClients),
+      icon: '👥',
+      change: `+${thisMonthClients} החודש`,
+      bg: 'from-purple-50 to-violet-50',
+      border: 'border-purple-100',
+    },
+    {
+      label: 'הכנסות',
+      value: `₪${totalRevenue}`,
+      icon: '💰',
+      change: `+₪${thisMonthRevenue} החודש`,
+      bg: 'from-violet-50 to-blue-50',
+      border: 'border-violet-100',
+    },
+    {
+      label: 'דירוג ממוצע',
+      value: profile?.avgRating ? profile.avgRating.toFixed(1) : '—',
+      icon: '⭐',
+      change: profile?.reviewCount ? `${profile.reviewCount} ביקורות` : 'אין ביקורות עדיין',
+      bg: 'from-amber-50 to-orange-50',
+      border: 'border-amber-100',
+    },
+  ]
 
   return (
     <div className="p-4 md:p-8">
@@ -176,7 +247,7 @@ export default function NailistDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
-        {stats.map((stat, i) => (
+        {computedStats.map((stat, i) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: i * 0.08 }}
             className={`rounded-3xl border-2 ${stat.border} bg-gradient-to-br ${stat.bg} p-6`}>
             <div className="flex items-center justify-between mb-4">
@@ -263,11 +334,45 @@ export default function NailistDashboard() {
             </div>
             <span className="text-2xl">⭐</span>
           </div>
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center text-3xl mb-4">💭</div>
-            <p className="text-sm font-bold text-gray-400 mb-1">אין ביקורות עדיין</p>
-            <p className="text-xs text-gray-300 font-medium">השלימי תורים כדי לקבל ביקורות</p>
-          </div>
+
+          {recentReviews.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center text-3xl mb-4">💭</div>
+              <p className="text-sm font-bold text-gray-400 mb-1">אין ביקורות עדיין</p>
+              <p className="text-xs text-gray-300 font-medium">השלימי תורים כדי לקבל ביקורות</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentReviews.map((review, i) => (
+                <motion.div
+                  key={review.id}
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + i * 0.06 }}
+                  className="p-3 rounded-2xl border border-gray-100"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-bold text-gray-700">{review.clientDisplayName ?? 'לקוחה'}</span>
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: 5 }).map((_, j) => (
+                        <Star key={j} className={`h-3.5 w-3.5 ${j < review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                      ))}
+                    </div>
+                  </div>
+                  {review.comment && (
+                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{review.comment}</p>
+                  )}
+                </motion.div>
+              ))}
+              <Link
+                href="/dashboard/nailist/reviews"
+                className="flex items-center justify-center gap-1 text-sm font-bold text-pink-500 hover:text-pink-700 pt-1 transition-colors"
+              >
+                כל הביקורות
+                <ChevronLeft className="h-4 w-4" />
+              </Link>
+            </div>
+          )}
         </motion.div>
 
         {/* Profile completion */}

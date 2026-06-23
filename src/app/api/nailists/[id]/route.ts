@@ -45,7 +45,15 @@ export async function GET(
           .map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown>>)
           .sort((a, b) => ((a['displayOrder'] as number) ?? 0) - ((b['displayOrder'] as number) ?? 0)),
         workingHours: hoursSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
-        reviews: reviewsSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
+        reviews: reviewsSnap.docs.map((d) => {
+          const rd = d.data()
+          return {
+            id: d.id,
+            ...rd,
+            createdAt: rd.createdAt?.toDate?.()?.toISOString() ?? rd.createdAt,
+            updatedAt: rd.updatedAt?.toDate?.()?.toISOString() ?? rd.updatedAt,
+          }
+        }),
       },
     })
   } catch (error) {
