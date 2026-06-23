@@ -84,6 +84,7 @@ export default function SearchPage() {
   useEffect(() => {
     if (loading) return
     const urls = nailists.map(n => n.coverPhotoUrl).filter(Boolean) as string[]
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (urls.length === 0) { setImagesReady(true); return }
 
     let settled = 0
