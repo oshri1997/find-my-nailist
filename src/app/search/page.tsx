@@ -53,6 +53,7 @@ export default function SearchPage() {
   const router = useRouter()
   const [nailists, setNailists] = useState<Nailist[]>([])
   const [loading, setLoading] = useState(true)
+  const [imagesReady, setImagesReady] = useState(false)
   const [locating, setLocating] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [locationLabel, setLocationLabel] = useState('')
@@ -62,6 +63,7 @@ export default function SearchPage() {
 
   const fetchNailists = useCallback(async (lat?: number, lng?: number) => {
     setLoading(true)
+    setImagesReady(false)
     try {
       const params = new URLSearchParams({ pageSize: '24' })
       if (lat != null && lng != null) {
@@ -77,6 +79,38 @@ export default function SearchPage() {
       setLoading(false)
     }
   }, [])
+
+  // Pre-load all cover images; only show real cards once they're all ready
+  useEffect(() => {
+    if (loading) return
+    const urls = nailists.map(n => n.coverPhotoUrl).filter(Boolean) as string[]
+    if (urls.length === 0) { setImagesReady(true); return }
+
+    let settled = 0
+    let cancelled = false
+
+    function onSettle() {
+      settled++
+      if (!cancelled && settled === urls.length) setImagesReady(true)
+    }
+
+    const imgs = urls.map(url => {
+      const img = new window.Image()
+      img.onload = onSettle
+      img.onerror = onSettle
+      img.src = url
+      return img
+    })
+
+    // Safety timeout — show cards after 2.5 s even if some images stall
+    const timeout = setTimeout(() => { if (!cancelled) setImagesReady(true) }, 2500)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timeout)
+      imgs.forEach(img => { img.onload = null; img.onerror = null })
+    }
+  }, [loading, nailists])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -167,7 +201,7 @@ export default function SearchPage() {
         {/* Results header */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-muted-foreground font-medium text-sm">
-            {loading ? (
+            {loading || !imagesReady ? (
               <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin text-primary" /> מחפשת...</span>
             ) : (
               <>נמצאו <span className="font-black text-foreground">{sorted.length}</span> נייליסטיות</>
@@ -220,11 +254,11 @@ export default function SearchPage() {
         </div>
 
         {/* Content area */}
-        {loading ? (
+        {loading || !imagesReady ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: 6 }).map((_, i) => <NailistCardSkeleton key={i} />)}
           </div>
-        ) : !loading && sorted.length === 0 ? (
+        ) : sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-5">
               <Search className="w-7 h-7 text-muted-foreground/60" />
