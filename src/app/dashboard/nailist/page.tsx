@@ -1,10 +1,43 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft, Eye, EyeOff, Star } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
+
+function CountUp({ to, prefix = '', decimals = 0, duration = 900 }: {
+  to: number
+  prefix?: string
+  decimals?: number
+  duration?: number
+}) {
+  const [current, setCurrent] = useState(0)
+  const rafRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (to === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCurrent(0); return
+    }
+    let startTime: number | null = null
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp
+      const progress = Math.min((timestamp - startTime) / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCurrent(eased * to)
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(step)
+      }
+    }
+    rafRef.current = requestAnimationFrame(step)
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+  }, [to, duration])
+
+  const formatted = decimals > 0 ? current.toFixed(decimals) : Math.round(current).toLocaleString()
+  return <>{prefix}{formatted}</>
+}
 
 type AppStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'
 
@@ -124,7 +157,6 @@ export default function NailistDashboard() {
         if (nailistRes.ok) {
           const { data: nailistData } = await nailistRes.json()
           setRecentReviews((nailistData.reviews ?? []).slice(0, 3))
-          // Sync avgRating / reviewCount into profile state
           setProfile(prev => prev ? {
             ...prev,
             avgRating: nailistData.avgRating ?? prev.avgRating,
@@ -181,7 +213,7 @@ export default function NailistDashboard() {
   const computedStats = [
     {
       label: 'תורים',
-      value: String(totalAppointments),
+      node: <CountUp to={totalAppointments} />,
       icon: '📅',
       change: `+${thisMonthAppointments} החודש`,
       bg: 'from-pink-50 to-rose-50',
@@ -189,7 +221,7 @@ export default function NailistDashboard() {
     },
     {
       label: 'לקוחות',
-      value: String(uniqueClients),
+      node: <CountUp to={uniqueClients} />,
       icon: '👥',
       change: `+${thisMonthClients} החודש`,
       bg: 'from-purple-50 to-violet-50',
@@ -197,7 +229,7 @@ export default function NailistDashboard() {
     },
     {
       label: 'הכנסות',
-      value: `₪${totalRevenue}`,
+      node: <CountUp to={totalRevenue} prefix="₪" />,
       icon: '💰',
       change: `+₪${thisMonthRevenue} החודש`,
       bg: 'from-violet-50 to-blue-50',
@@ -205,7 +237,9 @@ export default function NailistDashboard() {
     },
     {
       label: 'דירוג ממוצע',
-      value: profile?.avgRating ? profile.avgRating.toFixed(1) : '—',
+      node: profile?.avgRating
+        ? <CountUp to={profile.avgRating} decimals={1} />
+        : <span>—</span>,
       icon: '⭐',
       change: profile?.reviewCount ? `${profile.reviewCount} ביקורות` : 'אין ביקורות עדיין',
       bg: 'from-amber-50 to-orange-50',
@@ -254,7 +288,7 @@ export default function NailistDashboard() {
               <span className="text-2xl">{stat.icon}</span>
               <TrendingUp className="h-4 w-4 text-gray-300" />
             </div>
-            <div className="text-3xl font-black text-gray-800 mb-1">{stat.value}</div>
+            <div className="text-3xl font-black text-gray-800 mb-1">{stat.node}</div>
             <div className="text-sm font-bold text-gray-500">{stat.label}</div>
             <div className="text-xs text-gray-400 mt-1 font-medium">{stat.change}</div>
           </motion.div>
