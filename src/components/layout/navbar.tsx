@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Sparkles, LogOut, LayoutDashboard, ChevronDown, CalendarDays } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export function Navbar() {
   const { user, role, signOut } = useAuth()
@@ -78,6 +79,7 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             {user ? (
               <>
                 {role === 'NAILIST' && (

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, CalendarDays, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ReviewModal from '@/components/reviews/ReviewModal'
+import { Navbar } from '@/components/layout/navbar'
 
 interface Appointment {
   id: string
@@ -130,6 +131,7 @@ function MyAppointmentsInner() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50/30 via-white to-purple-50/20" dir="rtl">
+      <Navbar />
       <div className="container mx-auto max-w-2xl px-4 py-8">
         <div className="mb-8">
           <h1 className="text-2xl font-black text-gray-800 flex items-center gap-2">

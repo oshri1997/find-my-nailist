@@ -1,27 +1,76 @@
 @import "tailwindcss";
 
-@theme {
-  /* Luxe Soft — Beauty Marketplace Palette */
-  --color-background: #FDF2F8;
-  --color-foreground: #1A0A12;
-  --color-card: #FFFFFF;
-  --color-card-foreground: #1A0A12;
-  --color-popover: #FFFFFF;
-  --color-popover-foreground: #1A0A12;
-  --color-primary: #EC4899;
-  --color-primary-foreground: #FFFFFF;
-  --color-secondary: #F5EEF8;
-  --color-secondary-foreground: #831843;
-  --color-muted: #F5EEF8;
-  --color-muted-foreground: #9C6B82;
-  --color-accent: #8B5CF6;
-  --color-accent-foreground: #FFFFFF;
-  --color-destructive: #DC2626;
-  --color-destructive-foreground: #FFFFFF;
-  --color-border: #F3D5E8;
-  --color-input: #F5EEF8;
-  --color-ring: #EC4899;
+/* Class-based dark mode — adds `.dark *` variant */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Map Tailwind semantic utilities to CSS custom properties (resolved at runtime) */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --radius: 0.75rem;
+}
+
+/* ── Light theme ─────────────────────────────────── */
+:root {
+  --background: #FDF2F8;
+  --foreground: #1A0A12;
+  --card: #FFFFFF;
+  --card-foreground: #1A0A12;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A0A12;
+  --primary: #EC4899;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F5EEF8;
+  --secondary-foreground: #831843;
+  --muted: #F5EEF8;
+  --muted-foreground: #9C6B82;
+  --accent: #8B5CF6;
+  --accent-foreground: #FFFFFF;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #F3D5E8;
+  --input: #F5EEF8;
+  --ring: #EC4899;
+}
+
+/* ── Dark theme ──────────────────────────────────── */
+.dark {
+  --background: #100910;
+  --foreground: #F0E6EE;
+  --card: #1C0D18;
+  --card-foreground: #F0E6EE;
+  --popover: #1C0D18;
+  --popover-foreground: #F0E6EE;
+  --primary: #EC4899;
+  --primary-foreground: #FFFFFF;
+  --secondary: #2A1022;
+  --secondary-foreground: #F0B0D0;
+  --muted: #2A1022;
+  --muted-foreground: #A08090;
+  --accent: #8B5CF6;
+  --accent-foreground: #FFFFFF;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: #3D1528;
+  --input: #2A1022;
+  --ring: #EC4899;
 }
 
 * {
@@ -29,8 +78,8 @@
 }
 
 body {
-  background-color: var(--color-background);
-  color: var(--color-foreground);
+  background-color: var(--background);
+  color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -45,22 +94,26 @@ body {
 
 /* Soft card */
 .card-soft {
-  background: #FFFFFF;
-  border: 1px solid #F3D5E8;
+  background: var(--card);
+  border: 1px solid var(--border);
   box-shadow: 0 4px 20px rgba(236, 72, 153, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 /* Subtle page background variant */
 .bg-section-alt {
-  background: linear-gradient(160deg, #FFFFFF 0%, #FDF2F8 100%);
+  background: linear-gradient(160deg, var(--card) 0%, var(--background) 100%);
 }
 
-/* Glass — kept for compatibility, updated to feel cleaner */
+/* Glass */
 .glass {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid #F3D5E8;
+  border: 1px solid var(--border);
+}
+
+.dark .glass {
+  background: rgba(28, 13, 24, 0.92);
 }
 
 .glass-dark {
@@ -72,7 +125,7 @@ body {
 
 /* Subtle mesh background */
 .bg-mesh {
-  background-color: #FDF2F8;
+  background-color: var(--background);
   background-image:
     radial-gradient(at 10% 10%, rgba(236, 72, 153, 0.07) 0px, transparent 50%),
     radial-gradient(at 90% 80%, rgba(139, 92, 246, 0.05) 0px, transparent 50%);
