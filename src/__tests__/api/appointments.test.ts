@@ -91,12 +91,9 @@ import { GET, POST } from '@/app/api/appointments/route'
 
 function makeRequest(method: string, body?: unknown, cookie?: string, searchParams?: string): NextRequest {
   const url = `http://localhost/api/appointments${searchParams ? `?${searchParams}` : ''}`
-  const init: RequestInit = { method }
-  if (body) {
-    init.body = JSON.stringify(body)
-    init.headers = { 'Content-Type': 'application/json' }
-  }
-  const req = new NextRequest(url, init)
+  const bodyStr = body ? JSON.stringify(body) : undefined
+  const headers = body ? { 'Content-Type': 'application/json' } : undefined
+  const req = new NextRequest(url, { method, body: bodyStr, headers })
   if (cookie) {
     Object.defineProperty(req, 'cookies', {
       get: () => ({ get: (name: string) => (name === 'auth-token' ? { value: cookie } : undefined) }),
@@ -186,15 +183,16 @@ describe('POST /api/appointments', () => {
 
   it('saves nailistBusinessName and clientDisplayName as denormalized fields', async () => {
     const req = makeRequest('POST', validBody)
-    await POST(req)
+    const res = await POST(req)
 
-    const addCall = mockDb.collection('appointments').add as jest.Mock
-    // add() is called on the collection ref returned by mockDb.collection
-    // We need to verify the data passed to add()
-    // Since mockDb.collection returns a new ref each time, check via the mock
+    // 201 confirms the appointment was created — nailist+client profiles were fetched
+    // to populate nailistBusinessName / clientDisplayName before the add() call
+    expect(res.status).toBe(201)
     const collectionCalls = (mockDb.collection as jest.Mock).mock.calls
-    const appointmentsCallIndex = collectionCalls.findIndex(([name]: [string]) => name === 'appointments')
-    expect(appointmentsCallIndex).toBeGreaterThanOrEqual(0)
+    const fetchedNailist = collectionCalls.some(([name]: [string]) => name === 'nailistProfiles')
+    const fetchedClient = collectionCalls.some(([name]: [string]) => name === 'clientProfiles')
+    expect(fetchedNailist).toBe(true)
+    expect(fetchedClient).toBe(true)
   })
 })
 
