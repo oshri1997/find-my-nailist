@@ -9,7 +9,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
 
 export function Navbar() {
-  const { user, signOut } = useAuth()
+  const { user, role, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
   const [showMenu, setShowMenu] = useState(false)
@@ -80,12 +80,22 @@ export function Navbar() {
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                <Link href="/dashboard/nailist">
-                  <Button size="sm" variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground gap-2 cursor-pointer">
-                    <LayoutDashboard className="h-4 w-4" />
-                    <span className="hidden sm:inline">דשבורד</span>
-                  </Button>
-                </Link>
+                {role === 'NAILIST' && (
+                  <Link href="/dashboard/nailist">
+                    <Button size="sm" variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground gap-2 cursor-pointer">
+                      <LayoutDashboard className="h-4 w-4" />
+                      <span className="hidden sm:inline">דשבורד</span>
+                    </Button>
+                  </Link>
+                )}
+                {role === 'CLIENT' && (
+                  <Link href="/my-appointments">
+                    <Button size="sm" variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground gap-2 cursor-pointer">
+                      <CalendarDays className="h-4 w-4" />
+                      <span className="hidden sm:inline">התורים שלי</span>
+                    </Button>
+                  </Link>
+                )}
 
                 {/* Profile dropdown */}
                 <div ref={menuRef} className="relative">
@@ -117,14 +127,6 @@ export function Navbar() {
                         <p className="text-sm font-bold text-foreground truncate">{displayName}</p>
                         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                       </div>
-                      <Link
-                        href="/my-appointments"
-                        onClick={() => setShowMenu(false)}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm font-semibold text-foreground/80 hover:bg-muted/60 rounded-lg transition-colors cursor-pointer"
-                      >
-                        <CalendarDays className="h-4 w-4" />
-                        ההזמנות שלי
-                      </Link>
                       <button
                         onClick={handleSignOut}
                         className="flex items-center gap-2 w-full px-3 py-2 text-sm font-semibold text-destructive hover:bg-red-50 rounded-lg transition-colors cursor-pointer"

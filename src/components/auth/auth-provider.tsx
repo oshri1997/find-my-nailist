@@ -4,21 +4,26 @@ import { createContext, useContext, useEffect, useState, useRef, ReactNode, useC
 import type { User } from 'firebase/auth'
 import { NailLoader } from '@/components/ui/nail-loader'
 
+type UserRole = 'NAILIST' | 'CLIENT' | null
+
 interface AuthContextValue {
   user: User | null
   loading: boolean
+  role: UserRole
   signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
   loading: true,
+  role: null,
   signOut: async () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [role, setRole] = useState<UserRole>(null)
   const skipCallbackRef = useRef(false)
 
   const signOut = useCallback(async () => {
@@ -28,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOutUser()
     await fetch('/api/auth/session', { method: 'DELETE' })
     setUser(null)
+    setRole(null)
     skipCallbackRef.current = false
     setLoading(false)
   }, [])
@@ -52,8 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ token }),
             })
+            const roleRes = await fetch('/api/me/role')
+            if (roleRes.ok) {
+              const { role: fetchedRole } = await roleRes.json()
+              setRole(fetchedRole ?? null)
+            }
           } else {
             await fetch('/api/auth/session', { method: 'DELETE' })
+            setRole(null)
           }
         } catch {
           // session sync failed — auth state is still valid, don't block the UI
@@ -76,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, role, signOut }}>
       {children}
     </AuthContext.Provider>
   )

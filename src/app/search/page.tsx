@@ -14,6 +14,25 @@ import dynamic from 'next/dynamic'
 
 const NailistMap = dynamic(() => import('@/components/search/NailistMap'), { ssr: false })
 
+function NailistCardSkeleton() {
+  return (
+    <div className="animate-pulse rounded-2xl overflow-hidden bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-border">
+      <div className="h-44 bg-gray-200" />
+      <div className="p-5 space-y-3">
+        <div className="flex items-start justify-between">
+          <div className="h-4 bg-gray-200 rounded w-2/3" />
+          <div className="h-5 w-12 bg-gray-200 rounded-lg shrink-0 ml-2" />
+        </div>
+        <div className="h-3 bg-gray-200 rounded w-1/3" />
+        <div className="h-3 bg-gray-200 rounded w-1/2" />
+        <div className="flex justify-end pt-2 border-t border-gray-100">
+          <div className="h-8 w-20 bg-gray-200 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface Nailist {
   id: string
   businessName: string
@@ -201,7 +220,11 @@ export default function SearchPage() {
         </div>
 
         {/* Content area */}
-        {!loading && sorted.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {Array.from({ length: 6 }).map((_, i) => <NailistCardSkeleton key={i} />)}
+          </div>
+        ) : !loading && sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-5">
               <Search className="w-7 h-7 text-muted-foreground/60" />
@@ -229,7 +252,13 @@ export default function SearchPage() {
                 <div className="h-44 relative flex items-center justify-center overflow-hidden bg-pink-50">
                   {nailist.coverPhotoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={nailist.coverPhotoUrl} alt={nailist.businessName} className="w-full h-full object-cover" />
+                    <img
+                      src={nailist.coverPhotoUrl}
+                      alt={nailist.businessName}
+                      className="w-full h-full object-cover"
+                      style={{ opacity: 0, transition: 'opacity 0.4s' }}
+                      onLoad={(e) => { e.currentTarget.style.opacity = '1' }}
+                    />
                   ) : (
                     <div className="flex items-center justify-center w-full h-full">
                       <div className="w-16 h-16 rounded-2xl bg-white/80 flex items-center justify-center shadow-[0_2px_12px_rgba(236,72,153,0.12)]">

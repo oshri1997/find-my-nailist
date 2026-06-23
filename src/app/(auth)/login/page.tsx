@@ -85,7 +85,7 @@ export default function AuthPage() {
         } else if (actualRole === 'nailist') {
           router.replace(pendingMode === 'register' ? '/onboarding' : '/')
         } else {
-          router.replace(pendingMode === 'register' ? '/' : '/search')
+          router.replace(pendingMode === 'register' ? '/onboarding/client' : '/search')
         }
       })
       .catch(() => {
@@ -94,6 +94,8 @@ export default function AuthPage() {
           router.replace(redirectTo)
         } else if (pendingMode === 'register' && pendingRole === 'nailist') {
           router.replace('/onboarding')
+        } else if (pendingMode === 'register' && pendingRole === 'client') {
+          router.replace('/onboarding/client')
         } else if (pendingRole === 'nailist') {
           router.replace('/')
         } else {
@@ -132,7 +134,7 @@ export default function AuthPage() {
             role: role === 'nailist' ? 'NAILIST' : 'CLIENT',
           }),
         })
-        router.push(redirectTo || (role === 'nailist' ? '/onboarding' : '/'))
+        router.push(redirectTo || (role === 'nailist' ? '/onboarding' : '/onboarding/client'))
       }
     } catch (err: unknown) {
       setError(friendlyError(err, mode))
