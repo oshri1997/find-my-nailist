@@ -164,12 +164,12 @@ export async function GET(request: NextRequest) {
     if (!profileId) return NextResponse.json({ data: [] })
 
     const field = role === 'nailist' ? 'nailistProfileId' : 'clientProfileId'
-    const appointmentsSnap = await db
-      .collection(COLLECTIONS.APPOINTMENTS)
-      .where(field, '==', profileId)
-      .orderBy('startTime', 'desc')
-      .limit(50)
-      .get()
+    // nailistProfileId+startTime has a composite index; clientProfileId does not yet —
+    // sort in JS for client role to avoid requiring an additional index.
+    const appointmentsQuery = role === 'nailist'
+      ? db.collection(COLLECTIONS.APPOINTMENTS).where(field, '==', profileId).orderBy('startTime', 'desc').limit(50)
+      : db.collection(COLLECTIONS.APPOINTMENTS).where(field, '==', profileId).limit(50)
+    const appointmentsSnap = await appointmentsQuery.get()
 
     // Auto-complete CONFIRMED appointments whose end time has passed
     const now = new Date()
@@ -240,6 +240,11 @@ export async function GET(request: NextRequest) {
         updatedAt: data.updatedAt?.toDate?.()?.toISOString() ?? data.updatedAt,
       }
     })
+
+    // For client role the query has no orderBy (no composite index yet) — sort in JS
+    if (role === 'client') {
+      appointments.sort((a, b) => (b.startTime > a.startTime ? 1 : -1))
+    }
 
     return NextResponse.json({ data: appointments })
   } catch (error) {
