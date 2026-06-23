@@ -54,6 +54,11 @@ export default function SearchPage() {
   const [nailists, setNailists] = useState<Nailist[]>([])
   const [loading, setLoading] = useState(true)
   const [imagesReady, setImagesReady] = useState(false)
+  // Skeleton count: remembered across fetches so the count matches reality
+  const [skeletonCount, setSkeletonCount] = useState(() => {
+    try { return Math.max(1, parseInt(localStorage.getItem('nailists-count') ?? '3', 10)) }
+    catch { return 3 }
+  })
   const [locating, setLocating] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [locationLabel, setLocationLabel] = useState('')
@@ -79,6 +84,9 @@ export default function SearchPage() {
       const { data } = await res.json()
       if (myId !== fetchIdRef.current) return  // stale — a newer fetch is in flight
       setNailists(data)
+      const count = Math.max(1, (data as Nailist[]).length)
+      setSkeletonCount(count)
+      try { localStorage.setItem('nailists-count', String(count)) } catch {}
     } finally {
       if (myId === fetchIdRef.current) setLoading(false)
     }
@@ -261,7 +269,9 @@ export default function SearchPage() {
         {/* Content area */}
         {loading || !imagesReady ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {Array.from({ length: 6 }).map((_, i) => <NailistCardSkeleton key={i} />)}
+            {Array.from({ length: loading ? skeletonCount : sorted.length }).map((_, i) => (
+              <NailistCardSkeleton key={i} />
+            ))}
           </div>
         ) : sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
