@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/layout/navbar'
@@ -61,7 +61,10 @@ export default function SearchPage() {
   const [activeFilter, setActiveFilter] = useState('הכל')
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
 
+  const fetchIdRef = useRef(0)
+
   const fetchNailists = useCallback(async (lat?: number, lng?: number) => {
+    const myId = ++fetchIdRef.current
     setLoading(true)
     setImagesReady(false)
     try {
@@ -74,9 +77,10 @@ export default function SearchPage() {
       const res = await fetch(`/api/nailists?${params}`)
       if (!res.ok) return
       const { data } = await res.json()
+      if (myId !== fetchIdRef.current) return  // stale — a newer fetch is in flight
       setNailists(data)
     } finally {
-      setLoading(false)
+      if (myId === fetchIdRef.current) setLoading(false)
     }
   }, [])
 
