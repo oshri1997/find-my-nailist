@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Phone, MapPin, Loader2, Check, User } from 'lucide-react'
+import { ArrowLeft, Phone, Loader2, Check, User } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
 import { useAuth } from '@/components/auth/auth-provider'
 
 const STEPS = [
@@ -26,7 +27,10 @@ export default function ClientOnboardingPage() {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
   const [city, setCity] = useState('')
+  const [lat, setLat] = useState<number | undefined>()
+  const [lng, setLng] = useState<number | undefined>()
 
   useEffect(() => {
     if (authLoading) return
@@ -44,7 +48,10 @@ export default function ClientOnboardingPage() {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           phoneNumber: phone,
+          address: address || undefined,
           city: city || undefined,
+          latitude: lat,
+          longitude: lng,
         }),
       })
       if (!res.ok) throw new Error('failed')
@@ -227,18 +234,18 @@ export default function ClientOnboardingPage() {
                 <p className="text-sm text-muted-foreground mb-6">אופציונלי — עוזר למצוא נייליסטיות קרובות</p>
 
                 <div className="space-y-2 mb-6">
-                  <label className="text-sm font-bold text-foreground" htmlFor="city">עיר</label>
-                  <div className="relative">
-                    <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
-                    <Input
-                      id="city"
-                      type="text"
-                      value={city}
-                      onChange={e => setCity(e.target.value)}
-                      placeholder="תל אביב"
-                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-card"
-                    />
-                  </div>
+                  <label className="text-sm font-bold text-foreground">כתובת</label>
+                  <PlacesInput
+                    value={address}
+                    onChange={setAddress}
+                    onPlaceSelect={(result: PlaceResult) => {
+                      setAddress(result.address)
+                      setCity(result.city)
+                      setLat(result.lat)
+                      setLng(result.lng)
+                    }}
+                    placeholder="רחוב, עיר"
+                  />
                 </div>
 
                 {error && <p className="text-sm text-red-500 font-semibold mb-4">{error}</p>}
