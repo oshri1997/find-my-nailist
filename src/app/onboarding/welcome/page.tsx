@@ -10,7 +10,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 type Role = 'NAILIST' | 'CLIENT'
 
 export default function OnboardingWelcomePage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, refreshRole } = useAuth()
   const router = useRouter()
   const [selecting, setSelecting] = useState<Role | null>(null)
   const [error, setError] = useState('')
@@ -30,6 +30,7 @@ export default function OnboardingWelcomePage() {
         body: JSON.stringify({ role }),
       })
       if (!res.ok) throw new Error('failed')
+      await refreshRole()
       router.push(role === 'NAILIST' ? '/onboarding' : '/onboarding/client')
     } catch {
       setError('שגיאה — נסי שוב')

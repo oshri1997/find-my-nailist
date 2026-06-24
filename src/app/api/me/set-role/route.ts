@@ -49,6 +49,16 @@ export async function PATCH(request: NextRequest) {
         })
       }
     } else {
+      // Deactivate any existing nailist profile so user doesn't appear in search
+      const nailistSnap = await db
+        .collection(COLLECTIONS.NAILIST_PROFILES)
+        .where('userId', '==', uid)
+        .limit(1)
+        .get()
+      if (!nailistSnap.empty) {
+        await nailistSnap.docs[0].ref.update({ isActive: false, updatedAt: now })
+      }
+
       const existing = await db
         .collection(COLLECTIONS.CLIENT_PROFILES)
         .where('userId', '==', uid)

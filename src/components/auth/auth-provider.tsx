@@ -11,6 +11,7 @@ interface AuthContextValue {
   loading: boolean
   role: UserRole
   signOut: () => Promise<void>
+  refreshRole: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
   role: null,
   signOut: async () => {},
+  refreshRole: async () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -25,6 +27,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState<UserRole>(null)
   const skipCallbackRef = useRef(false)
+
+  const refreshRole = useCallback(async () => {
+    try {
+      const roleRes = await fetch('/api/me/role')
+      if (roleRes.ok) {
+        const { role: fetchedRole } = await roleRes.json()
+        setRole(fetchedRole ?? null)
+      }
+    } catch {}
+  }, [])
 
   const signOut = useCallback(async () => {
     setLoading(true)
@@ -88,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, role, signOut }}>
+    <AuthContext.Provider value={{ user, loading, role, signOut, refreshRole }}>
       {children}
     </AuthContext.Provider>
   )
