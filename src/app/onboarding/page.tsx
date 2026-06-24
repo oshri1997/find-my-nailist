@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, ArrowLeft, ArrowRight, ImagePlus, Plus, X, Loader2, MapPin, Check } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ImagePlus, Plus, X, Loader2, MapPin, Check } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
@@ -237,9 +238,7 @@ export default function OnboardingPage() {
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-pink-200">
-            <Sparkles className="h-6 w-6 text-white" />
-          </div>
+          <Image src="/logo.png" alt="נייליסטיות לוגו" width={56} height={56} className="mx-auto mb-2" />
           <h1 className="text-2xl font-black text-foreground">בואי נגדיר את העסק שלך 💅</h1>
           <p className="text-muted-foreground text-sm mt-1">עוד כמה צעדים ואת מוכנה לקבל לקוחות</p>
         </div>

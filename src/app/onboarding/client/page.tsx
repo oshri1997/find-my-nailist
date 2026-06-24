@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, ArrowLeft, Phone, MapPin, Loader2, Check, User } from 'lucide-react'
+import { ArrowLeft, Phone, MapPin, Loader2, Check, User } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/components/auth/auth-provider'
@@ -63,9 +64,7 @@ export default function ClientOnboardingPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shadow-[0_4px_16px_rgba(236,72,153,0.35)] mx-auto mb-3">
-            <Sparkles className="h-7 w-7 text-white" />
-          </div>
+          <Image src="/logo.png" alt="נייליסטיות לוגו" width={56} height={56} className="mx-auto mb-1" />
           <h1 className="text-2xl font-black gradient-text">נייליסטיות</h1>
           <p className="text-muted-foreground text-sm mt-1">בואי נכיר אותך קצת יותר 🌸</p>
         </div>

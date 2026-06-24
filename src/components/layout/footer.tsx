@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Sparkles, Heart } from 'lucide-react'
+import Image from 'next/image'
+import { Heart } from 'lucide-react'
 
 export function Footer() {
   return (
@@ -8,9 +9,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="col-span-1 md:col-span-2">
             <Link href="/" className="inline-flex items-center gap-2.5 font-black text-xl mb-5">
-              <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(236,72,153,0.3)]">
-                <Sparkles className="h-4 w-4 text-white" />
-              </div>
+              <Image src="/logo.png" alt="נייליסטיות לוגו" width={36} height={36} />
               <span className="gradient-text">נייליסטיות</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">

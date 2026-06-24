@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Sparkles, Mail, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Mail, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { resetPassword } from '@/lib/firebase/auth-helpers'
@@ -44,9 +45,7 @@ export default function ForgotPasswordPage() {
         {/* Logo */}
         <div className="text-center mb-10">
           <Link href="/" className="inline-flex items-center gap-2.5 group mb-8">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-[0_4px_16px_rgba(236,72,153,0.35)] group-hover:scale-105 transition-transform">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
+            <Image src="/logo.png" alt="נייליסטיות לוגו" width={48} height={48} className="group-hover:scale-105 transition-transform" />
             <span className="text-xl font-black gradient-text">נייליסטיות</span>
           </Link>
         </div>

@@ -52,9 +52,9 @@ export function Navbar() {
             <Image
               src="/logo.png"
               alt="נייליסטיות לוגו"
-              width={36}
-              height={36}
-              className="rounded-lg group-hover:scale-105 transition-transform"
+              width={52}
+              height={52}
+              className="group-hover:scale-105 transition-transform drop-shadow-sm"
             />
             <span className="gradient-text">נייליסטיות</span>
           </Link>

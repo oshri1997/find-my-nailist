@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Mail, Lock, User, ArrowLeft, AlertCircle } from 'lucide-react'
+import { Mail, Lock, User, ArrowLeft, AlertCircle } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { signInWithEmail, signInWithGoogle, signUpWithEmail } from '@/lib/firebase/auth-helpers'
@@ -174,9 +175,7 @@ export default function AuthPage() {
           {/* Logo */}
           <div className="text-center mb-8">
             <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-[0_4px_16px_rgba(236,72,153,0.35)] group-hover:scale-105 transition-transform">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
+              <Image src="/logo.png" alt="נייליסטיות לוגו" width={48} height={48} className="group-hover:scale-105 transition-transform" />
               <span className="text-xl font-black gradient-text">נייליסטיות</span>
             </Link>
           </div>
@@ -366,8 +365,8 @@ export default function AuthPage() {
             transition={{ duration: 0.35 }}
             className="relative z-10 text-white text-center px-12 max-w-sm"
           >
-            <div className="w-20 h-20 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-8 shadow-2xl">
-              <Sparkles className="w-10 h-10 text-white" />
+            <div className="mx-auto mb-8">
+              <Image src="/logo.png" alt="נייליסטיות לוגו" width={96} height={96} />
             </div>
             <h2 className="text-4xl font-black mb-4 leading-tight">{panel.heading}</h2>
             <p className="text-white/80 text-lg leading-relaxed mb-8 whitespace-pre-line">{panel.sub}</p>

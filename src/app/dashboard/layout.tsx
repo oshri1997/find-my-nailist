@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, LayoutDashboard, Calendar, Scissors, Image, Settings, Star, Clock, LogOut, Loader2, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Loader2, Menu, X } from 'lucide-react'
+import NextImage from 'next/image'
 import { useAuth } from '@/components/auth/auth-provider'
 
 const primaryNavLinks = [
@@ -16,7 +17,7 @@ const primaryNavLinks = [
 
 const secondaryNavLinks = [
   { href: '/dashboard/nailist/hours', label: 'שעות פעילות', Icon: Clock },
-  { href: '/dashboard/nailist/portfolio', label: 'פורטפוליו', Icon: Image },
+  { href: '/dashboard/nailist/portfolio', label: 'פורטפוליו', Icon: ImageIcon },
   { href: '/dashboard/nailist/reviews', label: 'ביקורות', Icon: Star },
 ]
 
@@ -79,9 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header className="md:hidden sticky top-0 z-40 bg-card border-b border-border shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
         <div className="flex items-center justify-between px-4 h-14">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(236,72,153,0.30)] group-hover:scale-105 transition-transform">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
+            <NextImage src="/logo.png" alt="נייליסטיות לוגו" width={36} height={36} className="group-hover:scale-105 transition-transform" />
             <span className="font-black text-base gradient-text">נייליסטיות</span>
           </Link>
 
@@ -111,9 +110,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Logo */}
           <div className="h-18 flex items-center px-5 border-b border-border py-5">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(236,72,153,0.30)] group-hover:scale-105 transition-transform">
-                <Sparkles className="h-4 w-4 text-white" />
-              </div>
+              <NextImage src="/logo.png" alt="נייליסטיות לוגו" width={36} height={36} className="group-hover:scale-105 transition-transform" />
               <span className="font-black text-base gradient-text">נייליסטיות</span>
             </Link>
           </div>
