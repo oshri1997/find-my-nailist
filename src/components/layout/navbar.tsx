@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Sparkles, LogOut, LayoutDashboard, ChevronDown, CalendarDays } from 'lucide-react'
+import { LogOut, LayoutDashboard, ChevronDown, CalendarDays } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -48,9 +49,13 @@ export function Navbar() {
             href="/"
             className="flex items-center gap-2.5 font-black text-xl group"
           >
-            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(236,72,153,0.35)] group-hover:scale-105 transition-transform">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="נייליסטיות לוגו"
+              width={36}
+              height={36}
+              className="rounded-lg group-hover:scale-105 transition-transform"
+            />
             <span className="gradient-text">נייליסטיות</span>
           </Link>
 
