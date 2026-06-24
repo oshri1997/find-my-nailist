@@ -57,9 +57,14 @@ export async function POST(request: NextRequest) {
     const clientProfile = clientProfileSnap.data()
 
     const confirmToken = randomUUID()
-    const confirmTokenExpiresAt = Timestamp.fromDate(
+    const declineToken = randomUUID()
+    const tokenExpiresAt = Timestamp.fromDate(
       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     )
+
+    const clientDisplayName = clientProfile?.firstName && clientProfile?.lastName
+      ? `${clientProfile.firstName} ${clientProfile.lastName}`
+      : (clientProfile?.displayName ?? '')
 
     const now = FieldValue.serverTimestamp()
     const appointmentRef = await db.collection(COLLECTIONS.APPOINTMENTS).add({
@@ -71,9 +76,11 @@ export async function POST(request: NextRequest) {
       currency: service.currency,
       serviceName: service.name,
       nailistBusinessName: nailist?.businessName ?? '',
-      clientDisplayName: clientProfile?.displayName ?? '',
+      clientDisplayName,
       confirmToken,
-      confirmTokenExpiresAt,
+      confirmTokenExpiresAt: tokenExpiresAt,
+      declineToken,
+      declineTokenExpiresAt: tokenExpiresAt,
       createdAt: now,
       updatedAt: now,
     })
@@ -91,17 +98,19 @@ export async function POST(request: NextRequest) {
     if (nailistEmail && clientEmail) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://nailistiot.fun'
       const confirmUrl = `${appUrl}/api/appointments/confirm?token=${confirmToken}`
+      const declineUrl = `${appUrl}/api/appointments/decline?token=${declineToken}`
       try {
         await sendAppointmentRequest({
           clientEmail,
           nailistEmail,
-          clientName: clientProfile?.displayName ?? clientEmail,
+          clientName: clientDisplayName || clientEmail,
           nailistBusinessName: nailist?.businessName ?? '',
           serviceName: service.name,
           startTime,
           price: service.price,
           currency: service.currency,
           confirmUrl,
+          declineUrl,
         })
         console.log('[booking] ✅ emails sent — nailist:', nailistEmail, '| client:', clientEmail)
       } catch (emailErr) {

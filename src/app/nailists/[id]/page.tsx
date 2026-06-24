@@ -92,6 +92,13 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
     return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   }
 
+  function formatReviewerName(displayName?: string) {
+    if (!displayName) return 'לקוחה'
+    const parts = displayName.trim().split(/\s+/)
+    if (parts.length < 2) return parts[0]
+    return `${parts[0]} ${parts[1][0]}.`
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-muted/50">
@@ -353,7 +360,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
                   className="bg-card rounded-2xl border border-border p-5"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <div className="font-bold text-muted-foreground">{review.clientDisplayName ?? 'לקוחה'}</div>
+                    <div className="font-bold text-muted-foreground">{formatReviewerName(review.clientDisplayName)}</div>
                     <div className="flex gap-0.5">
                       {Array.from({ length: 5 }).map((_, j) => (
                         <Star

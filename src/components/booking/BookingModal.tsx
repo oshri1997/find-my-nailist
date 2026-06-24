@@ -111,9 +111,15 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   }
 
   const dateStr = selectedDate ? toDateStr(selectedDate) : ''
+  const todayStr = toDateStr(new Date())
   const slots =
     availability?.workingDay && availability.startTime && availability.endTime
-      ? generateSlots(availability.startTime, availability.endTime)
+      ? generateSlots(availability.startTime, availability.endTime).filter((t) => {
+          if (!selectedDate || toDateStr(selectedDate) !== todayStr) return true
+          const [h, m] = t.split(':').map(Number)
+          const cur = new Date()
+          return h > cur.getHours() || (h === cur.getHours() && m > cur.getMinutes())
+        })
       : []
 
   const stepIndex = ['service', 'datetime', 'confirm'].indexOf(step)

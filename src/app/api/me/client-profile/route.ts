@@ -5,6 +5,8 @@ import { FieldValue } from 'firebase-admin/firestore'
 import { z } from 'zod'
 
 const patchSchema = z.object({
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
   phoneNumber: z.string().min(1).optional(),
   city: z.string().optional(),
 })
@@ -64,6 +66,11 @@ export async function PATCH(request: NextRequest) {
     if (snap.empty) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
     const updates: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() }
+    if (parsed.data.firstName !== undefined) updates.firstName = parsed.data.firstName
+    if (parsed.data.lastName !== undefined) updates.lastName = parsed.data.lastName
+    if (parsed.data.firstName && parsed.data.lastName) {
+      updates.displayName = `${parsed.data.firstName} ${parsed.data.lastName}`
+    }
     if (parsed.data.phoneNumber !== undefined) updates.phoneNumber = parsed.data.phoneNumber
     if (parsed.data.city !== undefined) updates.city = parsed.data.city
 

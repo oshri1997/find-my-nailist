@@ -47,6 +47,7 @@ export interface AppointmentEmailParams {
   price: number
   currency: string
   confirmUrl: string
+  declineUrl?: string
 }
 
 // Sent on booking creation: nailist gets action button, client gets "pending" notice
@@ -82,13 +83,17 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
           <p style="margin:4px 0"><strong>תאריך ושעה:</strong> ${dateStr}</p>
           <p style="margin:4px 0"><strong>מחיר:</strong> ${symbol}${p.price}</p>
         </div>
-        <div style="text-align:center;margin:32px 0">
+        <div style="text-align:center;margin:32px 0;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
           <a href="${p.confirmUrl}"
             style="background:linear-gradient(135deg,#ec4899,#a855f7);color:white;text-decoration:none;padding:18px 48px;border-radius:50px;font-size:20px;font-weight:bold;display:inline-block">
             ✅ מאשרת את התור
           </a>
+          ${p.declineUrl ? `<a href="${p.declineUrl}"
+            style="background:#f3f4f6;color:#6b7280;text-decoration:none;padding:18px 48px;border-radius:50px;font-size:20px;font-weight:bold;display:inline-block;border:2px solid #e5e7eb">
+            ❌ לא מאשרת
+          </a>` : ''}
         </div>
-        <p style="color:#aaa;font-size:12px;text-align:center">הקישור תקף ל-7 ימים. לאחר לחיצה, הלקוחה תקבל אישור במייל.</p>
+        <p style="color:#aaa;font-size:12px;text-align:center">הקישורים תקפים ל-7 ימים. לאחר לחיצה, הלקוחה תקבל עדכון במייל.</p>
       </div>`
     ),
   ])
