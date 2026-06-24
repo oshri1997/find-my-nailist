@@ -63,8 +63,18 @@ export default function AuthPage() {
         role: pendingRole === 'nailist' ? 'NAILIST' : 'CLIENT',
       }),
     })
-      .then(r => r.json())
-      .then(({ data }) => {
+      .then(async r => {
+        const isNew = r.status === 201
+        const json = await r.json()
+        return { isNew, data: json.data }
+      })
+      .then(({ isNew, data }) => {
+        // Brand new user → role selection onboarding
+        if (isNew) {
+          router.replace(redirectTo || '/onboarding/welcome')
+          return
+        }
+
         const actualRole: Role = data?.role === 'NAILIST' ? 'nailist' : 'client'
 
         // Registering via Google but account already exists with a different role
@@ -79,7 +89,7 @@ export default function AuthPage() {
           return
         }
 
-        // Redirect based on actual role stored in DB (ignores whatever was selected in the UI)
+        // Redirect existing user based on actual role stored in DB
         if (redirectTo) {
           router.replace(redirectTo)
         } else if (actualRole === 'nailist') {
@@ -89,13 +99,11 @@ export default function AuthPage() {
         }
       })
       .catch(() => {
-        // Network failure fallback — use intended role
+        // Network failure fallback
         if (redirectTo) {
           router.replace(redirectTo)
-        } else if (pendingMode === 'register' && pendingRole === 'nailist') {
-          router.replace('/onboarding')
-        } else if (pendingMode === 'register' && pendingRole === 'client') {
-          router.replace('/onboarding/client')
+        } else if (pendingMode === 'register') {
+          router.replace('/onboarding/welcome')
         } else if (pendingRole === 'nailist') {
           router.replace('/')
         } else {
