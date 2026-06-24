@@ -13,7 +13,7 @@ const mockCards = [
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-white">
+    <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-background">
       {/* Subtle decorative circles */}
       <div className="absolute top-0 right-0 w-[700px] h-[700px] rounded-full opacity-[0.06] bg-primary -translate-y-1/2 translate-x-1/3 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full opacity-[0.04] bg-accent translate-y-1/3 -translate-x-1/4 pointer-events-none" />

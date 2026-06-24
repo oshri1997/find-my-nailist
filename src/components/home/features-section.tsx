@@ -18,7 +18,7 @@ export function FeaturesSection() {
   const isInView = useInView(ref, { once: true, margin: '-80px' })
 
   return (
-    <section ref={ref} className="py-24 bg-white">
+    <section ref={ref} className="py-24 bg-background">
       <div className="container mx-auto max-w-7xl px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -46,9 +46,9 @@ export function FeaturesSection() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4, delay: i * 0.06 }}
               whileHover={{ y: -3, transition: { duration: 0.2 } }}
-              className="bg-white rounded-2xl p-7 cursor-default border border-border hover:border-pink-200 hover:shadow-[0_8px_30px_rgba(236,72,153,0.10)] transition-all duration-300 group"
+              className="bg-card rounded-2xl p-7 cursor-default border border-border hover:border-pink-200 hover:shadow-[0_8px_30px_rgba(236,72,153,0.10)] transition-all duration-300 group"
             >
-              <div className="w-11 h-11 rounded-xl bg-pink-50 flex items-center justify-center mb-5 group-hover:bg-primary group-hover:shadow-[0_4px_12px_rgba(236,72,153,0.3)] transition-all duration-300">
+              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary group-hover:shadow-[0_4px_12px_rgba(236,72,153,0.3)] transition-all duration-300">
                 <f.Icon className="w-5 h-5 text-primary group-hover:text-white transition-colors duration-300" />
               </div>
               <h3 className="text-base font-black text-foreground mb-2">{f.title}</h3>

@@ -40,7 +40,7 @@ export function Navbar() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm border-b border-border shadow-[0_1px_12px_rgba(236,72,153,0.06)]"
+      className="sticky top-0 z-50 w-full bg-card/95 backdrop-blur-sm border-b border-border shadow-[0_1px_12px_rgba(236,72,153,0.06)]"
     >
       <div className="container mx-auto max-w-7xl px-6">
         <div className="flex h-16 items-center justify-between">
@@ -124,7 +124,7 @@ export function Navbar() {
                   </button>
 
                   {showMenu && (
-                    <div className="absolute top-full mt-2 end-0 w-52 bg-white rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-border p-1 z-50">
+                    <div className="absolute top-full mt-2 end-0 w-52 bg-card rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-border p-1 z-50">
                       <div className="px-3 py-2.5 border-b border-border mb-1">
                         <p className="text-sm font-bold text-foreground truncate">{displayName}</p>
                         <p className="text-xs text-muted-foreground truncate">{user.email}</p>

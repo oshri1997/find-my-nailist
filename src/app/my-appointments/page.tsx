@@ -130,11 +130,11 @@ function MyAppointmentsInner() {
   const symbol = (currency: string) => currency === 'ILS' ? '₪' : '$'
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50/30 via-white to-purple-50/20" dir="rtl">
+    <div className="min-h-screen bg-background" dir="rtl">
       <Navbar />
       <div className="container mx-auto max-w-2xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-black text-gray-800 flex items-center gap-2">
+          <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
             <CalendarDays className="h-6 w-6 text-primary" />
             ההזמנות שלי
           </h1>
@@ -184,7 +184,7 @@ function MyAppointmentsInner() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
-                className="bg-white rounded-2xl border border-border shadow-sm p-4"
+                className="bg-card rounded-2xl border border-border shadow-sm p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">

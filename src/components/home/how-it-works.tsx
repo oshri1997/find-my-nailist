@@ -11,8 +11,8 @@ const steps = [
     title: 'גלי נייליסטיות בקרבתך',
     desc: 'השתמשי במיקום שלך כדי לגלות מאות מומחיות ציפורניים באזורך.',
     iconBg: 'bg-pink-500',
-    cardBg: 'bg-pink-50',
-    border: 'border-pink-100',
+    cardBg: 'bg-pink-50 dark:bg-pink-950/40',
+    border: 'border-pink-100 dark:border-pink-900/50',
     stepColor: 'text-pink-400',
   },
   {
@@ -21,8 +21,8 @@ const steps = [
     title: 'עיצוב ופורטפוליו',
     desc: 'עיצובים before & after, ביקורות אמיתיות ומחירים שקופים.',
     iconBg: 'bg-violet-500',
-    cardBg: 'bg-violet-50',
-    border: 'border-violet-100',
+    cardBg: 'bg-violet-50 dark:bg-violet-950/40',
+    border: 'border-violet-100 dark:border-violet-900/50',
     stepColor: 'text-violet-400',
   },
   {
@@ -31,8 +31,8 @@ const steps = [
     title: 'הזמיני תור בקליק',
     desc: 'בחרי שירות, תאריך ושעה — בלי שיחות, בלי המתנה.',
     iconBg: 'bg-purple-500',
-    cardBg: 'bg-purple-50',
-    border: 'border-purple-100',
+    cardBg: 'bg-purple-50 dark:bg-purple-950/40',
+    border: 'border-purple-100 dark:border-purple-900/50',
     stepColor: 'text-purple-400',
   },
 ]

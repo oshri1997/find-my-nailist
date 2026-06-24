@@ -76,7 +76,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen bg-background">
 
       {/* Mobile header */}
-      <header className="md:hidden sticky top-0 z-40 bg-white border-b border-border shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+      <header className="md:hidden sticky top-0 z-40 bg-card border-b border-border shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
         <div className="flex items-center justify-between px-4 h-14">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(236,72,153,0.30)] group-hover:scale-105 transition-transform">
@@ -106,7 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           initial={{ x: 60, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="hidden md:flex w-60 bg-white border-l border-border flex-col shrink-0 shadow-[1px_0_12px_rgba(0,0,0,0.04)]"
+          className="hidden md:flex w-60 bg-card border-l border-border flex-col shrink-0 shadow-[1px_0_12px_rgba(0,0,0,0.04)]"
         >
           {/* Logo */}
           <div className="h-18 flex items-center px-5 border-b border-border py-5">
@@ -182,7 +182,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Mobile bottom tab bar — 4 primary + More */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
         <div className="flex items-stretch h-16">
           {primaryNavLinks.map((link) => {
             const isActive = pathname === link.href
@@ -241,7 +241,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="md:hidden fixed bottom-16 inset-x-0 z-50 bg-white rounded-t-2xl shadow-[0_-8px_40px_rgba(0,0,0,0.14)] px-4 pt-4 pb-6"
+              className="md:hidden fixed bottom-16 inset-x-0 z-50 bg-card rounded-t-2xl shadow-[0_-8px_40px_rgba(0,0,0,0.14)] px-4 pt-4 pb-6"
             >
               {/* Handle bar */}
               <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
