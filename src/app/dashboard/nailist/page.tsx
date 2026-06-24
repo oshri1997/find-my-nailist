@@ -108,6 +108,13 @@ interface NailistProfile {
   reviewCount?: number
 }
 
+function formatReviewerName(displayName?: string) {
+  if (!displayName) return 'לקוחה'
+  const parts = displayName.trim().split(/\s+/)
+  if (parts.length < 2) return parts[0]
+  return `${parts[0]} ${parts[1][0]}.`
+}
+
 export default function NailistDashboard() {
   const { user } = useAuth()
   const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
@@ -392,7 +399,7 @@ export default function NailistDashboard() {
                   className="p-3 rounded-2xl border border-border"
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-bold text-foreground">{review.clientDisplayName ?? 'לקוחה'}</span>
+                    <span className="text-sm font-bold text-foreground">{formatReviewerName(review.clientDisplayName)}</span>
                     <div className="flex gap-0.5">
                       {Array.from({ length: 5 }).map((_, j) => (
                         <Star key={j} className={`h-3.5 w-3.5 ${j < review.rating ? 'fill-amber-400 text-amber-400' : 'text-border'}`} />

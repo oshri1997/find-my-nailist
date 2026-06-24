@@ -50,7 +50,7 @@ export default function OnboardingWelcomePage() {
         </div>
 
         <div className="bg-card rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-8 border border-border">
-          <h2 className="text-xl font-black text-foreground mb-2 text-center">את מי את? ✨</h2>
+          <h2 className="text-xl font-black text-foreground mb-2 text-center">בחרי סוג חשבון ✨</h2>
           <p className="text-sm text-muted-foreground mb-8 text-center">
             בחרי את סוג החשבון שלך כדי שנוכל להתאים לך את החוויה
           </p>
