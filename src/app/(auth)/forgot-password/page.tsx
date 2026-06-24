@@ -51,14 +51,14 @@ export default function ForgotPasswordPage() {
           </Link>
         </div>
 
-        <div className="bg-white rounded-2xl p-8 border border-border shadow-[0_4px_24px_rgba(236,72,153,0.08)]">
+        <div className="bg-card rounded-2xl p-8 border border-border shadow-[0_4px_24px_rgba(236,72,153,0.08)]">
           {sent ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-2"
             >
-              <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl flex items-center justify-center mx-auto mb-5">
                 <CheckCircle2 className="h-8 w-8 text-emerald-500" />
               </div>
               <h2 className="text-2xl font-black text-foreground mb-3">המייל נשלח!</h2>
@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 rounded-xl px-4 py-3 text-sm font-semibold mb-5"
+                  className="flex items-center gap-2 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40 text-red-600 dark:text-red-400 rounded-xl px-4 py-3 text-sm font-semibold mb-5"
                 >
                   <AlertCircle className="h-4 w-4 shrink-0" />
                   {error}
@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
                       required
-                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-white"
+                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-card"
                     />
                   </div>
                 </div>

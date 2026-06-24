@@ -80,7 +80,7 @@ export default function ReviewModal({
         initial={{ opacity: 0, scale: 0.95, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 16 }}
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+        className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
         dir="rtl"
       >
         {/* Header */}
@@ -174,7 +174,7 @@ export default function ReviewModal({
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="שתפי את החוויה שלך (לא חובה)..."
                 rows={4}
-                className="w-full border border-border rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 bg-muted text-foreground placeholder:text-muted-foreground/60"
               />
 
               {error && <p className="text-destructive text-sm text-center">{error}</p>}

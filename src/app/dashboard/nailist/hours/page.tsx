@@ -47,7 +47,7 @@ function TimeSelect({ value, onChange, min }: { value: string; onChange: (v: str
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
-      className="h-9 rounded-xl border border-gray-200 bg-white px-2 text-sm font-semibold text-gray-700 focus:outline-none focus:border-pink-300 cursor-pointer"
+      className="h-9 rounded-xl border border-border bg-card px-2 text-sm font-semibold text-foreground focus:outline-none focus:border-pink-300 cursor-pointer"
     >
       {options.map(t => <option key={t} value={t}>{t}</option>)}
     </select>
@@ -117,7 +117,7 @@ export default function WorkingHoursPage() {
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center gap-3 text-gray-400 font-medium">
+      <div className="p-8 flex items-center gap-3 text-muted-foreground font-medium">
         <Loader2 className="h-5 w-5 animate-spin" />
         טוענת שעות עבודה...
       </div>
@@ -129,14 +129,14 @@ export default function WorkingHoursPage() {
   return (
     <div className="p-4 md:p-8 max-w-2xl">
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-black text-gray-800 mb-1">שעות עבודה ⏰</h1>
-        <p className="text-gray-400 font-medium">הגדירי את הימים והשעות שאת זמינה ללקוחות</p>
+        <h1 className="text-2xl md:text-3xl font-black text-foreground mb-1">שעות עבודה ⏰</h1>
+        <p className="text-muted-foreground font-medium">הגדירי את הימים והשעות שאת זמינה ללקוחות</p>
       </motion.div>
 
       {/* Quick presets */}
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-        className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-4 mb-5 border border-pink-100">
-        <p className="text-xs font-black text-gray-500 mb-3 flex items-center gap-1.5">
+        className="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-950/30 dark:to-purple-950/30 rounded-2xl p-4 mb-5 border border-pink-100 dark:border-pink-900/50">
+        <p className="text-xs font-black text-muted-foreground mb-3 flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5" />
           תבניות מהירות
         </p>
@@ -146,7 +146,7 @@ export default function WorkingHoursPage() {
               key={preset.label}
               type="button"
               onClick={() => applyPreset(preset)}
-              className="px-4 py-1.5 rounded-xl bg-white border border-pink-200 text-sm font-bold text-pink-600 hover:bg-pink-500 hover:text-white hover:border-pink-500 transition-all shadow-sm"
+              className="px-4 py-1.5 rounded-xl bg-card border border-pink-200 text-sm font-bold text-pink-600 hover:bg-pink-500 hover:text-white hover:border-pink-500 transition-all shadow-sm"
             >
               {preset.label}
             </button>
@@ -157,7 +157,7 @@ export default function WorkingHoursPage() {
       <form onSubmit={handleSave}>
         {/* Active count badge */}
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-bold text-gray-400">
+          <p className="text-xs font-bold text-muted-foreground">
             {activeDays} ימים פעילים מתוך 7
           </p>
           <div className="flex gap-1">
@@ -166,7 +166,7 @@ export default function WorkingHoursPage() {
               return (
                 <div
                   key={day}
-                  className={`w-2 h-2 rounded-full transition-colors ${h.isActive ? 'bg-gradient-to-br from-pink-500 to-purple-600' : 'bg-gray-200'}`}
+                  className={`w-2 h-2 rounded-full transition-colors ${h.isActive ? 'bg-gradient-to-br from-pink-500 to-purple-600' : 'bg-muted'}`}
                 />
               )
             })}
@@ -186,8 +186,8 @@ export default function WorkingHoursPage() {
                   h.isActive
                     ? weekend
                       ? 'bg-amber-50/60 border-amber-200'
-                      : 'bg-white border-pink-100 shadow-sm'
-                    : 'bg-gray-50 border-gray-100'
+                      : 'bg-card border-pink-100 shadow-sm'
+                    : 'bg-muted/50 border-border'
                 }`}
               >
                 <div className="flex items-center gap-3 p-3.5">
@@ -199,7 +199,7 @@ export default function WorkingHoursPage() {
                     className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
                       h.isActive
                         ? weekend ? 'bg-amber-400' : 'bg-pink-500'
-                        : 'bg-gray-200'
+                        : 'bg-muted'
                     }`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${h.isActive ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -208,8 +208,8 @@ export default function WorkingHoursPage() {
                   {/* Day name */}
                   <span className={`w-14 text-sm font-black shrink-0 ${
                     h.isActive
-                      ? weekend ? 'text-amber-700' : 'text-gray-800'
-                      : 'text-gray-400'
+                      ? weekend ? 'text-amber-700' : 'text-foreground'
+                      : 'text-muted-foreground'
                   }`}>
                     {label}
                   </span>
@@ -218,9 +218,9 @@ export default function WorkingHoursPage() {
                   {h.isActive ? (
                     <div className="flex items-center gap-2 flex-1">
                       <TimeSelect value={h.startTime} onChange={v => setTime(day, 'startTime', v)} />
-                      <span className="text-gray-300 font-bold text-sm">—</span>
+                      <span className="text-muted-foreground/40 font-bold text-sm">—</span>
                       <TimeSelect value={h.endTime} onChange={v => setTime(day, 'endTime', v)} min={h.startTime} />
-                      <span className="text-xs text-gray-400 font-medium hidden sm:block">
+                      <span className="text-xs text-muted-foreground font-medium hidden sm:block">
                         ({Math.round(((() => {
                           const [eh, em] = h.endTime.split(':').map(Number)
                           const [sh, sm] = h.startTime.split(':').map(Number)
@@ -229,7 +229,7 @@ export default function WorkingHoursPage() {
                       </span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 text-gray-400">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
                       <span className="text-sm font-medium">סגור</span>
                       {day === 6 && <span className="text-base">🌙</span>}
                     </div>
@@ -241,7 +241,7 @@ export default function WorkingHoursPage() {
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 text-red-500 text-sm font-semibold mt-4 bg-red-50 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2 text-red-500 dark:text-red-400 text-sm font-semibold mt-4 bg-red-50 dark:bg-red-950/30 rounded-xl px-4 py-3">
             <AlertCircle className="h-4 w-4 shrink-0" />
             {error}
           </div>

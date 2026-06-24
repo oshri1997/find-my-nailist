@@ -41,7 +41,7 @@ function NailistPin({ nailist }: { nailist: Nailist }) {
           <span className="text-white text-sm font-black">{initials}</span>
         )}
       </div>
-      <div className="bg-white text-xs font-bold text-gray-700 px-2.5 py-1 rounded-full shadow-md mt-1 whitespace-nowrap max-w-[120px] truncate opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+      <div className="bg-card text-xs font-bold text-foreground px-2.5 py-1 rounded-full shadow-md mt-1 whitespace-nowrap max-w-[120px] truncate opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
         {nailist.businessName}
       </div>
       {/* Pin tail */}
@@ -67,16 +67,16 @@ export default function NailistMap({ nailists, center }: Props) {
 
   if (loading) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-2xl">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      <div className="w-full h-full flex items-center justify-center bg-muted rounded-2xl">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   if (!apiKey) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-2xl" dir="rtl">
-        <p className="text-gray-400 font-medium">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY לא מוגדר</p>
+      <div className="w-full h-full flex items-center justify-center bg-muted rounded-2xl" dir="rtl">
+        <p className="text-muted-foreground font-medium">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY לא מוגדר</p>
       </div>
     )
   }

@@ -51,7 +51,7 @@ export default function ClientOnboardingPage() {
   if (authLoading || !user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -81,7 +81,7 @@ export default function ClientOnboardingPage() {
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-8 border border-border">
+        <div className="bg-card rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-8 border border-border">
           <AnimatePresence mode="wait">
             {done ? (
               <motion.div
@@ -119,7 +119,7 @@ export default function ClientOnboardingPage() {
                       value={phone}
                       onChange={e => setPhone(e.target.value)}
                       placeholder="050-1234567"
-                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-white"
+                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-card"
                       dir="ltr"
                     />
                   </div>
@@ -158,7 +158,7 @@ export default function ClientOnboardingPage() {
                       value={city}
                       onChange={e => setCity(e.target.value)}
                       placeholder="תל אביב"
-                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-white"
+                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-card"
                     />
                   </div>
                 </div>

@@ -99,30 +99,30 @@ export function PlacesInput({ value, onChange, onPlaceSelect, placeholder }: Pro
         onChange={handleChange}
         onFocus={() => predictions.length > 0 && setOpen(true)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:border-pink-300 h-11 font-medium text-gray-700 placeholder:text-gray-300"
+        className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:border-pink-300 h-11 font-medium text-foreground placeholder:text-muted-foreground/40"
         autoComplete="off"
         dir="rtl"
       />
       {open && (
-        <ul className="absolute z-50 top-full mt-1 w-full bg-white rounded-xl border border-gray-100 shadow-2xl overflow-hidden">
+        <ul className="absolute z-50 top-full mt-1 w-full bg-card rounded-xl border border-border shadow-2xl overflow-hidden">
           {predictions.map((p) => (
             <li
               key={p.place_id}
               onMouseDown={() => selectPlace(p)}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-pink-50 cursor-pointer transition-colors border-b border-gray-50 last:border-0"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-pink-50 dark:hover:bg-pink-950/30 cursor-pointer transition-colors border-b border-border/50 last:border-0"
               dir="rtl"
             >
-              <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
+              <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="text-sm leading-tight">
-                <span className="font-semibold text-gray-700">{p.structured_formatting.main_text}</span>
+                <span className="font-semibold text-foreground">{p.structured_formatting.main_text}</span>
                 {p.structured_formatting.secondary_text && (
-                  <span className="text-gray-400 text-xs block">{p.structured_formatting.secondary_text}</span>
+                  <span className="text-muted-foreground text-xs block">{p.structured_formatting.secondary_text}</span>
                 )}
               </span>
             </li>
           ))}
-          <li className="flex justify-end px-3 py-1.5 bg-gray-50">
-            <span className="text-[10px] text-gray-400 font-medium">powered by Google</span>
+          <li className="flex justify-end px-3 py-1.5 bg-muted/50">
+            <span className="text-[10px] text-muted-foreground font-medium">powered by Google</span>
           </li>
         </ul>
       )}

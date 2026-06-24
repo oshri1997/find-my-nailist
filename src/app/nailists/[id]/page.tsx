@@ -94,7 +94,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50/50">
+      <div className="min-h-screen flex flex-col bg-muted/50">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
@@ -105,11 +105,11 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50/50">
+      <div className="min-h-screen flex flex-col bg-muted/50">
         <Navbar />
         <div className="flex-1 flex items-center justify-center flex-col gap-3" dir="rtl">
           <div className="text-4xl">😔</div>
-          <p className="font-black text-gray-400">הפרופיל לא נמצא</p>
+          <p className="font-black text-muted-foreground">הפרופיל לא נמצא</p>
           <Link href="/search">
             <Button variant="outline" className="rounded-xl">חזרה לחיפוש</Button>
           </Link>
@@ -119,7 +119,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50/50" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-muted/50" dir="rtl">
       <Navbar />
 
       {/* Hero */}
@@ -246,7 +246,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-gray-100 sticky top-20 z-20">
+      <div className="bg-card border-b border-border sticky top-20 z-20">
         <div className="container mx-auto max-w-4xl px-6">
           <div className="flex gap-1">
             {([['portfolio', 'פורטפוליו'], ['services', 'שירותים'], ['reviews', 'ביקורות']] as const).map(([key, label]) => (
@@ -256,7 +256,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
                 className={`py-4 px-4 text-sm font-bold border-b-2 transition-colors ${
                   activeTab === key
                     ? 'border-pink-500 text-pink-600'
-                    : 'border-transparent text-gray-400 hover:text-gray-600'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {label}
@@ -271,7 +271,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
         {activeTab === 'portfolio' && (
           <div>
             {profile.portfolio.length === 0 ? (
-              <div className="text-center py-16 text-gray-400">
+              <div className="text-center py-16 text-muted-foreground">
                 <div className="text-4xl mb-3">🖼️</div>
                 <p className="font-bold">אין תמונות בפורטפוליו עדיין</p>
               </div>
@@ -283,7 +283,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.05 }}
-                    className="aspect-square rounded-2xl overflow-hidden bg-gray-100"
+                    className="aspect-square rounded-2xl overflow-hidden bg-muted"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={photo.url} alt={photo.caption ?? ''} className="w-full h-full object-cover" />
@@ -297,7 +297,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
         {activeTab === 'services' && (
           <div className="space-y-4">
             {profile.services.length === 0 ? (
-              <div className="text-center py-16 text-gray-400">
+              <div className="text-center py-16 text-muted-foreground">
                 <div className="text-4xl mb-3">✂️</div>
                 <p className="font-bold">אין שירותים זמינים כרגע</p>
               </div>
@@ -308,12 +308,12 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.07 }}
-                  className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center justify-between hover:border-pink-200 transition-colors"
+                  className="bg-card rounded-2xl border border-border p-5 flex items-center justify-between hover:border-pink-200 transition-colors"
                 >
                   <div>
-                    <h3 className="font-black text-gray-800">{service.name}</h3>
-                    {service.description && <p className="text-sm text-gray-400 mt-0.5">{service.description}</p>}
-                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
+                    <h3 className="font-black text-foreground">{service.name}</h3>
+                    {service.description && <p className="text-sm text-muted-foreground mt-0.5">{service.description}</p>}
+                    <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                       <Clock className="h-3.5 w-3.5" />
                       {service.durationMinutes} {"דק'"}
                     </div>
@@ -339,7 +339,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
         {activeTab === 'reviews' && (
           <div className="space-y-4">
             {profile.reviews.length === 0 ? (
-              <div className="text-center py-16 text-gray-400">
+              <div className="text-center py-16 text-muted-foreground">
                 <div className="text-4xl mb-3">💬</div>
                 <p className="font-bold">אין ביקורות עדיין</p>
               </div>
@@ -350,21 +350,21 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.07 }}
-                  className="bg-white rounded-2xl border border-gray-100 p-5"
+                  className="bg-card rounded-2xl border border-border p-5"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <div className="font-bold text-gray-700">{review.clientDisplayName ?? 'לקוחה'}</div>
+                    <div className="font-bold text-muted-foreground">{review.clientDisplayName ?? 'לקוחה'}</div>
                     <div className="flex gap-0.5">
                       {Array.from({ length: 5 }).map((_, j) => (
                         <Star
                           key={j}
-                          className={`h-4 w-4 ${j < review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`}
+                          className={`h-4 w-4 ${j < review.rating ? 'fill-amber-400 text-amber-400' : 'text-border'}`}
                         />
                       ))}
                     </div>
                   </div>
-                  {review.comment && <p className="text-sm text-gray-600 leading-relaxed">{review.comment}</p>}
-                  <p className="text-xs text-gray-300 mt-2">
+                  {review.comment && <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>}
+                  <p className="text-xs text-muted-foreground/60 mt-2">
                     {new Date(review.createdAt).toLocaleDateString('he-IL')}
                   </p>
                 </motion.div>

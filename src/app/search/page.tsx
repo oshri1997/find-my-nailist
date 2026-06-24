@@ -16,17 +16,17 @@ const NailistMap = dynamic(() => import('@/components/search/NailistMap'), { ssr
 
 function NailistCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-2xl overflow-hidden bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-border">
-      <div className="h-44 bg-gray-200" />
+    <div className="animate-pulse rounded-2xl overflow-hidden bg-card shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-border">
+      <div className="h-44 bg-muted" />
       <div className="p-5 space-y-3">
         <div className="flex items-start justify-between">
-          <div className="h-4 bg-gray-200 rounded w-2/3" />
-          <div className="h-5 w-12 bg-gray-200 rounded-lg shrink-0 ml-2" />
+          <div className="h-4 bg-muted rounded w-2/3" />
+          <div className="h-5 w-12 bg-muted rounded-lg shrink-0 ml-2" />
         </div>
-        <div className="h-3 bg-gray-200 rounded w-1/3" />
-        <div className="h-3 bg-gray-200 rounded w-1/2" />
-        <div className="flex justify-end pt-2 border-t border-gray-100">
-          <div className="h-8 w-20 bg-gray-200 rounded-xl" />
+        <div className="h-3 bg-muted rounded w-1/3" />
+        <div className="h-3 bg-muted rounded w-1/2" />
+        <div className="flex justify-end pt-2 border-t border-border">
+          <div className="h-8 w-20 bg-muted rounded-xl" />
         </div>
       </div>
     </div>
@@ -158,7 +158,7 @@ export default function SearchPage() {
       <Navbar />
 
       {/* Search controls bar */}
-      <div className="bg-white border-b border-border sticky top-16 z-30 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+      <div className="bg-card border-b border-border sticky top-16 z-30 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
         <div className="container mx-auto max-w-7xl px-6 py-4">
           <div className="flex gap-3">
             <div className="relative flex-1">
@@ -166,7 +166,7 @@ export default function SearchPage() {
               <Input
                 value={locationLabel}
                 onChange={(e) => setLocationLabel(e.target.value)}
-                className="pr-9 rounded-xl border-border focus:border-primary h-11 bg-white"
+                className="pr-9 rounded-xl border-border focus:border-primary h-11 bg-card"
                 placeholder="הכניסי מיקום..."
                 readOnly={!!coords}
               />
@@ -200,7 +200,7 @@ export default function SearchPage() {
                 className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-all cursor-pointer ${
                   activeFilter === tag
                     ? 'bg-primary text-white shadow-[0_2px_8px_rgba(236,72,153,0.25)]'
-                    : 'bg-white border border-border text-muted-foreground hover:border-primary/40 hover:text-primary'
+                    : 'bg-card border border-border text-muted-foreground hover:border-primary/40 hover:text-primary'
                 }`}
               >
                 {tag}
@@ -242,7 +242,7 @@ export default function SearchPage() {
               }}
               className={`rounded-xl px-3 py-1.5 text-sm font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
                 viewMode === 'map'
-                  ? 'border-primary/40 text-primary bg-pink-50'
+                  ? 'border-primary/40 text-primary bg-pink-50 dark:bg-pink-950/30'
                   : 'border-border text-muted-foreground hover:border-primary/30 hover:text-primary'
               }`}
             >
@@ -256,7 +256,7 @@ export default function SearchPage() {
                 disabled={key === 'distance' && !coords}
                 className={`rounded-xl px-3 py-1.5 text-sm font-semibold border transition-all disabled:opacity-40 cursor-pointer ${
                   sortBy === key
-                    ? 'border-primary/40 text-primary bg-pink-50'
+                    ? 'border-primary/40 text-primary bg-pink-50 dark:bg-pink-950/30'
                     : 'border-border text-muted-foreground hover:border-primary/30 hover:text-primary'
                 }`}
               >
@@ -295,7 +295,7 @@ export default function SearchPage() {
                 transition={{ duration: 0.35, delay: Math.min(i * 0.06, 0.4) }}
                 whileHover={{ y: -3, transition: { duration: 0.2 } }}
                 onClick={() => router.push(`/nailists/${nailist.id}`)}
-                className="bg-white rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_32px_rgba(236,72,153,0.12)] transition-all duration-300 cursor-pointer group border border-border hover:border-pink-200"
+                className="bg-card rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_32px_rgba(236,72,153,0.12)] transition-all duration-300 cursor-pointer group border border-border hover:border-pink-200"
               >
                 {/* Cover */}
                 <div className="h-44 relative flex items-center justify-center overflow-hidden bg-pink-50">
@@ -310,7 +310,7 @@ export default function SearchPage() {
                     />
                   ) : (
                     <div className="flex items-center justify-center w-full h-full">
-                      <div className="w-16 h-16 rounded-2xl bg-white/80 flex items-center justify-center shadow-[0_2px_12px_rgba(236,72,153,0.12)]">
+                      <div className="w-16 h-16 rounded-2xl bg-card/80 flex items-center justify-center shadow-[0_2px_12px_rgba(236,72,153,0.12)]">
                         <Sparkles className="w-8 h-8 text-primary/60" />
                       </div>
                     </div>
@@ -318,12 +318,12 @@ export default function SearchPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
                   <button
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute top-3 left-3 w-9 h-9 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-sm cursor-pointer"
+                    className="absolute top-3 left-3 w-9 h-9 bg-card/80 rounded-full flex items-center justify-center hover:bg-card transition-colors shadow-sm cursor-pointer"
                   >
                     <Heart className="h-4 w-4 text-muted-foreground/60" />
                   </button>
                   {nailist.distanceKm != null && (
-                    <div className="absolute top-3 right-3 bg-white/90 rounded-full px-3 py-1 text-foreground text-xs font-bold flex items-center gap-1 shadow-sm">
+                    <div className="absolute top-3 right-3 bg-card/90 rounded-full px-3 py-1 text-foreground text-xs font-bold flex items-center gap-1 shadow-sm">
                       <MapPin className="h-3 w-3 text-primary" />
                       {formatDistance(nailist.distanceKm)}
                     </div>
@@ -342,9 +342,9 @@ export default function SearchPage() {
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="font-black text-foreground text-base leading-tight">{nailist.businessName}</h3>
-                    <div className="flex items-center gap-1 text-sm shrink-0 bg-amber-50 rounded-lg px-2 py-0.5 ml-2 border border-amber-100">
+                    <div className="flex items-center gap-1 text-sm shrink-0 bg-amber-50 dark:bg-amber-950/30 rounded-lg px-2 py-0.5 ml-2 border border-amber-100 dark:border-amber-900/40">
                       <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                      <span className="font-black text-amber-600 text-xs">{nailist.avgRating > 0 ? nailist.avgRating.toFixed(1) : '—'}</span>
+                      <span className="font-black text-amber-600 dark:text-amber-400 text-xs">{nailist.avgRating > 0 ? nailist.avgRating.toFixed(1) : '—'}</span>
                       {nailist.reviewCount > 0 && <span className="text-amber-400/60 text-xs">({nailist.reviewCount})</span>}
                     </div>
                   </div>

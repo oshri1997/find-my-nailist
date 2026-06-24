@@ -3,7 +3,7 @@ import { Sparkles, Heart } from 'lucide-react'
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-white">
+    <footer className="border-t border-border bg-card">
       <div className="container mx-auto max-w-7xl px-6 py-14">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="col-span-1 md:col-span-2">

@@ -36,8 +36,8 @@ export default function NailistReviewsPage() {
   return (
     <div className="p-4 md:p-8" dir="rtl">
       <div className="mb-6">
-        <h1 className="text-2xl font-black text-gray-800">ביקורות</h1>
-        <p className="text-gray-400 font-medium text-sm">מה הלקוחות אומרות עלייך</p>
+        <h1 className="text-2xl font-black text-foreground">ביקורות</h1>
+        <p className="text-muted-foreground font-medium text-sm">מה הלקוחות אומרות עלייך</p>
       </div>
 
       {loading ? (
@@ -47,18 +47,18 @@ export default function NailistReviewsPage() {
       ) : (
         <>
           {reviews.length > 0 && (
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl border border-amber-100 p-6 mb-6 flex items-center gap-4">
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 rounded-3xl border border-amber-100 dark:border-amber-900/50 p-6 mb-6 flex items-center gap-4">
               <div className="text-5xl font-black text-amber-600">{avgRating.toFixed(1)}</div>
               <div>
                 <div className="flex gap-0.5 mb-1">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star
                       key={i}
-                      className={`h-5 w-5 ${i < Math.round(avgRating) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`}
+                      className={`h-5 w-5 ${i < Math.round(avgRating) ? 'fill-amber-400 text-amber-400' : 'text-border'}`}
                     />
                   ))}
                 </div>
-                <p className="text-sm font-bold text-gray-500">{reviews.length} ביקורות</p>
+                <p className="text-sm font-bold text-muted-foreground">{reviews.length} ביקורות</p>
               </div>
             </div>
           )}
@@ -66,8 +66,8 @@ export default function NailistReviewsPage() {
           {reviews.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-4xl mb-3">💬</div>
-              <p className="font-black text-gray-400 mb-2">אין ביקורות עדיין</p>
-              <p className="text-sm text-gray-300">לקוחות יכולות לכתוב ביקורת לאחר השלמת תור</p>
+              <p className="font-black text-muted-foreground mb-2">אין ביקורות עדיין</p>
+              <p className="text-sm text-muted-foreground/50">לקוחות יכולות לכתוב ביקורת לאחר השלמת תור</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -77,21 +77,21 @@ export default function NailistReviewsPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.07 }}
-                  className="bg-white rounded-2xl border border-gray-100 p-5"
+                  className="bg-card rounded-2xl border border-border p-5"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <div className="font-bold text-gray-700">{review.clientDisplayName ?? 'לקוחה'}</div>
+                    <div className="font-bold text-foreground">{review.clientDisplayName ?? 'לקוחה'}</div>
                     <div className="flex gap-0.5">
                       {Array.from({ length: 5 }).map((_, j) => (
                         <Star
                           key={j}
-                          className={`h-4 w-4 ${j < review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`}
+                          className={`h-4 w-4 ${j < review.rating ? 'fill-amber-400 text-amber-400' : 'text-border'}`}
                         />
                       ))}
                     </div>
                   </div>
-                  {review.comment && <p className="text-sm text-gray-600 leading-relaxed">{review.comment}</p>}
-                  <p className="text-xs text-gray-300 mt-2">
+                  {review.comment && <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>}
+                  <p className="text-xs text-muted-foreground/50 mt-2">
                     {new Date(review.createdAt).toLocaleDateString('he-IL')}
                   </p>
                 </motion.div>

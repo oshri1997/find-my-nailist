@@ -120,8 +120,8 @@ export default function PortfolioPage() {
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black text-gray-800 mb-1">פורטפוליו 🎨</h1>
-            <p className="text-gray-400 font-medium">העלי תמונות של עבודות שלך</p>
+            <h1 className="text-3xl font-black text-foreground mb-1">פורטפוליו 🎨</h1>
+            <p className="text-muted-foreground font-medium">העלי תמונות של עבודות שלך</p>
             <p className="text-xs text-amber-500 font-medium mt-0.5 flex items-center gap-1">
               <Star className="h-3 w-3 fill-amber-400" />
               לחצי על ⭐ בתמונה כדי להגדיר אותה כתמונת הרקע של הכרטיס שלך
@@ -138,7 +138,7 @@ export default function PortfolioPage() {
         </div>
 
         {uploading && (
-          <div className="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
             <motion.div
               animate={{ width: `${progress}%` }}
               transition={{ ease: 'linear' }}
@@ -164,7 +164,7 @@ export default function PortfolioPage() {
       />
 
       {loading ? (
-        <div className="flex items-center gap-3 text-gray-400 font-medium">
+        <div className="flex items-center gap-3 text-muted-foreground font-medium">
           <Loader2 className="h-5 w-5 animate-spin" />
           טוענת תמונות...
         </div>
@@ -173,13 +173,13 @@ export default function PortfolioPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-gray-200 rounded-3xl p-16 flex flex-col items-center justify-center text-center cursor-pointer hover:border-pink-300 hover:bg-pink-50/30 transition-all group"
+          className="border-2 border-dashed border-border rounded-3xl p-16 flex flex-col items-center justify-center text-center cursor-pointer hover:border-pink-300 hover:bg-pink-50/30 transition-all group"
         >
-          <div className="w-16 h-16 rounded-2xl bg-gray-50 group-hover:bg-pink-100 flex items-center justify-center text-3xl mb-4 transition-colors">
+          <div className="w-16 h-16 rounded-2xl bg-muted group-hover:bg-pink-100 dark:group-hover:bg-pink-950/40 flex items-center justify-center text-3xl mb-4 transition-colors">
             🖼️
           </div>
-          <p className="font-black text-gray-400 mb-1">אין תמונות עדיין</p>
-          <p className="text-sm text-gray-300 font-medium">לחצי להעלאת תמונה ראשונה</p>
+          <p className="font-black text-muted-foreground mb-1">אין תמונות עדיין</p>
+          <p className="text-sm text-muted-foreground/50 font-medium">לחצי להעלאת תמונה ראשונה</p>
         </motion.div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -191,7 +191,7 @@ export default function PortfolioPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ delay: i * 0.04 }}
-                className="relative group aspect-square rounded-2xl overflow-hidden bg-gray-100 shadow-sm"
+                className="relative group aspect-square rounded-2xl overflow-hidden bg-muted shadow-sm"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -236,7 +236,7 @@ export default function PortfolioPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               onClick={() => fileInputRef.current?.click()}
-              className="aspect-square rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 hover:border-pink-300 hover:bg-pink-50/30 transition-all text-gray-300 hover:text-pink-400"
+              className="aspect-square rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-pink-300 hover:bg-pink-50/30 transition-all text-muted-foreground/50 hover:text-pink-400"
             >
               <ImagePlus className="h-6 w-6" />
               <span className="text-xs font-bold">הוסיפי</span>

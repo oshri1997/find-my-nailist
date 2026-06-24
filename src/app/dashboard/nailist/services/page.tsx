@@ -96,8 +96,8 @@ export default function NailistServicesPage() {
     <div className="p-4 md:p-8" dir="rtl">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-black text-gray-800">השירותים שלי</h1>
-          <p className="text-gray-400 font-medium text-sm">ניהול מחירון</p>
+          <h1 className="text-2xl font-black text-foreground">השירותים שלי</h1>
+          <p className="text-muted-foreground font-medium text-sm">ניהול מחירון</p>
         </div>
         <Button
           onClick={() => { setShowForm(true); setForm(DEFAULT_FORM); setError('') }}
@@ -120,53 +120,53 @@ export default function NailistServicesPage() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-3xl border border-pink-100 p-6 mb-6"
+                className="bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-950/30 dark:to-purple-950/30 rounded-3xl border border-pink-100 dark:border-pink-900/50 p-6 mb-6"
               >
                 <div className="flex items-center justify-between mb-5">
-                  <h2 className="font-black text-gray-800">שירות חדש</h2>
+                  <h2 className="font-black text-foreground">שירות חדש</h2>
                   <button onClick={() => setShowForm(false)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/60 transition-colors">
-                    <X className="h-4 w-4 text-gray-400" />
+                    <X className="h-4 w-4 text-muted-foreground" />
                   </button>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-bold text-gray-600 block mb-1.5">שם השירות *</label>
+                    <label className="text-sm font-bold text-muted-foreground block mb-1.5">שם השירות *</label>
                     <Input
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       placeholder="לדוגמה: מניקור ג'ל"
-                      className="rounded-xl border-gray-200 bg-white h-11"
+                      className="rounded-xl border-border bg-card h-11"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-bold text-gray-600 block mb-1.5">תיאור (אופציונלי)</label>
+                    <label className="text-sm font-bold text-muted-foreground block mb-1.5">תיאור (אופציונלי)</label>
                     <Input
                       value={form.description}
                       onChange={(e) => setForm({ ...form, description: e.target.value })}
                       placeholder="תיאור קצר..."
-                      className="rounded-xl border-gray-200 bg-white h-11"
+                      className="rounded-xl border-border bg-card h-11"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm font-bold text-gray-600 block mb-1.5">משך (דקות)</label>
+                      <label className="text-sm font-bold text-muted-foreground block mb-1.5">משך (דקות)</label>
                       <Input
                         type="number"
                         min={15}
                         step={15}
                         value={form.durationMinutes}
                         onChange={(e) => setForm({ ...form, durationMinutes: Number(e.target.value) })}
-                        className="rounded-xl border-gray-200 bg-white h-11"
+                        className="rounded-xl border-border bg-card h-11"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-bold text-gray-600 block mb-1.5">מחיר (₪)</label>
+                      <label className="text-sm font-bold text-muted-foreground block mb-1.5">מחיר (₪)</label>
                       <Input
                         type="number"
                         min={0}
                         value={form.price}
                         onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                        className="rounded-xl border-gray-200 bg-white h-11"
+                        className="rounded-xl border-border bg-card h-11"
                       />
                     </div>
                   </div>
@@ -186,8 +186,8 @@ export default function NailistServicesPage() {
           {services.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-4xl mb-3">✂️</div>
-              <p className="font-black text-gray-400 mb-2">אין שירותים עדיין</p>
-              <p className="text-sm text-gray-300">הוסיפי שירות ראשון כדי שלקוחות יוכלו להזמין</p>
+              <p className="font-black text-muted-foreground mb-2">אין שירותים עדיין</p>
+              <p className="text-sm text-muted-foreground/50">הוסיפי שירות ראשון כדי שלקוחות יוכלו להזמין</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -197,12 +197,12 @@ export default function NailistServicesPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center justify-between hover:border-pink-200 transition-colors"
+                  className="bg-card rounded-2xl border border-border p-5 flex items-center justify-between hover:border-pink-200 transition-colors"
                 >
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-black text-gray-800">{service.name}</h3>
-                    {service.description && <p className="text-sm text-gray-400 mt-0.5">{service.description}</p>}
-                    <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                    <h3 className="font-black text-foreground">{service.name}</h3>
+                    {service.description && <p className="text-sm text-muted-foreground mt-0.5">{service.description}</p>}
+                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {service.durationMinutes} {"דק'"}</span>
                       <span className="font-black text-pink-600 text-sm">{service.currency === 'ILS' ? '₪' : '$'}{service.price}</span>
                     </div>
@@ -210,7 +210,7 @@ export default function NailistServicesPage() {
                   <button
                     onClick={() => handleDelete(service.id)}
                     disabled={deletingId === service.id}
-                    className="mr-4 w-9 h-9 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors"
+                    className="mr-4 w-9 h-9 flex items-center justify-center rounded-full hover:bg-red-50 text-muted-foreground/50 hover:text-red-400 transition-colors"
                   >
                     {deletingId === service.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                   </button>

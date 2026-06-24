@@ -30,7 +30,7 @@ const STATUS_COLORS: Record<Appointment['status'], string> = {
   CONFIRMED: 'bg-green-50 text-green-600 border-green-200',
   CANCELLED: 'bg-red-50 text-red-500 border-red-200',
   COMPLETED: 'bg-blue-50 text-blue-600 border-blue-200',
-  NO_SHOW: 'bg-gray-50 text-gray-400 border-gray-200',
+  NO_SHOW: 'bg-gray-50 text-muted-foreground border-gray-200',
 }
 
 export default function NailistAppointmentsPage() {
@@ -73,8 +73,8 @@ export default function NailistAppointmentsPage() {
   return (
     <div className="p-4 md:p-8" dir="rtl">
       <div className="mb-6">
-        <h1 className="text-2xl font-black text-gray-800">התורים שלי</h1>
-        <p className="text-gray-400 font-medium text-sm">ניהול הזמנות</p>
+        <h1 className="text-2xl font-black text-foreground">התורים שלי</h1>
+        <p className="text-muted-foreground font-medium text-sm">ניהול הזמנות</p>
       </div>
 
       {loading ? (
@@ -85,7 +85,7 @@ export default function NailistAppointmentsPage() {
         <div className="space-y-8">
           {upcoming.length > 0 && (
             <section>
-              <h2 className="font-black text-gray-700 mb-4">קרובים</h2>
+              <h2 className="font-black text-foreground/80 mb-4">קרובים</h2>
               <div className="space-y-4">
                 {upcoming.map((apt, i) => (
                   <AppointmentCard key={apt.id} apt={apt} i={i} updating={updating} onUpdate={updateStatus} />
@@ -96,7 +96,7 @@ export default function NailistAppointmentsPage() {
 
           {past.length > 0 && (
             <section>
-              <h2 className="font-black text-gray-700 mb-4">היסטוריה</h2>
+              <h2 className="font-black text-foreground/80 mb-4">היסטוריה</h2>
               <div className="space-y-4">
                 {past.map((apt, i) => (
                   <AppointmentCard key={apt.id} apt={apt} i={i} updating={updating} onUpdate={updateStatus} />
@@ -108,7 +108,7 @@ export default function NailistAppointmentsPage() {
           {appointments.length === 0 && (
             <div className="text-center py-16">
               <div className="text-4xl mb-3">📭</div>
-              <p className="font-black text-gray-400">אין תורים עדיין</p>
+              <p className="font-black text-muted-foreground">אין תורים עדיין</p>
             </div>
           )}
         </div>
@@ -136,22 +136,22 @@ function AppointmentCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: i * 0.05 }}
-      className="bg-white rounded-2xl border border-gray-100 p-5"
+      className="bg-card rounded-2xl border border-border p-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h3 className="font-black text-gray-800">{apt.serviceName}</h3>
+            <h3 className="font-black text-foreground">{apt.serviceName}</h3>
             <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${STATUS_COLORS[apt.status]}`}>
               {STATUS_LABELS[apt.status]}
             </span>
           </div>
-          <p className="text-sm text-gray-500 font-medium">{apt.clientDisplayName ?? 'לקוחה'}</p>
-          <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+          <p className="text-sm text-muted-foreground font-medium">{apt.clientDisplayName ?? 'לקוחה'}</p>
+          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             <span>{dateStr} {timeStr}</span>
             <span className="font-black text-pink-600">{symbol}{apt.price}</span>
           </div>
-          {apt.notes && <p className="text-xs text-gray-400 mt-1 italic">{apt.notes}</p>}
+          {apt.notes && <p className="text-xs text-muted-foreground mt-1 italic">{apt.notes}</p>}
         </div>
 
         {(apt.status === 'PENDING' || apt.status === 'CONFIRMED') && (

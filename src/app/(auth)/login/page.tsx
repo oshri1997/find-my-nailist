@@ -182,7 +182,7 @@ export default function AuthPage() {
                 onClick={() => switchMode(m)}
                 className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
                   mode === m
-                    ? 'bg-white text-primary shadow-sm shadow-pink-100'
+                    ? 'bg-card text-primary shadow-sm shadow-pink-100'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -219,7 +219,7 @@ export default function AuthPage() {
                       onClick={() => setRole(r)}
                       className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
                         role === r
-                          ? 'bg-white text-primary shadow-sm shadow-pink-100'
+                          ? 'bg-card text-primary shadow-sm shadow-pink-100'
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
@@ -233,7 +233,7 @@ export default function AuthPage() {
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 rounded-xl px-4 py-3 text-sm font-semibold mb-5"
+                  className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 dark:bg-red-950/30 dark:border-red-900/40 dark:text-red-400 rounded-xl px-4 py-3 text-sm font-semibold mb-5"
                 >
                   <AlertCircle className="h-4 w-4 shrink-0" />
                   {error}
@@ -253,7 +253,7 @@ export default function AuthPage() {
                         onChange={e => setName(e.target.value)}
                         placeholder={role === 'nailist' ? 'סטודיו שרה' : 'שרה לוי'}
                         required
-                        className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-white"
+                        className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-card"
                       />
                     </div>
                   </div>
@@ -267,7 +267,7 @@ export default function AuthPage() {
                       id="email" type="email" value={email}
                       onChange={e => setEmail(e.target.value)}
                       placeholder="you@example.com" required
-                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-white"
+                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-card"
                     />
                   </div>
                 </div>
@@ -289,7 +289,7 @@ export default function AuthPage() {
                       placeholder={mode === 'register' ? 'לפחות 8 תווים' : '••••••••'}
                       minLength={mode === 'register' ? 8 : undefined}
                       required
-                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-white"
+                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-card"
                     />
                   </div>
                 </div>
@@ -316,7 +316,7 @@ export default function AuthPage() {
 
               <Button
                 type="button" variant="outline" disabled={loading || authLoading} onClick={handleGoogle}
-                className="w-full rounded-xl h-12 border-border font-semibold gap-3 hover:border-primary/40 hover:bg-pink-50/50 transition-colors cursor-pointer disabled:opacity-60 bg-white"
+                className="w-full rounded-xl h-12 border-border font-semibold gap-3 hover:border-primary/40 hover:bg-primary/10 transition-colors cursor-pointer disabled:opacity-60 bg-card"
               >
                 <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
