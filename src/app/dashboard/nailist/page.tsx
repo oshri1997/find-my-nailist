@@ -79,7 +79,7 @@ const STATUS_COLORS: Record<AppStatus, string> = {
   CONFIRMED: 'bg-green-50 text-green-600 border-green-200',
   CANCELLED: 'bg-red-50 text-red-500 border-red-200',
   COMPLETED: 'bg-blue-50 text-blue-600 border-blue-200',
-  NO_SHOW: 'bg-gray-50 text-gray-400 border-gray-200',
+  NO_SHOW: 'bg-muted text-muted-foreground border-border',
 }
 
 function formatAppointmentTime(iso: string) {

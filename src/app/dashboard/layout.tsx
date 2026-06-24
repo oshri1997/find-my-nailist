@@ -64,7 +64,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (authorized === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-pink-400" />
       </div>
     )
@@ -120,7 +120,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Profile */}
           <div className="px-4 py-4 border-b border-border">
-            <div className="flex items-center gap-3 bg-pink-50 rounded-xl p-3">
+            <div className="flex items-center gap-3 bg-pink-50 dark:bg-pink-950/40 rounded-xl p-3">
               {user?.photoURL ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.photoURL} alt={displayName} className="w-9 h-9 rounded-lg object-cover" />
@@ -167,7 +167,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="p-3 border-t border-border">
             <button
               onClick={handleSignOut}
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-destructive hover:bg-red-50 transition-all cursor-pointer"
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-destructive hover:bg-red-50 dark:hover:bg-red-950/30 transition-all cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
               יציאה
@@ -277,7 +277,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="border-t border-border pt-3">
                 <button
                   onClick={handleSignOut}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-destructive hover:bg-red-50 transition-colors cursor-pointer"
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-destructive hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
                 >
                   <LogOut className="h-4 w-4" />
                   יציאה מהחשבון
