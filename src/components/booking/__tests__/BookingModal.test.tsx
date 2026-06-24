@@ -24,10 +24,17 @@ const mockAvailability = {
 }
 
 beforeEach(() => {
+  // Pin time to midnight so past-slot filter never removes test time slots
+  jest.useFakeTimers()
+  jest.setSystemTime(new Date('2025-01-15T00:00:00'))
   mockFetch.mockReset()
   // Default catch-all so background fetches don't throw
   mockFetch.mockResolvedValue({ ok: true, json: async () => ({ data: {} }) })
   defaultProps.onClose.mockReset()
+})
+
+afterEach(() => {
+  jest.useRealTimers()
 })
 
 async function navigateToStep2(serviceName = "מניקור ג'ל") {
@@ -146,5 +153,68 @@ describe('BookingModal', () => {
     await waitFor(() =>
       expect(screen.getByText(/יש להתחבר לחשבון/)).toBeInTheDocument()
     )
+  })
+
+  it('hides past time slots when current time is 09:00 and today is selected', async () => {
+    // Override to 09:00 — 08:00, 08:30, 09:00 should be hidden; 09:30+ shown
+    jest.setSystemTime(new Date('2025-01-15T09:00:00'))
+
+    render(<BookingModal {...defaultProps} />)
+    await navigateToStep2()
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: mockAvailability }),
+    })
+
+    // Today (Jan 15) should be the first enabled date at 09:00 AM
+    const dateButtons = screen.getAllByTestId('date-btn').filter((btn) => !btn.hasAttribute('disabled'))
+    fireEvent.click(dateButtons[0])
+
+    await waitFor(() => expect(screen.getByText('09:30')).toBeInTheDocument())
+
+    expect(screen.queryByText('08:00')).not.toBeInTheDocument()
+    expect(screen.queryByText('08:30')).not.toBeInTheDocument()
+    expect(screen.queryByText('09:00')).not.toBeInTheDocument()
+    expect(screen.getByText('09:30')).toBeInTheDocument()
+    expect(screen.getByText('10:00')).toBeInTheDocument()
+  })
+
+  it('shows all time slots when a future date is selected', async () => {
+    render(<BookingModal {...defaultProps} />)
+    await navigateToStep2()
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: mockAvailability }),
+    })
+
+    // Click a future date (not the first = today, but the second enabled)
+    const dateButtons = screen.getAllByTestId('date-btn').filter((btn) => !btn.hasAttribute('disabled'))
+    fireEvent.click(dateButtons[1]) // Second enabled = Jan 16
+
+    await waitFor(() => expect(screen.getByText('08:00')).toBeInTheDocument())
+
+    // All slots from mockAvailability (08:00–18:00) should be visible
+    expect(screen.getByText('08:00')).toBeInTheDocument()
+    expect(screen.getByText('08:30')).toBeInTheDocument()
+    expect(screen.getByText('09:00')).toBeInTheDocument()
+  })
+
+  it('calls onClose when clicking the backdrop', () => {
+    render(<BookingModal {...defaultProps} />)
+    const backdrop = document.querySelector('.fixed.inset-0')!
+    fireEvent.click(backdrop)
+    expect(defaultProps.onClose).toHaveBeenCalled()
+  })
+
+  it('step progress indicator shows correct step number', async () => {
+    render(<BookingModal {...defaultProps} />)
+    // Step 1 visible
+    expect(screen.getByText('בחרי שירות')).toBeInTheDocument()
+
+    await navigateToStep2()
+    // Step 2 visible
+    expect(screen.getByText(/בחרי תאריך ושעה/)).toBeInTheDocument()
   })
 })

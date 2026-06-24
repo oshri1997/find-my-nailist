@@ -10,6 +10,8 @@ const mockBatch = {
   commit: jest.fn().mockResolvedValue(undefined),
 }
 
+const mockAppointmentAdd = jest.fn().mockResolvedValue({ id: 'new-appointment-id' })
+
 // Per-collection document store so tests can seed individual docs
 const docStore: Record<string, Record<string, unknown>> = {}
 const collectionStore: Record<string, unknown[]> = {}
@@ -48,7 +50,7 @@ function makeCollectionRef(name: string) {
         orderBy: jest.fn().mockReturnThis(),
       }
     }),
-    add: jest.fn().mockResolvedValue({ id: 'new-appointment-id' }),
+    add: name === 'appointments' ? mockAppointmentAdd : jest.fn().mockResolvedValue({ id: `${name}-new` }),
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     get: jest.fn().mockResolvedValue({ docs: [], empty: true }),
@@ -194,6 +196,127 @@ describe('POST /api/appointments', () => {
     expect(fetchedNailist).toBe(true)
     expect(fetchedClient).toBe(true)
   })
+
+  it('uses firstName + lastName as clientDisplayName when both are present', async () => {
+    docStore['clientProfiles/client-profile-1'] = {
+      displayName: 'Old Display Name',
+      firstName: 'שרה',
+      lastName: 'כהן',
+      userId: 'client-user-1',
+    }
+    const req = makeRequest('POST', validBody)
+    await POST(req)
+    expect(mockAppointmentAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ clientDisplayName: 'שרה כהן' })
+    )
+  })
+
+  it('falls back to displayName when firstName or lastName is missing', async () => {
+    // default seed has displayName: 'לקוחה מעולה' without firstName/lastName
+    const req = makeRequest('POST', validBody)
+    await POST(req)
+    expect(mockAppointmentAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ clientDisplayName: 'לקוחה מעולה' })
+    )
+  })
+
+  it('falls back to displayName when only firstName is present', async () => {
+    docStore['clientProfiles/client-profile-1'] = {
+      displayName: 'Fallback Name',
+      firstName: 'שרה',
+      userId: 'client-user-1',
+    }
+    const req = makeRequest('POST', validBody)
+    await POST(req)
+    expect(mockAppointmentAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ clientDisplayName: 'Fallback Name' })
+    )
+  })
+
+  it('stores both confirmToken and declineToken in the appointment', async () => {
+    const req = makeRequest('POST', validBody)
+    await POST(req)
+    expect(mockAppointmentAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        confirmToken: 'test-uuid-1234',
+        declineToken: 'test-uuid-1234',
+      })
+    )
+  })
+
+  it('stores confirmTokenExpiresAt and declineTokenExpiresAt with expiry in the future', async () => {
+    const req = makeRequest('POST', validBody)
+    await POST(req)
+    const addArg = mockAppointmentAdd.mock.calls[0][0]
+    expect(addArg.confirmTokenExpiresAt).toBeDefined()
+    expect(addArg.declineTokenExpiresAt).toBeDefined()
+    // Expiry should be 7 days from now — the Timestamp mock wraps the Date
+    const expiryDate: Date = addArg.confirmTokenExpiresAt.toDate()
+    expect(expiryDate.getTime()).toBeGreaterThan(Date.now())
+  })
+
+  it('saves status as PENDING', async () => {
+    const req = makeRequest('POST', validBody)
+    await POST(req)
+    expect(mockAppointmentAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'PENDING' })
+    )
+  })
+
+  it('saves service price, currency, and name as denormalized fields', async () => {
+    const req = makeRequest('POST', validBody)
+    await POST(req)
+    expect(mockAppointmentAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        price: 120,
+        currency: 'ILS',
+        serviceName: 'מניקור',
+      })
+    )
+  })
+
+  it('saves nailistBusinessName as denormalized field', async () => {
+    const req = makeRequest('POST', validBody)
+    await POST(req)
+    expect(mockAppointmentAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ nailistBusinessName: 'סטודיו נייל' })
+    )
+  })
+
+  it('ignores CANCELLED conflicts when checking availability', async () => {
+    const startTime = new Date('2026-07-01T10:00:00.000Z')
+    const endTime = new Date('2026-07-01T11:00:00.000Z')
+    collectionStore['appointments'] = [
+      {
+        __id: 'cancelled-apt',
+        nailistProfileId: 'nailist-profile-1',
+        status: 'CANCELLED',
+        startTime: { toDate: () => startTime },
+        endTime: { toDate: () => endTime },
+      },
+    ]
+    const req = makeRequest('POST', validBody)
+    const res = await POST(req)
+    // CANCELLED appointment should not block the slot
+    expect(res.status).toBe(201)
+  })
+
+  it('ignores COMPLETED conflicts when checking availability', async () => {
+    const startTime = new Date('2026-07-01T10:00:00.000Z')
+    const endTime = new Date('2026-07-01T11:00:00.000Z')
+    collectionStore['appointments'] = [
+      {
+        __id: 'completed-apt',
+        nailistProfileId: 'nailist-profile-1',
+        status: 'COMPLETED',
+        startTime: { toDate: () => startTime },
+        endTime: { toDate: () => endTime },
+      },
+    ]
+    const req = makeRequest('POST', validBody)
+    const res = await POST(req)
+    expect(res.status).toBe(201)
+  })
 })
 
 // ── GET /api/appointments ────────────────────────────────────────────────────
@@ -250,5 +373,119 @@ describe('GET /api/appointments', () => {
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(json.data).toEqual([])
+  })
+
+  it('returns 200 with empty array when nailist profile not found', async () => {
+    collectionStore['nailistProfiles'] = []
+    const req = makeRequest('GET', undefined, 'valid-token', 'role=nailist')
+    const res = await GET(req)
+    expect(res.status).toBe(200)
+    const json = await res.json()
+    expect(json.data).toEqual([])
+  })
+
+  it('returns appointment list for nailist role', async () => {
+    const futureStart = new Date(Date.now() + 60 * 60 * 1000)
+    const futureEnd = new Date(Date.now() + 2 * 60 * 60 * 1000)
+    collectionStore['appointments'] = [
+      {
+        __id: 'apt-1',
+        nailistProfileId: 'nailist-profile-1',
+        clientProfileId: 'client-profile-1',
+        status: 'CONFIRMED',
+        serviceName: 'מניקור',
+        startTime: { toDate: () => futureStart },
+        endTime: { toDate: () => futureEnd },
+      },
+    ]
+    const req = makeRequest('GET', undefined, 'valid-token', 'role=nailist')
+    const res = await GET(req)
+    expect(res.status).toBe(200)
+    const json = await res.json()
+    expect(json.data).toHaveLength(1)
+    expect(json.data[0].id).toBe('apt-1')
+    expect(json.data[0].status).toBe('CONFIRMED')
+  })
+
+  it('auto-completes CONFIRMED appointments whose endTime has passed', async () => {
+    const pastEnd = new Date(Date.now() - 30 * 60 * 1000)
+    collectionStore['appointments'] = [
+      {
+        __id: 'expired-apt',
+        nailistProfileId: 'nailist-profile-1',
+        clientProfileId: 'client-profile-1',
+        status: 'CONFIRMED',
+        serviceName: 'מניקור',
+        clientDisplayName: 'לקוחה',
+        reviewRequested: true,
+        startTime: { toDate: () => new Date(Date.now() - 90 * 60 * 1000) },
+        endTime: { toDate: () => pastEnd },
+      },
+    ]
+    const req = makeRequest('GET', undefined, 'valid-token', 'role=nailist')
+    const res = await GET(req)
+    expect(res.status).toBe(200)
+    const json = await res.json()
+    expect(json.data[0].status).toBe('COMPLETED')
+    expect(mockBatch.update).toHaveBeenCalled()
+    expect(mockBatch.commit).toHaveBeenCalled()
+  })
+
+  it('does not auto-complete CONFIRMED appointments with future endTime', async () => {
+    const futureEnd = new Date(Date.now() + 60 * 60 * 1000)
+    collectionStore['appointments'] = [
+      {
+        __id: 'future-apt',
+        nailistProfileId: 'nailist-profile-1',
+        clientProfileId: 'client-profile-1',
+        status: 'CONFIRMED',
+        serviceName: 'מניקור',
+        startTime: { toDate: () => new Date(Date.now() + 30 * 60 * 1000) },
+        endTime: { toDate: () => futureEnd },
+      },
+    ]
+    const req = makeRequest('GET', undefined, 'valid-token', 'role=nailist')
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.data[0].status).toBe('CONFIRMED')
+    expect(mockBatch.commit).not.toHaveBeenCalled()
+  })
+
+  it('does not auto-complete PENDING appointments even with past endTime', async () => {
+    const pastEnd = new Date(Date.now() - 30 * 60 * 1000)
+    collectionStore['appointments'] = [
+      {
+        __id: 'pending-past',
+        nailistProfileId: 'nailist-profile-1',
+        clientProfileId: 'client-profile-1',
+        status: 'PENDING',
+        serviceName: 'מניקור',
+        endTime: { toDate: () => pastEnd },
+      },
+    ]
+    const req = makeRequest('GET', undefined, 'valid-token', 'role=nailist')
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.data[0].status).toBe('PENDING')
+    expect(mockBatch.commit).not.toHaveBeenCalled()
+  })
+
+  it('serializes startTime and endTime to ISO strings in the response', async () => {
+    const start = new Date('2026-07-01T10:00:00Z')
+    const end = new Date('2026-07-01T11:00:00Z')
+    collectionStore['appointments'] = [
+      {
+        __id: 'apt-serialize',
+        nailistProfileId: 'nailist-profile-1',
+        status: 'PENDING',
+        startTime: { toDate: () => start },
+        endTime: { toDate: () => end },
+      },
+    ]
+    const req = makeRequest('GET', undefined, 'valid-token', 'role=nailist')
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.data[0].startTime).toBe(start.toISOString())
+    expect(json.data[0].endTime).toBe(end.toISOString())
   })
 })

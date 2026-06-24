@@ -1,4 +1,119 @@
-import { generateSlots, isSlotUnavailable, buildDateStrip, toDateStr, computeDateAvailability, filterExpiredConfirmed } from '@/lib/booking-utils'
+import { generateSlots, isSlotUnavailable, buildDateStrip, buildMonthCalendar, toDateStr, computeDateAvailability, filterExpiredConfirmed } from '@/lib/booking-utils'
+
+describe('buildMonthCalendar', () => {
+  beforeEach(() => jest.useFakeTimers())
+  afterEach(() => jest.useRealTimers())
+
+  describe('June 2025 — month starts on Sunday (getDay() = 0, no leading nulls)', () => {
+    beforeEach(() => {
+      jest.setSystemTime(new Date(2025, 5, 15)) // June 15, 2025
+    })
+
+    it('returns 30 cells (0 leading nulls + 30 days)', () => {
+      expect(buildMonthCalendar()).toHaveLength(30)
+    })
+
+    it('all elements are Date objects (no nulls)', () => {
+      const cal = buildMonthCalendar()
+      expect(cal.every((d) => d !== null)).toBe(true)
+    })
+
+    it('first element is June 1', () => {
+      const first = buildMonthCalendar()[0] as Date
+      expect(first.getDate()).toBe(1)
+      expect(first.getMonth()).toBe(5)
+    })
+
+    it('last element is June 30', () => {
+      const cal = buildMonthCalendar()
+      const last = cal[cal.length - 1] as Date
+      expect(last.getDate()).toBe(30)
+    })
+  })
+
+  describe('January 2025 — month starts on Wednesday (getDay() = 3, 3 leading nulls)', () => {
+    beforeEach(() => {
+      jest.setSystemTime(new Date(2025, 0, 15)) // January 15, 2025
+    })
+
+    it('returns 34 cells (3 leading nulls + 31 days)', () => {
+      expect(buildMonthCalendar()).toHaveLength(34)
+    })
+
+    it('first 3 elements are null', () => {
+      const cal = buildMonthCalendar()
+      expect(cal[0]).toBeNull()
+      expect(cal[1]).toBeNull()
+      expect(cal[2]).toBeNull()
+    })
+
+    it('element at index 3 is January 1 (first real date)', () => {
+      const cal = buildMonthCalendar()
+      const first = cal[3] as Date
+      expect(first).not.toBeNull()
+      expect(first.getDate()).toBe(1)
+      expect(first.getMonth()).toBe(0)
+      expect(first.getFullYear()).toBe(2025)
+    })
+
+    it('last element is January 31', () => {
+      const cal = buildMonthCalendar()
+      const last = cal[cal.length - 1] as Date
+      expect(last.getDate()).toBe(31)
+    })
+
+    it('all non-null elements are in January 2025', () => {
+      const cal = buildMonthCalendar()
+      const dates = cal.filter((d): d is Date => d !== null)
+      expect(dates.every((d) => d.getMonth() === 0 && d.getFullYear() === 2025)).toBe(true)
+    })
+
+    it('non-null dates are consecutive days', () => {
+      const cal = buildMonthCalendar()
+      const dates = cal.filter((d): d is Date => d !== null)
+      for (let i = 1; i < dates.length; i++) {
+        const diff = (dates[i].getTime() - dates[i - 1].getTime()) / (1000 * 60 * 60 * 24)
+        expect(diff).toBe(1)
+      }
+    })
+
+    it('exactly 31 non-null dates', () => {
+      const cal = buildMonthCalendar()
+      const dates = cal.filter((d) => d !== null)
+      expect(dates).toHaveLength(31)
+    })
+  })
+
+  describe('February 2025 — 28 days (non-leap year)', () => {
+    beforeEach(() => {
+      jest.setSystemTime(new Date(2025, 1, 10)) // February 10, 2025
+    })
+
+    it('has exactly 28 non-null dates', () => {
+      const cal = buildMonthCalendar()
+      const dates = cal.filter((d) => d !== null)
+      expect(dates).toHaveLength(28)
+    })
+
+    it('last non-null date is February 28', () => {
+      const cal = buildMonthCalendar()
+      const last = cal[cal.length - 1] as Date
+      expect(last.getDate()).toBe(28)
+      expect(last.getMonth()).toBe(1)
+    })
+  })
+
+  it('today date object is at midnight (hours/minutes/seconds = 0)', () => {
+    jest.setSystemTime(new Date(2025, 5, 20, 14, 30, 0)) // June 20 at 2:30 PM
+    const cal = buildMonthCalendar()
+    const dates = cal.filter((d): d is Date => d !== null)
+    for (const d of dates) {
+      expect(d.getHours()).toBe(0)
+      expect(d.getMinutes()).toBe(0)
+      expect(d.getSeconds()).toBe(0)
+    }
+  })
+})
 
 describe('toDateStr', () => {
   it('formats a date as YYYY-MM-DD', () => {
