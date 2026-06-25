@@ -43,11 +43,52 @@ interface Nailist {
   whatsappPhone?: string
   distanceKm?: number
   coverPhotoUrl?: string
+  serviceNames?: string[]
 }
 
 type SortKey = 'distance' | 'rating'
 
-const filterTags = ['הכל', "ג'ל", 'נייל ארט', 'אקריל', 'מניקור', 'פדיקור', 'אקסטנשן']
+export const filterTags = [
+  'הכל',
+  'מניקור',
+  'פדיקור',
+  "ג'ל",
+  "ג'ל בנייה",
+  "ביוג'ל",
+  "ג'ל רוסי",
+  'נייל ארט',
+  'אקריל',
+  'אקריגל',
+  'אקסטנשן',
+  'ספא ידיים',
+  'פרפין',
+  'רפואי',
+]
+
+// Keywords to match each filter tag against service names (case-insensitive)
+export const FILTER_KEYWORDS: Record<string, string[]> = {
+  'מניקור':       ['מניקור', 'manicure'],
+  'פדיקור':       ['פדיקור', 'pedicure'],
+  "ג'ל":          ["ג'ל", 'gel'],
+  "ג'ל בנייה":    ["ג'ל בנייה", 'builder gel', 'בנייה'],
+  "ביוג'ל":       ["ביוג'ל", 'biab', 'bio gel', "ביו ג'ל"],
+  "ג'ל רוסי":     ["ג'ל רוסי", 'russian gel', 'רוסי'],
+  'נייל ארט':     ['נייל ארט', 'nail art', 'ציור ציפורניים'],
+  'אקריל':        ['אקריל', 'acrylic'],
+  'אקריגל':       ['אקריגל', 'acrygel', 'acrylic gel'],
+  'אקסטנשן':      ['אקסטנשן', 'extension'],
+  'ספא ידיים':    ['ספא ידיים', 'hand spa', 'ספא'],
+  'פרפין':        ['פרפין', 'paraffin'],
+  'רפואי':        ['רפואי', 'medical', 'רפואית', 'ציפורן חודרנית', 'פדיקור רפואי'],
+}
+
+export function matchesFilter(serviceNames: string[], filter: string): boolean {
+  if (filter === 'הכל') return true
+  const keywords = FILTER_KEYWORDS[filter] ?? [filter]
+  return serviceNames.some((s) =>
+    keywords.some((kw) => s.toLowerCase().includes(kw.toLowerCase()))
+  )
+}
 
 export default function SearchPage() {
   const router = useRouter()
@@ -146,12 +187,14 @@ export default function SearchPage() {
     )
   }
 
-  const sorted = [...nailists].sort((a, b) => {
-    if (sortBy === 'distance' && a.distanceKm != null && b.distanceKm != null) {
-      return a.distanceKm - b.distanceKm
-    }
-    return b.avgRating - a.avgRating
-  })
+  const sorted = [...nailists]
+    .filter((n) => matchesFilter(n.serviceNames ?? [], activeFilter))
+    .sort((a, b) => {
+      if (sortBy === 'distance' && a.distanceKm != null && b.distanceKm != null) {
+        return a.distanceKm - b.distanceKm
+      }
+      return b.avgRating - a.avgRating
+    })
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -192,12 +235,12 @@ export default function SearchPage() {
           </div>
 
           {/* Filter tags */}
-          <div className="flex gap-2 mt-3 flex-wrap">
+          <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
             {filterTags.map((tag) => (
               <button
                 key={tag}
                 onClick={() => setActiveFilter(tag)}
-                className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-all cursor-pointer ${
+                className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition-all cursor-pointer ${
                   activeFilter === tag
                     ? 'bg-primary text-white shadow-[0_2px_8px_rgba(236,72,153,0.25)]'
                     : 'bg-card border border-border text-muted-foreground hover:border-primary/40 hover:text-primary'
@@ -278,8 +321,23 @@ export default function SearchPage() {
             <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-5">
               <Search className="w-7 h-7 text-muted-foreground/60" />
             </div>
-            <p className="font-black text-foreground/60 text-lg mb-2">לא נמצאו נייליסטיות</p>
-            <p className="text-sm text-muted-foreground">נסי לחפש באזור אחר</p>
+            {activeFilter !== 'הכל' ? (
+              <>
+                <p className="font-black text-foreground/60 text-lg mb-2">לא נמצאו נייליסטיות עם שירות &quot;{activeFilter}&quot;</p>
+                <p className="text-sm text-muted-foreground mb-4">נסי פילטר אחר או הסירי את הסינון</p>
+                <button
+                  onClick={() => setActiveFilter('הכל')}
+                  className="text-sm font-bold text-primary hover:underline cursor-pointer"
+                >
+                  הצגי הכל
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="font-black text-foreground/60 text-lg mb-2">לא נמצאו נייליסטיות</p>
+                <p className="text-sm text-muted-foreground">נסי לחפש באזור אחר</p>
+              </>
+            )}
           </div>
         ) : viewMode === 'map' ? (
           <div className="h-[70vh] rounded-2xl overflow-hidden shadow-sm border border-border">

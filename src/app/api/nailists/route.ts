@@ -3,6 +3,40 @@ import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 
 import { geohashQueryBounds, distanceBetween } from 'geofire-common'
+import type { Firestore } from 'firebase-admin/firestore'
+
+async function attachServiceNames(
+  db: Firestore,
+  nailists: Array<Record<string, unknown>>,
+): Promise<void> {
+  const ids = nailists.map((n) => n.id as string).filter(Boolean)
+  if (ids.length === 0) return
+
+  const serviceMap: Record<string, string[]> = {}
+
+  // Firestore 'in' supports max 30 items per query
+  const chunks: string[][] = []
+  for (let i = 0; i < ids.length; i += 30) chunks.push(ids.slice(i, i + 30))
+
+  await Promise.all(
+    chunks.map(async (chunk) => {
+      const snap = await db
+        .collection(COLLECTIONS.SERVICES)
+        .where('nailistProfileId', 'in', chunk)
+        .get()
+      snap.docs.forEach((doc) => {
+        const d = doc.data()
+        if (!d.isActive) return
+        if (!serviceMap[d.nailistProfileId]) serviceMap[d.nailistProfileId] = []
+        serviceMap[d.nailistProfileId].push(d.name as string)
+      })
+    }),
+  )
+
+  nailists.forEach((n) => {
+    n.serviceNames = serviceMap[n.id as string] ?? []
+  })
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,7 +63,7 @@ export async function GET(request: NextRequest) {
 
       const snapshots = await Promise.all(queries)
       const seen = new Set<string>()
-      const nailists: unknown[] = []
+      const nailists: Array<Record<string, unknown>> = []
 
       for (const snap of snapshots) {
         for (const doc of snap.docs) {
@@ -45,9 +79,12 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      (nailists as Array<{ distanceKm: number }>).sort((a, b) => a.distanceKm - b.distanceKm)
+      nailists.sort((a, b) => (a.distanceKm as number) - (b.distanceKm as number))
+      const page = nailists.slice(0, pageSize)
+      await attachServiceNames(db, page)
+
       return NextResponse.json({
-        data: nailists.slice(0, pageSize),
+        data: page,
         total: nailists.length,
         hasMore: nailists.length > pageSize,
       })
@@ -61,9 +98,11 @@ export async function GET(request: NextRequest) {
       .get()
 
     const nailists = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    const page = nailists.slice(0, pageSize)
+    await attachServiceNames(db, page)
 
     return NextResponse.json({
-      data: nailists.slice(0, pageSize),
+      data: page,
       total: nailists.length,
       hasMore: nailists.length > pageSize,
     })
