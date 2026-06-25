@@ -189,7 +189,7 @@ export default function AuthPage() {
                 onClick={() => switchMode(m)}
                 className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
                   mode === m
-                    ? 'bg-card text-primary shadow-sm shadow-pink-100'
+                    ? 'bg-card text-primary shadow-sm shadow-primary/30'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -226,7 +226,7 @@ export default function AuthPage() {
                       onClick={() => setRole(r)}
                       className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
                         role === r
-                          ? 'bg-card text-primary shadow-sm shadow-pink-100'
+                          ? 'bg-card text-primary shadow-sm shadow-primary/30'
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
