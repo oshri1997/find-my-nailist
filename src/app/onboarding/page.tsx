@@ -249,9 +249,9 @@ export default function OnboardingPage() {
             <div key={i} className="flex items-center gap-3">
               <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-black transition-all ${
                 i < step
-                  ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-md shadow-pink-200'
+                  ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-md shadow-primary/40'
                   : i === step
-                  ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-md shadow-pink-200 ring-4 ring-pink-100'
+                  ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-md shadow-primary/40 ring-4 ring-primary/30'
                   : 'bg-muted text-muted-foreground'
               }`}>
                 {i < step ? <Check className="h-4 w-4" /> : i + 1}
@@ -269,7 +269,7 @@ export default function OnboardingPage() {
         </p>
 
         {/* Card */}
-        <div className="bg-card rounded-3xl shadow-xl shadow-pink-100/50 p-7">
+        <div className="bg-card rounded-3xl shadow-xl shadow-primary/20 p-7">
           {error && (
             <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 dark:bg-red-950/30 dark:border-red-900/40 dark:text-red-400 rounded-xl px-4 py-3 text-sm font-semibold mb-5">
               <X className="h-4 w-4 shrink-0" />
@@ -296,7 +296,7 @@ export default function OnboardingPage() {
                 <Button
                   onClick={saveAddress}
                   disabled={!lat || saving}
-                  className="w-full mt-6 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black text-base shadow-lg shadow-pink-200 gap-2 group disabled:opacity-50"
+                  className="w-full mt-6 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black text-base shadow-lg shadow-primary/40 gap-2 group disabled:opacity-50"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>המשיכי <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /></>}
                 </Button>
@@ -355,7 +355,7 @@ export default function OnboardingPage() {
                   <Button
                     onClick={() => setStep(2)}
                     disabled={photos.length < 3}
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-pink-200 disabled:opacity-50"
+                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
                     המשיכי <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
                   </Button>
@@ -437,7 +437,7 @@ export default function OnboardingPage() {
                   <Button
                     onClick={() => { setError(''); setStep(3) }}
                     disabled={services.length === 0}
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-pink-200 disabled:opacity-50"
+                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
                     המשיכי <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
                   </Button>
@@ -498,7 +498,7 @@ export default function OnboardingPage() {
                   <Button
                     onClick={saveSocialLinks}
                     disabled={saving}
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-pink-200 disabled:opacity-50"
+                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>המשיכי <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /></>}
                   </Button>
@@ -562,7 +562,7 @@ export default function OnboardingPage() {
                   <Button
                     onClick={saveWorkingHours}
                     disabled={saving}
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-pink-200 disabled:opacity-50"
+                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>סיימתי! <Check className="h-4 w-4" /></>}
                   </Button>

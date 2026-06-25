@@ -220,7 +220,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                 <Button
                   onClick={() => selectedService && setStep('datetime')}
                   disabled={!selectedService}
-                  className="w-full mt-5 bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-pink-200 disabled:opacity-50"
+                  className="w-full mt-5 bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40 disabled:opacity-50"
                 >
                   המשך לבחירת תאריך
                 </Button>
@@ -279,7 +279,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                           }}
                           className={`flex flex-col items-center py-2 rounded-xl border-2 transition-all ${
                             isSelected
-                              ? 'border-pink-500 bg-gradient-to-b from-pink-500 to-purple-600 text-white shadow-md shadow-pink-200'
+                              ? 'border-pink-500 bg-gradient-to-b from-pink-500 to-purple-600 text-white shadow-md shadow-primary/40'
                               : isDisabled
                               ? 'border-border bg-muted cursor-not-allowed opacity-35'
                               : isWeekend
@@ -344,7 +344,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                               onClick={() => !unavailable && setSelectedTime(t)}
                               className={`py-2.5 rounded-xl text-sm font-bold transition-all ${
                                 isSelected
-                                  ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-sm shadow-pink-200'
+                                  ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-sm shadow-primary/40'
                                   : unavailable
                                   ? 'bg-muted text-muted-foreground cursor-not-allowed line-through text-xs'
                                   : 'bg-muted text-muted-foreground hover:bg-pink-50 dark:hover:bg-pink-950/30 hover:text-pink-600 border border-border hover:border-pink-200'
@@ -377,7 +377,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   <Button
                     onClick={() => selectedDate && selectedTime && setStep('confirm')}
                     disabled={!selectedDate || !selectedTime}
-                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-pink-200 disabled:opacity-50"
+                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40 disabled:opacity-50"
                   >
                     המשך לאישור
                   </Button>
@@ -451,7 +451,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                 <Button
                   onClick={handleConfirm}
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-pink-200"
+                  className="w-full bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40"
                 >
                   {loading ? <><Loader2 className="h-4 w-4 animate-spin ml-2" /> מזמינה...</> : 'אישור וקביעת תור 💅'}
                 </Button>
@@ -465,7 +465,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.1 }}
-                  className="w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-5 shadow-xl shadow-pink-200"
+                  className="w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-5 shadow-xl shadow-primary/40"
                 >
                   <CheckCircle2 className="h-10 w-10 text-white" />
                 </motion.div>

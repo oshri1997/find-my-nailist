@@ -347,7 +347,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
                     <Button
                       size="sm"
                       onClick={() => setShowBooking(true)}
-                      className="bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-xl font-bold shadow-sm shadow-pink-200"
+                      className="bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-xl font-bold shadow-sm shadow-primary/40"
                     >
                       הזמני
                     </Button>

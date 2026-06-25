@@ -87,7 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-2">
             {user?.photoURL ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.photoURL} alt={displayName} className="w-8 h-8 rounded-full object-cover ring-2 ring-pink-100" />
+              <img src={user.photoURL} alt={displayName} className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/30" />
             ) : (
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-black">
                 {displayName[0].toUpperCase()}

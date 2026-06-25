@@ -206,7 +206,7 @@ export default function HowItWorksPage() {
             className="flex flex-wrap items-center justify-center gap-3 mt-8"
           >
             <Link href="/search">
-              <Button className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-2xl h-12 px-7 font-black shadow-lg shadow-pink-200">
+              <Button className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-2xl h-12 px-7 font-black shadow-lg shadow-primary/40">
                 חפשי נייליסטית 💅
               </Button>
             </Link>
@@ -255,7 +255,7 @@ export default function HowItWorksPage() {
 
           <Section className="mt-10 text-center">
             <Link href="/search">
-              <Button className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-2xl h-11 px-8 font-bold shadow-md shadow-pink-200">
+              <Button className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-2xl h-11 px-8 font-bold shadow-md shadow-primary/40">
                 חפשי נייליסטית עכשיו →
               </Button>
             </Link>

@@ -101,7 +101,7 @@ export default function NailistServicesPage() {
         </div>
         <Button
           onClick={() => { setShowForm(true); setForm(DEFAULT_FORM); setError('') }}
-          className="bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl font-bold shadow-md shadow-pink-200 gap-2"
+          className="bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl font-bold shadow-md shadow-primary/40 gap-2"
         >
           <Plus className="h-4 w-4" />
           שירות חדש
@@ -174,7 +174,7 @@ export default function NailistServicesPage() {
                   <Button
                     onClick={handleCreate}
                     disabled={saving || !form.name || form.price < 0}
-                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl font-bold shadow-md shadow-pink-200"
+                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl font-bold shadow-md shadow-primary/40"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'שמור שירות'}
                   </Button>
