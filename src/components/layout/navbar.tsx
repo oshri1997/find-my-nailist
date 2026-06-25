@@ -47,14 +47,14 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-2.5 font-black text-xl group"
+            className="flex items-center gap-2 md:gap-2.5 font-black text-xl group"
           >
             <Image
               src="/logo.png"
               alt="נייליסטיות לוגו"
               width={52}
               height={52}
-              className="group-hover:scale-105 transition-transform drop-shadow-sm"
+              className="w-9 h-9 md:w-[52px] md:h-[52px] group-hover:scale-105 transition-transform drop-shadow-sm"
             />
             <span className="gradient-text">נייליסטיות</span>
           </Link>
