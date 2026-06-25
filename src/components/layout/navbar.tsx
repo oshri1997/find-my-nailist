@@ -56,7 +56,7 @@ export function Navbar() {
               height={52}
               className="w-9 h-9 md:w-[52px] md:h-[52px] group-hover:scale-105 transition-transform drop-shadow-sm"
             />
-            <span className="gradient-text">נייליסטיות</span>
+            <span className="hidden sm:inline gradient-text">נייליסטיות</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-semibold">
