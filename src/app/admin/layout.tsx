@@ -54,7 +54,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [user, loading, router])
 
   // Close drawer on route change
-  useEffect(() => { setDrawerOpen(false) }, [pathname])
+  useEffect(() => {
+    async function close() { setDrawerOpen(false) }
+    void close()
+  }, [pathname])
 
   if (loading || !user || user.email !== ADMIN_EMAIL) {
     return (
