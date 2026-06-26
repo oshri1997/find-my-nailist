@@ -26,8 +26,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={heebo.className}>
         <Providers>{children}</Providers>
-        {/* UserWay accessibility widget — position=2 (bottom-left) */}
+        {/* UserWay accessibility widget */}
         <script dangerouslySetInnerHTML={{ __html: `(function(d){var s=d.createElement("script");s.setAttribute("data-account","z8YM8BPOF6");s.setAttribute("data-position","2");s.setAttribute("src","https://cdn.userway.org/widget.js");(d.body||d.head).appendChild(s)})(document)` }} />
+        {/* Force UserWay button to bottom-left — MutationObserver stops as soon as element is found */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){function fix(el){el.style.setProperty('position','fixed','important');el.style.setProperty('bottom','16px','important');el.style.setProperty('left','16px','important');el.style.setProperty('top','auto','important');el.style.setProperty('right','auto','important');}var obs=new MutationObserver(function(ml){ml.forEach(function(m){m.addedNodes.forEach(function(n){if(n.nodeType!==1)return;var el=n.id&&n.id.toLowerCase().includes('userway')?n:n.querySelector&&n.querySelector('[id*="userway"],[class*="userway"]');if(el){fix(el);obs.disconnect();}});});});obs.observe(document.body,{childList:true,subtree:true});})()` }} />
       </body>
     </html>
   )
