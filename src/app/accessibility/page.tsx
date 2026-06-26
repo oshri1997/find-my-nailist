@@ -21,7 +21,7 @@ export default function AccessibilityPage() {
           <section className="space-y-3">
             <h2 className="text-xl font-bold text-foreground">כללי</h2>
             <p className="text-muted-foreground leading-relaxed">
-              אתר <strong className="text-foreground">נייליסטיות</strong> (nailistiot.fun) פועל לאפשר שימוש נוח ונגיש לכלל המשתמשות והמשתמשים, לרבות אנשים עם מוגבלות, בהתאם לתקנות שוויון זכויות לאנשים עם מוגבלות (התאמות נגישות לשירות), התשע"ג–2013, ולתקן הישראלי (ת"י 5568) המבוסס על הנחיות WCAG 2.1 ברמת AA.
+              אתר <strong className="text-foreground">נייליסטיות</strong> (nailistiot.fun) פועל לאפשר שימוש נוח ונגיש לכלל המשתמשות והמשתמשים, לרבות אנשים עם מוגבלות, בהתאם לתקנות שוויון זכויות לאנשים עם מוגבלות (התאמות נגישות לשירות), התשע&quot;ג&ndash;2013, ולתקן הישראלי (ת&quot;י 5568) המבוסס על הנחיות WCAG 2.1 ברמת AA.
             </p>
           </section>
 
@@ -38,14 +38,14 @@ export default function AccessibilityPage() {
               <li>תיאורי Alt לתמונות משמעותיות</li>
               <li>כותרות עמוד ברורות ומבנה היררכי תקין</li>
               <li>הודעות שגיאה מובנות בטפסים</li>
-              <li>תמיכה בווידג'ט הנגישות של UserWay</li>
+              <li>תמיכה בווידג&apos;ט הנגישות של UserWay</li>
             </ul>
           </section>
 
           <section className="space-y-3">
             <h2 className="text-xl font-bold text-foreground">פרטים שאינם נגישים</h2>
             <p className="text-muted-foreground leading-relaxed">
-              אנו מודעים לכך שייתכנו פערים נגישות מסוימים. אנו עובדים על שיפורם באופן שוטף. אם נתקלתם בבעיה — אנא פנו אלינו (ראו פרטי יצירת קשר מטה).
+              אנו מודעים לכך שייתכנו פערי נגישות מסוימים. אנו עובדים על שיפורם באופן שוטף. אם נתקלתם בבעיה — אנא פנו אלינו (ראו פרטי יצירת קשר מטה).
             </p>
           </section>
 
@@ -57,7 +57,7 @@ export default function AccessibilityPage() {
             <div className="bg-muted/50 rounded-2xl p-5 space-y-2 text-sm text-muted-foreground border border-border">
               <p><span className="font-semibold text-foreground">שם רכז הנגישות:</span> אושרי מועלם</p>
               <p>
-                <span className="font-semibold text-foreground">דוא״ל: </span>
+                <span className="font-semibold text-foreground">דוא&quot;ל: </span>
                 <a href="mailto:oshri19970@gmail.com" className="text-primary hover:underline">
                   oshri19970@gmail.com
                 </a>
@@ -69,7 +69,7 @@ export default function AccessibilityPage() {
           <section className="space-y-3">
             <h2 className="text-xl font-bold text-foreground">בקשות וסיוע</h2>
             <p className="text-muted-foreground leading-relaxed">
-              אם נתקלתם בקושי לבצע פעולה כלשהי באתר, נשמח לסייע. ניתן לפנות אלינו בדוא״ל ונטפל בבקשתכם באופן ישיר.
+              אם נתקלתם בקושי לבצע פעולה כלשהי באתר, נשמח לסייע. ניתן לפנות אלינו בדוא&quot;ל ונטפל בבקשתכם באופן ישיר.
             </p>
           </section>
 
@@ -82,7 +82,7 @@ export default function AccessibilityPage() {
 
         <div className="mt-12 pt-8 border-t border-border">
           <Link href="/" className="text-sm text-primary hover:underline">
-            ← חזרה לדף הבית
+            &larr; חזרה לדף הבית
           </Link>
         </div>
       </main>
