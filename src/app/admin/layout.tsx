@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Users, Scissors, Calendar, Star, LogOut, Shield, Menu, X, ArrowRight } from 'lucide-react'
+import { LayoutDashboard, Users, Scissors, Calendar, Star, LogOut, Shield, Menu, X, ArrowRight, Home } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 const ADMIN_EMAIL = 'oshri19970@gmail.com'
@@ -79,6 +79,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <ArrowRight className="w-4 h-4" />
           </button>
+          <Link
+            href="/"
+            className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+            title="דף הבית"
+          >
+            <Home className="w-4 h-4" />
+          </Link>
           <Shield className="w-4 h-4 text-primary" />
           <span className="font-black text-foreground text-sm">אדמין פאנל</span>
         </div>
@@ -119,8 +126,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <ArrowRight className="w-4 h-4" />
-            חזרה לאתר
+            חזרה
           </button>
+          <Link
+            href="/"
+            onClick={() => setDrawerOpen(false)}
+            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <Home className="w-4 h-4" />
+            דף הבית
+          </Link>
           <button
             onClick={() => signOut()}
             className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
@@ -151,8 +166,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             >
               <ArrowRight className="w-4 h-4" />
-              חזרה לאתר
+              חזרה
             </button>
+            <Link
+              href="/"
+              className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <Home className="w-4 h-4" />
+              דף הבית
+            </Link>
             <button
               onClick={() => signOut()}
               className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
