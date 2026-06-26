@@ -26,36 +26,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={heebo.className}>
         <Providers>{children}</Providers>
-        {/* UserWay accessibility widget */}
-        <script dangerouslySetInnerHTML={{ __html: `(function(d){var s=d.createElement("script");s.setAttribute("data-position",2);s.setAttribute("data-size","small");s.setAttribute("data-language","he");s.setAttribute("data-mobile",true);s.setAttribute("data-account","z8YM8BPOF6");s.setAttribute("src","https://cdn.userway.org/widget.js");(d.body||d.head).appendChild(s)})(document)` }} />
-        {/* Force UserWay button to bottom-left — setInterval wins over any internal repositioning */}
-        <script dangerouslySetInnerHTML={{ __html: `
-(function(){
-  function applyPos(el){
-    el.style.setProperty('position','fixed','important');
-    el.style.setProperty('bottom','16px','important');
-    el.style.setProperty('left','16px','important');
-    el.style.setProperty('right','auto','important');
-    el.style.setProperty('top','auto','important');
-    el.style.setProperty('z-index','999999','important');
-  }
-  function fix(){
-    var selectors=['#userwayAccessibilityIcon','.userway_buttons_wrapper','[id*="userway"i]','[class*="userway"i]'];
-    var found=false;
-    for(var i=0;i<selectors.length;i++){
-      var els=document.querySelectorAll(selectors[i]);
-      els.forEach(function(el){applyPos(el);found=true;});
-    }
-    return found;
-  }
-  var attempts=0;
-  var iv=setInterval(function(){
-    fix();
-    attempts++;
-    if(attempts>100)clearInterval(iv);
-  },100);
-})();
-        ` }} />
+        {/* UserWay accessibility widget — position configured in app.userway.org dashboard */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(d){var s=d.createElement("script");s.setAttribute("data-account","z8YM8BPOF6");s.setAttribute("src","https://cdn.userway.org/widget.js");(d.body||d.head).appendChild(s)})(document)` }} />
       </body>
     </html>
   )

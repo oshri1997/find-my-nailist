@@ -168,22 +168,3 @@ body {
   background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0);
   background-size: 28px 28px;
 }
-
-/* Force UserWay accessibility button to bottom-left */
-#userwayAccessibilityIcon {
-  bottom: 16px !important;
-  left: 16px !important;
-  right: auto !important;
-  top: auto !important;
-}
-
-/* UserWay — additional selectors fallback */
-.userway_buttons_wrapper,
-[id*="userway"],
-[class*="userway"] {
-  bottom: 16px !important;
-  left: 16px !important;
-  right: auto !important;
-  top: auto !important;
-  position: fixed !important;
-}
