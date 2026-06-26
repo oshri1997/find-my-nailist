@@ -8,10 +8,9 @@ export async function GET(request: NextRequest) {
 
   const db = adminDb()
 
-  const [usersSnap, nailistsSnap, clientsSnap, appointmentsSnap, reviewsSnap] = await Promise.all([
+  const [usersSnap, nailistsSnap, appointmentsSnap, reviewsSnap] = await Promise.all([
     db.collection(COLLECTIONS.USERS).get(),
     db.collection(COLLECTIONS.NAILIST_PROFILES).get(),
-    db.collection(COLLECTIONS.CLIENT_PROFILES).get(),
     db.collection(COLLECTIONS.APPOINTMENTS).get(),
     db.collection(COLLECTIONS.REVIEWS).get(),
   ])
@@ -32,6 +31,8 @@ export async function GET(request: NextRequest) {
     return created && created >= weekAgo
   }).length
 
+  const totalNailistUsers = usersSnap.docs.filter(d => d.data().role === 'NAILIST').length
+  const totalClientUsers = usersSnap.docs.filter(d => d.data().role === 'CLIENT').length
   const activeNailists = nailistsSnap.docs.filter(d => d.data().isActive === true).length
 
   let totalRevenue = 0
@@ -46,8 +47,8 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     data: {
       totalUsers: usersSnap.size,
-      totalNailists: nailistsSnap.size,
-      totalClients: clientsSnap.size,
+      totalNailists: totalNailistUsers,
+      totalClients: totalClientUsers,
       activeNailists,
       totalAppointments: appointmentsSnap.size,
       appointmentsByStatus,
