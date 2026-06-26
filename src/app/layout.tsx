@@ -26,16 +26,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={heebo.className}>
         <Providers>{children}</Providers>
-        {/* UserWay accessibility widget */}
-        <Script
-          src="https://cdn.userway.org/widget.js"
-          data-account="z8YM8BPOF6"
-          data-language="he"
-          data-mobile="true"
-          data-position="2"
-          data-size="small"
-          strategy="afterInteractive"
-        />
+        {/* UserWay accessibility widget — bottom-left, small */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(d){var s=d.createElement("script");s.setAttribute("data-account","z8YM8BPOF6");s.setAttribute("data-position","2");s.setAttribute("data-size","small");s.setAttribute("data-language","he");s.setAttribute("data-mobile","true");s.setAttribute("src","https://cdn.userway.org/widget.js");(d.body||d.head).appendChild(s)})(document)` }} />
       </body>
     </html>
   )
