@@ -26,11 +26,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={heebo.className}>
         <Providers>{children}</Providers>
-        {/* EqualWeb accessibility widget (IS 5568) — replace YOUR_SITE_ID after signing up at equalweb.co.il */}
+        {/* UserWay accessibility widget — replace account ID via NEXT_PUBLIC_USERWAY_ACCOUNT_ID in Railway */}
         <Script
-          src="https://cdn.equalweb.com/core.js"
-          data-site={process.env.NEXT_PUBLIC_EQUALWEB_SITE_ID ?? 'YOUR_SITE_ID'}
-          data-lang="he"
+          src="https://cdn.userway.org/widget.js"
+          data-account={process.env.NEXT_PUBLIC_USERWAY_ACCOUNT_ID ?? ''}
           strategy="afterInteractive"
         />
       </body>
