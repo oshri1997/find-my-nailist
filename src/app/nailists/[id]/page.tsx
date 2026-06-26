@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Navbar } from '@/components/layout/navbar'
 import { Button } from '@/components/ui/button'
@@ -56,12 +57,21 @@ interface NailistProfile {
 export default function NailistProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { user } = useAuth()
+  const router = useRouter()
   const [profile, setProfile] = useState<NailistProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [isOwner, setIsOwner] = useState(false)
   const [showBooking, setShowBooking] = useState(false)
   const [activeTab, setActiveTab] = useState<'portfolio' | 'services' | 'reviews'>('portfolio')
   const [copied, setCopied] = useState(false)
+
+  function openBooking() {
+    if (!user) {
+      router.push(`/login?redirect=/nailists/${id}`)
+      return
+    }
+    setShowBooking(true)
+  }
 
   async function handleShare() {
     const url = window.location.href
@@ -211,7 +221,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
           <div className="flex flex-wrap gap-2 mt-5">
             {profile.services.length > 0 && (
               <Button
-                onClick={() => setShowBooking(true)}
+                onClick={openBooking}
                 className="bg-white text-pink-600 hover:bg-pink-50 border-0 rounded-2xl font-black shadow-lg"
               >
                 קביעת תור 💅
@@ -366,7 +376,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
                     </span>
                     <Button
                       size="sm"
-                      onClick={() => setShowBooking(true)}
+                      onClick={openBooking}
                       className="bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-xl font-bold shadow-sm shadow-primary/40"
                     >
                       הזמני
