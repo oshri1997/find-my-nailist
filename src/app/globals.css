@@ -170,7 +170,12 @@ body {
 }
 
 /* Force UserWay accessibility button to bottom-left */
-#userwayAccessibilityIcon {
-  inset: auto auto 16px 16px !important;
+#userwayAccessibilityIcon,
+[id*="userway"],
+[class*="userway"] {
+  position: fixed !important;
+  bottom: 16px !important;
+  left: 16px !important;
+  top: auto !important;
   right: auto !important;
 }
