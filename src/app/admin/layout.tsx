@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Users, Scissors, Calendar, Star, LogOut, Shield, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Users, Scissors, Calendar, Star, LogOut, Shield, Menu, X, ArrowRight } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 const ADMIN_EMAIL = 'oshri19970@gmail.com'
@@ -72,6 +72,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Mobile header */}
       <header className="md:hidden sticky top-0 z-40 flex items-center justify-between px-4 h-14 bg-card border-b border-border">
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.back()}
+            className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+            title="חזרה"
+          >
+            <ArrowRight className="w-4 h-4" />
+          </button>
           <Shield className="w-4 h-4 text-primary" />
           <span className="font-black text-foreground text-sm">אדמין פאנל</span>
         </div>
@@ -106,7 +113,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           <NavLinks pathname={pathname} onNav={() => setDrawerOpen(false)} />
         </nav>
-        <div className="p-3 border-t border-border">
+        <div className="p-3 border-t border-border space-y-1">
+          <button
+            onClick={() => { setDrawerOpen(false); router.back() }}
+            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <ArrowRight className="w-4 h-4" />
+            חזרה לאתר
+          </button>
           <button
             onClick={() => signOut()}
             className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
@@ -131,7 +145,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             <NavLinks pathname={pathname} />
           </nav>
-          <div className="p-4 border-t border-border">
+          <div className="p-4 border-t border-border space-y-1">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <ArrowRight className="w-4 h-4" />
+              חזרה לאתר
+            </button>
             <button
               onClick={() => signOut()}
               className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
