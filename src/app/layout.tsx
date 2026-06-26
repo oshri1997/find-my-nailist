@@ -32,6 +32,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           data-account="z8YM8BPOF6"
           data-language="he"
           data-mobile="true"
+          data-position="2"
+          data-size="small"
           strategy="afterInteractive"
         />
       </body>
