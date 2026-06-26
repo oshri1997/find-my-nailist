@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Users, Scissors, Calendar, Star, LogOut, Shield } from 'lucide-react'
+import { LayoutDashboard, Users, Scissors, Calendar, Star, LogOut, Shield, Menu, X } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 const ADMIN_EMAIL = 'oshri19970@gmail.com'
@@ -16,16 +16,45 @@ const NAV = [
   { href: '/admin/reviews', label: 'ביקורות', icon: Star },
 ]
 
+function NavLinks({ pathname, onNav }: { pathname: string; onNav?: () => void }) {
+  return (
+    <>
+      {NAV.map(({ href, label, icon: Icon, exact }) => {
+        const active = exact ? pathname === href : pathname.startsWith(href)
+        return (
+          <Link
+            key={href}
+            href={href}
+            onClick={onNav}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+              active
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Icon className="w-4 h-4 flex-shrink-0" />
+            {label}
+          </Link>
+        )
+      })}
+    </>
+  )
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
     if (!loading && (!user || user.email !== ADMIN_EMAIL)) {
       router.replace('/')
     }
   }, [user, loading, router])
+
+  // Close drawer on route change
+  useEffect(() => { setDrawerOpen(false) }, [pathname])
 
   if (loading || !user || user.email !== ADMIN_EMAIL) {
     return (
@@ -36,38 +65,45 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen flex bg-background" dir="rtl">
-      {/* Sidebar */}
-      <aside className="w-60 flex-shrink-0 bg-card border-l border-border flex flex-col">
-        <div className="p-6 border-b border-border">
-          <div className="flex items-center gap-2 mb-1">
-            <Shield className="w-5 h-5 text-primary" />
-            <span className="font-black text-foreground">אדמין פאנל</span>
-          </div>
-          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+    <div className="min-h-screen bg-background" dir="rtl">
+      {/* Mobile header */}
+      <header className="md:hidden sticky top-0 z-40 flex items-center justify-between px-4 h-14 bg-card border-b border-border">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-primary" />
+          <span className="font-black text-foreground text-sm">אדמין פאנל</span>
         </div>
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      </header>
 
-        <nav className="flex-1 p-4 space-y-1">
-          {NAV.map(({ href, label, icon: Icon, exact }) => {
-            const active = exact ? pathname === href : pathname.startsWith(href)
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  active
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {label}
-              </Link>
-            )
-          })}
+      {/* Mobile drawer overlay */}
+      {drawerOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-50"
+          onClick={() => setDrawerOpen(false)}
+        />
+      )}
+
+      {/* Mobile drawer */}
+      <div className={`md:hidden fixed top-0 right-0 h-full w-64 bg-card border-l border-border z-50 flex flex-col transition-transform duration-300 ${drawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-primary" />
+            <span className="font-black text-foreground text-sm">אדמין פאנל</span>
+          </div>
+          <button onClick={() => setDrawerOpen(false)} className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-xs text-muted-foreground px-4 py-2">{user.email}</p>
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          <NavLinks pathname={pathname} onNav={() => setDrawerOpen(false)} />
         </nav>
-
-        <div className="p-4 border-t border-border">
+        <div className="p-3 border-t border-border">
           <button
             onClick={() => signOut()}
             className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
@@ -76,12 +112,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             התנתק
           </button>
         </div>
-      </aside>
+      </div>
 
-      {/* Main */}
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
+      {/* Desktop layout */}
+      <div className="md:flex min-h-screen">
+        {/* Desktop sidebar */}
+        <aside className="hidden md:flex w-60 flex-shrink-0 flex-col bg-card border-l border-border min-h-screen sticky top-0 h-screen">
+          <div className="p-6 border-b border-border">
+            <div className="flex items-center gap-2 mb-1">
+              <Shield className="w-5 h-5 text-primary" />
+              <span className="font-black text-foreground">אדמין פאנל</span>
+            </div>
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+          </div>
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+            <NavLinks pathname={pathname} />
+          </nav>
+          <div className="p-4 border-t border-border">
+            <button
+              onClick={() => signOut()}
+              className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              התנתק
+            </button>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-1 min-w-0 overflow-auto">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }

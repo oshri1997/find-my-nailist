@@ -79,10 +79,10 @@ export default function AdminDashboard() {
     )
   }
 
-  if (!stats) return <div className="p-8 text-muted-foreground">שגיאה בטעינת הנתונים</div>
+  if (!stats) return <div className="p-4 md:p-8 text-muted-foreground">שגיאה בטעינת הנתונים</div>
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8">
       <div>
         <h1 className="text-2xl font-black text-foreground">דשבורד</h1>
         <p className="text-muted-foreground text-sm mt-1">סקירה כללית של המערכת</p>
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Appointments breakdown */}
-      <div className="bg-card border border-border rounded-2xl p-6">
+      <div className="bg-card border border-border rounded-2xl p-4 md:p-6">
         <h2 className="font-black text-foreground mb-4">הזמנות לפי סטטוס</h2>
         <div className="flex flex-wrap gap-3">
           {Object.entries(stats.appointmentsByStatus).map(([status, count]) => (
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick nav */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {[
           { href: '/admin/users', label: 'ניהול משתמשים', desc: `${stats.totalUsers} משתמשים`, icon: Users },
           { href: '/admin/nailists', label: 'ניהול נייליסטיות', desc: `${stats.activeNailists} פעילות`, icon: Scissors },

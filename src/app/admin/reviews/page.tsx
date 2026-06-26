@@ -34,7 +34,7 @@ export default function AdminReviewsPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-5 md:space-y-6">
       <div>
         <h1 className="text-2xl font-black text-foreground">ניהול ביקורות</h1>
         <p className="text-muted-foreground text-sm mt-1">{reviews.length} ביקורות סה״כ</p>
