@@ -168,7 +168,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
             <Link href="/dashboard/nailist/portfolio">
               <button className="bg-white/20 backdrop-blur text-white text-xs font-bold rounded-full px-3 py-1.5 hover:bg-white/35 transition-colors flex items-center gap-1.5 border border-white/20">
                 <ImageIcon className="h-3 w-3" />
-                שנאי רקע
+                שני רקע
               </button>
             </Link>
             <Link href="/dashboard/nailist/settings">
