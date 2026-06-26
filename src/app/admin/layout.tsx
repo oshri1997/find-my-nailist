@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { LayoutDashboard, Users, Scissors, Calendar, Star, LogOut, Shield } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
-import { ADMIN_EMAIL } from '@/lib/admin-auth'
+
+const ADMIN_EMAIL = 'oshri19970@gmail.com'
 
 const NAV = [
   { href: '/admin', label: 'דשבורד', icon: LayoutDashboard, exact: true },

@@ -7,6 +7,13 @@ const { version } = JSON.parse(
 ) as { version: string }
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: [
+    'firebase-admin',
+    '@google-cloud/storage',
+    '@google-cloud/firestore',
+    'google-gax',
+    '@grpc/grpc-js',
+  ],
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
   },

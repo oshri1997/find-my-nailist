@@ -6,12 +6,13 @@ import { FieldValue } from 'firebase-admin/firestore'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!await verifyAdmin(request)) return adminUnauthorized()
 
+  const { id } = await params
   const db = adminDb()
-  const reviewSnap = await db.collection(COLLECTIONS.REVIEWS).doc(params.id).get()
+  const reviewSnap = await db.collection(COLLECTIONS.REVIEWS).doc(id).get()
   if (!reviewSnap.exists) return NextResponse.json({ error: 'ביקורת לא נמצאה' }, { status: 404 })
 
   const { nailistProfileId } = reviewSnap.data()!

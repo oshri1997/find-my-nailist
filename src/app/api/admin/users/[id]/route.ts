@@ -5,11 +5,11 @@ import { verifyAdmin, adminUnauthorized } from '@/lib/admin-auth'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!await verifyAdmin(request)) return adminUnauthorized()
 
-  const { id } = params
+  const { id } = await params
   const db = adminDb()
 
   try {
