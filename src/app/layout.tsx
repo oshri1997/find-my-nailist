@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Heebo } from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 import { Providers } from '@/components/providers'
 
@@ -25,6 +26,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={heebo.className}>
         <Providers>{children}</Providers>
+        {/* UserWay accessibility widget — replace YOUR_ACCOUNT_ID after signing up at userway.org */}
+        <Script
+          src="https://cdn.userway.org/widget.js"
+          data-account={process.env.NEXT_PUBLIC_USERWAY_ACCOUNT_ID ?? 'YOUR_ACCOUNT_ID'}
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   )
