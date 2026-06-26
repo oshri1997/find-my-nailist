@@ -26,8 +26,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={heebo.className}>
         <Providers>{children}</Providers>
-        {/* UserWay accessibility widget — bottom-left, small, Hebrew */}
+        {/* UserWay accessibility widget */}
         <script dangerouslySetInnerHTML={{ __html: `(function(d){var s=d.createElement("script");s.setAttribute("data-position",2);s.setAttribute("data-size","small");s.setAttribute("data-language","he");s.setAttribute("data-mobile",true);s.setAttribute("data-account","z8YM8BPOF6");s.setAttribute("src","https://cdn.userway.org/widget.js");(d.body||d.head).appendChild(s)})(document)` }} />
+        {/* Force UserWay button to bottom-left using MutationObserver */}
+        <script dangerouslySetInnerHTML={{ __html: `
+(function(){
+  function fix(){
+    var selectors=['#userwayAccessibilityIcon','.userway_buttons_wrapper','[id*="userway"i]','[class*="userway"i]'];
+    for(var i=0;i<selectors.length;i++){
+      var el=document.querySelector(selectors[i]);
+      if(el){
+        el.style.setProperty('position','fixed','important');
+        el.style.setProperty('bottom','16px','important');
+        el.style.setProperty('left','16px','important');
+        el.style.setProperty('right','auto','important');
+        el.style.setProperty('top','auto','important');
+        el.style.setProperty('z-index','999999','important');
+        return true;
+      }
+    }
+    return false;
+  }
+  if(!fix()){
+    var obs=new MutationObserver(function(){if(fix())obs.disconnect();});
+    obs.observe(document.body||document.documentElement,{childList:true,subtree:true});
+    setTimeout(function(){obs.disconnect();},10000);
+  }
+})();
+        ` }} />
       </body>
     </html>
   )

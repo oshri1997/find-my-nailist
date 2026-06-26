@@ -176,3 +176,14 @@ body {
   right: auto !important;
   top: auto !important;
 }
+
+/* UserWay — additional selectors fallback */
+.userway_buttons_wrapper,
+[id*="userway"],
+[class*="userway"] {
+  bottom: 16px !important;
+  left: 16px !important;
+  right: auto !important;
+  top: auto !important;
+  position: fixed !important;
+}
