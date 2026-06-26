@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { motion } from 'framer-motion'
 import { Navbar } from '@/components/layout/navbar'
 import { Button } from '@/components/ui/button'
-import { MapPin, Star, Clock, MessageCircle, Navigation, ExternalLink, ChevronRight, Settings, ImageIcon } from 'lucide-react'
+import { MapPin, Star, Clock, MessageCircle, Navigation, ExternalLink, ChevronRight, Settings, ImageIcon, Share2, Check } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
 import BookingModal from '@/components/booking/BookingModal'
 import Link from 'next/link'
@@ -61,6 +61,19 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
   const [isOwner, setIsOwner] = useState(false)
   const [showBooking, setShowBooking] = useState(false)
   const [activeTab, setActiveTab] = useState<'portfolio' | 'services' | 'reviews'>('portfolio')
+  const [copied, setCopied] = useState(false)
+
+  async function handleShare() {
+    const url = window.location.href
+    const text = `${profile?.businessName} — נייליסטית מקצועית${profile?.city ? ` ב${profile.city}` : ''}`
+    if (navigator.share) {
+      await navigator.share({ title: profile?.businessName ?? 'נייליסטית', text, url })
+    } else {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   useEffect(() => {
     fetch(`/api/nailists/${id}`)
@@ -263,6 +276,13 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
                 Google Maps
               </a>
             )}
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-2 bg-white/20 backdrop-blur hover:bg-white/30 text-white rounded-2xl px-4 py-2 font-bold text-sm transition-colors"
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+              {copied ? 'הלינק הועתק!' : 'שתפי'}
+            </button>
           </div>
         </div>
       </div>
