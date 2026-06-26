@@ -38,14 +38,12 @@ export function Footer() {
             <h4 className="font-black text-foreground mb-4 text-xs uppercase tracking-widest">נגישות ומדיניות</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li>
-                <a
-                  href="https://userway.org/accessibility-statement/z8YM8BPOF6"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href="/accessibility"
                   className="hover:text-primary transition-colors"
                 >
                   הצהרת נגישות
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
