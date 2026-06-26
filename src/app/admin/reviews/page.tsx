@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Loader2, Trash2, Star } from 'lucide-react'
 
 interface AdminReview {
   id: string
   nailistProfileId: string
+  nailistBusinessName: string
   clientDisplayName: string
   rating: number
   comment: string
@@ -51,6 +53,7 @@ export default function AdminReviewsPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/40">
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">לקוחה</th>
+                  <th className="text-right px-5 py-3 font-semibold text-muted-foreground">נייליסטית</th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">דירוג</th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">תגובה</th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">תאריך</th>
@@ -61,6 +64,18 @@ export default function AdminReviewsPage() {
                 {reviews.map(r => (
                   <tr key={r.id} className="hover:bg-muted/20 transition-colors">
                     <td className="px-5 py-3 font-medium text-foreground">{r.clientDisplayName || '—'}</td>
+                    <td className="px-5 py-3">
+                      {r.nailistBusinessName ? (
+                        <Link
+                          href={`/nailists/${r.nailistProfileId}`}
+                          className="text-primary hover:underline font-medium"
+                        >
+                          {r.nailistBusinessName}
+                        </Link>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">{r.nailistProfileId || '—'}</span>
+                      )}
+                    </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-1">
                         {Array.from({ length: 5 }).map((_, i) => (
@@ -89,7 +104,7 @@ export default function AdminReviewsPage() {
                 ))}
                 {reviews.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-5 py-12 text-center text-muted-foreground">אין ביקורות</td>
+                    <td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">אין ביקורות</td>
                   </tr>
                 )}
               </tbody>
