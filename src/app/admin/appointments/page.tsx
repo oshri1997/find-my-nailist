@@ -38,12 +38,18 @@ export default function AdminAppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState('')
 
   useEffect(() => {
-    setLoading(true)
-    const q = statusFilter ? `?status=${statusFilter}` : ''
-    fetch(`/api/admin/appointments${q}`)
-      .then(r => r.json())
-      .then(j => { setAppointments(j.data ?? []); setLoading(false) })
-      .catch(() => setLoading(false))
+    async function load() {
+      setLoading(true)
+      const q = statusFilter ? `?status=${statusFilter}` : ''
+      try {
+        const r = await fetch(`/api/admin/appointments${q}`)
+        const j = await r.json()
+        setAppointments(j.data ?? [])
+      } finally {
+        setLoading(false)
+      }
+    }
+    void load()
   }, [statusFilter])
 
   const filtered = statusFilter
