@@ -33,6 +33,22 @@ export function Footer() {
               <li><Link href="/dashboard/nailist" className="hover:text-primary transition-colors">לוח הבקרה</Link></li>
             </ul>
           </div>
+
+          <div>
+            <h4 className="font-black text-foreground mb-4 text-xs uppercase tracking-widest">נגישות ומדיניות</h4>
+            <ul className="space-y-3 text-sm text-muted-foreground">
+              <li>
+                <a
+                  href="https://userway.org/accessibility-statement/z8YM8BPOF6"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors"
+                >
+                  הצהרת נגישות
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
 
         <div className="mt-10 pt-8 border-t border-border text-center text-sm text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap">
