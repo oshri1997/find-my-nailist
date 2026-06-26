@@ -26,10 +26,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={heebo.className}>
         <Providers>{children}</Providers>
-        {/* UserWay accessibility widget — replace account ID via NEXT_PUBLIC_USERWAY_ACCOUNT_ID in Railway */}
+        {/* UserWay accessibility widget */}
         <Script
           src="https://cdn.userway.org/widget.js"
-          data-account={process.env.NEXT_PUBLIC_USERWAY_ACCOUNT_ID ?? ''}
+          data-account="z8YM8BPOF6"
+          data-language="he"
+          data-mobile="true"
           strategy="afterInteractive"
         />
       </body>
