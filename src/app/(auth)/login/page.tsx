@@ -43,6 +43,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const handlingFormRef = useRef(false)
 
   // Auth-state redirect (handles Google OAuth callback + email login)
@@ -119,6 +120,7 @@ export default function AuthPage() {
     setName('')
     setEmail('')
     setPassword('')
+    setAgreedToTerms(false)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -301,8 +303,25 @@ export default function AuthPage() {
                   </div>
                 </div>
 
+                {mode === 'register' && (
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={agreedToTerms}
+                      onChange={e => setAgreedToTerms(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-primary cursor-pointer"
+                    />
+                    <span className="text-xs text-muted-foreground leading-relaxed">
+                      קראתי ואני מסכים/ה ל
+                      <Link href="/terms" target="_blank" className="text-primary hover:underline font-semibold mx-0.5">תנאי השימוש</Link>
+                      ול
+                      <Link href="/privacy" target="_blank" className="text-primary hover:underline font-semibold mx-0.5">מדיניות הפרטיות</Link>
+                    </span>
+                  </label>
+                )}
+
                 <Button
-                  type="submit" disabled={loading || authLoading}
+                  type="submit" disabled={loading || authLoading || (mode === 'register' && !agreedToTerms)}
                   className="w-full bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black text-base shadow-[0_4px_16px_rgba(236,72,153,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
                 >
                   {loading

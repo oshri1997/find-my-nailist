@@ -35,13 +35,20 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-black text-foreground mb-4 text-xs uppercase tracking-widest">נגישות ומדיניות</h4>
+            <h4 className="font-black text-foreground mb-4 text-xs uppercase tracking-widest">מדיניות ונגישות</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li>
-                <Link
-                  href="/accessibility"
-                  className="hover:text-primary transition-colors"
-                >
+                <Link href="/terms" className="hover:text-primary transition-colors">
+                  תנאי שימוש
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-primary transition-colors">
+                  מדיניות פרטיות
+                </Link>
+              </li>
+              <li>
+                <Link href="/accessibility" className="hover:text-primary transition-colors">
                   הצהרת נגישות
                 </Link>
               </li>
