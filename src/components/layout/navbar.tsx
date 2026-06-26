@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { LogOut, LayoutDashboard, ChevronDown, CalendarDays } from 'lucide-react'
+import { LogOut, LayoutDashboard, ChevronDown, CalendarDays, Shield } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -134,6 +134,16 @@ export function Navbar() {
                         <p className="text-sm font-bold text-foreground truncate">{displayName}</p>
                         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                       </div>
+                      {user.email === 'oshri19970@gmail.com' && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setShowMenu(false)}
+                          className="flex items-center gap-2 w-full px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/8 rounded-lg transition-colors"
+                        >
+                          <Shield className="h-4 w-4" />
+                          פאנל ניהול
+                        </Link>
+                      )}
                       <button
                         onClick={handleSignOut}
                         className="flex items-center gap-2 w-full px-3 py-2 text-sm font-semibold text-destructive hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
