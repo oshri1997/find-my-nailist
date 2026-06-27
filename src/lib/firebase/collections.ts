@@ -8,4 +8,5 @@ export const COLLECTIONS = {
   WORKING_HOURS: 'workingHours',
   APPOINTMENTS: 'appointments',
   REVIEWS: 'reviews',
+  FAVORITES: 'favorites',
 } as const

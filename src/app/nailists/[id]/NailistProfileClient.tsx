@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Navbar } from '@/components/layout/navbar'
 import { Button } from '@/components/ui/button'
-import { MapPin, Star, Clock, MessageCircle, Navigation, ExternalLink, ChevronRight, Settings, ImageIcon, Share2, Check } from 'lucide-react'
+import { MapPin, Star, Clock, MessageCircle, Navigation, ExternalLink, ChevronRight, Settings, ImageIcon, Share2, Check, Heart } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
 import BookingModal from '@/components/booking/BookingModal'
 import Link from 'next/link'
@@ -63,6 +63,8 @@ export default function NailistProfileClient({ id }: { id: string }) {
   const [showBooking, setShowBooking] = useState(false)
   const [activeTab, setActiveTab] = useState<'portfolio' | 'services' | 'reviews'>('portfolio')
   const [copied, setCopied] = useState(false)
+  const [isFavorited, setIsFavorited] = useState(false)
+  const [favLoading, setFavLoading] = useState(false)
 
   function openBooking() {
     if (!user) {
@@ -99,6 +101,33 @@ export default function NailistProfileClient({ id }: { id: string }) {
       .then(json => { if (json?.data?.id === id) setIsOwner(true) })
       .catch(() => {})
   }, [user, id])
+
+  useEffect(() => {
+    if (!user) return
+    fetch(`/api/favorites/${id}`)
+      .then(r => r.json())
+      .then(json => setIsFavorited(json?.data?.isFavorited ?? false))
+      .catch(() => {})
+  }, [user, id])
+
+  async function toggleFavorite() {
+    if (!user) {
+      router.push(`/login?redirect=/nailists/${id}`)
+      return
+    }
+    if (favLoading) return
+    setFavLoading(true)
+    const method = isFavorited ? 'DELETE' : 'POST'
+    try {
+      const res = await fetch(`/api/favorites/${id}`, { method })
+      const json = await res.json()
+      setIsFavorited(json?.data?.isFavorited ?? !isFavorited)
+    } catch {
+      // revert on error
+    } finally {
+      setFavLoading(false)
+    }
+  }
 
   function wazeUrl() {
     if (!profile?.latitude || !profile?.longitude) return null
@@ -284,6 +313,18 @@ export default function NailistProfileClient({ id }: { id: string }) {
                 <ExternalLink className="h-4 w-4" />
                 Google Maps
               </a>
+            )}
+            {!isOwner && (
+              <button
+                onClick={toggleFavorite}
+                disabled={favLoading}
+                className="flex items-center gap-2 bg-white/20 backdrop-blur hover:bg-white/30 text-white rounded-2xl px-4 py-2 font-bold text-sm transition-colors disabled:opacity-60"
+              >
+                <Heart
+                  className={`h-4 w-4 transition-all ${isFavorited ? 'fill-pink-400 text-pink-400 scale-110' : ''}`}
+                />
+                {isFavorited ? 'שמורה' : 'שמרי'}
+              </button>
             )}
             <button
               onClick={handleShare}
