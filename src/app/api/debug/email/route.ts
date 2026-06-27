@@ -6,6 +6,10 @@ import { sendAppointmentRequest, sendClientConfirmedEmail } from '@/lib/email'
 // ?secret=xxx&type=booking → simulate new booking emails (nailist + client)
 // ?secret=xxx&type=confirmed → simulate client confirmation email
 export async function GET(request: NextRequest) {
+  if (process.env.NODE_ENV !== 'development') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   const secret = request.nextUrl.searchParams.get('secret')
   if (secret !== process.env.DEBUG_EMAIL_SECRET) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

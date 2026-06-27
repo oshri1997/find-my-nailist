@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebase/admin'
+import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { geocodeAddress } from '@/lib/geocoding'
 
@@ -67,9 +67,32 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
+
+  const token = request.cookies.get('auth-token')?.value
+  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  let decoded: { uid: string }
   try {
-    const body = await request.json()
+    decoded = await adminAuth().verifyIdToken(token)
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
     const db = adminDb()
+
+    // Verify caller owns this nailist profile
+    const nailistSnap = await db
+      .collection(COLLECTIONS.NAILIST_PROFILES)
+      .where('userId', '==', decoded.uid)
+      .limit(1)
+      .get()
+    const ownedProfileId = nailistSnap.empty ? null : nailistSnap.docs[0].id
+    if (!ownedProfileId || ownedProfileId !== id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const body = await request.json()
     const { FieldValue } = await import('firebase-admin/firestore')
 
     const update: Record<string, unknown> = { ...body, updatedAt: FieldValue.serverTimestamp() }

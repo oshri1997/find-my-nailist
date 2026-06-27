@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebase/admin'
+import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { FieldValue } from 'firebase-admin/firestore'
 
@@ -24,13 +24,36 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const token = request.cookies.get('auth-token')?.value
+  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  let decoded: { uid: string }
+  try {
+    decoded = await adminAuth().verifyIdToken(token)
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const { nailistProfileId, url, storageKey, caption, displayOrder } = await request.json()
     if (!nailistProfileId || !url) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const ref = await adminDb().collection(COLLECTIONS.PORTFOLIO_PHOTOS).add({
+    const db = adminDb()
+
+    // Verify caller owns the nailist profile
+    const nailistSnap = await db
+      .collection(COLLECTIONS.NAILIST_PROFILES)
+      .where('userId', '==', decoded.uid)
+      .limit(1)
+      .get()
+    const ownedProfileId = nailistSnap.empty ? null : nailistSnap.docs[0].id
+    if (!ownedProfileId || ownedProfileId !== nailistProfileId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const ref = await db.collection(COLLECTIONS.PORTFOLIO_PHOTOS).add({
       nailistProfileId,
       url,
       storageKey: storageKey ?? null,
