@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { signInWithEmail, signInWithGoogle, signUpWithEmail } from '@/lib/firebase/auth-helpers'
 import { useAuth } from '@/components/auth/auth-provider'
 import Link from 'next/link'
+import LegalModal from '@/components/auth/LegalModal'
 
 type Mode = 'login' | 'register'
 type Role = 'nailist' | 'client'
@@ -44,6 +45,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [legalModal, setLegalModal] = useState<'terms' | 'privacy' | null>(null)
   const handlingFormRef = useRef(false)
 
   // Auth-state redirect (handles Google OAuth callback + email login)
@@ -170,6 +172,7 @@ export default function AuthPage() {
   const panel = PANEL_CONTENT[mode]
 
   return (
+    <>
     <div className="min-h-screen flex bg-background">
       {/* ── Form panel (first in DOM = right side in RTL) ── */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
@@ -304,20 +307,35 @@ export default function AuthPage() {
                 </div>
 
                 {mode === 'register' && (
-                  <label className="flex items-start gap-2.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={agreedToTerms}
-                      onChange={e => setAgreedToTerms(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-primary cursor-pointer"
-                    />
-                    <span className="text-xs text-muted-foreground leading-relaxed">
-                      קראתי ואני מסכים/ה ל
-                      <Link href="/terms" target="_blank" className="text-primary hover:underline font-semibold mx-0.5">תנאי השימוש</Link>
-                      ול
-                      <Link href="/privacy" target="_blank" className="text-primary hover:underline font-semibold mx-0.5">מדיניות הפרטיות</Link>
-                    </span>
-                  </label>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setLegalModal('terms')}
+                        className="flex-1 text-xs border border-border rounded-xl py-2.5 px-3 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors text-center font-medium"
+                      >
+                        תנאי שימוש
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLegalModal('privacy')}
+                        className="flex-1 text-xs border border-border rounded-xl py-2.5 px-3 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors text-center font-medium"
+                      >
+                        מדיניות פרטיות
+                      </button>
+                    </div>
+                    <label className={`flex items-center gap-2.5 cursor-pointer rounded-xl border px-3 py-2.5 transition-colors ${agreedToTerms ? 'border-primary/40 bg-primary/5' : 'border-border'}`}>
+                      <input
+                        type="checkbox"
+                        checked={agreedToTerms}
+                        onChange={e => setAgreedToTerms(e.target.checked)}
+                        className="h-4 w-4 shrink-0 accent-primary cursor-pointer"
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        קראתי ואני מסכים/ה לתנאי השימוש ולמדיניות הפרטיות
+                      </span>
+                    </label>
+                  </div>
                 )}
 
                 <Button
@@ -404,6 +422,15 @@ export default function AuthPage() {
         </AnimatePresence>
       </div>
     </div>
+
+    {legalModal && (
+      <LegalModal
+        type={legalModal}
+        onAgree={() => setAgreedToTerms(true)}
+        onClose={() => setLegalModal(null)}
+      />
+    )}
+    </>
   )
 }
 
