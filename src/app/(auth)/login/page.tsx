@@ -148,6 +148,8 @@ export default function AuthPage() {
           }),
         })
         router.push(redirectTo || (role === 'nailist' ? '/onboarding' : '/onboarding/client'))
+        handlingFormRef.current = false
+        setLoading(false)
       }
     } catch (err: unknown) {
       setError(friendlyError(err, mode))

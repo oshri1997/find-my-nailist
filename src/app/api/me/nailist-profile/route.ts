@@ -28,7 +28,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ data: { id: doc.id, ...data } })
     }
 
-    // Auto-create a minimal profile for users who signed in with Google
+    // Only auto-create for users with NAILIST role — block clients from getting a ghost profile
+    const userSnap = await db.collection(COLLECTIONS.USERS).doc(decoded.uid).get()
+    const userRole = userSnap.data()?.role as string | undefined
+    if (userRole && userRole !== 'NAILIST') {
+      return NextResponse.json({ data: null })
+    }
+
+    // Auto-create a minimal profile for nailist users who signed in with Google
     // without going through the register flow
     const now = FieldValue.serverTimestamp()
     const profileData = {

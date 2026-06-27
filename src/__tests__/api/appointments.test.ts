@@ -10,7 +10,7 @@ const mockBatch = {
   commit: jest.fn().mockResolvedValue(undefined),
 }
 
-const mockAppointmentAdd = jest.fn().mockResolvedValue({ id: 'new-appointment-id' })
+const mockAppointmentAdd = jest.fn().mockResolvedValue(undefined)
 
 // Per-collection document store so tests can seed individual docs
 const docStore: Record<string, Record<string, unknown>> = {}
@@ -31,7 +31,18 @@ function makeCollectionRef(name: string) {
   let _whereField: string
   let _whereValue: unknown
   return {
-    doc: (id: string) => makeDocRef(name, id),
+    doc: (id?: string) => {
+      if (id === undefined) {
+        // Auto-ID ref used by db.collection(...).doc() in transactions
+        return {
+          id: 'new-appointment-id',
+          set: mockAppointmentAdd,
+          update: jest.fn().mockResolvedValue(undefined),
+          get: jest.fn().mockResolvedValue({ exists: false, data: () => undefined }),
+        }
+      }
+      return makeDocRef(name, id)
+    },
     where: jest.fn().mockImplementation((field: string, _op: string, value: unknown) => {
       _whereField = field
       _whereValue = value
@@ -60,6 +71,13 @@ function makeCollectionRef(name: string) {
 const mockDb = {
   collection: jest.fn((name: string) => makeCollectionRef(name)),
   batch: jest.fn(() => mockBatch),
+  runTransaction: jest.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+    const tx = {
+      get: (queryOrRef: { get: () => Promise<unknown> }) => queryOrRef.get(),
+      set: jest.fn().mockImplementation((ref: { set: (data: unknown) => unknown }, data: unknown) => ref.set(data)),
+    }
+    return fn(tx)
+  }),
 }
 
 jest.mock('@/lib/firebase/admin', () => ({
@@ -131,19 +149,36 @@ describe('POST /api/appointments', () => {
       userId: 'nailist-user-1',
     }
 
-    // Seed client profile
+    // Seed client profile (doc read by ID)
     docStore['clientProfiles/client-profile-1'] = {
       displayName: 'לקוחה מעולה',
-      userId: 'client-user-1',
+      userId: 'user-123',
     }
+
+    // Ownership check uses where('userId','==', uid) → collectionStore
+    collectionStore['clientProfiles'] = [
+      { __id: 'client-profile-1', userId: 'user-123' },
+    ]
 
     // No conflicting appointments
     collectionStore['appointments'] = []
   })
 
+  it('returns 401 when no auth token', async () => {
+    const req = makeRequest('POST', validBody) // no cookie
+    const res = await POST(req)
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 403 when clientProfileId does not belong to caller', async () => {
+    const req = makeRequest('POST', { ...validBody, clientProfileId: 'other-profile' }, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(403)
+  })
+
   it('returns 404 when service does not exist', async () => {
     delete docStore['services/service-1']
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(404)
     const json = await res.json()
@@ -162,7 +197,7 @@ describe('POST /api/appointments', () => {
         endTime: { toDate: () => endTime },
       },
     ]
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(409)
     const json = await res.json()
@@ -170,13 +205,13 @@ describe('POST /api/appointments', () => {
   })
 
   it('returns 400 on invalid body (missing required fields)', async () => {
-    const req = makeRequest('POST', { serviceId: 'service-1' })
+    const req = makeRequest('POST', { serviceId: 'service-1' }, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(400)
   })
 
   it('creates appointment and returns 201 with id', async () => {
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(201)
     const json = await res.json()
@@ -184,7 +219,7 @@ describe('POST /api/appointments', () => {
   })
 
   it('saves nailistBusinessName and clientDisplayName as denormalized fields', async () => {
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     const res = await POST(req)
 
     // 201 confirms the appointment was created — nailist+client profiles were fetched
@@ -202,9 +237,9 @@ describe('POST /api/appointments', () => {
       displayName: 'Old Display Name',
       firstName: 'שרה',
       lastName: 'כהן',
-      userId: 'client-user-1',
+      userId: 'user-123',
     }
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     await POST(req)
     expect(mockAppointmentAdd).toHaveBeenCalledWith(
       expect.objectContaining({ clientDisplayName: 'שרה כהן' })
@@ -213,7 +248,7 @@ describe('POST /api/appointments', () => {
 
   it('falls back to displayName when firstName or lastName is missing', async () => {
     // default seed has displayName: 'לקוחה מעולה' without firstName/lastName
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     await POST(req)
     expect(mockAppointmentAdd).toHaveBeenCalledWith(
       expect.objectContaining({ clientDisplayName: 'לקוחה מעולה' })
@@ -224,9 +259,9 @@ describe('POST /api/appointments', () => {
     docStore['clientProfiles/client-profile-1'] = {
       displayName: 'Fallback Name',
       firstName: 'שרה',
-      userId: 'client-user-1',
+      userId: 'user-123',
     }
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     await POST(req)
     expect(mockAppointmentAdd).toHaveBeenCalledWith(
       expect.objectContaining({ clientDisplayName: 'Fallback Name' })
@@ -234,7 +269,7 @@ describe('POST /api/appointments', () => {
   })
 
   it('stores both confirmToken and declineToken in the appointment', async () => {
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     await POST(req)
     expect(mockAppointmentAdd).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -245,7 +280,7 @@ describe('POST /api/appointments', () => {
   })
 
   it('stores confirmTokenExpiresAt and declineTokenExpiresAt with expiry in the future', async () => {
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     await POST(req)
     const addArg = mockAppointmentAdd.mock.calls[0][0]
     expect(addArg.confirmTokenExpiresAt).toBeDefined()
@@ -256,7 +291,7 @@ describe('POST /api/appointments', () => {
   })
 
   it('saves status as PENDING', async () => {
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     await POST(req)
     expect(mockAppointmentAdd).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'PENDING' })
@@ -264,7 +299,7 @@ describe('POST /api/appointments', () => {
   })
 
   it('saves service price, currency, and name as denormalized fields', async () => {
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     await POST(req)
     expect(mockAppointmentAdd).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -276,7 +311,7 @@ describe('POST /api/appointments', () => {
   })
 
   it('saves nailistBusinessName as denormalized field', async () => {
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     await POST(req)
     expect(mockAppointmentAdd).toHaveBeenCalledWith(
       expect.objectContaining({ nailistBusinessName: 'סטודיו נייל' })
@@ -295,7 +330,7 @@ describe('POST /api/appointments', () => {
         endTime: { toDate: () => endTime },
       },
     ]
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     const res = await POST(req)
     // CANCELLED appointment should not block the slot
     expect(res.status).toBe(201)
@@ -313,7 +348,7 @@ describe('POST /api/appointments', () => {
         endTime: { toDate: () => endTime },
       },
     ]
-    const req = makeRequest('POST', validBody)
+    const req = makeRequest('POST', validBody, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(201)
   })

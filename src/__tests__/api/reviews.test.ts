@@ -10,6 +10,7 @@ type DocData = Record<string, unknown>
 const docStore: Record<string, DocData> = {}
 
 const mockDocRef = (collection: string, id: string) => ({
+  id,
   get: jest.fn().mockImplementation(() =>
     Promise.resolve({
       exists: !!docStore[`${collection}/${id}`],
@@ -18,6 +19,7 @@ const mockDocRef = (collection: string, id: string) => ({
     })
   ),
   update: jest.fn().mockResolvedValue(undefined),
+  set: jest.fn().mockResolvedValue(undefined),
 })
 
 // Queryable store per collection
@@ -28,7 +30,19 @@ function makeCollectionRef(name: string) {
   let _whereValue: unknown
 
   return {
-    doc: (id: string) => mockDocRef(name, id),
+    doc: (id?: string) => {
+      const resolvedId = id ?? 'new-review-id'
+      return {
+        id: resolvedId,
+        get: jest.fn().mockResolvedValue({
+          exists: !!docStore[`${name}/${resolvedId}`],
+          data: () => docStore[`${name}/${resolvedId}`] ?? undefined,
+          id: resolvedId,
+        }),
+        update: jest.fn().mockResolvedValue(undefined),
+        set: jest.fn().mockResolvedValue(undefined),
+      }
+    },
     where: jest.fn().mockImplementation((field: string, _op: string, value: unknown) => {
       _whereField = field
       _whereValue = value
@@ -60,9 +74,19 @@ function makeCollectionRef(name: string) {
 
 const mockDb = {
   collection: jest.fn((name: string) => makeCollectionRef(name)),
+  runTransaction: jest.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+    const tx = {
+      get: (queryOrRef: { get: () => Promise<unknown> }) => queryOrRef.get(),
+      set: jest.fn().mockResolvedValue(undefined),
+    }
+    return fn(tx)
+  }),
 }
 
 jest.mock('@/lib/firebase/admin', () => ({
+  adminAuth: jest.fn(() => ({
+    verifyIdToken: jest.fn().mockResolvedValue({ uid: 'user-123', email: 'client@test.com' }),
+  })),
   adminDb: jest.fn(() => mockDb),
 }))
 
@@ -81,12 +105,18 @@ import { POST } from '@/app/api/reviews/route'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function makeRequest(body: unknown): NextRequest {
-  return new NextRequest('http://localhost/api/reviews', {
+function makeRequest(body: unknown, cookie?: string): NextRequest {
+  const req = new NextRequest('http://localhost/api/reviews', {
     method: 'POST',
     body: JSON.stringify(body),
     headers: { 'Content-Type': 'application/json' },
   })
+  if (cookie) {
+    Object.defineProperty(req, 'cookies', {
+      get: () => ({ get: (name: string) => (name === 'auth-token' ? { value: cookie } : undefined) }),
+    })
+  }
+  return req
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -103,6 +133,11 @@ describe('POST /api/reviews', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+
+    // Client profile owned by the authenticated user
+    collectionStore['clientProfiles'] = [
+      { __id: 'client-profile-1', userId: 'user-123' },
+    ]
 
     // Seed a completed appointment
     docStore['appointments/appointment-1'] = {
@@ -127,14 +162,23 @@ describe('POST /api/reviews', () => {
 
     // Nailist user (for email)
     docStore['users/nailist-user-1'] = { email: 'nailist@test.com' }
+  })
 
-    // Existing reviews for avgRating calculation
-    collectionStore['reviews'] = []
+  it('returns 401 when no auth token', async () => {
+    const req = makeRequest(validBody) // no cookie
+    const res = await POST(req)
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 403 when clientProfileId does not belong to caller', async () => {
+    const req = makeRequest({ ...validBody, clientProfileId: 'other-profile' }, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(403)
   })
 
   it('returns 400 when appointment does not exist', async () => {
     delete docStore['appointments/appointment-1']
-    const req = makeRequest(validBody)
+    const req = makeRequest(validBody, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(400)
     const json = await res.json()
@@ -143,7 +187,7 @@ describe('POST /api/reviews', () => {
 
   it('returns 400 when appointment is not COMPLETED', async () => {
     docStore['appointments/appointment-1'] = { status: 'CONFIRMED' }
-    const req = makeRequest(validBody)
+    const req = makeRequest(validBody, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(400)
   })
@@ -152,7 +196,7 @@ describe('POST /api/reviews', () => {
     collectionStore['reviews'] = [
       { __id: 'existing-review', appointmentId: 'appointment-1', rating: 4, nailistProfileId: 'nailist-profile-1' },
     ]
-    const req = makeRequest(validBody)
+    const req = makeRequest(validBody, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(409)
     const json = await res.json()
@@ -160,19 +204,19 @@ describe('POST /api/reviews', () => {
   })
 
   it('returns 400 on invalid body (missing required fields)', async () => {
-    const req = makeRequest({ nailistProfileId: 'x' })
+    const req = makeRequest({ nailistProfileId: 'x' }, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(400)
   })
 
   it('returns 400 when rating is out of range', async () => {
-    const req = makeRequest({ ...validBody, rating: 6 })
+    const req = makeRequest({ ...validBody, rating: 6 }, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(400)
   })
 
   it('creates review and returns 201 with id', async () => {
-    const req = makeRequest(validBody)
+    const req = makeRequest(validBody, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(201)
     const json = await res.json()
@@ -180,16 +224,9 @@ describe('POST /api/reviews', () => {
   })
 
   it('marks hasReview=true on the appointment after review is submitted', async () => {
-    const req = makeRequest(validBody)
+    const req = makeRequest(validBody, 'valid-token')
     const res = await POST(req)
-
-    // 201 confirms the review was created — which means add() was called
-    // and the appointment update must have been attempted
     expect(res.status).toBe(201)
-
-    // The route calls .doc(appointmentId).update({ hasReview: true })
-    // Our mockDocRef returns the same update fn for the same (collection, id) pair
-    // Verify by checking that the reviews collection add returned the expected id
     const json = await res.json()
     expect(json.data.id).toBe('new-review-id')
   })
@@ -201,10 +238,9 @@ describe('POST /api/reviews', () => {
       { __id: 'r2', nailistProfileId: 'nailist-profile-1', rating: 3 },
     ]
     // New review has rating 5 → avg = (4+3+5)/3 = 4.0
-    const req = makeRequest({ ...validBody, rating: 5 })
+    const req = makeRequest({ ...validBody, rating: 5 }, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(201)
-    // Nailist profile update should have been triggered
     const nailistDocRef = mockDocRef('nailistProfiles', 'nailist-profile-1')
     expect(nailistDocRef).toBeDefined()
   })

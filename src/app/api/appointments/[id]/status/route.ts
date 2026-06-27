@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebase/admin'
+import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue } from 'firebase-admin/firestore'
@@ -14,15 +14,40 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
+
+  const token = request.cookies.get('auth-token')?.value
+  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  let decoded: { uid: string }
+  try {
+    decoded = await adminAuth().verifyIdToken(token)
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const { status } = schema.parse(body)
     const db = adminDb()
 
-    // Fetch existing doc BEFORE update so we can check reviewRequested's old value
+    // Fetch existing doc BEFORE update (ownership check + idempotency guard + email data)
     const existingSnap = await db.collection(COLLECTIONS.APPOINTMENTS).doc(id).get()
-    const existingData = existingSnap.data()
-    const alreadyRequested = existingData?.reviewRequested === true
+    if (!existingSnap.exists) {
+      return NextResponse.json({ error: 'Appointment not found' }, { status: 404 })
+    }
+    const existingData = existingSnap.data()!
+    const alreadyRequested = existingData.reviewRequested === true
+
+    // Verify caller owns the nailist profile on this appointment
+    const nailistProfileSnap = await db
+      .collection(COLLECTIONS.NAILIST_PROFILES)
+      .where('userId', '==', decoded.uid)
+      .limit(1)
+      .get()
+    const ownedNailistProfileId = nailistProfileSnap.empty ? null : nailistProfileSnap.docs[0].id
+    if (!ownedNailistProfileId || ownedNailistProfileId !== existingData.nailistProfileId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     await db.collection(COLLECTIONS.APPOINTMENTS).doc(id).update({
       status,
@@ -33,7 +58,7 @@ export async function PATCH(
     if (status === 'COMPLETED') {
       void (async () => {
         try {
-          if (alreadyRequested || !existingData) return
+          if (alreadyRequested) return
 
           const [clientProfileSnap, nailistSnap] = await Promise.all([
             db.collection(COLLECTIONS.CLIENT_PROFILES).doc(existingData.clientProfileId).get(),
@@ -68,16 +93,12 @@ export async function PATCH(
     }
 
     if (status === 'CANCELLED') {
-      // fire-and-forget — don't block the response
+      // fire-and-forget — reuse existingData to avoid a redundant Firestore read
       void (async () => {
         try {
-          const apptSnap = await db.collection(COLLECTIONS.APPOINTMENTS).doc(id).get()
-          const appt = apptSnap.data()
-          if (!appt) return
-
           const [clientProfileSnap, nailistSnap] = await Promise.all([
-            db.collection(COLLECTIONS.CLIENT_PROFILES).doc(appt.clientProfileId).get(),
-            db.collection(COLLECTIONS.NAILIST_PROFILES).doc(appt.nailistProfileId).get(),
+            db.collection(COLLECTIONS.CLIENT_PROFILES).doc(existingData.clientProfileId).get(),
+            db.collection(COLLECTIONS.NAILIST_PROFILES).doc(existingData.nailistProfileId).get(),
           ])
 
           const clientProfile = clientProfileSnap.data()
@@ -97,8 +118,8 @@ export async function PATCH(
             clientEmail,
             clientName: (clientProfile?.displayName as string | undefined) ?? clientEmail,
             nailistBusinessName: (nailist?.businessName as string | undefined) ?? '',
-            serviceName: appt.serviceName as string,
-            startTime: appt.startTime?.toDate?.() ?? new Date(appt.startTime),
+            serviceName: existingData.serviceName as string,
+            startTime: existingData.startTime?.toDate?.() ?? new Date(existingData.startTime),
           })
           console.log(`[cancel] ✅ cancellation email sent to ${clientEmail}`)
         } catch (err) {

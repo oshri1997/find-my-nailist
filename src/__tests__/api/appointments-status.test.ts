@@ -8,6 +8,7 @@ import { NextRequest } from 'next/server'
 type DocData = Record<string, unknown>
 
 const docStore: Record<string, DocData> = {}
+const collectionStore: Record<string, (DocData & { __id: string })[]> = {}
 
 const mockUpdateFn = jest.fn().mockResolvedValue(undefined)
 
@@ -22,13 +23,40 @@ const mockDocRef = (collection: string, id: string) => ({
   update: mockUpdateFn,
 })
 
-const mockDb = {
-  collection: jest.fn((name: string) => ({
+function makeCollectionRef(name: string) {
+  let _whereField: string
+  let _whereValue: unknown
+  return {
     doc: (id: string) => mockDocRef(name, id),
-  })),
+    where: jest.fn().mockImplementation((field: string, _op: string, value: unknown) => {
+      _whereField = field
+      _whereValue = value
+      const filtered = (collectionStore[name] ?? []).filter(
+        (d) => d[_whereField] === _whereValue
+      )
+      return {
+        limit: jest.fn().mockReturnThis(),
+        get: jest.fn().mockResolvedValue({
+          empty: filtered.length === 0,
+          docs: filtered.map((d) => ({
+            id: d.__id,
+            data: () => d,
+            ref: mockDocRef(name, d.__id),
+          })),
+        }),
+      }
+    }),
+  }
+}
+
+const mockDb = {
+  collection: jest.fn((name: string) => makeCollectionRef(name)),
 }
 
 jest.mock('@/lib/firebase/admin', () => ({
+  adminAuth: jest.fn(() => ({
+    verifyIdToken: jest.fn().mockResolvedValue({ uid: 'nailist-user-1' }),
+  })),
   adminDb: jest.fn(() => mockDb),
 }))
 
@@ -50,12 +78,18 @@ import { PATCH } from '@/app/api/appointments/[id]/status/route'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function makeRequest(body: unknown): NextRequest {
-  return new NextRequest('http://localhost/api/appointments/appointment-1/status', {
+function makeRequest(body: unknown, cookie?: string): NextRequest {
+  const req = new NextRequest('http://localhost/api/appointments/appointment-1/status', {
     method: 'PATCH',
     body: JSON.stringify(body),
     headers: { 'Content-Type': 'application/json' },
   })
+  if (cookie) {
+    Object.defineProperty(req, 'cookies', {
+      get: () => ({ get: (name: string) => (name === 'auth-token' ? { value: cookie } : undefined) }),
+    })
+  }
+  return req
 }
 
 const mockParams: { params: Promise<{ id: string }> } = {
@@ -92,16 +126,43 @@ describe('PATCH /api/appointments/[id]/status', () => {
 
     docStore['users/client-user-1'] = { email: 'client@test.com' }
     docStore['users/nailist-user-1'] = { email: 'nailist@test.com' }
+
+    // Ownership: nailist-user-1 owns nailist-profile-1
+    collectionStore['nailistProfiles'] = [
+      { __id: 'nailist-profile-1', userId: 'nailist-user-1', businessName: 'סטודיו נייל' },
+    ]
+  })
+
+  it('returns 401 when no auth token', async () => {
+    const req = makeRequest({ status: 'CONFIRMED' }) // no cookie
+    const res = await PATCH(req, mockParams)
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 403 when caller does not own the nailist profile', async () => {
+    collectionStore['nailistProfiles'] = [
+      { __id: 'other-profile', userId: 'nailist-user-1' },
+    ]
+    const req = makeRequest({ status: 'CONFIRMED' }, 'valid-token')
+    const res = await PATCH(req, mockParams)
+    expect(res.status).toBe(403)
+  })
+
+  it('returns 404 when appointment does not exist', async () => {
+    delete docStore['appointments/appointment-1']
+    const req = makeRequest({ status: 'CONFIRMED' }, 'valid-token')
+    const res = await PATCH(req, mockParams)
+    expect(res.status).toBe(404)
   })
 
   it('returns 400 for invalid status value', async () => {
-    const req = makeRequest({ status: 'INVALID_STATUS' })
+    const req = makeRequest({ status: 'INVALID_STATUS' }, 'valid-token')
     const res = await PATCH(req, mockParams)
     expect(res.status).toBe(400)
   })
 
   it('returns 200 when status is updated to CONFIRMED', async () => {
-    const req = makeRequest({ status: 'CONFIRMED' })
+    const req = makeRequest({ status: 'CONFIRMED' }, 'valid-token')
     const res = await PATCH(req, mockParams)
     expect(res.status).toBe(200)
     const json = await res.json()
@@ -109,13 +170,13 @@ describe('PATCH /api/appointments/[id]/status', () => {
   })
 
   it('returns 200 when status is updated to CANCELLED', async () => {
-    const req = makeRequest({ status: 'CANCELLED' })
+    const req = makeRequest({ status: 'CANCELLED' }, 'valid-token')
     const res = await PATCH(req, mockParams)
     expect(res.status).toBe(200)
   })
 
   it('returns 200 when status is updated to COMPLETED', async () => {
-    const req = makeRequest({ status: 'COMPLETED' })
+    const req = makeRequest({ status: 'COMPLETED' }, 'valid-token')
     const res = await PATCH(req, mockParams)
     expect(res.status).toBe(200)
     const json = await res.json()
@@ -125,7 +186,7 @@ describe('PATCH /api/appointments/[id]/status', () => {
   it('sends review request email when status → COMPLETED (first time)', async () => {
     docStore['appointments/appointment-1'].reviewRequested = false
 
-    const req = makeRequest({ status: 'COMPLETED' })
+    const req = makeRequest({ status: 'COMPLETED' }, 'valid-token')
     await PATCH(req, mockParams)
 
     // Fire-and-forget: give it a tick to resolve
@@ -143,7 +204,7 @@ describe('PATCH /api/appointments/[id]/status', () => {
   it('does NOT send review email when reviewRequested is already true (idempotency)', async () => {
     docStore['appointments/appointment-1'].reviewRequested = true
 
-    const req = makeRequest({ status: 'COMPLETED' })
+    const req = makeRequest({ status: 'COMPLETED' }, 'valid-token')
     await PATCH(req, mockParams)
 
     await new Promise((r) => setTimeout(r, 10))
@@ -152,7 +213,7 @@ describe('PATCH /api/appointments/[id]/status', () => {
   })
 
   it('sends cancellation email when status → CANCELLED', async () => {
-    const req = makeRequest({ status: 'CANCELLED' })
+    const req = makeRequest({ status: 'CANCELLED' }, 'valid-token')
     await PATCH(req, mockParams)
 
     await new Promise((r) => setTimeout(r, 10))
@@ -167,7 +228,7 @@ describe('PATCH /api/appointments/[id]/status', () => {
   })
 
   it('does NOT send cancellation email when status → CONFIRMED', async () => {
-    const req = makeRequest({ status: 'CONFIRMED' })
+    const req = makeRequest({ status: 'CONFIRMED' }, 'valid-token')
     await PATCH(req, mockParams)
 
     await new Promise((r) => setTimeout(r, 10))

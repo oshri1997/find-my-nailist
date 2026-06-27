@@ -15,40 +15,41 @@ const createSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  const token = request.cookies.get('auth-token')?.value
+  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  let decoded: { uid: string }
+  try {
+    decoded = await adminAuth().verifyIdToken(token)
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const data = createSchema.parse(body)
     const db = adminDb()
 
-    const serviceSnap = await db.collection(COLLECTIONS.SERVICES).doc(data.serviceId).get()
+    // Parallel: fetch service + verify client profile ownership
+    const [serviceSnap, clientProfileOwnerSnap] = await Promise.all([
+      db.collection(COLLECTIONS.SERVICES).doc(data.serviceId).get(),
+      db.collection(COLLECTIONS.CLIENT_PROFILES).where('userId', '==', decoded.uid).limit(1).get(),
+    ])
+
     if (!serviceSnap.exists) {
       return NextResponse.json({ error: 'Service not found' }, { status: 404 })
     }
     const service = serviceSnap.data()!
 
+    const ownedProfileId = clientProfileOwnerSnap.empty ? null : clientProfileOwnerSnap.docs[0].id
+    if (!ownedProfileId || ownedProfileId !== data.clientProfileId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const startTime = new Date(data.startTime)
     const endTime = new Date(startTime.getTime() + service.durationMinutes * 60 * 1000)
 
-    // Check for conflicts — single-field query to avoid needing a composite index,
-    // then filter by time overlap and status in JS
-    const conflictSnap = await db
-      .collection(COLLECTIONS.APPOINTMENTS)
-      .where('nailistProfileId', '==', data.nailistProfileId)
-      .get()
-
-    const hasConflict = conflictSnap.docs.some((doc) => {
-      const apt = doc.data()
-      if (!['PENDING', 'CONFIRMED'].includes(apt.status)) return false
-      const aptStart: Date = apt.startTime?.toDate?.() ?? new Date(apt.startTime)
-      const aptEnd: Date = apt.endTime?.toDate?.() ?? new Date(apt.endTime)
-      return aptStart < endTime && aptEnd > startTime
-    })
-
-    if (hasConflict) {
-      return NextResponse.json({ error: 'Time slot not available' }, { status: 409 })
-    }
-
-    // Fetch nailist + client profiles now (needed for denormalized fields + email)
+    // Fetch nailist + client profiles (needed for denormalized fields + email)
     const [nailistSnap, clientProfileSnap] = await Promise.all([
       db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).get(),
       db.collection(COLLECTIONS.CLIENT_PROFILES).doc(data.clientProfileId).get(),
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
       : (clientProfile?.displayName ?? '')
 
     const now = FieldValue.serverTimestamp()
-    const appointmentRef = await db.collection(COLLECTIONS.APPOINTMENTS).add({
+    const appointmentData = {
       ...data,
       startTime: Timestamp.fromDate(startTime),
       endTime: Timestamp.fromDate(endTime),
@@ -83,7 +84,32 @@ export async function POST(request: NextRequest) {
       declineTokenExpiresAt: tokenExpiresAt,
       createdAt: now,
       updatedAt: now,
-    })
+    }
+
+    // Atomically check for conflicts and insert — prevents double-booking race
+    const newDocRef = db.collection(COLLECTIONS.APPOINTMENTS).doc()
+    try {
+      await db.runTransaction(async (tx) => {
+        const conflictSnap = await tx.get(
+          db.collection(COLLECTIONS.APPOINTMENTS)
+            .where('nailistProfileId', '==', data.nailistProfileId)
+        )
+        const hasConflict = conflictSnap.docs.some((doc) => {
+          const apt = doc.data()
+          if (!['PENDING', 'CONFIRMED'].includes(apt.status)) return false
+          const aptStart: Date = apt.startTime?.toDate?.() ?? new Date(apt.startTime)
+          const aptEnd: Date = apt.endTime?.toDate?.() ?? new Date(apt.endTime)
+          return aptStart < endTime && aptEnd > startTime
+        })
+        if (hasConflict) throw new Error('CONFLICT')
+        tx.set(newDocRef, appointmentData)
+      })
+    } catch (txErr) {
+      if (txErr instanceof Error && txErr.message === 'CONFLICT') {
+        return NextResponse.json({ error: 'Time slot not available' }, { status: 409 })
+      }
+      throw txErr
+    }
 
     // Both nailist and client profiles may lack email — always fall back to USERS
     const [nailistUserSnap, clientUserSnap] = await Promise.all([
@@ -120,7 +146,7 @@ export async function POST(request: NextRequest) {
       console.warn('[booking] ⚠️ skipping email — nailistEmail:', nailistEmail, 'clientEmail:', clientEmail)
     }
 
-    return NextResponse.json({ data: { id: appointmentRef.id } }, { status: 201 })
+    return NextResponse.json({ data: { id: newDocRef.id } }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues }, { status: 400 })

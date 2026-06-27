@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebase/admin'
+import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue } from 'firebase-admin/firestore'
@@ -15,10 +15,31 @@ const createSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  const token = request.cookies.get('auth-token')?.value
+  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  let decoded: { uid: string }
+  try {
+    decoded = await adminAuth().verifyIdToken(token)
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const data = createSchema.parse(body)
     const db = adminDb()
+
+    // Verify the caller owns the clientProfileId they're submitting on behalf of
+    const clientProfileSnap = await db
+      .collection(COLLECTIONS.CLIENT_PROFILES)
+      .where('userId', '==', decoded.uid)
+      .limit(1)
+      .get()
+    const ownedProfileId = clientProfileSnap.empty ? null : clientProfileSnap.docs[0].id
+    if (!ownedProfileId || ownedProfileId !== data.clientProfileId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     // Verify appointment exists and is completed
     const apptSnap = await db.collection(COLLECTIONS.APPOINTMENTS).doc(data.appointmentId).get()
@@ -26,27 +47,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid or incomplete appointment' }, { status: 400 })
     }
 
-    // Prevent duplicate reviews for the same appointment
-    const dupSnap = await db
-      .collection(COLLECTIONS.REVIEWS)
-      .where('appointmentId', '==', data.appointmentId)
-      .limit(1)
-      .get()
-    if (!dupSnap.empty) {
-      return NextResponse.json({ error: 'Review already submitted for this appointment' }, { status: 409 })
+    // Atomically check for duplicate review and insert — prevents double-submit race
+    const reviewRef = db.collection(COLLECTIONS.REVIEWS).doc()
+    try {
+      await db.runTransaction(async (tx) => {
+        const dupSnap = await tx.get(
+          db.collection(COLLECTIONS.REVIEWS)
+            .where('appointmentId', '==', data.appointmentId)
+            .limit(1)
+        )
+        if (!dupSnap.empty) throw new Error('DUPLICATE')
+        const now = FieldValue.serverTimestamp()
+        tx.set(reviewRef, { ...data, createdAt: now, updatedAt: now })
+      })
+    } catch (txErr) {
+      if (txErr instanceof Error && txErr.message === 'DUPLICATE') {
+        return NextResponse.json({ error: 'Review already submitted for this appointment' }, { status: 409 })
+      }
+      throw txErr
     }
-
-    const now = FieldValue.serverTimestamp()
-    const ref = await db.collection(COLLECTIONS.REVIEWS).add({
-      ...data,
-      createdAt: now,
-      updatedAt: now,
-    })
 
     // Mark appointment as reviewed
     await db.collection(COLLECTIONS.APPOINTMENTS).doc(data.appointmentId).update({
       hasReview: true,
-      updatedAt: now,
+      updatedAt: FieldValue.serverTimestamp(),
     })
 
     // Update nailist avg rating
@@ -61,7 +85,7 @@ export async function POST(request: NextRequest) {
     await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).update({
       avgRating: Math.round(avgRating * 10) / 10,
       reviewCount: ratings.length,
-      updatedAt: now,
+      updatedAt: FieldValue.serverTimestamp(),
     })
 
     // Notify nailist via email (fire-and-forget)
@@ -96,7 +120,7 @@ export async function POST(request: NextRequest) {
       }
     })()
 
-    return NextResponse.json({ data: { id: ref.id } }, { status: 201 })
+    return NextResponse.json({ data: { id: reviewRef.id } }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues }, { status: 400 })

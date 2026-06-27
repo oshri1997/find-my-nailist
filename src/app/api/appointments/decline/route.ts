@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     })
   }
 
+  try {
   const db = adminDb()
 
   const snap = await db
@@ -89,6 +90,13 @@ export async function GET(request: NextRequest) {
     status: 200,
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
   })
+  } catch (err) {
+    console.error('[decline] ❌ Firestore error:', err)
+    return new NextResponse(errorPage('שגיאת שרת', 'אירעה שגיאה. אנא נסי שוב מאוחר יותר.'), {
+      status: 500,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    })
+  }
 }
 
 function successPage(clientName: string, serviceName: string, businessName: string) {
