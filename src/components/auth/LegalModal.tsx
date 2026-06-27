@@ -1,94 +1,79 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type LegalType = 'terms' | 'privacy'
-
 interface LegalModalProps {
-  type: LegalType
   onAgree: () => void
   onClose: () => void
 }
 
-const CONTENT: Record<LegalType, { title: string; sections: { heading: string; body: string }[] }> = {
-  terms: {
-    title: 'תנאי שימוש',
-    sections: [
-      {
-        heading: '1. הסכמה לתנאים',
-        body: 'השימוש באתר נייליסטיות (nailistiot.fun) ובשירותים המוצעים בו מהווה הסכמה מלאה לתנאי שימוש אלה. תנאים אלה חלים על כל משתמשי האתר — לקוחות ונייליסטיות כאחד.',
-      },
-      {
-        heading: '2. אופי השירות',
-        body: 'נייליסטיות היא פלטפורמת תיווך בלבד המחברת בין לקוחות לנייליסטיות עצמאיות. אנו אינינו צד לעסקה בין הלקוח לנייליסטית, ואיננו אחראים לאיכות השירות, לתוצאות הטיפול, לנזקים שנגרמו במהלך הטיפול, או לכל מחלוקת שתתגלע בין הצדדים. האחריות המקצועית חלה על הנייליסטית בלבד.',
-      },
-      {
-        heading: '3. הרשמה וחשבון משתמש',
-        body: 'יש להיות מעל גיל 16 כדי להירשם. המידע שתמסור חייב להיות נכון ומדויק. אתה אחראי לשמירת פרטי ההתחברות שלך ולכל פעולה שתבוצע תחת חשבונך. חל איסור ליצור חשבון עבור אדם אחר ללא הרשאתו.',
-      },
-      {
-        heading: '4. כללי התנהגות',
-        body: 'חל איסור מוחלט: להעלות תוכן פוגעני, מטעה, גזעני, מאיים או בלתי חוקי; להתחזות לאדם אחר; לפרסם ביקורות שקריות; לפגוע בתפקוד האתר; לשלוח ספאם או הודעות הטרדה.',
-      },
-      {
-        heading: '5. תנאים לנייליסטיות',
-        body: 'הנייליסטית מצהירה שהיא בעלת הכישורים המקצועיים לביצוע השירותים המפורסמים. המחירים, שעות הפעילות והשירותים חייבים להיות מדויקים ועדכניים. תמונות הפורטפוליו חייבות להיות עבודות מקוריות שלה בלבד.',
-      },
-      {
-        heading: '6. הגבלת אחריות',
-        body: 'נייליסטיות לא תהיה אחראית לנזקים ישירים, עקיפים, מקריים או תוצאתיים הנובעים משימוש בשירות, לרבות נזקים מטיפול, מחלוקות בין הצדדים, שיבושים בשירות, או אבדן מידע. השימוש בשירות הוא על אחריות המשתמש בלבד.',
-      },
-      {
-        heading: '7. קניין רוחני',
-        body: 'כל הזכויות באתר, לרבות עיצוב, קוד, לוגו ושם המותג, שייכות לנייליסטיות. חל איסור להעתיק, לשכפל או לעשות שימוש מסחרי בתכנים ללא אישור בכתב.',
-      },
-      {
-        heading: '8. דין חל',
-        body: 'תנאים אלה כפופים לחוקי מדינת ישראל. כל מחלוקת תידון בבתי המשפט המוסמכים במחוז תל אביב, ישראל.',
-      },
-    ],
+const SECTIONS = [
+  {
+    heading: 'תנאי שימוש',
+    isTitle: true,
   },
-  privacy: {
-    title: 'מדיניות פרטיות',
-    sections: [
-      {
-        heading: '1. כללי',
-        body: 'מדיניות זו מתארת כיצד נייליסטיות אוספת, משתמשת ומגנה על המידע האישי שלך. השימוש באתר מהווה הסכמה למדיניות זו. המדיניות כתובה בהתאם לחוק הגנת הפרטיות, התשמ"א–1981.',
-      },
-      {
-        heading: '2. המידע שאנו אוספים',
-        body: 'אנו אוספים: שם מלא, כתובת דוא"ל, מספר טלפון (אופציונלי), עיר, תמונת פרופיל ותמונות פורטפוליו (לנייליסטיות), היסטוריית הזמנות וביקורות שכתבת. בהרשמה דרך Google — שם, דוא"ל ותמונה מחשבונך.',
-      },
-      {
-        heading: '3. שימוש במידע',
-        body: 'המידע משמש לאפשר קביעת תורים, לשלוח אישורים ועדכוני תורים בדוא"ל, להציג פרופיל נייליסטית לגולשים, ולתפעל ולשפר את השירות. אנו לא מוכרים את המידע שלך לצדדים שלישיים ולא משתמשים בו לפרסום ממוקד.',
-      },
-      {
-        heading: '4. שירותי צד שלישי',
-        body: 'המידע עשוי להיות נגיש ל: Google Firebase (אחסון ואימות), Resend (שליחת דוא"ל), Google OAuth (הרשמה), Google Places API (השלמת ערים), UserWay (נגישות), ו-Railway (שרת). כולם מחויבים לתנאי פרטיות משלהם.',
-      },
-      {
-        heading: '5. אבטחה ושמירת מידע',
-        body: 'אנו נוקטים באמצעי אבטחה סבירים (HTTPS, Firebase Authentication). המידע נשמר כל עוד חשבונך פעיל. עם מחיקת החשבון, המידע נמחק תוך 30 ימים.',
-      },
-      {
-        heading: '6. זכויותיך',
-        body: 'יש לך זכות לעיין במידע שלך, לתקן מידע שגוי, לבקש מחיקת חשבונך, ולבקש הגבלת עיבוד המידע. לממש את זכויותיך — פנה אלינו בדוא"ל: oshri19970@gmail.com.',
-      },
-      {
-        heading: '7. קטינים',
-        body: 'השירות אינו מיועד לבני פחות מ-16. אנו לא אוספים ביודעין מידע מקטינים. אם גילית כי קטין מסר לנו מידע, פנה אלינו ונמחק אותו.',
-      },
-    ],
+  {
+    heading: '1. הסכמה לתנאים',
+    body: 'השימוש באתר נייליסטיות (nailistiot.fun) ובשירותים המוצעים בו מהווה הסכמה מלאה לתנאי שימוש אלה. תנאים אלה חלים על כל משתמשי האתר — לקוחות ונייליסטיות כאחד.',
   },
-}
+  {
+    heading: '2. אופי השירות',
+    body: 'נייליסטיות היא פלטפורמת תיווך בלבד המחברת בין לקוחות לנייליסטיות עצמאיות. אנו אינינו צד לעסקה בין הלקוח לנייליסטית, ואיננו אחראים לאיכות השירות, לנזקים שנגרמו במהלך הטיפול, או לכל מחלוקת שתתגלע בין הצדדים.',
+  },
+  {
+    heading: '3. הרשמה וחשבון משתמש',
+    body: 'יש להיות מעל גיל 16 כדי להירשם. המידע שתמסור חייב להיות נכון ומדויק. אתה אחראי לשמירת פרטי ההתחברות שלך ולכל פעולה שתבוצע תחת חשבונך.',
+  },
+  {
+    heading: '4. כללי התנהגות',
+    body: 'חל איסור: להעלות תוכן פוגעני, מטעה, גזעני או בלתי חוקי; להתחזות לאדם אחר; לפרסם ביקורות שקריות; לפגוע בתפקוד האתר; לשלוח ספאם.',
+  },
+  {
+    heading: '5. הגבלת אחריות',
+    body: 'נייליסטיות לא תהיה אחראית לנזקים ישירים, עקיפים או תוצאתיים הנובעים משימוש בשירות, לרבות נזקים מטיפול, מחלוקות בין הצדדים, שיבושים בשירות, או אבדן מידע.',
+  },
+  {
+    heading: '6. קניין רוחני',
+    body: 'כל הזכויות באתר — עיצוב, קוד, לוגו ושם המותג — שייכות לנייליסטיות. חל איסור להעתיק או לעשות שימוש מסחרי בתכנים ללא אישור בכתב.',
+  },
+  {
+    heading: '7. דין חל',
+    body: 'תנאים אלה כפופים לחוקי מדינת ישראל. כל מחלוקת תידון בבתי המשפט המוסמכים במחוז תל אביב.',
+  },
+  {
+    heading: 'מדיניות פרטיות',
+    isTitle: true,
+  },
+  {
+    heading: '1. כללי',
+    body: 'מדיניות זו מתארת כיצד נייליסטיות אוספת, משתמשת ומגנה על המידע האישי שלך, בהתאם לחוק הגנת הפרטיות, התשמ"א–1981.',
+  },
+  {
+    heading: '2. המידע שאנו אוספים',
+    body: 'שם מלא, דוא"ל, טלפון (אופציונלי), עיר, תמונת פרופיל ופורטפוליו (לנייליסטיות), היסטוריית הזמנות וביקורות. בהרשמה דרך Google — שם, דוא"ל ותמונה מחשבונך.',
+  },
+  {
+    heading: '3. שימוש במידע',
+    body: 'המידע משמש לקביעת תורים, שליחת עדכונים בדוא"ל, והצגת פרופילים. אנו לא מוכרים את המידע שלך לצדדים שלישיים ולא משתמשים בו לפרסום ממוקד.',
+  },
+  {
+    heading: '4. שירותי צד שלישי',
+    body: 'Google Firebase (אחסון ואימות), Resend (דוא"ל), Google OAuth, Google Places API, UserWay (נגישות), Railway (שרת) — כולם מחויבים למדיניות פרטיות משלהם.',
+  },
+  {
+    heading: '5. שמירת מידע',
+    body: 'המידע נשמר כל עוד חשבונך פעיל. עם מחיקת החשבון, המידע נמחק תוך 30 ימים.',
+  },
+  {
+    heading: '6. זכויותיך',
+    body: 'יש לך זכות לעיין במידע, לתקן אותו, לבקש מחיקתו. לממש את זכויותיך — פנה אלינו: oshri19970@gmail.com.',
+  },
+]
 
-export default function LegalModal({ type, onAgree, onClose }: LegalModalProps) {
+export default function LegalModal({ onAgree, onClose }: LegalModalProps) {
   const [checked, setChecked] = useState(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const content = CONTENT[type]
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -111,7 +96,7 @@ export default function LegalModal({ type, onAgree, onClose }: LegalModalProps) 
       <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden" style={{ maxHeight: '85vh' }} dir="rtl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
-          <h2 className="font-black text-foreground text-lg">{content.title}</h2>
+          <h2 className="font-black text-foreground text-lg">תנאי שימוש ומדיניות פרטיות</h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
@@ -122,26 +107,32 @@ export default function LegalModal({ type, onAgree, onClose }: LegalModalProps) 
         </div>
 
         {/* Scrollable content */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-          {content.sections.map((s) => (
-            <div key={s.heading} className="space-y-1.5">
-              <h3 className="font-bold text-sm text-foreground">{s.heading}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{s.body}</p>
-            </div>
-          ))}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+          {SECTIONS.map((s) =>
+            'isTitle' in s && s.isTitle ? (
+              <h3 key={s.heading} className="text-base font-black text-foreground pt-2 border-t border-border first:border-0 first:pt-0">
+                {s.heading}
+              </h3>
+            ) : (
+              <div key={s.heading} className="space-y-1">
+                <p className="text-sm font-bold text-foreground">{s.heading}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{'body' in s ? s.body : ''}</p>
+              </div>
+            )
+          )}
         </div>
 
         {/* Sticky footer */}
         <div className="shrink-0 border-t border-border px-6 py-4 bg-card space-y-3">
-          <label className="flex items-start gap-2.5 cursor-pointer">
+          <label className="flex items-center gap-2.5 cursor-pointer">
             <input
               type="checkbox"
               checked={checked}
               onChange={e => setChecked(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-primary cursor-pointer"
+              className="h-4 w-4 shrink-0 accent-primary cursor-pointer"
             />
             <span className="text-sm text-foreground font-medium">
-              קראתי ואני מסכים/ה ל{content.title}
+              קראתי ואני מסכים/ה לתנאי השימוש ולמדיניות הפרטיות
             </span>
           </label>
           <div className="flex gap-2">
