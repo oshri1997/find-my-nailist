@@ -219,7 +219,7 @@ export default function NailistProfilePage({ params }: { params: Promise<{ id: s
           )}
 
           <div className="flex flex-wrap gap-2 mt-5">
-            {profile.services.length > 0 && (
+            {!isOwner && profile.services.length > 0 && (
               <Button
                 onClick={openBooking}
                 className="bg-white text-pink-600 hover:bg-pink-50 border-0 rounded-2xl font-black shadow-lg"
