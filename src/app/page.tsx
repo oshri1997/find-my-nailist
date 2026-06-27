@@ -1,4 +1,11 @@
+import type { Metadata } from 'next'
 import { Navbar } from '@/components/layout/navbar'
+
+export const metadata: Metadata = {
+  title: 'נייליסטיות — מצאי נייליסטית מקצועית קרוב אלייך',
+  description: 'חפשי נייליסטיות מקצועיות בעירך והזמיני תור בשניות. עיצוב גל, נייל ארט, מניקור ופדיקור — הפלטפורמה הישראלית המובילה לנייליסטיות.',
+  alternates: { canonical: 'https://nailistiot.fun' },
+}
 import { Footer } from '@/components/layout/footer'
 import { HeroSection } from '@/components/home/hero-section'
 import { HowItWorksSection } from '@/components/home/how-it-works'
