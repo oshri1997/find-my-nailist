@@ -160,7 +160,12 @@ export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('auth-token')?.value
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const decoded = await adminAuth().verifyIdToken(token)
+    let decoded: { uid: string; email?: string }
+    try {
+      decoded = await adminAuth().verifyIdToken(token)
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { searchParams } = new URL(request.url)
     const role = searchParams.get('role') ?? 'nailist'

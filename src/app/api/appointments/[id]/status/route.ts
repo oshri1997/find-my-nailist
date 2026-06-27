@@ -48,6 +48,8 @@ export async function PATCH(
     if (!ownedNailistProfileId || ownedNailistProfileId !== existingData.nailistProfileId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    // Cache the nailist data — already fetched for ownership check
+    const cachedNailistData = nailistProfileSnap.docs[0].data()
 
     await db.collection(COLLECTIONS.APPOINTMENTS).doc(id).update({
       status,
@@ -60,12 +62,8 @@ export async function PATCH(
         try {
           if (alreadyRequested) return
 
-          const [clientProfileSnap, nailistSnap] = await Promise.all([
-            db.collection(COLLECTIONS.CLIENT_PROFILES).doc(existingData.clientProfileId).get(),
-            db.collection(COLLECTIONS.NAILIST_PROFILES).doc(existingData.nailistProfileId).get(),
-          ])
+          const clientProfileSnap = await db.collection(COLLECTIONS.CLIENT_PROFILES).doc(existingData.clientProfileId).get()
           const clientProfile = clientProfileSnap.data()
-          const nailist = nailistSnap.data()
 
           const clientUserSnap = clientProfile?.userId
             ? await db.collection(COLLECTIONS.USERS).doc(clientProfile.userId).get()
@@ -79,7 +77,7 @@ export async function PATCH(
           await sendReviewRequestEmail({
             clientEmail,
             clientName: (existingData.clientDisplayName as string | undefined) ?? clientEmail,
-            nailistBusinessName: (nailist?.businessName as string | undefined) ?? '',
+            nailistBusinessName: (cachedNailistData?.businessName as string | undefined) ?? '',
             serviceName: existingData.serviceName as string,
             startTime: existingData.startTime?.toDate?.() ?? new Date(existingData.startTime),
             appointmentId: id,
@@ -96,13 +94,8 @@ export async function PATCH(
       // fire-and-forget — reuse existingData to avoid a redundant Firestore read
       void (async () => {
         try {
-          const [clientProfileSnap, nailistSnap] = await Promise.all([
-            db.collection(COLLECTIONS.CLIENT_PROFILES).doc(existingData.clientProfileId).get(),
-            db.collection(COLLECTIONS.NAILIST_PROFILES).doc(existingData.nailistProfileId).get(),
-          ])
-
+          const clientProfileSnap = await db.collection(COLLECTIONS.CLIENT_PROFILES).doc(existingData.clientProfileId).get()
           const clientProfile = clientProfileSnap.data()
-          const nailist = nailistSnap.data()
 
           const clientUserSnap = clientProfile?.userId
             ? await db.collection(COLLECTIONS.USERS).doc(clientProfile.userId).get()
@@ -116,8 +109,8 @@ export async function PATCH(
 
           await sendCancellationEmail({
             clientEmail,
-            clientName: (clientProfile?.displayName as string | undefined) ?? clientEmail,
-            nailistBusinessName: (nailist?.businessName as string | undefined) ?? '',
+            clientName: (existingData.clientDisplayName as string | undefined) ?? clientEmail,
+            nailistBusinessName: (cachedNailistData?.businessName as string | undefined) ?? '',
             serviceName: existingData.serviceName as string,
             startTime: existingData.startTime?.toDate?.() ?? new Date(existingData.startTime),
           })

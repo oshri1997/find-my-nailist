@@ -73,29 +73,24 @@ export async function POST(request: NextRequest) {
       updatedAt: FieldValue.serverTimestamp(),
     })
 
-    // Update nailist avg rating
-    const reviewsSnap = await db
-      .collection(COLLECTIONS.REVIEWS)
-      .where('nailistProfileId', '==', data.nailistProfileId)
-      .get()
-
-    const ratings = reviewsSnap.docs.map((d) => d.data().rating as number)
-    const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length
+    // Update nailist avg rating incrementally (O(1), no N-doc scan)
+    const nailistProfileSnap = await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).get()
+    const nailistProfile = nailistProfileSnap.data()
+    const currentAvg = (nailistProfile?.avgRating ?? 0) as number
+    const currentCount = (nailistProfile?.reviewCount ?? 0) as number
+    const newCount = currentCount + 1
+    const newAvg = Math.round(((currentAvg * currentCount + data.rating) / newCount) * 10) / 10
 
     await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).update({
-      avgRating: Math.round(avgRating * 10) / 10,
-      reviewCount: ratings.length,
+      avgRating: newAvg,
+      reviewCount: newCount,
       updatedAt: FieldValue.serverTimestamp(),
     })
 
     // Notify nailist via email (fire-and-forget)
     void (async () => {
       try {
-        const [nailistProfileSnap, apptData] = [
-          await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).get(),
-          apptSnap.data()!,
-        ]
-        const nailistProfile = nailistProfileSnap.data()
+        const apptData = apptSnap.data()!
         const nailistUserSnap = nailistProfile?.userId
           ? await db.collection(COLLECTIONS.USERS).doc(nailistProfile.userId).get()
           : null

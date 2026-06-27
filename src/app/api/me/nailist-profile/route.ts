@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     // Only auto-create for users with NAILIST role — block clients from getting a ghost profile
     const userSnap = await db.collection(COLLECTIONS.USERS).doc(decoded.uid).get()
     const userRole = userSnap.data()?.role as string | undefined
-    if (userRole && userRole !== 'NAILIST') {
+    if (userRole !== 'NAILIST') {
       return NextResponse.json({ data: null })
     }
 
