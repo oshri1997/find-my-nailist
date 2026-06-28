@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Trash2, Loader2, User, Scissors } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Search, Trash2, Loader2, User, Scissors, LogIn } from 'lucide-react'
 
 interface AdminUser {
   id: string
@@ -20,11 +21,40 @@ const ROLE_COLORS: Record<string, string> = {
 }
 
 export default function AdminUsersPage() {
+  const router = useRouter()
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<AdminUser | null>(null)
+  const [impersonating, setImpersonating] = useState<string | null>(null)
+
+  async function handleImpersonate(user: AdminUser) {
+    setImpersonating(user.id)
+    try {
+      const res = await fetch('/api/admin/impersonate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.id }),
+      })
+      const { customToken, error } = await res.json()
+      if (!res.ok || !customToken) throw new Error(error ?? 'failed')
+
+      const { initFirebase } = await import('@/lib/firebase/client')
+      const clients = await initFirebase()
+      if (!clients) throw new Error('Firebase not initialized')
+
+      const { signInWithCustomToken } = await import('firebase/auth')
+      await signInWithCustomToken(clients.auth, customToken)
+
+      router.push(user.role === 'NAILIST' ? '/dashboard/nailist' : '/search')
+    } catch (err) {
+      console.error('[impersonate]', err)
+      alert('שגיאה בכניסה לחשבון')
+    } finally {
+      setImpersonating(null)
+    }
+  }
 
   useEffect(() => {
     const q = search ? `?search=${encodeURIComponent(search)}` : ''
@@ -112,18 +142,31 @@ export default function AdminUsersPage() {
                       {u.createdAt ? new Date(u.createdAt).toLocaleDateString('he-IL') : '—'}
                     </td>
                     <td className="px-5 py-3">
-                      {u.email !== 'oshri19970@gmail.com' && (
+                      <div className="flex items-center gap-1">
                         <button
-                          onClick={() => setConfirmDelete(u)}
-                          disabled={deleting === u.id}
-                          className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
+                          onClick={() => handleImpersonate(u)}
+                          disabled={impersonating === u.id}
+                          title={`התחבר בתור ${u.displayName || u.email}`}
+                          className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
                         >
-                          {deleting === u.id
+                          {impersonating === u.id
                             ? <Loader2 className="w-4 h-4 animate-spin" />
-                            : <Trash2 className="w-4 h-4" />
+                            : <LogIn className="w-4 h-4" />
                           }
                         </button>
-                      )}
+                        {u.email !== 'oshri19970@gmail.com' && (
+                          <button
+                            onClick={() => setConfirmDelete(u)}
+                            disabled={deleting === u.id}
+                            className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
+                          >
+                            {deleting === u.id
+                              ? <Loader2 className="w-4 h-4 animate-spin" />
+                              : <Trash2 className="w-4 h-4" />
+                            }
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
