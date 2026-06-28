@@ -2,6 +2,40 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { verifyAdmin, adminUnauthorized } from '@/lib/admin-auth'
+import { FieldValue } from 'firebase-admin/firestore'
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!await verifyAdmin(request)) return adminUnauthorized()
+
+  const { id } = await params
+  const body = await request.json()
+  const newRole: string = body.role
+
+  if (!['CLIENT', 'NAILIST'].includes(newRole)) {
+    return NextResponse.json({ error: 'תפקיד לא תקין' }, { status: 400 })
+  }
+
+  const db = adminDb()
+  const userDoc = await db.collection(COLLECTIONS.USERS).doc(id).get()
+  if (!userDoc.exists) return NextResponse.json({ error: 'משתמש לא נמצא' }, { status: 404 })
+
+  const currentRole = userDoc.data()?.role
+
+  // If demoting from NAILIST → CLIENT, hide the nailist profile from search
+  if (currentRole === 'NAILIST' && newRole === 'CLIENT') {
+    const profileSnap = await db.collection(COLLECTIONS.NAILIST_PROFILES)
+      .where('userId', '==', id).limit(1).get()
+    if (!profileSnap.empty) {
+      await profileSnap.docs[0].ref.update({ isActive: false, updatedAt: FieldValue.serverTimestamp() })
+    }
+  }
+
+  await db.collection(COLLECTIONS.USERS).doc(id).update({ role: newRole })
+  return NextResponse.json({ message: 'התפקיד עודכן בהצלחה' })
+}
 
 export async function DELETE(
   request: NextRequest,
