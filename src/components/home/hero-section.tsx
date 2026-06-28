@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Search, ArrowLeft, Star, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -110,8 +111,8 @@ export function HeroSection() {
                 {/* App content */}
                 <div className="p-5 pt-2">
                   <div className="text-center mb-5">
-                    <div className="w-10 h-10 rounded-xl bg-primary mx-auto mb-2 flex items-center justify-center shadow-[0_4px_12px_rgba(236,72,153,0.3)]">
-                      <Sparkles className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 rounded-xl mx-auto mb-2 overflow-hidden shadow-[0_4px_12px_rgba(236,72,153,0.3)]">
+                      <Image src="/logo.png" alt="נייליסטיות" width={40} height={40} className="w-full h-full object-cover" />
                     </div>
                     <h3 className="font-black text-base text-foreground">נייליסטיות</h3>
                     <p className="text-xs text-muted-foreground">גלי את המושלמת עבורך</p>

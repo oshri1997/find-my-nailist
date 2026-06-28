@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { Button } from '@/components/ui/button'
@@ -29,8 +30,8 @@ export function NailistCtaSection() {
           <div className="absolute inset-0 dot-pattern pointer-events-none" />
 
           <div className="relative z-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 mb-8">
-              <Sparkles className="w-8 h-8 text-white" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl overflow-hidden mb-8">
+              <Image src="/logo.png" alt="נייליסטיות" width={64} height={64} className="w-full h-full object-cover" />
             </div>
 
             <h2 className="text-4xl md:text-5xl font-black mb-4 leading-tight">
