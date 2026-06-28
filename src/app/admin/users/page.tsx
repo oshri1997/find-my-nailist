@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Search, Trash2, Loader2, User, Scissors, LogIn } from 'lucide-react'
+import { Search, Trash2, Loader2, User, Scissors } from 'lucide-react'
+import { useAuth } from '@/components/auth/auth-provider'
 
 interface AdminUser {
   id: string
@@ -21,40 +21,13 @@ const ROLE_COLORS: Record<string, string> = {
 }
 
 export default function AdminUsersPage() {
-  const router = useRouter()
+  const { user: adminUser, refreshRole } = useAuth()
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<AdminUser | null>(null)
-  const [impersonating, setImpersonating] = useState<string | null>(null)
-
-  async function handleImpersonate(user: AdminUser) {
-    setImpersonating(user.id)
-    try {
-      const res = await fetch('/api/admin/impersonate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: user.id }),
-      })
-      const { customToken, error } = await res.json()
-      if (!res.ok || !customToken) throw new Error(error ?? 'failed')
-
-      const { initFirebase } = await import('@/lib/firebase/client')
-      const clients = await initFirebase()
-      if (!clients) throw new Error('Firebase not initialized')
-
-      const { signInWithCustomToken } = await import('firebase/auth')
-      await signInWithCustomToken(clients.auth, customToken)
-
-      router.push(user.role === 'NAILIST' ? '/dashboard/nailist' : '/search')
-    } catch (err) {
-      console.error('[impersonate]', err)
-      alert('שגיאה בכניסה לחשבון')
-    } finally {
-      setImpersonating(null)
-    }
-  }
+  const [changingRole, setChangingRole] = useState<string | null>(null)
 
   useEffect(() => {
     const q = search ? `?search=${encodeURIComponent(search)}` : ''
@@ -63,6 +36,23 @@ export default function AdminUsersPage() {
       .then(j => { setUsers(j.data ?? []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [search])
+
+  async function handleRoleChange(user: AdminUser, newRole: 'CLIENT' | 'NAILIST') {
+    if (user.role === newRole) return
+    setChangingRole(user.id)
+    const res = await fetch(`/api/admin/users/${user.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: newRole }),
+    })
+    if (res.ok) {
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u))
+      if (adminUser?.uid === user.id) {
+        await refreshRole()
+      }
+    }
+    setChangingRole(null)
+  }
 
   async function handleDelete(user: AdminUser) {
     setDeleting(user.id)
@@ -123,6 +113,7 @@ export default function AdminUsersPage() {
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         {u.photoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img src={u.photoUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
@@ -134,39 +125,57 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">{u.email}</td>
                     <td className="px-5 py-3">
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${ROLE_COLORS[u.role] ?? 'bg-muted text-muted-foreground border-border'}`}>
-                        {ROLE_LABELS[u.role] ?? u.role}
-                      </span>
+                      {u.role === 'ADMIN' ? (
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${ROLE_COLORS.ADMIN}`}>
+                          {ROLE_LABELS.ADMIN}
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          {changingRole === u.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleRoleChange(u, 'NAILIST')}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                                  u.role === 'NAILIST'
+                                    ? ROLE_COLORS.NAILIST
+                                    : 'bg-muted/40 text-muted-foreground border-border hover:border-pink-300 hover:text-primary'
+                                }`}
+                              >
+                                נייליסטית
+                              </button>
+                              <button
+                                onClick={() => handleRoleChange(u, 'CLIENT')}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                                  u.role === 'CLIENT'
+                                    ? ROLE_COLORS.CLIENT
+                                    : 'bg-muted/40 text-muted-foreground border-border hover:border-blue-300 hover:text-blue-600'
+                                }`}
+                              >
+                                לקוח
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">
                       {u.createdAt ? new Date(u.createdAt).toLocaleDateString('he-IL') : '—'}
                     </td>
                     <td className="px-5 py-3">
-                      <div className="flex items-center gap-1">
+                      {u.email !== 'oshri19970@gmail.com' && (
                         <button
-                          onClick={() => handleImpersonate(u)}
-                          disabled={impersonating === u.id}
-                          title={`התחבר בתור ${u.displayName || u.email}`}
-                          className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
+                          onClick={() => setConfirmDelete(u)}
+                          disabled={deleting === u.id}
+                          className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
                         >
-                          {impersonating === u.id
+                          {deleting === u.id
                             ? <Loader2 className="w-4 h-4 animate-spin" />
-                            : <LogIn className="w-4 h-4" />
+                            : <Trash2 className="w-4 h-4" />
                           }
                         </button>
-                        {u.email !== 'oshri19970@gmail.com' && (
-                          <button
-                            onClick={() => setConfirmDelete(u)}
-                            disabled={deleting === u.id}
-                            className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
-                          >
-                            {deleting === u.id
-                              ? <Loader2 className="w-4 h-4 animate-spin" />
-                              : <Trash2 className="w-4 h-4" />
-                            }
-                          </button>
-                        )}
-                      </div>
+                      )}
                     </td>
                   </tr>
                 ))}
