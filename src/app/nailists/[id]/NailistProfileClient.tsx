@@ -55,7 +55,7 @@ interface NailistProfile {
 }
 
 export default function NailistProfileClient({ id }: { id: string }) {
-  const { user } = useAuth()
+  const { user, role } = useAuth()
   const router = useRouter()
   const [profile, setProfile] = useState<NailistProfile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -95,12 +95,12 @@ export default function NailistProfileClient({ id }: { id: string }) {
   }, [id])
 
   useEffect(() => {
-    if (!user) return
+    if (!user || role !== 'NAILIST') { setIsOwner(false); return }
     fetch('/api/me/nailist-profile')
       .then(r => r.ok ? r.json() : null)
-      .then(json => { if (json?.data?.id === id) setIsOwner(true) })
+      .then(json => { setIsOwner(json?.data?.id === id) })
       .catch(() => {})
-  }, [user, id])
+  }, [user, id, role])
 
   useEffect(() => {
     if (!user) return
@@ -152,10 +152,19 @@ export default function NailistProfileClient({ id }: { id: string }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-muted/50">
+      <div className="min-h-screen flex flex-col bg-muted/30">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
+        <div className="animate-pulse">
+          <div className="h-64 bg-gradient-to-br from-pink-400 via-purple-500 to-violet-500 opacity-60" />
+          <div className="container mx-auto max-w-4xl px-6 py-6 space-y-4">
+            <div className="h-5 bg-muted rounded w-1/3" />
+            <div className="h-5 bg-muted rounded w-1/2" />
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="aspect-square rounded-2xl bg-muted" />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     )
