@@ -48,6 +48,14 @@
         { "fieldPath": "isActive", "order": "ASCENDING" },
         { "fieldPath": "geohash", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "favorites",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
