@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Heart } from 'lucide-react'
 
 export function Footer() {
   return (
@@ -56,15 +55,8 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 pt-8 border-t border-border text-center text-sm text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap">
-          <span>© {new Date().getFullYear()} נייליסטיות. כל הזכויות שמורות. עשוי עם</span>
-          <Heart className="w-3.5 h-3.5 fill-primary text-primary" />
-          <span>בישראל</span>
-          {process.env.NEXT_PUBLIC_ENV === 'staging' ? (
-            <span className="text-xs text-muted-foreground/50 mr-2">staging</span>
-          ) : process.env.NEXT_PUBLIC_APP_VERSION ? (
-            <span className="text-xs text-muted-foreground/50 mr-2">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
-          ) : null}
+        <div className="mt-10 pt-8 border-t border-border text-center text-sm text-muted-foreground">
+          <span>© 2026 נייליסטיות. כל הזכויות שמורות.</span>
         </div>
       </div>
     </footer>
