@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/layout/navbar'
+import { useAuth } from '@/components/auth/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MapPin, Search, Star, Heart, MessageCircle, Loader2, LocateFixed, Map as MapIcon, LayoutGrid, Sparkles } from 'lucide-react'
@@ -92,8 +93,11 @@ export function matchesFilter(serviceNames: string[], filter: string): boolean {
 
 export default function SearchPage() {
   const router = useRouter()
+  const { user } = useAuth()
   const [nailists, setNailists] = useState<Nailist[]>([])
   const [loading, setLoading] = useState(true)
+  const [favorites, setFavorites] = useState<Set<string>>(new Set())
+  const [togglingFav, setTogglingFav] = useState<string | null>(null)
   const [imagesReady, setImagesReady] = useState(false)
   // Skeleton count: remembered across fetches so the count matches reality
   const [skeletonCount, setSkeletonCount] = useState(() => {
@@ -170,6 +174,40 @@ export default function SearchPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchNailists()
   }, [fetchNailists])
+
+  useEffect(() => {
+    if (!user) { setFavorites(new Set()); return }
+    fetch('/api/favorites')
+      .then(r => r.json())
+      .then(j => setFavorites(new Set((j.data ?? []).map((f: { id: string }) => f.id))))
+      .catch(() => {})
+  }, [user])
+
+  async function toggleFavorite(e: React.MouseEvent, nailistId: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!user) { router.push('/login?redirect=/search'); return }
+    if (togglingFav === nailistId) return
+    setTogglingFav(nailistId)
+    const isFav = favorites.has(nailistId)
+    setFavorites(prev => {
+      const next = new Set(prev)
+      isFav ? next.delete(nailistId) : next.add(nailistId)
+      return next
+    })
+    try {
+      await fetch(`/api/favorites/${nailistId}`, { method: isFav ? 'DELETE' : 'POST' })
+    } catch {
+      // revert on failure
+      setFavorites(prev => {
+        const next = new Set(prev)
+        isFav ? next.add(nailistId) : next.delete(nailistId)
+        return next
+      })
+    } finally {
+      setTogglingFav(null)
+    }
+  }
 
   function handleLocate() {
     if (!navigator.geolocation) return
@@ -375,10 +413,11 @@ export default function SearchPage() {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
                   <button
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute top-3 left-3 w-9 h-9 bg-card/80 rounded-full flex items-center justify-center hover:bg-card transition-colors shadow-sm cursor-pointer"
+                    onClick={(e) => toggleFavorite(e, nailist.id)}
+                    disabled={togglingFav === nailist.id}
+                    className="absolute top-3 left-3 w-9 h-9 bg-card/80 rounded-full flex items-center justify-center hover:bg-card transition-colors shadow-sm cursor-pointer disabled:opacity-60"
                   >
-                    <Heart className="h-4 w-4 text-muted-foreground/60" />
+                    <Heart className={`h-4 w-4 transition-all ${favorites.has(nailist.id) ? 'fill-pink-500 text-pink-500 scale-110' : 'text-muted-foreground/60'}`} />
                   </button>
                   {nailist.distanceKm != null && (
                     <div className="absolute top-3 right-3 bg-card/90 rounded-full px-3 py-1 text-foreground text-xs font-bold flex items-center gap-1 shadow-sm">
