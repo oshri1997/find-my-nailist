@@ -28,6 +28,6 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE() {
   const response = NextResponse.json({ ok: true })
-  response.cookies.delete(COOKIE_NAME)
+  response.cookies.set(COOKIE_NAME, '', { maxAge: 0, path: '/' })
   return response
 }

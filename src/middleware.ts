@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (isAuth && token) {
-    return NextResponse.redirect(new URL('/dashboard/nailist', request.url))
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
   return NextResponse.next()
