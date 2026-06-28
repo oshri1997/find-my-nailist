@@ -82,32 +82,6 @@ export function HeroSection() {
               </Link>
             </motion.div>
 
-            {/* Social proof */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="flex items-center gap-4 mt-10"
-            >
-              <div className="flex -space-x-3 space-x-reverse">
-                {['#F9A8D4', '#C4B5FD', '#93C5FD', '#6EE7B7'].map((color, i) => (
-                  <div
-                    key={i}
-                    className="w-9 h-9 rounded-full border-2 border-white shadow-sm"
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-              <div>
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  ))}
-                  <span className="font-bold text-foreground mr-1">4.9</span>
-                </div>
-                <p className="text-sm text-muted-foreground">+2,000 לקוחות מרוצות</p>
-              </div>
-            </motion.div>
           </div>
 
           {/* Visual side — phone mockup */}

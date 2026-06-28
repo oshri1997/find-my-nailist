@@ -4,7 +4,6 @@ import { Footer } from '@/components/layout/footer'
 import { HeroSection } from '@/components/home/hero-section'
 import { HowItWorksSection } from '@/components/home/how-it-works'
 import { FeaturesSection } from '@/components/home/features-section'
-import { StatsSection } from '@/components/home/stats-section'
 import { NailistCtaSection } from '@/components/home/nailist-cta'
 
 export const metadata: Metadata = {
@@ -61,7 +60,6 @@ export default function HomePage() {
       />
       <Navbar />
       <HeroSection />
-      <StatsSection />
       <HowItWorksSection />
       <FeaturesSection />
       <NailistCtaSection />
