@@ -76,7 +76,7 @@ export function HeroSection() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border border-border hover:border-primary/40 hover:bg-pink-50/50 font-semibold text-base rounded-xl px-8 h-12 text-foreground transition-all cursor-pointer"
+                  className="border border-border hover:border-primary hover:bg-pink-100 hover:text-primary dark:hover:bg-primary/15 font-semibold text-base rounded-xl px-8 h-12 text-foreground transition-all cursor-pointer"
                 >
                   אני נייליסטית →
                 </Button>
