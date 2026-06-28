@@ -2,9 +2,11 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Search, ArrowLeft, Star, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useAuth } from '@/components/auth/auth-provider'
 
 const mockCards = [
   { name: 'גל כהן', service: "ג'ל + נייל ארט", price: '₪120', stars: 5 },
@@ -13,6 +15,17 @@ const mockCards = [
 ]
 
 export function HeroSection() {
+  const { user, role } = useAuth()
+  const router = useRouter()
+
+  function handleNailistClick() {
+    if (user && role === 'NAILIST') {
+      router.push('/dashboard/nailist')
+    } else {
+      router.push('/login?tab=register')
+    }
+  }
+
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-background">
       {/* Subtle decorative circles */}
@@ -72,15 +85,14 @@ export function HeroSection() {
                   <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Link href="/login?tab=register">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border border-border hover:border-primary hover:bg-pink-100 hover:text-primary dark:hover:bg-primary/15 font-semibold text-base rounded-xl px-8 h-12 text-foreground transition-all cursor-pointer"
-                >
-                  אני נייליסטית →
-                </Button>
-              </Link>
+              <Button
+                onClick={handleNailistClick}
+                size="lg"
+                variant="outline"
+                className="border border-border hover:border-primary hover:bg-pink-100 hover:text-primary dark:hover:bg-primary/15 font-semibold text-base rounded-xl px-8 h-12 text-foreground transition-all cursor-pointer"
+              >
+                אני נייליסטית →
+              </Button>
             </motion.div>
 
           </div>
