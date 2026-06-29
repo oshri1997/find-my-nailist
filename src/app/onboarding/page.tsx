@@ -57,6 +57,7 @@ export default function OnboardingPage() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadStatus, setUploadStatus] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Step 3 — services
@@ -108,32 +109,47 @@ export default function OnboardingPage() {
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || !profileId) return
-    if (file.size > 5 * 1024 * 1024) { setError('הקובץ גדול מדי — מקסימום 5MB'); return }
+    const files = Array.from(e.target.files || [])
+    if (!files.length || !profileId) return
+
+    const oversized = files.filter(f => f.size > 5 * 1024 * 1024)
+    if (oversized.length > 0) {
+      setError(`${oversized.length > 1 ? `${oversized.length} תמונות גדולות` : 'תמונה גדולה'} מדי — מקסימום 5MB לתמונה`)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
     setError('')
     setUploading(true)
-    setUploadProgress(0)
-    try {
-      const { uploadPortfolioPhoto } = await import('@/lib/firebase/storage')
-      const { url, storageKey } = await uploadPortfolioPhoto(profileId, file, setUploadProgress)
-      const res = await fetch('/api/portfolio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nailistProfileId: profileId, url, storageKey, displayOrder: photos.length }),
-      })
-      if (res.ok) {
-        const { data } = await res.json()
-        setPhotos(prev => [...prev, data])
-      } else {
-        setError('שגיאה בשמירת התמונה')
+    const startIndex = photos.length
+    const { uploadPortfolioPhoto } = await import('@/lib/firebase/storage')
+
+    for (let i = 0; i < files.length; i++) {
+      setUploadStatus(files.length > 1 ? `מעלה תמונה ${i + 1} מתוך ${files.length}...` : 'מעלה תמונה...')
+      setUploadProgress(0)
+      try {
+        const { url, storageKey } = await uploadPortfolioPhoto(profileId, files[i], setUploadProgress)
+        const res = await fetch('/api/portfolio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nailistProfileId: profileId, url, storageKey, displayOrder: startIndex + i }),
+        })
+        if (res.ok) {
+          const { data } = await res.json()
+          setPhotos(prev => [...prev, data])
+        } else {
+          setError('שגיאה בשמירת תמונה')
+          break
+        }
+      } catch {
+        setError('שגיאה בהעלאה — ודאי ש-Storage מופעל ב-Firebase')
+        break
       }
-    } catch {
-      setError('שגיאה בהעלאה — ודאי ש-Storage מופעל ב-Firebase')
-    } finally {
-      setUploading(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
     }
+
+    setUploading(false)
+    setUploadStatus('')
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   async function addService() {
@@ -313,12 +329,12 @@ export default function OnboardingPage() {
                   </span>
                 </p>
 
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
 
                 {uploading && (
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                      <span>מעלה תמונה...</span>
+                      <span>{uploadStatus || 'מעלה תמונה...'}</span>
                       <span>{uploadProgress}%</span>
                     </div>
                     <div className="h-1.5 bg-muted rounded-full overflow-hidden">
