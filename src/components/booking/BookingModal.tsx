@@ -264,21 +264,21 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   </p>
                   <div className="flex items-center justify-between mb-2">
                     <button
-                      onClick={nextMonth}
-                      disabled={isAtMax}
-                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-                    </button>
-                    <p className="text-sm font-black text-foreground">
-                      {HE_MONTHS[viewMonth]} {viewYear}
-                    </p>
-                    <button
                       onClick={prevMonth}
                       disabled={isAtMin}
                       className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    <p className="text-sm font-black text-foreground">
+                      {HE_MONTHS[viewMonth]} {viewYear}
+                    </p>
+                    <button
+                      onClick={nextMonth}
+                      disabled={isAtMax}
+                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="h-4 w-4 text-muted-foreground" />
                     </button>
                   </div>
                   {/* Day-of-week headers */}
