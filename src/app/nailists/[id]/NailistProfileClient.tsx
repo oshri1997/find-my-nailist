@@ -59,7 +59,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
   const router = useRouter()
   const [profile, setProfile] = useState<NailistProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isOwner, setIsOwner] = useState(false)
+  const [isOwner, setIsOwner] = useState<boolean | null>(null)
   const [showBooking, setShowBooking] = useState(false)
   const [activeTab, setActiveTab] = useState<'portfolio' | 'services' | 'reviews'>('portfolio')
   const [copied, setCopied] = useState(false)
@@ -200,7 +200,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
         )}
 
         {/* Owner edit buttons */}
-        {isOwner && (
+        {isOwner === true && (
           <div className="absolute top-3 left-3 flex gap-2 z-10">
             <Link href="/dashboard/nailist/portfolio">
               <button className="bg-white/20 backdrop-blur text-white text-xs font-bold rounded-full px-3 py-1.5 hover:bg-white/35 transition-colors flex items-center gap-1.5 border border-white/20">
@@ -256,7 +256,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
           )}
 
           <div className="flex flex-wrap gap-2 mt-5">
-            {!isOwner && profile.services.length > 0 && (
+            {isOwner === false && profile.services.length > 0 && (
               <Button
                 onClick={openBooking}
                 className="bg-white text-pink-600 hover:bg-pink-50 border-0 rounded-2xl font-black shadow-lg"
@@ -323,7 +323,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                 Google Maps
               </a>
             )}
-            {!isOwner && (
+            {isOwner === false && (
               <button
                 onClick={toggleFavorite}
                 disabled={favLoading}

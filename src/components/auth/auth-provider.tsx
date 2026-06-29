@@ -73,6 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (roleRes.ok) {
               const { role: fetchedRole } = await roleRes.json()
               setRole(fetchedRole ?? null)
+            } else {
+              setRole(null)
             }
           } else {
             await fetch('/api/auth/session', { method: 'DELETE' })
