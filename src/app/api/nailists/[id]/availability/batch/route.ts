@@ -23,7 +23,7 @@ export async function GET(
   const { id: nailistProfileId } = await params
   const { searchParams } = new URL(request.url)
   const from = searchParams.get('from')
-  const days = Math.min(parseInt(searchParams.get('days') ?? '21', 10), 60)
+  const days = Math.min(parseInt(searchParams.get('days') ?? '21', 10), 180)
   const durationMinutes = parseInt(searchParams.get('durationMinutes') ?? '60', 10)
 
   if (!from || !/^\d{4}-\d{2}-\d{2}$/.test(from)) {
@@ -69,13 +69,18 @@ export async function GET(
       })
       .filter((a): a is { startTime: string; endTime: string } => a !== null)
 
+    const serverNow = new Date()
+    const todayStr = `${serverNow.getFullYear()}-${String(serverNow.getMonth() + 1).padStart(2, '0')}-${String(serverNow.getDate()).padStart(2, '0')}`
+    const todayNowMinutes = serverNow.getHours() * 60 + serverNow.getMinutes()
+
     const result: Record<string, { workingDay: boolean; fullyBooked: boolean }> = {}
     for (const date of dates) {
       result[date] = computeDateAvailability(
         date,
         workingHoursByDay.get(getDayOfWeek(date)),
         durationMinutes,
-        rangeAppointments
+        rangeAppointments,
+        date === todayStr ? todayNowMinutes : undefined
       )
     }
 

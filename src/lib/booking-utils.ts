@@ -78,15 +78,20 @@ export function computeDateAvailability(
   date: string,
   workingHours: WorkingHours | undefined,
   durationMinutes: number,
-  appointments: BookedSlot[]
+  appointments: BookedSlot[],
+  nowMinutes?: number
 ): { workingDay: boolean; fullyBooked: boolean } {
   if (!workingHours || !workingHours.isActive) {
     return { workingDay: false, fullyBooked: false }
   }
   const slots = generateSlots(workingHours.startTime, workingHours.endTime)
-  const available = slots.filter(
-    (slot) => !isSlotUnavailable(slot, date, durationMinutes, workingHours.endTime, appointments)
-  )
+  const available = slots.filter((slot) => {
+    if (nowMinutes !== undefined) {
+      const [h, m] = slot.split(':').map(Number)
+      if (h * 60 + m <= nowMinutes) return false
+    }
+    return !isSlotUnavailable(slot, date, durationMinutes, workingHours.endTime, appointments)
+  })
   return { workingDay: true, fullyBooked: available.length === 0 }
 }
 

@@ -299,7 +299,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                       const summary = dateSummary?.[toDateStr(d)]
                       const isNonWorking = summary !== undefined && !summary.workingDay
                       const isFullyBooked = summary?.workingDay && summary.fullyBooked
-                      const isDisabled = isPast || isNonWorking
+                      const isDisabled = isPast || isNonWorking || (isToday && !!isFullyBooked)
                       return (
                         <button
                           key={toDateStr(d)}
