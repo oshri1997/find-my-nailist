@@ -379,7 +379,7 @@ export default function SearchPage() {
             )}
           </div>
         ) : viewMode === 'map' ? (
-          <div className="h-[70vh] rounded-2xl overflow-hidden shadow-sm border border-border">
+          <div className="w-full h-[70vh] rounded-2xl overflow-hidden shadow-sm border border-border">
             <NailistMap nailists={sorted} center={coords ?? undefined} />
           </div>
         ) : (
