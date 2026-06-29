@@ -85,7 +85,6 @@ export default function NailistMap({ nailists, center }: Props) {
   const pinned = nailists.filter((n) => n.latitude != null && n.longitude != null)
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
     <APIProvider apiKey={apiKey}>
       <Map
         mapId="find-my-nailist-map"
@@ -116,6 +115,5 @@ export default function NailistMap({ nailists, center }: Props) {
         ))}
       </Map>
     </APIProvider>
-    </div>
   )
 }

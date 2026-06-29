@@ -379,7 +379,10 @@ export default function SearchPage() {
             )}
           </div>
         ) : viewMode === 'map' ? (
-          <div className="w-full h-[70vh] rounded-2xl overflow-hidden shadow-sm border border-border">
+          <div
+            className="w-full h-[70vh] shadow-sm border border-border rounded-2xl"
+            style={{ clipPath: 'inset(0 round 1rem)' }}
+          >
             <NailistMap nailists={sorted} center={coords ?? undefined} />
           </div>
         ) : (
