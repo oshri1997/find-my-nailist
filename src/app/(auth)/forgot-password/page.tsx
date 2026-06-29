@@ -7,7 +7,6 @@ import { Mail, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { resetPassword } from '@/lib/firebase/auth-helpers'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -20,15 +19,15 @@ export default function ForgotPasswordPage() {
     setError('')
     setLoading(true)
     try {
-      await resetPassword(email)
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      if (!res.ok) throw new Error('server error')
       setSent(true)
-    } catch (err: unknown) {
-      const code = (err as { code?: string })?.code ?? ''
-      if (code === 'auth/user-not-found') {
-        setSent(true)
-      } else {
-        setError('שגיאה בשליחת המייל — נסי שוב')
-      }
+    } catch {
+      setError('שגיאה בשליחת המייל — נסי שוב')
     } finally {
       setLoading(false)
     }

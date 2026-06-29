@@ -257,3 +257,31 @@ export async function sendClientConfirmedEmail(p: {
     `שלום ${p.clientName},\n\n${p.nailistBusinessName} אישרה את התור שלך!\n\nשירות: ${p.serviceName}\nתאריך ושעה: ${dateStr}\nמחיר: ${symbol}${p.price}\n\nמחכות לראותך!\nצוות נייליסטיות`
   )
 }
+
+export async function sendPasswordResetEmail(p: {
+  email: string
+  resetLink: string
+}): Promise<void> {
+  await sendResend(
+    p.email,
+    'איפוס סיסמה — נייליסטיות',
+    `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center">
+        <h1 style="color:white;margin:0;font-size:22px;font-weight:900">נייליסטיות</h1>
+      </div>
+      <div style="background:#fff;border:1px solid #f3e8ff;border-top:none;border-radius:0 0 16px 16px;padding:32px">
+        <h2 style="font-size:20px;font-weight:900;margin:0 0 8px">איפוס סיסמה</h2>
+        <p style="color:#666;margin:0 0 24px">קיבלנו בקשה לאיפוס הסיסמה לחשבון שלך.</p>
+        <p style="color:#666;margin:0 0 24px">לחצי על הכפתור כדי לאפס את הסיסמה — הקישור בתוקף ל-24 שעות.</p>
+        <div style="text-align:center;margin:28px 0">
+          <a href="${p.resetLink}" style="background:linear-gradient(135deg,#ec4899,#a855f7);color:white;text-decoration:none;border-radius:12px;padding:14px 32px;font-weight:900;font-size:16px;display:inline-block">
+            איפוס סיסמה
+          </a>
+        </div>
+        <p style="color:#999;font-size:12px;margin:24px 0 0">אם לא ביקשת לאפס סיסמה, אפשר להתעלם ממייל זה.</p>
+        <p style="color:#ccc;font-size:11px;margin:8px 0 0">הקישור: <a href="${p.resetLink}" style="color:#a855f7;word-break:break-all">${p.resetLink}</a></p>
+      </div>
+    </div>`,
+    `איפוס סיסמה — נייליסטיות\n\nלחצי על הקישור הבא לאיפוס הסיסמה (בתוקף ל-24 שעות):\n${p.resetLink}\n\nאם לא ביקשת לאפס סיסמה, אפשר להתעלם ממייל זה.\n\nצוות נייליסטיות`
+  )
+}
