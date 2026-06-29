@@ -61,7 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { onIdTokenChanged } = await import('firebase/auth')
       unsub = onIdTokenChanged(clients.auth, async (firebaseUser) => {
         if (skipCallbackRef.current) return
-        setUser(firebaseUser)
         try {
           if (firebaseUser) {
             const token = await firebaseUser.getIdToken()
@@ -82,6 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch {
           // session sync failed — auth state is still valid, don't block the UI
         } finally {
+          // Set user AFTER the session cookie is written so any redirect
+          // triggered by the login page useEffect finds the cookie already set.
+          setUser(firebaseUser)
           setLoading(false)
         }
       })
