@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronRight, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare } from 'lucide-react'
+import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { generateSlots, isSlotUnavailable, buildMonthCalendar, toDateStr, type BookedSlot } from '@/lib/booking-utils'
+import { generateSlots, isSlotUnavailable, buildMonthCalendarFor, toDateStr, type BookedSlot } from '@/lib/booking-utils'
 
 interface Service {
   id: string
@@ -49,20 +49,38 @@ export default function BookingModal({ nailistProfileId, businessName, services,
 
   const now = new Date()
   now.setHours(0, 0, 0, 0)
-  const monthDays = buildMonthCalendar()
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-  const daysRemaining = daysInMonth - now.getDate() + 1
+
+  const [viewYear, setViewYear] = useState(now.getFullYear())
+  const [viewMonth, setViewMonth] = useState(now.getMonth())
+
+  const maxViewDate = new Date(now.getFullYear(), now.getMonth() + 6, 1)
+  const isAtMin = viewYear === now.getFullYear() && viewMonth === now.getMonth()
+  const isAtMax = viewYear === maxViewDate.getFullYear() && viewMonth === maxViewDate.getMonth()
+
+  function prevMonth() {
+    if (isAtMin) return
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
+    else setViewMonth(m => m - 1)
+  }
+
+  function nextMonth() {
+    if (isAtMax) return
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0) }
+    else setViewMonth(m => m + 1)
+  }
+
+  const monthDays = buildMonthCalendarFor(viewYear, viewMonth)
 
   useEffect(() => {
     if (!selectedService) return
     const from = toDateStr(new Date())
     fetch(
-      `/api/nailists/${nailistProfileId}/availability/batch?from=${from}&days=${daysRemaining}&durationMinutes=${selectedService.durationMinutes}`
+      `/api/nailists/${nailistProfileId}/availability/batch?from=${from}&days=180&durationMinutes=${selectedService.durationMinutes}`
     )
       .then((r) => r.json())
       .then(({ data }) => setDateSummary(data ?? null))
       .catch(() => setDateSummary(null))
-  }, [selectedService, nailistProfileId, daysRemaining])
+  }, [selectedService, nailistProfileId])
 
   useEffect(() => {
     if (!selectedDate) return
@@ -244,9 +262,25 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   <p className="text-xs font-black text-muted-foreground flex items-center gap-1.5 mb-3">
                     <Calendar className="h-3.5 w-3.5" /> בחרי תאריך
                   </p>
-                  <p className="text-sm font-black text-center text-foreground mb-2">
-                    {HE_MONTHS[now.getMonth()]} {now.getFullYear()}
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <button
+                      onClick={nextMonth}
+                      disabled={isAtMax}
+                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    <p className="text-sm font-black text-foreground">
+                      {HE_MONTHS[viewMonth]} {viewYear}
+                    </p>
+                    <button
+                      onClick={prevMonth}
+                      disabled={isAtMin}
+                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  </div>
                   {/* Day-of-week headers */}
                   <div className="grid grid-cols-7 gap-1 mb-1">
                     {HE_DAYS_SHORT.map((d) => (
