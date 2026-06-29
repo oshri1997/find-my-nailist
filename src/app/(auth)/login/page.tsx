@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Lock, User, ArrowLeft, AlertCircle } from 'lucide-react'
+import { Mail, Lock, User, ArrowLeft, AlertCircle, Check } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,14 +17,14 @@ type Role = 'nailist' | 'client'
 
 const PANEL_CONTENT = {
   login: {
-    heading: 'ברוכה השבה! 👋',
-    sub: 'גלי את עולם הנייל המושלם —\nהזמיני תור בקליק אחד',
-    emojis: ['💅', '🌸', '✨'],
+    heading: 'ברוכה השבה',
+    sub: 'גלי את עולם הנייל המושלם',
+    features: ['חיפוש לפי מיקום', 'הזמנת תור אונליין', 'ביקורות אמיתיות'],
   },
   register: {
-    heading: 'הצטרפי אלינו! 💅',
-    sub: 'צרי חשבון חינמי בכמה שניות\nוקבלי לקוחות חדשות',
-    emojis: ['✨', '💎', '🌸'],
+    heading: 'הצטרפי אלינו',
+    sub: 'צרי חשבון חינמי בכמה שניות',
+    features: ['פרופיל עסקי מקצועי', 'לקוחות חדשות כל יום', 'ניהול תורים אוטומטי'],
   },
 }
 
@@ -391,22 +391,27 @@ export default function AuthPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -24 }}
             transition={{ duration: 0.35 }}
-            className="relative z-10 text-white text-center px-12 max-w-sm"
+            className="relative z-10 text-white text-center px-10 max-w-xs"
           >
-            <div className="mx-auto mb-8">
-              <Image src="/logo.png" alt="נייליסטיות לוגו" width={96} height={96} />
+            <div className="mx-auto mb-7 w-16 h-16 rounded-2xl overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.2)]">
+              <Image src="/logo.png" alt="נייליסטיות לוגו" width={64} height={64} className="w-full h-full object-cover" />
             </div>
-            <h2 className="text-4xl font-black mb-4 leading-tight">{panel.heading}</h2>
-            <p className="text-white/80 text-lg leading-relaxed mb-8 whitespace-pre-line">{panel.sub}</p>
-            <div className="flex justify-center gap-4 text-5xl">
-              {panel.emojis.map((e, i) => (
-                <motion.span
+            <h2 className="text-3xl font-black mb-2 leading-tight">{panel.heading}</h2>
+            <p className="text-white/70 text-base mb-8">{panel.sub}</p>
+            <div className="flex flex-col gap-2.5 text-right">
+              {panel.features.map((f, i) => (
+                <motion.div
                   key={`${mode}-${i}`}
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.4 }}
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 + i * 0.1 }}
+                  className="flex items-center gap-3 bg-white/15 rounded-xl px-4 py-2.5"
                 >
-                  {e}
-                </motion.span>
+                  <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold">{f}</span>
+                </motion.div>
               ))}
             </div>
           </motion.div>
