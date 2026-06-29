@@ -64,6 +64,7 @@ export default function OnboardingPage() {
   const [services, setServices] = useState<Service[]>([])
   const [svcName, setSvcName] = useState('')
   const [svcDuration, setSvcDuration] = useState(60)
+  const [isCustomDuration, setIsCustomDuration] = useState(false)
   const [svcPrice, setSvcPrice] = useState('')
 
   // Step 4 — social links (optional)
@@ -174,6 +175,7 @@ export default function OnboardingPage() {
         setSvcName('')
         setSvcPrice('')
         setSvcDuration(60)
+        setIsCustomDuration(false)
       } else {
         setError('שגיאה בהוספת שירות')
       }
@@ -414,14 +416,34 @@ export default function OnboardingPage() {
                     <div className="flex-1">
                       <label className="text-xs font-bold text-muted-foreground block mb-1">משך (דקות)</label>
                       <select
-                        value={svcDuration}
-                        onChange={e => setSvcDuration(Number(e.target.value))}
+                        value={isCustomDuration ? 'custom' : String(svcDuration)}
+                        onChange={e => {
+                          if (e.target.value === 'custom') {
+                            setIsCustomDuration(true)
+                            setSvcDuration(0)
+                          } else {
+                            setIsCustomDuration(false)
+                            setSvcDuration(Number(e.target.value))
+                          }
+                        }}
                         className="w-full h-11 rounded-xl border border-border bg-card px-3 text-sm font-semibold focus:outline-none focus:border-pink-300"
                       >
                         {[30, 45, 60, 75, 90, 120].map(d => (
-                          <option key={d} value={d}>{d} דק׳</option>
+                          <option key={d} value={String(d)}>{d} דק׳</option>
                         ))}
+                        <option value="custom">אחר...</option>
                       </select>
+                      {isCustomDuration && (
+                        <Input
+                          type="number"
+                          placeholder="כמה דקות?"
+                          min={5}
+                          max={480}
+                          value={svcDuration > 0 ? String(svcDuration) : ''}
+                          onChange={e => setSvcDuration(Number(e.target.value) || 0)}
+                          className="mt-2 rounded-xl border-border focus:border-pink-300 h-11 bg-card"
+                        />
+                      )}
                     </div>
                     <div className="flex-1">
                       <label className="text-xs font-bold text-muted-foreground block mb-1">מחיר (₪)</label>
@@ -438,7 +460,7 @@ export default function OnboardingPage() {
                   <Button
                     type="button"
                     onClick={addService}
-                    disabled={!svcName.trim() || !svcPrice || saving}
+                    disabled={!svcName.trim() || !svcPrice || saving || (isCustomDuration && svcDuration < 5)}
                     variant="outline"
                     className="w-full rounded-xl h-10 font-bold border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 gap-2 disabled:opacity-50"
                   >
