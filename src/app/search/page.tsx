@@ -176,6 +176,7 @@ export default function SearchPage() {
   }, [fetchNailists])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!user) { setFavorites(new Set()); return }
     fetch('/api/favorites')
       .then(r => r.json())
@@ -192,7 +193,7 @@ export default function SearchPage() {
     const isFav = favorites.has(nailistId)
     setFavorites(prev => {
       const next = new Set(prev)
-      isFav ? next.delete(nailistId) : next.add(nailistId)
+      if (isFav) { next.delete(nailistId) } else { next.add(nailistId) }
       return next
     })
     try {
@@ -201,7 +202,7 @@ export default function SearchPage() {
       // revert on failure
       setFavorites(prev => {
         const next = new Set(prev)
-        isFav ? next.add(nailistId) : next.delete(nailistId)
+        if (isFav) { next.add(nailistId) } else { next.delete(nailistId) }
         return next
       })
     } finally {

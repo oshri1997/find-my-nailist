@@ -62,7 +62,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
       .then((r) => r.json())
       .then(({ data }) => setDateSummary(data ?? null))
       .catch(() => setDateSummary(null))
-  }, [selectedService, nailistProfileId])
+  }, [selectedService, nailistProfileId, daysRemaining])
 
   useEffect(() => {
     if (!selectedDate) return

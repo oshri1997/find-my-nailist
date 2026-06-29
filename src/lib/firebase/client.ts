@@ -64,4 +64,3 @@ export function initFirebase(): Promise<FirebaseClients | null> {
   return _promise
 }
 
-export default null
