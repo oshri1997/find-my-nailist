@@ -11,11 +11,11 @@ import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
 import { useAuth } from '@/components/auth/auth-provider'
 
 const STEPS = [
-  { label: 'כתובת העסק', emoji: '📍' },
-  { label: 'תמונות עבודות', emoji: '🖼️' },
-  { label: 'שירותים', emoji: '✂️' },
-  { label: 'רשתות חברתיות', emoji: '📱' },
-  { label: 'שעות פעילות', emoji: '⏰' },
+  { label: 'כתובת העסק' },
+  { label: 'תמונות עבודות' },
+  { label: 'שירותים' },
+  { label: 'רשתות חברתיות' },
+  { label: 'שעות פעילות' },
 ]
 
 const DAYS_HE = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
@@ -283,7 +283,7 @@ export default function OnboardingPage() {
 
         {/* Step label */}
         <p className="text-center text-sm font-bold text-muted-foreground mb-6">
-          שלב {step + 1} מתוך {STEPS.length} — {STEPS[step].emoji} {STEPS[step].label}
+          שלב {step + 1} מתוך {STEPS.length} — {STEPS[step].label}
         </p>
 
         {/* Card */}

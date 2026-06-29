@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Loader2, CheckCircle2, XCircle, Star } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle, Star, Inbox } from 'lucide-react'
 
 interface Appointment {
   id: string
@@ -107,7 +107,9 @@ export default function NailistAppointmentsPage() {
 
           {appointments.length === 0 && (
             <div className="text-center py-16">
-              <div className="text-4xl mb-3">📭</div>
+              <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+                <Inbox className="h-6 w-6 text-muted-foreground" />
+              </div>
               <p className="font-black text-muted-foreground">אין תורים עדיין</p>
             </div>
           )}

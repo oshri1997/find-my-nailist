@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft, Eye, EyeOff, Star } from 'lucide-react'
+import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft, Eye, EyeOff, Star, Scissors, Users, Wallet, Calendar, Inbox, MessageSquare, FileText, Zap } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 function CountUp({ to, prefix = '', decimals = 0, duration = 1500 }: {
@@ -90,9 +90,9 @@ function formatAppointmentTime(iso: string) {
 }
 
 const quickActions = [
-  { label: 'הגדרת שעות עבודה', icon: '⏰', href: '/dashboard/nailist/hours' },
-  { label: 'הוספת שירות חדש', icon: '✂️', href: '/dashboard/nailist/services' },
-  { label: 'צפייה בפרופיל ציבורי', icon: '👁️', href: '/search' },
+  { label: 'הגדרת שעות עבודה', icon: Clock, href: '/dashboard/nailist/hours' },
+  { label: 'הוספת שירות חדש', icon: Scissors, href: '/dashboard/nailist/services' },
+  { label: 'צפייה בפרופיל ציבורי', icon: Eye, href: '/search' },
 ]
 
 interface NailistProfile {
@@ -227,7 +227,7 @@ export default function NailistDashboard() {
     {
       label: 'תורים',
       node: <CountUp to={totalAppointments} />,
-      icon: '📅',
+      icon: <Calendar className="h-5 w-5 text-pink-500" />,
       change: `+${thisMonthAppointments} החודש`,
       bg: 'from-pink-50 to-rose-50 dark:from-pink-950/50 dark:to-rose-950/50',
       border: 'border-pink-100 dark:border-pink-900/50',
@@ -235,7 +235,7 @@ export default function NailistDashboard() {
     {
       label: 'לקוחות',
       node: <CountUp to={uniqueClients} />,
-      icon: '👥',
+      icon: <Users className="h-5 w-5 text-purple-500" />,
       change: `+${thisMonthClients} החודש`,
       bg: 'from-purple-50 to-violet-50 dark:from-purple-950/50 dark:to-violet-950/50',
       border: 'border-purple-100 dark:border-purple-900/50',
@@ -243,7 +243,7 @@ export default function NailistDashboard() {
     {
       label: 'הכנסות',
       node: <CountUp to={totalRevenue} prefix="₪" />,
-      icon: '💰',
+      icon: <Wallet className="h-5 w-5 text-violet-500" />,
       change: `+₪${thisMonthRevenue} החודש`,
       bg: 'from-violet-50 to-blue-50 dark:from-violet-950/50 dark:to-blue-950/50',
       border: 'border-violet-100 dark:border-violet-900/50',
@@ -253,7 +253,7 @@ export default function NailistDashboard() {
       node: profile?.avgRating
         ? <CountUp to={profile.avgRating} decimals={1} />
         : <span>—</span>,
-      icon: '⭐',
+      icon: <Star className="h-5 w-5 text-amber-400" />,
       change: profile?.reviewCount ? `${profile.reviewCount} ביקורות` : 'אין ביקורות עדיין',
       bg: 'from-amber-50 to-orange-50 dark:from-amber-950/50 dark:to-orange-950/50',
       border: 'border-amber-100 dark:border-amber-900/50',
@@ -263,7 +263,7 @@ export default function NailistDashboard() {
   return (
     <div className="p-4 md:p-8">
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-black text-foreground">שלום, {firstName}! 👋</h1>
+        <h1 className="text-2xl md:text-3xl font-black text-foreground">שלום, {firstName}</h1>
         <p className="text-muted-foreground font-medium">הנה סקירה של העסק שלך</p>
       </motion.div>
 
@@ -298,7 +298,7 @@ export default function NailistDashboard() {
           <motion.div key={stat.label} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: i * 0.08 }}
             className={`rounded-3xl border-2 ${stat.border} bg-gradient-to-br ${stat.bg} p-6`}>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-2xl">{stat.icon}</span>
+              {stat.icon}
               <TrendingUp className="h-4 w-4 text-muted-foreground/40" />
             </div>
             <div className="text-3xl font-black text-foreground mb-1">{stat.node}</div>
@@ -317,12 +317,14 @@ export default function NailistDashboard() {
               <h3 className="text-lg font-black text-foreground">תורים קרובים</h3>
               <p className="text-sm text-muted-foreground font-medium">ההזמנות הבאות שלך</p>
             </div>
-            <span className="text-2xl">📅</span>
+            <Calendar className="h-5 w-5 text-pink-400" />
           </div>
 
           {upcomingAppointments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-3xl mb-4">📭</div>
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                <Inbox className="h-7 w-7 text-muted-foreground" />
+              </div>
               <p className="text-sm font-bold text-muted-foreground mb-4">אין תורים קרובים</p>
               <Link href="/dashboard/nailist/hours"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-bold text-muted-foreground hover:border-pink-300 hover:text-pink-600 transition-colors">
@@ -343,8 +345,8 @@ export default function NailistDashboard() {
                     transition={{ delay: 0.4 + i * 0.06 }}
                     className="flex items-center gap-3 p-3 rounded-2xl border border-border hover:border-pink-100 hover:bg-pink-50/20 dark:hover:bg-pink-950/20 transition-all"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center text-lg shrink-0">
-                      💅
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center shrink-0">
+                      <Scissors className="h-4 w-4 text-pink-500" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -379,12 +381,14 @@ export default function NailistDashboard() {
               <h3 className="text-lg font-black text-foreground">ביקורות אחרונות</h3>
               <p className="text-sm text-muted-foreground font-medium">מה הלקוחות אומרות</p>
             </div>
-            <span className="text-2xl">⭐</span>
+            <Star className="h-5 w-5 text-amber-400 fill-amber-400" />
           </div>
 
           {recentReviews.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-3xl mb-4">💭</div>
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                <MessageSquare className="h-7 w-7 text-muted-foreground" />
+              </div>
               <p className="text-sm font-bold text-muted-foreground mb-1">אין ביקורות עדיין</p>
               <p className="text-xs text-muted-foreground/60 font-medium">השלימי תורים כדי לקבל ביקורות</p>
             </div>
@@ -430,7 +434,7 @@ export default function NailistDashboard() {
               <h3 className="text-lg font-black text-foreground">השלמת פרופיל</h3>
               <p className="text-sm text-muted-foreground font-medium">משכי יותר לקוחות</p>
             </div>
-            <span className="text-2xl">📝</span>
+            <FileText className="h-5 w-5 text-muted-foreground" />
           </div>
           <div className="mb-4">
             <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -458,14 +462,14 @@ export default function NailistDashboard() {
               <h3 className="text-lg font-black text-foreground">פעולות מהירות</h3>
               <p className="text-sm text-muted-foreground font-medium">קיצורי דרך שימושיים</p>
             </div>
-            <span className="text-2xl">⚡</span>
+            <Zap className="h-5 w-5 text-muted-foreground" />
           </div>
           <div className="space-y-3">
             {quickActions.map((action, i) => (
               <motion.a key={action.label} href={action.href} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.55 + i * 0.07 }} whileHover={{ x: -4 }}
                 className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-border text-sm font-bold text-muted-foreground hover:border-pink-200 hover:text-pink-600 hover:bg-pink-50/30 dark:hover:bg-pink-950/20 transition-all">
-                <span className="text-lg">{action.icon}</span>
+                <action.icon className="h-4 w-4 shrink-0" />
                 {action.label}
               </motion.a>
             ))}

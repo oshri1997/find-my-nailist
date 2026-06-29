@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, CalendarDays, Search } from 'lucide-react'
+import { Loader2, CalendarDays, Search, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ReviewModal from '@/components/reviews/ReviewModal'
 import { Navbar } from '@/components/layout/navbar'
@@ -151,7 +151,9 @@ function MyAppointmentsInner() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-20 space-y-4"
           >
-            <div className="text-5xl">😔</div>
+            <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+              <AlertCircle className="h-7 w-7 text-muted-foreground" />
+            </div>
             <h2 className="text-xl font-bold text-foreground">{error}</h2>
             <Button
               onClick={() => setRefetchKey((k) => k + 1)}
@@ -166,7 +168,9 @@ function MyAppointmentsInner() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-20 space-y-4"
           >
-            <div className="text-5xl">💅</div>
+            <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+              <CalendarDays className="h-7 w-7 text-muted-foreground" />
+            </div>
             <h2 className="text-xl font-bold text-foreground">עדיין אין תורים</h2>
             <p className="text-muted-foreground text-sm">בואי נזמין תור אצל נייליסטית!</p>
             <Link href="/search">
@@ -206,7 +210,7 @@ function MyAppointmentsInner() {
                         onClick={() => openReview(apt)}
                         className="text-xs font-bold px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap"
                       >
-                        כתבי ביקורת 💅
+                        כתבי ביקורת
                       </button>
                     )}
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare } from 'lucide-react'
+import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare, CalendarOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { generateSlots, isSlotUnavailable, buildMonthCalendarFor, toDateStr, type BookedSlot } from '@/lib/booking-utils'
 
@@ -352,7 +352,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                       </div>
                     ) : !availability?.workingDay ? (
                       <div className="text-sm text-muted-foreground bg-muted rounded-2xl p-5 text-center">
-                        <div className="text-2xl mb-2">😴</div>
+                        <CalendarOff className="h-7 w-7 text-muted-foreground mx-auto mb-2" />
                         <p className="font-bold">יום זה אינו יום עבודה</p>
                         <p className="text-xs text-muted-foreground mt-1">אנא בחרי תאריך אחר</p>
                       </div>
@@ -487,7 +487,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40"
                 >
-                  {loading ? <><Loader2 className="h-4 w-4 animate-spin ml-2" /> מזמינה...</> : 'אישור וקביעת תור 💅'}
+                  {loading ? <><Loader2 className="h-4 w-4 animate-spin ml-2" /> מזמינה...</> : 'אישור וקביעת תור'}
                 </Button>
               </motion.div>
             )}
@@ -503,7 +503,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                 >
                   <CheckCircle2 className="h-10 w-10 text-white" />
                 </motion.div>
-                <h3 className="text-2xl font-black text-foreground mb-2">התור נקבע! 🎉</h3>
+                <h3 className="text-2xl font-black text-foreground mb-2">התור נקבע!</h3>
                 <p className="text-sm text-muted-foreground font-medium mb-1">
                   {selectedDate?.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </p>

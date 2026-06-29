@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Loader2, Star } from 'lucide-react'
+import { Loader2, Star, MessageSquare } from 'lucide-react'
 
 interface Review {
   id: string
@@ -72,7 +72,9 @@ export default function NailistReviewsPage() {
 
           {reviews.length === 0 ? (
             <div className="text-center py-16">
-              <div className="text-4xl mb-3">💬</div>
+              <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+              <MessageSquare className="h-6 w-6 text-muted-foreground" />
+            </div>
               <p className="font-black text-muted-foreground mb-2">אין ביקורות עדיין</p>
               <p className="text-sm text-muted-foreground/50">לקוחות יכולות לכתוב ביקורת לאחר השלמת תור</p>
             </div>

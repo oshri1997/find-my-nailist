@@ -67,7 +67,7 @@ export default function ReviewModal({
   const stepTitles: Record<Step, string> = {
     rating: 'כמה כוכבים?',
     comment: 'ספרי לנו עוד',
-    done: 'תודה! ✨',
+    done: 'הביקורת נשלחה!',
   }
 
   return (
@@ -215,7 +215,7 @@ export default function ReviewModal({
               </motion.div>
               <h3 className="text-xl font-bold text-foreground">הביקורת נשלחה!</h3>
               <p className="text-muted-foreground text-sm">
-                הביקורת שלך עוזרת ל<strong>{businessName}</strong> לצמוח 🌸
+                הביקורת שלך עוזרת ל<strong>{businessName}</strong> לצמוח
               </p>
               <Button
                 className="mt-2 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold px-8 cursor-pointer"

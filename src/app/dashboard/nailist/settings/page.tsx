@@ -104,7 +104,7 @@ export default function NailistSettingsPage() {
   return (
     <div className="p-4 md:p-8 max-w-2xl">
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-        <h1 className="text-3xl font-black text-foreground mb-1">הגדרות פרופיל ⚙️</h1>
+        <h1 className="text-3xl font-black text-foreground mb-1">הגדרות פרופיל</h1>
         <p className="text-muted-foreground font-medium">עדכני את פרטי העסק שלך</p>
       </motion.div>
 
@@ -116,7 +116,7 @@ export default function NailistSettingsPage() {
               <h2 className="font-black text-foreground text-base">פרסום פרופיל</h2>
               <p className="text-sm text-muted-foreground mt-0.5 font-medium">
                 {form.isActive
-                  ? 'הפרופיל שלך פעיל — לקוחות יכולות למצוא אותך בחיפוש ✅'
+                  ? 'הפרופיל שלך פעיל — לקוחות יכולות למצוא אותך בחיפוש'
                   : 'הפרופיל שלך מוסתר — לקוחות לא יכולות למצוא אותך עדיין'}
               </p>
             </div>
@@ -147,7 +147,7 @@ export default function NailistSettingsPage() {
               placeholder="רחוב הרצל 12, תל אביב"
             />
             {form.latitude && (
-              <p className="text-xs text-green-600 mt-1 font-medium">📍 מיקום נשמר מגוגל</p>
+              <p className="text-xs text-green-600 mt-1 font-medium">מיקום נשמר מגוגל</p>
             )}
           </div>
 
@@ -176,7 +176,7 @@ export default function NailistSettingsPage() {
               מספר WhatsApp
             </label>
             <Input name="whatsappPhone" value={form.whatsappPhone} onChange={handleChange} placeholder="0501234567" type="tel" className="rounded-xl border-[#25D366]/40 focus:border-[#25D366] h-11" />
-            <p className="text-xs text-muted-foreground mt-1 font-medium">לקוחות יוכלו לשלוח לך הודעה ישירה 💬</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">לקוחות יוכלו לשלוח לך הודעה ישירה</p>
           </div>
         </motion.div>
 

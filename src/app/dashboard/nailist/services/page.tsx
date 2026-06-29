@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Loader2, Plus, Trash2, Clock, X } from 'lucide-react'
+import { Loader2, Plus, Trash2, Clock, X, Scissors } from 'lucide-react'
 
 interface Service {
   id: string
@@ -185,7 +185,9 @@ export default function NailistServicesPage() {
 
           {services.length === 0 ? (
             <div className="text-center py-16">
-              <div className="text-4xl mb-3">✂️</div>
+              <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+              <Scissors className="h-6 w-6 text-muted-foreground" />
+            </div>
               <p className="font-black text-muted-foreground mb-2">אין שירותים עדיין</p>
               <p className="text-sm text-muted-foreground/50">הוסיפי שירות ראשון כדי שלקוחות יוכלו להזמין</p>
             </div>

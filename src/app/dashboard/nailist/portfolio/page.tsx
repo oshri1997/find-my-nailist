@@ -120,11 +120,11 @@ export default function PortfolioPage() {
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black text-foreground mb-1">פורטפוליו 🎨</h1>
+            <h1 className="text-3xl font-black text-foreground mb-1">פורטפוליו</h1>
             <p className="text-muted-foreground font-medium">העלי תמונות של עבודות שלך</p>
             <p className="text-xs text-amber-500 font-medium mt-0.5 flex items-center gap-1">
               <Star className="h-3 w-3 fill-amber-400" />
-              לחצי על ⭐ בתמונה כדי להגדיר אותה כתמונת הרקע של הכרטיס שלך
+              לחצי על הכוכב שבתמונה כדי להגדיר אותה כתמונת הרקע של הכרטיס שלך
             </p>
           </div>
           <Button
@@ -175,8 +175,8 @@ export default function PortfolioPage() {
           onClick={() => fileInputRef.current?.click()}
           className="border-2 border-dashed border-border rounded-3xl p-16 flex flex-col items-center justify-center text-center cursor-pointer hover:border-pink-300 hover:bg-pink-50/30 transition-all group"
         >
-          <div className="w-16 h-16 rounded-2xl bg-muted group-hover:bg-pink-100 dark:group-hover:bg-pink-950/40 flex items-center justify-center text-3xl mb-4 transition-colors">
-            🖼️
+          <div className="w-16 h-16 rounded-2xl bg-muted group-hover:bg-pink-100 dark:group-hover:bg-pink-950/40 flex items-center justify-center mb-4 transition-colors">
+            <ImagePlus className="h-7 w-7 text-muted-foreground group-hover:text-pink-500 transition-colors" />
           </div>
           <p className="font-black text-muted-foreground mb-1">אין תמונות עדיין</p>
           <p className="text-sm text-muted-foreground/50 font-medium">לחצי להעלאת תמונה ראשונה</p>

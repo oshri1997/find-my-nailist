@@ -129,7 +129,7 @@ export default function WorkingHoursPage() {
   return (
     <div className="p-4 md:p-8 max-w-2xl">
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-black text-foreground mb-1">שעות עבודה ⏰</h1>
+        <h1 className="text-2xl md:text-3xl font-black text-foreground mb-1">שעות עבודה</h1>
         <p className="text-muted-foreground font-medium">הגדירי את הימים והשעות שאת זמינה ללקוחות</p>
       </motion.div>
 
@@ -231,7 +231,6 @@ export default function WorkingHoursPage() {
                   ) : (
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <span className="text-sm font-medium">סגור</span>
-                      {day === 6 && <span className="text-base">🌙</span>}
                     </div>
                   )}
                 </div>

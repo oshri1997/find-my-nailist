@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Navbar } from '@/components/layout/navbar'
 import { Button } from '@/components/ui/button'
-import { MapPin, Star, Clock, MessageCircle, Navigation, ExternalLink, ChevronRight, Settings, ImageIcon, Share2, Check, Heart } from 'lucide-react'
+import { MapPin, Star, Clock, MessageCircle, Navigation, ExternalLink, ChevronRight, Settings, ImageIcon, Share2, Check, Heart, AlertCircle, Scissors, MessageSquare } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
 import BookingModal from '@/components/booking/BookingModal'
 import Link from 'next/link'
@@ -176,7 +176,9 @@ export default function NailistProfileClient({ id }: { id: string }) {
       <div className="min-h-screen flex flex-col bg-muted/50">
         <Navbar />
         <div className="flex-1 flex items-center justify-center flex-col gap-3" dir="rtl">
-          <div className="text-4xl">😔</div>
+          <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center">
+            <AlertCircle className="h-6 w-6 text-muted-foreground" />
+          </div>
           <p className="font-black text-muted-foreground">הפרופיל לא נמצא</p>
           <Link href="/search">
             <Button variant="outline" className="rounded-xl">חזרה לחיפוש</Button>
@@ -262,7 +264,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                 onClick={openBooking}
                 className="bg-white text-pink-600 hover:bg-pink-50 border-0 rounded-2xl font-black shadow-lg"
               >
-                קביעת תור 💅
+                קביעת תור
               </Button>
             )}
             {profile.whatsappPhone && (
@@ -374,7 +376,9 @@ export default function NailistProfileClient({ id }: { id: string }) {
           <div>
             {profile.portfolio.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
-                <div className="text-4xl mb-3">🖼️</div>
+                <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                </div>
                 <p className="font-bold">אין תמונות בפורטפוליו עדיין</p>
               </div>
             ) : (
@@ -400,7 +404,9 @@ export default function NailistProfileClient({ id }: { id: string }) {
           <div className="space-y-4">
             {profile.services.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
-                <div className="text-4xl mb-3">✂️</div>
+                <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+                  <Scissors className="h-6 w-6 text-muted-foreground" />
+                </div>
                 <p className="font-bold">אין שירותים זמינים כרגע</p>
               </div>
             ) : (
@@ -442,7 +448,9 @@ export default function NailistProfileClient({ id }: { id: string }) {
           <div className="space-y-4">
             {profile.reviews.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
-                <div className="text-4xl mb-3">💬</div>
+                <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+                  <MessageSquare className="h-6 w-6 text-muted-foreground" />
+                </div>
                 <p className="font-bold">אין ביקורות עדיין</p>
               </div>
             ) : (

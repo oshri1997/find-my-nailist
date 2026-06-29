@@ -11,9 +11,9 @@ import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
 import { useAuth } from '@/components/auth/auth-provider'
 
 const STEPS = [
-  { label: 'שם', emoji: '👤' },
-  { label: 'טלפון', emoji: '📱' },
-  { label: 'מיקום', emoji: '📍' },
+  { label: 'שם' },
+  { label: 'טלפון' },
+  { label: 'מיקום' },
 ]
 
 export default function ClientOnboardingPage() {
@@ -73,7 +73,7 @@ export default function ClientOnboardingPage() {
         <div className="text-center mb-8">
           <Image src="/logo.png" alt="נייליסטיות לוגו" width={56} height={56} className="mx-auto mb-1" />
           <h1 className="text-2xl font-black gradient-text">נייליסטיות</h1>
-          <p className="text-muted-foreground text-sm mt-1">בואי נכיר אותך קצת יותר 🌸</p>
+          <p className="text-muted-foreground text-sm mt-1">בואי נכיר אותך קצת יותר</p>
         </div>
 
         {/* Step indicator */}
@@ -88,7 +88,7 @@ export default function ClientOnboardingPage() {
                 {i < step ? <Check className="h-4 w-4" /> : i + 1}
               </div>
               <span className={`text-xs font-semibold hidden sm:block ${i === step ? 'text-foreground' : 'text-muted-foreground'}`}>
-                {s.emoji} {s.label}
+                {s.label}
               </span>
               {i < STEPS.length - 1 && <div className={`w-8 h-0.5 rounded-full mx-1 ${i < step ? 'bg-primary' : 'bg-border'}`} />}
             </div>
@@ -107,7 +107,7 @@ export default function ClientOnboardingPage() {
                 <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
                   <Check className="h-8 w-8 text-green-600" />
                 </div>
-                <h2 className="text-xl font-black text-foreground mb-2">הפרופיל שלך מוכן! ✨</h2>
+                <h2 className="text-xl font-black text-foreground mb-2">הפרופיל שלך מוכן!</h2>
                 <p className="text-muted-foreground text-sm">מעבירה אותך לחיפוש נייליסטיות...</p>
               </motion.div>
 
@@ -119,7 +119,7 @@ export default function ClientOnboardingPage() {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <h2 className="text-xl font-black text-foreground mb-1">מה השם שלך? 👤</h2>
+                <h2 className="text-xl font-black text-foreground mb-1">מה השם שלך?</h2>
                 <p className="text-sm text-muted-foreground mb-6">כדי שהנייליסטית תדע איך לפנות אלייך</p>
 
                 <div className="space-y-4 mb-6">
@@ -178,7 +178,7 @@ export default function ClientOnboardingPage() {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <h2 className="text-xl font-black text-foreground mb-1">מה מספר הטלפון שלך? 📱</h2>
+                <h2 className="text-xl font-black text-foreground mb-1">מה מספר הטלפון שלך?</h2>
                 <p className="text-sm text-muted-foreground mb-6">כדי שהנייליסטית תוכל ליצור איתך קשר</p>
 
                 <div className="space-y-2 mb-6">
@@ -230,7 +230,7 @@ export default function ClientOnboardingPage() {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <h2 className="text-xl font-black text-foreground mb-1">איפה את גרה? 📍</h2>
+                <h2 className="text-xl font-black text-foreground mb-1">איפה את גרה?</h2>
                 <p className="text-sm text-muted-foreground mb-6">אופציונלי — עוזר למצוא נייליסטיות קרובות</p>
 
                 <div className="space-y-2 mb-6">
@@ -275,7 +275,7 @@ export default function ClientOnboardingPage() {
                     onClick={handleFinish}
                     className="flex-1 bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black shadow-[0_4px_16px_rgba(236,72,153,0.30)] gap-2 cursor-pointer disabled:opacity-60"
                   >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'שמרי ✨'}
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'שמרי'}
                   </Button>
                 </div>
               </motion.div>

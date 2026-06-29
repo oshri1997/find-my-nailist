@@ -216,7 +216,7 @@ export default function AuthPage() {
               {/* Heading */}
               <div className="mb-6">
                 <h1 className="text-2xl font-black text-foreground">
-                  {mode === 'login' ? 'ברוכה השבה! 👋' : 'יצירת חשבון חדש 🌸'}
+                  {mode === 'login' ? 'ברוכה השבה' : 'יצירת חשבון חדש'}
                 </h1>
                 <p className="text-muted-foreground text-sm mt-1">
                   {mode === 'login' ? 'התחברי לחשבון שלך' : 'חינמי לחלוטין, מוכן תוך שניות'}
@@ -237,7 +237,7 @@ export default function AuthPage() {
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      {r === 'nailist' ? '💅 נייליסטית' : '🌸 לקוחה'}
+                      {r === 'nailist' ? 'נייליסטית' : 'לקוחה'}
                     </button>
                   ))}
                 </div>

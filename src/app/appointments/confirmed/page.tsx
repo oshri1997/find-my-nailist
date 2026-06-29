@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Suspense } from 'react'
+import { Link2, Clock, AlertCircle, CheckCircle2, CalendarCheck } from 'lucide-react'
 
 function Content() {
   const params = useSearchParams()
@@ -13,7 +14,9 @@ function Content() {
   if (error === 'invalid') {
     return (
       <div className="text-center">
-        <div className="text-6xl mb-4">🔗</div>
+        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+          <Link2 className="h-7 w-7 text-muted-foreground" />
+        </div>
         <h1 className="text-2xl font-black text-foreground mb-2">קישור לא תקין</h1>
         <p className="text-muted-foreground font-medium">הקישור אינו תקין. ייתכן שהתור כבר אושר או בוטל.</p>
       </div>
@@ -23,7 +26,9 @@ function Content() {
   if (error === 'expired') {
     return (
       <div className="text-center">
-        <div className="text-6xl mb-4">⏰</div>
+        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+          <Clock className="h-7 w-7 text-muted-foreground" />
+        </div>
         <h1 className="text-2xl font-black text-foreground mb-2">הקישור פג תוקף</h1>
         <p className="text-muted-foreground font-medium">הקישור לאישור פג תוקף (תקף 7 ימים). אנא בקשי מהלקוחה לקבוע תור חדש.</p>
       </div>
@@ -33,7 +38,9 @@ function Content() {
   if (error === 'server') {
     return (
       <div className="text-center">
-        <div className="text-6xl mb-4">😕</div>
+        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="h-7 w-7 text-muted-foreground" />
+        </div>
         <h1 className="text-2xl font-black text-foreground mb-2">שגיאה</h1>
         <p className="text-muted-foreground font-medium">אירעה שגיאה. אנא נסי שוב מאוחר יותר.</p>
       </div>
@@ -43,7 +50,9 @@ function Content() {
   if (already) {
     return (
       <div className="text-center">
-        <div className="text-6xl mb-4">✅</div>
+        <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center mx-auto mb-4">
+          <CheckCircle2 className="h-7 w-7 text-green-600" />
+        </div>
         <h1 className="text-2xl font-black text-foreground mb-2">התור כבר אושר</h1>
         <p className="text-muted-foreground font-medium">התור הזה אושר כבר בעבר.</p>
       </div>
@@ -52,16 +61,18 @@ function Content() {
 
   return (
     <div className="text-center">
-      <div className="text-7xl mb-6 animate-bounce">💅</div>
+      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/30">
+        <CalendarCheck className="h-10 w-10 text-white" />
+      </div>
       <h1 className="text-3xl font-black text-foreground mb-3">התור אושר!</h1>
       {emailError ? (
         <p className="text-amber-600 font-semibold text-sm bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-2">
-          ⚠️ התור אושר אך שליחת מייל ללקוחה נכשלה — בדקי את לוגי Railway
+          התור אושר אך שליחת מייל ללקוחה נכשלה — בדקי את לוגי Railway
         </p>
       ) : (
         <p className="text-muted-foreground font-medium text-lg mb-2">הלקוחה קיבלה אישור במייל.</p>
       )}
-      <p className="text-muted-foreground font-medium">תודה שאישרת — הכול מסודר! 🌸</p>
+      <p className="text-muted-foreground font-medium">תודה שאישרת — הכול מסודר!</p>
     </div>
   )
 }
