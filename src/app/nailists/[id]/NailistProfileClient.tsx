@@ -95,6 +95,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
   }, [id])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!user || role !== 'NAILIST') { setIsOwner(false); return }
     fetch('/api/me/nailist-profile')
       .then(r => r.ok ? r.json() : null)
