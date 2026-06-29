@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import Link from 'next/link'
 import { ArrowLeft, ArrowRight, ImagePlus, Plus, X, Loader2, MapPin, Check } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
@@ -73,6 +74,7 @@ export default function OnboardingPage() {
 
   // Step 5 — working hours
   const [workingHours, setWorkingHours] = useState<DayHours[]>(defaultHours)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -593,13 +595,28 @@ export default function OnboardingPage() {
                   ))}
                 </div>
 
+                <label className="flex items-start gap-3 mb-5 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={e => setAgreedToTerms(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-border accent-pink-500 shrink-0 cursor-pointer"
+                  />
+                  <span className="text-sm text-muted-foreground leading-snug group-hover:text-foreground transition-colors">
+                    קראתי ואני מסכים/ה ל
+                    <Link href="/terms" target="_blank" className="text-primary font-semibold hover:underline">תנאי שימוש</Link>
+                    {' '}ו
+                    <Link href="/privacy" target="_blank" className="text-primary font-semibold hover:underline">מדיניות פרטיות</Link>
+                  </span>
+                </label>
+
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setStep(3)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
                     <ArrowRight className="h-4 w-4" /> חזרה
                   </Button>
                   <Button
                     onClick={saveWorkingHours}
-                    disabled={saving}
+                    disabled={saving || !agreedToTerms}
                     className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>סיימתי! <Check className="h-4 w-4" /></>}
