@@ -77,15 +77,17 @@ describe('BookingModal', () => {
     expect(screen.getByText('₪120')).toBeInTheDocument()
   })
 
-  it('disables the Continue button when no service is selected', () => {
+  it('shows an error when clicking Continue without selecting a service', async () => {
     render(<BookingModal {...defaultProps} />)
-    expect(screen.getByRole('button', { name: /המשך/ })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: /המשך/ }))
+    await waitFor(() => expect(screen.getByText(/יש לבחור שירות/)).toBeInTheDocument())
   })
 
-  it('enables Continue button after selecting a service', () => {
+  it('navigates to step 2 after selecting a service and clicking Continue', async () => {
     render(<BookingModal {...defaultProps} />)
     fireEvent.click(screen.getByText("מניקור ג'ל"))
-    expect(screen.getByRole('button', { name: /המשך/ })).not.toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: /המשך/ }))
+    await waitFor(() => expect(screen.getByText(/בחרי תאריך ושעה/)).toBeInTheDocument())
   })
 
   it('moves to step 2 (date/time) after selecting a service and continuing', async () => {

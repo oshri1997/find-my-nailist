@@ -20,6 +20,7 @@ interface Props {
   businessName: string
   services: Service[]
   onClose: () => void
+  initialServiceId?: string
 }
 
 interface Availability {
@@ -34,9 +35,12 @@ type Step = 'service' | 'datetime' | 'confirm' | 'done'
 const HE_DAYS_SHORT = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
 const HE_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר']
 
-export default function BookingModal({ nailistProfileId, businessName, services, onClose }: Props) {
+export default function BookingModal({ nailistProfileId, businessName, services, onClose, initialServiceId }: Props) {
   const [step, setStep] = useState<Step>('service')
-  const [selectedService, setSelectedService] = useState<Service | null>(null)
+  const [selectedService, setSelectedService] = useState<Service | null>(
+    initialServiceId ? (services.find(s => s.id === initialServiceId) ?? null) : null
+  )
+  const [serviceError, setServiceError] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedTime, setSelectedTime] = useState('')
   const [notes, setNotes] = useState('')
@@ -209,7 +213,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                     return (
                       <button
                         key={s.id}
-                        onClick={() => { setSelectedService(s); setDateSummary(null) }}
+                        onClick={() => { setSelectedService(s); setDateSummary(null); setServiceError(false) }}
                         className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-right transition-all ${
                           selected
                             ? 'border-pink-400 bg-primary/10 shadow-sm'
@@ -235,10 +239,16 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                     )
                   })}
                 </div>
+                {serviceError && (
+                  <p className="text-center text-sm text-red-500 font-semibold mt-4 mb-1">יש לבחור שירות כדי להמשיך</p>
+                )}
                 <Button
-                  onClick={() => selectedService && setStep('datetime')}
-                  disabled={!selectedService}
-                  className="w-full mt-5 bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40 disabled:opacity-50"
+                  onClick={() => {
+                    if (!selectedService) { setServiceError(true); return }
+                    setServiceError(false)
+                    setStep('datetime')
+                  }}
+                  className="w-full mt-4 bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40"
                 >
                   המשך לבחירת תאריך
                 </Button>

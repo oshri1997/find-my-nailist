@@ -61,16 +61,18 @@ export default function NailistProfileClient({ id }: { id: string }) {
   const [loading, setLoading] = useState(true)
   const [isOwner, setIsOwner] = useState<boolean | null>(null)
   const [showBooking, setShowBooking] = useState(false)
+  const [bookingServiceId, setBookingServiceId] = useState<string | undefined>(undefined)
   const [activeTab, setActiveTab] = useState<'portfolio' | 'services' | 'reviews'>('portfolio')
   const [copied, setCopied] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
 
-  function openBooking() {
+  function openBooking(serviceId?: string) {
     if (!user) {
       router.push(`/login?redirect=/nailists/${id}`)
       return
     }
+    setBookingServiceId(serviceId)
     setShowBooking(true)
   }
 
@@ -432,7 +434,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                     </span>
                     <Button
                       size="sm"
-                      onClick={openBooking}
+                      onClick={() => openBooking(service.id)}
                       className="bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-xl font-bold shadow-sm shadow-primary/40"
                     >
                       הזמני
@@ -489,6 +491,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
           nailistProfileId={id}
           businessName={profile.businessName}
           services={profile.services}
+          initialServiceId={bookingServiceId}
           onClose={() => setShowBooking(false)}
         />
       )}

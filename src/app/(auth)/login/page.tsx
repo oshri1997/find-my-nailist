@@ -7,7 +7,7 @@ import { Mail, Lock, User, ArrowLeft, AlertCircle, Check } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { signInWithEmail, signInWithGoogle, signUpWithEmail } from '@/lib/firebase/auth-helpers'
+import { signInWithEmail, signInWithGoogle, signUpWithEmail, sendVerificationEmail } from '@/lib/firebase/auth-helpers'
 import { useAuth } from '@/components/auth/auth-provider'
 import Link from 'next/link'
 import LegalModal from '@/components/auth/LegalModal'
@@ -137,6 +137,7 @@ export default function AuthPage() {
         handlingFormRef.current = false
       } else {
         const cred = await signUpWithEmail(email, password, name)
+        sendVerificationEmail(cred.user).catch(console.error)
         await fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
