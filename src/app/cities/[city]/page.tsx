@@ -7,7 +7,7 @@ import { Navbar } from '@/components/layout/navbar'
 import { MapPin, Star, Sparkles } from 'lucide-react'
 import { CITIES, type CityEntry } from '@/lib/cities'
 
-export const revalidate = 3600 // re-render at most once per hour
+export const dynamic = 'force-dynamic'
 
 const BASE_URL = 'https://nailistiot.fun'
 
