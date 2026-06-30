@@ -1,9 +1,7 @@
 import type { MetadataRoute } from 'next'
-import { adminDb } from '@/lib/firebase/admin'
-import { COLLECTIONS } from '@/lib/firebase/collections'
 import { CITIES } from '@/lib/cities'
 
-export const revalidate = 3600
+export const dynamic = 'force-dynamic'
 
 const BASE_URL = 'https://nailistiot.fun'
 
@@ -21,10 +19,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.85,
   }))
 
+  let nailistPages: MetadataRoute.Sitemap = []
   try {
+    // Dynamic import so a missing/broken Firebase Admin never breaks the whole sitemap
+    const { adminDb } = await import('@/lib/firebase/admin')
+    const { COLLECTIONS } = await import('@/lib/firebase/collections')
     const db = adminDb()
     const snap = await db.collection(COLLECTIONS.NAILIST_PROFILES).where('isActive', '==', true).get()
-    const nailistPages: MetadataRoute.Sitemap = snap.docs.map((doc) => {
+    nailistPages = snap.docs.map((doc) => {
       const data = doc.data()
       return {
         url: `${BASE_URL}/nailists/${doc.id}`,
@@ -33,8 +35,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
       }
     })
-    return [...staticPages, ...cityPages, ...nailistPages]
   } catch {
-    return [...staticPages, ...cityPages]
+    // Firebase unavailable — sitemap still returns static + city pages
   }
+
+  return [...staticPages, ...cityPages, ...nailistPages]
 }
