@@ -36,7 +36,7 @@ export function HeroSection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
           {/* Text side */}
-          <div className="text-right">
+          <div className="text-center lg:text-right">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -73,7 +73,7 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.24 }}
-              className="flex flex-col sm:flex-row gap-4"
+              className="flex flex-col items-center sm:flex-row gap-4"
             >
               <Link href="/search">
                 <Button
