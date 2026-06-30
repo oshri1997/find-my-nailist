@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
-import { CITIES } from './cities/[city]/page'
+import { CITIES } from '@/lib/cities'
 
 export const revalidate = 3600
 
