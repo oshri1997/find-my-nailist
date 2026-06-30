@@ -21,10 +21,15 @@ const PANEL_CONTENT = {
     sub: 'גלי את עולם הנייל המושלם',
     features: ['חיפוש לפי מיקום', 'הזמנת תור אונליין', 'ביקורות אמיתיות'],
   },
-  register: {
-    heading: 'הצטרפי אלינו',
-    sub: 'צרי חשבון חינמי בכמה שניות',
+  register_nailist: {
+    heading: 'הצטרפי כנייליסטית',
+    sub: 'פרופיל עסקי מקצועי בכמה שניות',
     features: ['פרופיל עסקי מקצועי', 'לקוחות חדשות כל יום', 'ניהול תורים אוטומטי'],
+  },
+  register_client: {
+    heading: 'הצטרפי אלינו',
+    sub: 'מצאי את הנייליסטית המושלמת',
+    features: ['חיפוש לפי מיקום', 'הזמנת תור אונליין בקלות', 'ביקורות אמיתיות'],
   },
 }
 
@@ -128,6 +133,25 @@ export default function AuthPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    // Manual Hebrew validation (avoids English browser messages)
+    if (mode === 'register' && !name.trim()) {
+      setError('יש להזין שם מלא')
+      return
+    }
+    if (!email.trim() || !email.includes('@')) {
+      setError('יש להזין כתובת אימייל תקינה')
+      return
+    }
+    if (!password) {
+      setError('יש להזין סיסמה')
+      return
+    }
+    if (mode === 'register' && password.length < 8) {
+      setError('הסיסמה חייבת להכיל לפחות 8 תווים')
+      return
+    }
+
     setLoading(true)
     handlingFormRef.current = true
     try {
@@ -172,7 +196,8 @@ export default function AuthPage() {
     }
   }
 
-  const panel = PANEL_CONTENT[mode]
+  const panelKey = mode === 'login' ? 'login' : `register_${role}`
+  const panel = PANEL_CONTENT[panelKey as keyof typeof PANEL_CONTENT]
 
   return (
     <>
@@ -255,7 +280,7 @@ export default function AuthPage() {
                 </motion.div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} noValidate className="space-y-4">
                 {mode === 'register' && (
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-foreground" htmlFor="name">
@@ -387,7 +412,7 @@ export default function AuthPage() {
 
         <AnimatePresence mode="wait">
           <motion.div
-            key={mode}
+            key={panelKey}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -24 }}

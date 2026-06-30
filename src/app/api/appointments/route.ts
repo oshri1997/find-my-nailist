@@ -267,13 +267,31 @@ export async function GET(request: NextRequest) {
       await batch.commit()
     }
 
+    // Auto-cancel PENDING appointments with no response after 3 days
+    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
+    const stale = appointmentsSnap.docs.filter((doc) => {
+      const data = doc.data()
+      if (data.status !== 'PENDING') return false
+      const createdAt: Date = data.createdAt?.toDate?.() ?? new Date(data.createdAt)
+      return createdAt < threeDaysAgo
+    })
+
+    if (stale.length > 0) {
+      const staleBatch = db.batch()
+      stale.forEach((doc) => {
+        staleBatch.update(doc.ref, { status: 'CANCELLED', updatedAt: FieldValue.serverTimestamp() })
+      })
+      await staleBatch.commit()
+    }
+
     const expiredIds = new Set(expired.map((d) => d.id))
+    const staleIds = new Set(stale.map((d) => d.id))
     const appointments = appointmentsSnap.docs.map((d) => {
       const data = d.data()
       return {
         id: d.id,
         ...data,
-        status: expiredIds.has(d.id) ? 'COMPLETED' : data.status,
+        status: expiredIds.has(d.id) ? 'COMPLETED' : staleIds.has(d.id) ? 'CANCELLED' : data.status,
         startTime: data.startTime?.toDate?.()?.toISOString() ?? data.startTime,
         endTime: data.endTime?.toDate?.()?.toISOString() ?? data.endTime,
         createdAt: data.createdAt?.toDate?.()?.toISOString() ?? data.createdAt,

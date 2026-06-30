@@ -263,7 +263,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
           <div className="flex flex-wrap gap-2 mt-5">
             {isOwner === false && profile.services.length > 0 && (
               <Button
-                onClick={openBooking}
+                onClick={() => openBooking()}
                 className="bg-white text-pink-600 hover:bg-pink-50 border-0 rounded-2xl font-black shadow-lg"
               >
                 קביעת תור
@@ -432,13 +432,15 @@ export default function NailistProfileClient({ id }: { id: string }) {
                     <span className="font-black text-pink-600 text-xl">
                       {service.currency === 'ILS' ? '₪' : '$'}{service.price}
                     </span>
-                    <Button
-                      size="sm"
-                      onClick={() => openBooking(service.id)}
-                      className="bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-xl font-bold shadow-sm shadow-primary/40"
-                    >
-                      הזמני
-                    </Button>
+                    {isOwner === false && (
+                      <Button
+                        size="sm"
+                        onClick={() => openBooking(service.id)}
+                        className="bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-xl font-bold shadow-sm shadow-primary/40"
+                      >
+                        הזמני
+                      </Button>
+                    )}
                   </div>
                 </motion.div>
               ))

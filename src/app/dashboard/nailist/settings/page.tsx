@@ -102,7 +102,7 @@ export default function NailistSettingsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-2xl">
+    <div className="p-4 md:p-8 max-w-2xl mx-auto" dir="rtl">
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
         <h1 className="text-3xl font-black text-foreground mb-1">הגדרות פרופיל</h1>
         <p className="text-muted-foreground font-medium">עדכני את פרטי העסק שלך</p>
