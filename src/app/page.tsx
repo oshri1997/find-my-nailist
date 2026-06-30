@@ -8,8 +8,8 @@ import { NailistCtaSection } from '@/components/home/nailist-cta'
 import { HomeRedirect } from '@/components/home/home-redirect'
 
 export const metadata: Metadata = {
-  title: 'נייליסטיות — מצאי נייליסטית מקצועית קרוב אלייך',
-  description: 'הפלטפורמה הישראלית המובילה לחיפוש נייליסטיות מקצועיות. חפשי לפי עיר, השווי מחירים וקביעי תור אונליין — גל, נייל ארט, מניקור ופדיקור.',
+  title: "נייליסטיות — ג'ל, מניקור ונייל ארט בעירך",
+  description: "הפלטפורמה הישראלית לחיפוש נייליסטיות מקצועיות. נייליסטית בתל אביב, ירושלים, חיפה, ראשון לציון, פתח תקווה, נתניה ועוד. ג'ל, נייל ארט, מניקור ופדיקור — הזמיני תור בשניות.",
   alternates: { canonical: 'https://nailistiot.fun' },
 }
 

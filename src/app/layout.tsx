@@ -12,13 +12,19 @@ export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
     template: '%s | נייליסטיות',
-    default: 'נייליסטיות — מצאי נייליסטית מקצועית קרוב אלייך',
+    default: "נייליסטיות — ג'ל, מניקור ונייל ארט בעירך",
   },
-  description: 'הפלטפורמה הישראלית המובילה לחיפוש והזמנת תורים אצל נייליסטיות מקצועיות. עיצוב גל, נייל ארט, מניקור ופדיקור — הזמיני תור בשניות.',
-  keywords: ['נייליסטיות', 'נייליסטית', 'הזמנת תור', 'ציפורניים', 'גל', 'נייל ארט', 'מניקור', 'פדיקור', 'עיצוב ציפורניים'],
+  description: "הפלטפורמה הישראלית לחיפוש והזמנת תורים אצל נייליסטיות מקצועיות. נייליסטית בתל אביב, ירושלים, חיפה, ראשון לציון, פתח תקווה, נתניה, רמת גן ועוד. ג'ל, נייל ארט, מניקור ופדיקור — הזמיני תור בשניות.",
+  keywords: [
+    'נייליסטיות', 'נייליסטית', 'הזמנת תור', 'ציפורניים', 'ציפורנים',
+    "ג'ל", 'נייל ארט', 'מניקור', 'פדיקור', 'עיצוב ציפורניים',
+    'נייליסטית בתל אביב', 'נייליסטית בירושלים', 'נייליסטית בחיפה',
+    'נייליסטית בראשון לציון', 'נייליסטית בפתח תקווה', 'נייליסטית בנתניה',
+    "ג'ל בעיר שלי", 'עיצוב ציפורניים קרוב אלי',
+  ],
   openGraph: {
-    title: 'נייליסטיות — מצאי נייליסטית מקצועית',
-    description: 'הפלטפורמה הישראלית להזמנת תורים אצל נייליסטיות מקצועיות. גל, נייל ארט, מניקור ופדיקור.',
+    title: "נייליסטיות — ג'ל, מניקור ונייל ארט בעירך",
+    description: "הפלטפורמה הישראלית להזמנת תורים אצל נייליסטיות מקצועיות. ג'ל, נייל ארט, מניקור ופדיקור בכל הערים.",
     type: 'website',
     locale: 'he_IL',
     siteName: 'נייליסטיות',
@@ -26,8 +32,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'נייליסטיות — הזמיני תור אצל נייליסטית',
-    description: 'הפלטפורמה הישראלית להזמנת תורים אצל נייליסטיות מקצועיות.',
+    title: "נייליסטיות — הזמיני תור אצל נייליסטית",
+    description: "הפלטפורמה הישראלית להזמנת תורים אצל נייליסטיות מקצועיות. ג'ל, מניקור ונייל ארט בכל הערים.",
   },
   robots: {
     index: true,
@@ -39,19 +45,32 @@ export const metadata: Metadata = {
   },
 }
 
-const orgJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  name: 'נייליסטיות',
-  url: APP_URL,
-  description: 'הפלטפורמה הישראלית המובילה לחיפוש והזמנת תורים אצל נייליסטיות מקצועיות',
-  inLanguage: 'he',
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: { '@type': 'EntryPoint', urlTemplate: `${APP_URL}/search?q={search_term_string}` },
-    'query-input': 'required name=search_term_string',
+const orgJsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'נייליסטיות',
+    url: APP_URL,
+    description: "הפלטפורמה הישראלית המובילה לחיפוש והזמנת תורים אצל נייליסטיות מקצועיות",
+    inLanguage: 'he',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: { '@type': 'EntryPoint', urlTemplate: `${APP_URL}/search?q={search_term_string}` },
+      'query-input': 'required name=search_term_string',
+    },
   },
-}
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'נייליסטיות',
+    url: APP_URL,
+    logo: `${APP_URL}/icon.png`,
+    description: "פלטפורמה ישראלית להזמנת תורים אצל נייליסטיות — ג'ל, מניקור, נייל ארט ופדיקור",
+    foundingLocation: { '@type': 'Place', addressCountry: 'IL' },
+    areaServed: { '@type': 'Country', name: 'Israel' },
+    knowsLanguage: 'he',
+  },
+]
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

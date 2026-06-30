@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/dashboard/', '/onboarding/', '/login/', '/admin/'],
+      disallow: ['/api/', '/dashboard/', '/onboarding/', '/login/', '/admin/', '/my-appointments'],
     },
     sitemap: 'https://nailistiot.fun/sitemap.xml',
   }

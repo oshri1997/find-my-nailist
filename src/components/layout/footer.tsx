@@ -1,6 +1,19 @@
 import Link from 'next/link'
 import Image from 'next/image'
 
+const FOOTER_CITIES = [
+  { slug: 'tel-aviv', name: 'תל אביב' },
+  { slug: 'jerusalem', name: 'ירושלים' },
+  { slug: 'haifa', name: 'חיפה' },
+  { slug: 'rishon-lezion', name: 'ראשון לציון' },
+  { slug: 'petah-tikva', name: 'פתח תקווה' },
+  { slug: 'netanya', name: 'נתניה' },
+  { slug: 'ramat-gan', name: 'רמת גן' },
+  { slug: 'herzliya', name: 'הרצליה' },
+  { slug: 'ashdod', name: 'אשדוד' },
+  { slug: 'beer-sheva', name: 'באר שבע' },
+]
+
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card">
@@ -55,7 +68,21 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 pt-8 border-t border-border text-center text-sm text-muted-foreground">
+        {/* City links — helps Google discover city landing pages */}
+        <div className="mt-10 pt-8 border-t border-border">
+          <h4 className="font-black text-foreground mb-4 text-xs uppercase tracking-widest">חפשי נייליסטית לפי עיר</h4>
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            {FOOTER_CITIES.map((c) => (
+              <li key={c.slug}>
+                <Link href={`/cities/${c.slug}`} className="hover:text-primary transition-colors">
+                  נייליסטית ב{c.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
           <span>© 2026 נייליסטיות. כל הזכויות שמורות.</span>
         </div>
       </div>
