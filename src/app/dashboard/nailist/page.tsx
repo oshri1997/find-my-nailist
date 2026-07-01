@@ -465,14 +465,17 @@ export default function NailistDashboard() {
             <Zap className="h-5 w-5 text-muted-foreground" />
           </div>
           <div className="space-y-3">
-            {quickActions.map((action, i) => (
-              <motion.a key={action.label} href={action.href} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.55 + i * 0.07 }} whileHover={{ x: -4 }}
-                className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-border text-sm font-bold text-muted-foreground hover:border-pink-200 hover:text-pink-600 hover:bg-pink-50/30 dark:hover:bg-pink-950/20 transition-all">
-                <action.icon className="h-4 w-4 shrink-0" />
-                {action.label}
-              </motion.a>
-            ))}
+            {quickActions.map((action, i) => {
+              const href = action.href === '/search' && profile?.id ? `/nailists/${profile.id}` : action.href
+              return (
+                <motion.a key={action.label} href={href} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.55 + i * 0.07 }} whileHover={{ x: -4 }}
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-border text-sm font-bold text-muted-foreground hover:border-pink-200 hover:text-pink-600 hover:bg-pink-50/30 dark:hover:bg-pink-950/20 transition-all">
+                  <action.icon className="h-4 w-4 shrink-0" />
+                  {action.label}
+                </motion.a>
+              )
+            })}
           </div>
         </motion.div>
       </div>

@@ -313,7 +313,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                     href={wazeUrl()!}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 bg-white/20 backdrop-blur hover:bg-white/30 text-white rounded-2xl px-4 py-2 font-bold text-sm transition-colors"
+                    className="flex items-center gap-2 bg-[#00BDD6] hover:bg-[#00a8bf] text-white rounded-2xl px-4 py-2 font-bold text-sm transition-colors"
                   >
                     <Navigation className="h-4 w-4" />
                     Waze
@@ -324,7 +324,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                     href={googleMapsUrl()!}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 bg-white/20 backdrop-blur hover:bg-white/30 text-white rounded-2xl px-4 py-2 font-bold text-sm transition-colors"
+                    className="flex items-center gap-2 bg-[#4285F4] hover:bg-[#3574e2] text-white rounded-2xl px-4 py-2 font-bold text-sm transition-colors"
                   >
                     <ExternalLink className="h-4 w-4" />
                     Google Maps
@@ -346,17 +346,17 @@ export default function NailistProfileClient({ id }: { id: string }) {
               <button
                 onClick={toggleFavorite}
                 disabled={favLoading}
-                className="flex items-center gap-2 bg-white/20 backdrop-blur hover:bg-white/30 text-white rounded-2xl px-4 py-2 font-bold text-sm transition-colors disabled:opacity-60"
+                className={`flex items-center gap-2 rounded-2xl px-4 py-2 font-bold text-sm transition-colors disabled:opacity-60 text-white ${isFavorited ? 'bg-rose-500 hover:bg-rose-600' : 'bg-rose-400 hover:bg-rose-500'}`}
               >
                 <Heart
-                  className={`h-4 w-4 transition-all ${isFavorited ? 'fill-pink-400 text-pink-400 scale-110' : ''}`}
+                  className={`h-4 w-4 transition-all ${isFavorited ? 'fill-white scale-110' : ''}`}
                 />
                 {isFavorited ? 'שמורה' : 'שמרי'}
               </button>
             )}
             <button
               onClick={handleShare}
-              className="flex items-center gap-2 bg-white/20 backdrop-blur hover:bg-white/30 text-white rounded-2xl px-4 py-2 font-bold text-sm transition-colors"
+              className={`flex items-center gap-2 rounded-2xl px-4 py-2 font-bold text-sm transition-colors text-white ${copied ? 'bg-green-500 hover:bg-green-600' : 'bg-violet-500 hover:bg-violet-600'}`}
             >
               {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
               {copied ? 'הלינק הועתק!' : 'שתפי'}
