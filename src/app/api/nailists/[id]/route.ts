@@ -3,17 +3,37 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { geocodeAddress } from '@/lib/geocoding'
 
+// Direct contact info is only returned to authenticated callers — keeps the
+// profile itself public for SEO while forcing anonymous visitors through login.
+const CONTACT_FIELDS = ['whatsappPhone', 'instagramUrl', 'tiktokUrl'] as const
+
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
   try {
+    const token = request.cookies.get('auth-token')?.value
+    let isAuthenticated = false
+    if (token) {
+      try {
+        await adminAuth().verifyIdToken(token)
+        isAuthenticated = true
+      } catch {
+        isAuthenticated = false
+      }
+    }
+
     const db = adminDb()
     const snap = await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(id).get()
 
     if (!snap.exists) {
       return NextResponse.json({ error: 'Nailist not found' }, { status: 404 })
+    }
+
+    const profileData = snap.data()!
+    if (!isAuthenticated) {
+      for (const field of CONTACT_FIELDS) delete profileData[field]
     }
 
     const [servicesSnap, portfolioSnap, hoursSnap, reviewsSnap] = await Promise.all([
@@ -39,7 +59,7 @@ export async function GET(
     return NextResponse.json({
       data: {
         id: snap.id,
-        ...snap.data(),
+        ...profileData,
         services: servicesSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
         portfolio: (portfolioSnap.docs
           .map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown>>)

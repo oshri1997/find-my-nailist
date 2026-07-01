@@ -2,9 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
-import { FieldValue, Timestamp } from 'firebase-admin/firestore'
+import { FieldValue, Timestamp, type Firestore, type DocumentReference } from 'firebase-admin/firestore'
 import { sendAppointmentRequest, sendReviewRequestEmail } from '@/lib/email'
 import { randomUUID } from 'crypto'
+
+// Firestore batched writes cap at 500 operations — split larger update sets into chunks.
+const BATCH_WRITE_LIMIT = 500
+
+async function chunkedBatchUpdate(
+  db: Firestore,
+  refs: DocumentReference[],
+  data: Record<string, unknown>
+) {
+  for (let i = 0; i < refs.length; i += BATCH_WRITE_LIMIT) {
+    const batch = db.batch()
+    refs.slice(i, i + BATCH_WRITE_LIMIT).forEach((ref) => batch.update(ref, data))
+    await batch.commit()
+  }
+}
 
 const createSchema = z.object({
   nailistProfileId: z.string(),
@@ -223,15 +238,14 @@ export async function GET(request: NextRequest) {
     })
 
     if (expired.length > 0) {
-      const batch = db.batch()
+      await chunkedBatchUpdate(db, expired.map((doc) => doc.ref), {
+        status: 'COMPLETED',
+        reviewRequested: true,
+        updatedAt: FieldValue.serverTimestamp(),
+      })
+
       expired.forEach((doc) => {
         const apt = doc.data()
-        batch.update(doc.ref, {
-          status: 'COMPLETED',
-          reviewRequested: true,
-          updatedAt: FieldValue.serverTimestamp(),
-        })
-
         if (!apt.reviewRequested) {
           void (async () => {
             try {
@@ -266,7 +280,6 @@ export async function GET(request: NextRequest) {
           })()
         }
       })
-      await batch.commit()
     }
 
     // Auto-cancel PENDING appointments with no response after 3 days
@@ -279,11 +292,10 @@ export async function GET(request: NextRequest) {
     })
 
     if (stale.length > 0) {
-      const staleBatch = db.batch()
-      stale.forEach((doc) => {
-        staleBatch.update(doc.ref, { status: 'CANCELLED', updatedAt: FieldValue.serverTimestamp() })
+      await chunkedBatchUpdate(db, stale.map((doc) => doc.ref), {
+        status: 'CANCELLED',
+        updatedAt: FieldValue.serverTimestamp(),
       })
-      await staleBatch.commit()
     }
 
     const expiredIds = new Set(expired.map((d) => d.id))

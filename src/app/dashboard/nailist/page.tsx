@@ -466,11 +466,16 @@ export default function NailistDashboard() {
           </div>
           <div className="space-y-3">
             {quickActions.map((action, i) => {
-              const href = action.href === '/search' && profile?.id ? `/nailists/${profile.id}` : action.href
+              const needsProfileId = action.href === '/search'
+              const pending = needsProfileId && !profile?.id
+              const href = needsProfileId && profile?.id ? `/nailists/${profile.id}` : action.href
               return (
-                <motion.a key={action.label} href={href} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.55 + i * 0.07 }} whileHover={{ x: -4 }}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-border text-sm font-bold text-muted-foreground hover:border-pink-200 hover:text-pink-600 hover:bg-pink-50/30 dark:hover:bg-pink-950/20 transition-all">
+                <motion.a key={action.label} href={pending ? undefined : href}
+                  onClick={pending ? (e) => e.preventDefault() : undefined}
+                  aria-disabled={pending}
+                  initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.55 + i * 0.07 }} whileHover={pending ? undefined : { x: -4 }}
+                  className={`flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-border text-sm font-bold text-muted-foreground transition-all ${pending ? 'opacity-50 cursor-not-allowed' : 'hover:border-pink-200 hover:text-pink-600 hover:bg-pink-50/30 dark:hover:bg-pink-950/20'}`}>
                   <action.icon className="h-4 w-4 shrink-0" />
                   {action.label}
                 </motion.a>
