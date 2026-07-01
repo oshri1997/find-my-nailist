@@ -204,11 +204,13 @@ export async function GET(request: NextRequest) {
     if (!profileId) return NextResponse.json({ data: [] })
 
     const field = role === 'nailist' ? 'nailistProfileId' : 'clientProfileId'
+    // Nailist fetches all appointments for accurate stats; client gets last 50 for the UI list
+    const limitCount = role === 'nailist' ? 1000 : 50
     const appointmentsSnap = await db
       .collection(COLLECTIONS.APPOINTMENTS)
       .where(field, '==', profileId)
       .orderBy('startTime', 'desc')
-      .limit(50)
+      .limit(limitCount)
       .get()
 
     // Auto-complete CONFIRMED appointments whose end time has passed
