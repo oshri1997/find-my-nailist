@@ -30,6 +30,8 @@ export interface NailistProfileDoc {
   instagramUrl?: string
   tiktokUrl?: string
   whatsappPhone?: string   // Israeli format: 0501234567 or +972501234567
+  photoUrl?: string
+  coverPhotoUrl?: string   // shown on the search-results card; set from Settings or the portfolio picker
   isVerified: boolean
   isActive: boolean
   avgRating: number

@@ -47,6 +47,33 @@ export async function uploadProfilePhoto(
   return { url, storageKey }
 }
 
+export async function uploadCoverPhoto(
+  nailistId: string,
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<{ url: string; storageKey: string }> {
+  const storage = await getStorage()
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const storageKey = `covers/${nailistId}/cover.${ext}`
+  const storageRef = ref(storage, storageKey)
+
+  return new Promise((resolve, reject) => {
+    const task = uploadBytesResumable(storageRef, file, { contentType: file.type })
+    task.on(
+      'state_changed',
+      (snapshot) => {
+        const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        onProgress?.(Math.round(percent))
+      },
+      reject,
+      async () => {
+        const url = await getDownloadURL(task.snapshot.ref)
+        resolve({ url, storageKey })
+      }
+    )
+  })
+}
+
 export async function deleteStorageFile(storageKey: string) {
   const storage = await getStorage()
   await deleteObject(ref(storage, storageKey))

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
-import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
+import { CheckCircle2, Loader2, AlertCircle, ImagePlus, X } from 'lucide-react'
 
 const EMPTY_FORM = {
   businessName: '',
@@ -29,6 +29,12 @@ export default function NailistSettingsPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
 
+  const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null)
+  const [coverUploading, setCoverUploading] = useState(false)
+  const [coverProgress, setCoverProgress] = useState(0)
+  const [coverError, setCoverError] = useState('')
+  const coverInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     fetch('/api/me/nailist-profile')
       .then(async (r) => {
@@ -39,6 +45,7 @@ export default function NailistSettingsPage() {
         const { data } = await r.json()
         if (!data) return
         setProfileId(data.id)
+        setCoverPhotoUrl(data.coverPhotoUrl ?? null)
         setForm({
           businessName: data.businessName ?? '',
           bio: data.bio ?? '',
@@ -56,6 +63,54 @@ export default function NailistSettingsPage() {
       .catch(() => setError('שגיאה בטעינת הפרופיל'))
       .finally(() => setLoading(false))
   }, [])
+
+  async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !profileId) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      setCoverError('הקובץ גדול מדי — מקסימום 5MB')
+      return
+    }
+
+    setCoverError('')
+    setCoverUploading(true)
+    setCoverProgress(0)
+
+    try {
+      const { uploadCoverPhoto } = await import('@/lib/firebase/storage')
+      const { url } = await uploadCoverPhoto(profileId, file, setCoverProgress)
+      const res = await fetch(`/api/nailists/${profileId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ coverPhotoUrl: url }),
+      })
+      if (!res.ok) throw new Error()
+      setCoverPhotoUrl(url)
+    } catch {
+      setCoverError('שגיאה בהעלאה — נסי שוב')
+    } finally {
+      setCoverUploading(false)
+      if (coverInputRef.current) coverInputRef.current.value = ''
+    }
+  }
+
+  async function handleRemoveCover() {
+    if (!profileId) return
+    const previous = coverPhotoUrl
+    setCoverPhotoUrl(null)
+    try {
+      const res = await fetch(`/api/nailists/${profileId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ coverPhotoUrl: null }),
+      })
+      if (!res.ok) throw new Error()
+    } catch {
+      setCoverPhotoUrl(previous)
+      setCoverError('שגיאה בהסרת התמונה')
+    }
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -131,6 +186,58 @@ export default function NailistSettingsPage() {
               <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${form.isActive ? 'translate-x-8' : 'translate-x-1'}`} />
             </button>
           </div>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}
+          className="bg-card rounded-3xl border border-border p-6 shadow-sm space-y-4">
+          <div>
+            <h2 className="font-black text-muted-foreground text-sm uppercase tracking-wider">תמונת כרטיס</h2>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">התמונה שמוצגת על הכרטיס שלך בתוצאות החיפוש. אפשר גם לבחור תמונה מהפורטפוליו.</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-24 h-24 rounded-2xl overflow-hidden bg-muted border border-border flex items-center justify-center shrink-0">
+              {coverPhotoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={coverPhotoUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <ImagePlus className="h-6 w-6 text-muted-foreground/40" />
+              )}
+            </div>
+            <div className="flex flex-col items-start gap-2">
+              <Button
+                type="button"
+                onClick={() => coverInputRef.current?.click()}
+                disabled={coverUploading || !profileId}
+                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-9 px-4 text-sm font-bold gap-2 disabled:opacity-60"
+              >
+                {coverUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
+                {coverUploading ? `${coverProgress}%` : coverPhotoUrl ? 'החליפי תמונה' : 'העלי תמונה'}
+              </Button>
+              {coverPhotoUrl && (
+                <button
+                  type="button"
+                  onClick={handleRemoveCover}
+                  className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-red-500 transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                  הסירי תמונה
+                </button>
+              )}
+            </div>
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleCoverChange}
+            />
+          </div>
+          {coverError && (
+            <div className="flex items-center gap-2 text-red-500 text-sm font-semibold">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {coverError}
+            </div>
+          )}
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
