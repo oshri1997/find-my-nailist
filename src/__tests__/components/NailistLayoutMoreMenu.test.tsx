@@ -34,10 +34,10 @@ jest.mock('@/components/auth/auth-provider', () => ({
   useAuth: () => mockUseAuth(),
 }))
 
-function mockFetch(profileId: string | null | Promise<unknown>) {
+function mockFetch(profileId: string | null | Promise<unknown>, role: 'NAILIST' | 'ADMIN' = 'NAILIST') {
   global.fetch = jest.fn().mockImplementation((url: string) => {
     if (url.includes('/api/me/role')) {
-      return Promise.resolve({ ok: true, json: async () => ({ role: 'NAILIST' }) } as Response)
+      return Promise.resolve({ ok: true, json: async () => ({ role }) } as Response)
     }
     if (url.includes('/api/me/nailist-profile')) {
       if (profileId instanceof Promise) return profileId
@@ -49,7 +49,7 @@ function mockFetch(profileId: string | null | Promise<unknown>) {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  mockUseAuth.mockReturnValue({ user: { uid: 'nailist-user-1', displayName: 'Oshri Test', email: 'oshri@example.com' }, signOut: jest.fn() })
+  mockUseAuth.mockReturnValue({ user: { uid: 'nailist-user-1', displayName: 'Oshri Test', email: 'oshri@example.com' }, role: 'NAILIST', signOut: jest.fn() })
 })
 
 async function openMoreMenu() {
@@ -108,11 +108,12 @@ describe('Dashboard layout — public profile shortcut', () => {
 
 describe('Dashboard layout — admin panel entry point', () => {
   // Regression: the dashboard has its own mobile header with no menu at all, so a
-  // nailist account that's also the admin had no way to reach /admin on mobile —
-  // the main site Navbar's dropdown link isn't rendered inside the dashboard shell.
+  // nailist account that's also the admin (role: 'ADMIN' in Firestore) had no way
+  // to reach /admin on mobile — the main site Navbar's dropdown link isn't rendered
+  // inside the dashboard shell.
   it('shows a "פאנל ניהול" link for the admin account', async () => {
-    mockUseAuth.mockReturnValue({ user: { uid: 'admin-uid', displayName: 'Admin', email: 'oshri19970@gmail.com' }, signOut: jest.fn() })
-    mockFetch('nailist-42')
+    mockUseAuth.mockReturnValue({ user: { uid: 'admin-uid', displayName: 'Admin', email: 'oshri19970@gmail.com' }, role: 'ADMIN', signOut: jest.fn() })
+    mockFetch('nailist-42', 'ADMIN')
     await openMoreMenu()
 
     await waitFor(() => {
@@ -123,7 +124,7 @@ describe('Dashboard layout — admin panel entry point', () => {
   })
 
   it('does not show the admin link for a regular nailist account', async () => {
-    mockUseAuth.mockReturnValue({ user: { uid: 'nailist-user-1', displayName: 'Oshri Test', email: 'someone-else@example.com' }, signOut: jest.fn() })
+    mockUseAuth.mockReturnValue({ user: { uid: 'nailist-user-1', displayName: 'Oshri Test', email: 'someone-else@example.com' }, role: 'NAILIST', signOut: jest.fn() })
     mockFetch('nailist-42')
     await openMoreMenu()
 

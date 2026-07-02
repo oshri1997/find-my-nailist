@@ -66,8 +66,19 @@ const mockDb = {
 
 // ── Admin auth mock ────────────────────────────────────────────────────────
 
+// verifyAdmin now looks up the caller's role from Firestore rather than
+// comparing a hardcoded email, so these helpers seed a `users` doc for the
+// token's uid alongside whatever business data each describe block set up.
+function seedCallerUser(uid: string, role: string) {
+  collectionStore.users = [
+    ...(collectionStore.users ?? []).filter(u => u.__id !== uid),
+    { __id: uid, email: `${uid}@test.com`, role },
+  ]
+}
+
 function adminRequest(path = '/api/admin/stats') {
   mockVerifyIdToken.mockResolvedValue({ uid: 'admin-uid', email: 'oshri19970@gmail.com' })
+  seedCallerUser('admin-uid', 'ADMIN')
   const req = new NextRequest(`http://localhost${path}`)
   Object.defineProperty(req, 'cookies', {
     value: { get: (key: string) => key === 'auth-token' ? { value: 'valid-token' } : undefined },
@@ -77,6 +88,7 @@ function adminRequest(path = '/api/admin/stats') {
 
 function nonAdminRequest(path = '/api/admin/stats') {
   mockVerifyIdToken.mockResolvedValue({ uid: 'other-uid', email: 'other@gmail.com' })
+  seedCallerUser('other-uid', 'CLIENT')
   const req = new NextRequest(`http://localhost${path}`)
   Object.defineProperty(req, 'cookies', {
     value: { get: (key: string) => key === 'auth-token' ? { value: 'non-admin-token' } : undefined },
