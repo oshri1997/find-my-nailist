@@ -29,8 +29,9 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/dashboard/nailist',
 }))
 
+const mockUseAuth = jest.fn()
 jest.mock('@/components/auth/auth-provider', () => ({
-  useAuth: () => ({ user: { uid: 'nailist-user-1', displayName: 'Oshri Test' }, signOut: jest.fn() }),
+  useAuth: () => mockUseAuth(),
 }))
 
 function mockFetch(profileId: string | null | Promise<unknown>) {
@@ -48,6 +49,7 @@ function mockFetch(profileId: string | null | Promise<unknown>) {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockUseAuth.mockReturnValue({ user: { uid: 'nailist-user-1', displayName: 'Oshri Test', email: 'oshri@example.com' }, signOut: jest.fn() })
 })
 
 async function openMoreMenu() {
@@ -101,5 +103,31 @@ describe('Dashboard layout — public profile shortcut', () => {
     expect(hoursLink).not.toHaveAttribute('aria-disabled', 'true')
 
     resolveProfile({ ok: true, json: async () => ({ data: null }) })
+  })
+})
+
+describe('Dashboard layout — admin panel entry point', () => {
+  // Regression: the dashboard has its own mobile header with no menu at all, so a
+  // nailist account that's also the admin had no way to reach /admin on mobile —
+  // the main site Navbar's dropdown link isn't rendered inside the dashboard shell.
+  it('shows a "פאנל ניהול" link for the admin account', async () => {
+    mockUseAuth.mockReturnValue({ user: { uid: 'admin-uid', displayName: 'Admin', email: 'oshri19970@gmail.com' }, signOut: jest.fn() })
+    mockFetch('nailist-42')
+    await openMoreMenu()
+
+    await waitFor(() => {
+      const links = screen.getAllByText('פאנל ניהול')
+      expect(links.length).toBeGreaterThan(0)
+      expect(links[0].closest('a')).toHaveAttribute('href', '/admin')
+    })
+  })
+
+  it('does not show the admin link for a regular nailist account', async () => {
+    mockUseAuth.mockReturnValue({ user: { uid: 'nailist-user-1', displayName: 'Oshri Test', email: 'someone-else@example.com' }, signOut: jest.fn() })
+    mockFetch('nailist-42')
+    await openMoreMenu()
+
+    await waitFor(() => expect(screen.getAllByText('פרופיל ציבורי').length).toBeGreaterThan(0))
+    expect(screen.queryByText('פאנל ניהול')).not.toBeInTheDocument()
   })
 })

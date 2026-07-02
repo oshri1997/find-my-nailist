@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Loader2, Menu, X, Search, Eye } from 'lucide-react'
+import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Loader2, Menu, X, Search, Eye, Shield } from 'lucide-react'
 import NextImage from 'next/image'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { ADMIN_EMAIL } from '@/lib/constants'
 
 const primaryNavLinks = [
   { href: '/dashboard/nailist', label: 'סקירה', Icon: LayoutDashboard, dynamic: false },
@@ -79,6 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const secondaryActive = secondaryNavLinks.some(l => pathname === l.href)
+  const isAdmin = user?.email === ADMIN_EMAIL
 
   if (authorized === null) {
     return (
@@ -192,6 +194,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Search className="h-4 w-4" />
               חיפוש נייליסטיות
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-primary hover:bg-primary/8 transition-all"
+              >
+                <Shield className="h-4 w-4" />
+                פאנל ניהול
+              </Link>
+            )}
             <div className="flex items-center justify-between px-3 py-2">
               <span className="text-sm font-semibold text-muted-foreground">מצב תצוגה</span>
               <ThemeToggle />
@@ -311,6 +322,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
 
               <div className="border-t border-border pt-3 space-y-1">
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setShowMoreSheet(false)}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-primary hover:bg-primary/8 transition-colors"
+                  >
+                    <Shield className="h-4 w-4" />
+                    פאנל ניהול
+                  </Link>
+                )}
                 <div className="flex items-center justify-between px-4 py-2.5 rounded-xl">
                   <span className="text-sm font-semibold text-muted-foreground">מצב תצוגה</span>
                   <ThemeToggle />
