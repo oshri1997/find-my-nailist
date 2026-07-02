@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, useRef, ReactNode, useC
 import type { User } from 'firebase/auth'
 import { NailLoader } from '@/components/ui/nail-loader'
 
-type UserRole = 'NAILIST' | 'CLIENT' | null
+type UserRole = 'NAILIST' | 'CLIENT' | 'ADMIN' | null
 
 interface AuthContextValue {
   user: User | null

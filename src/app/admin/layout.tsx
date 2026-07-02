@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { LayoutDashboard, Users, Scissors, Calendar, Star, LogOut, Shield, Menu, X, ArrowRight, Home } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
-import { ADMIN_EMAIL } from '@/lib/constants'
 
 const NAV = [
   { href: '/admin', label: 'דשבורד', icon: LayoutDashboard, exact: true },
@@ -41,16 +40,16 @@ function NavLinks({ pathname, onNav }: { pathname: string; onNav?: () => void })
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, signOut } = useAuth()
+  const { user, loading, role, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
-    if (!loading && (!user || user.email !== ADMIN_EMAIL)) {
+    if (!loading && (!user || role !== 'ADMIN')) {
       router.replace('/')
     }
-  }, [user, loading, router])
+  }, [user, role, loading, router])
 
   // Close drawer on route change
   useEffect(() => {
@@ -58,7 +57,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     void close()
   }, [pathname])
 
-  if (loading || !user || user.email !== ADMIN_EMAIL) {
+  if (loading || !user || role !== 'ADMIN') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />

@@ -8,7 +8,6 @@ import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star
 import NextImage from 'next/image'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { ADMIN_EMAIL } from '@/lib/constants'
 
 const primaryNavLinks = [
   { href: '/dashboard/nailist', label: 'סקירה', Icon: LayoutDashboard, dynamic: false },
@@ -29,7 +28,7 @@ const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { user, signOut } = useAuth()
+  const { user, role, signOut } = useAuth()
   const router = useRouter()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [showMoreSheet, setShowMoreSheet] = useState(false)
@@ -43,9 +42,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     fetch('/api/me/role', { signal: controller.signal })
       .then(r => r.json())
-      .then(({ role }) => {
+      .then(({ role: fetchedRole }) => {
         clearTimeout(timeout)
-        if (role === 'NAILIST') {
+        // Admins get superuser access to the nailist dashboard too (e.g. an
+        // admin account that's also a working nailist testing the product).
+        if (fetchedRole === 'NAILIST' || fetchedRole === 'ADMIN') {
           setAuthorized(true)
         } else {
           router.replace('/search')
@@ -80,7 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const secondaryActive = secondaryNavLinks.some(l => pathname === l.href)
-  const isAdmin = user?.email === ADMIN_EMAIL
+  const isAdmin = role === 'ADMIN'
 
   if (authorized === null) {
     return (

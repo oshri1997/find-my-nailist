@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Search, Trash2, Loader2, User, Scissors } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
-import { ADMIN_EMAIL } from '@/lib/constants'
 
 interface AdminUser {
   id: string
@@ -165,7 +164,7 @@ export default function AdminUsersPage() {
                       {u.createdAt ? new Date(u.createdAt).toLocaleDateString('he-IL') : '—'}
                     </td>
                     <td className="px-5 py-3">
-                      {u.email !== ADMIN_EMAIL && (
+                      {u.role !== 'ADMIN' && (
                         <button
                           onClick={() => setConfirmDelete(u)}
                           disabled={deleting === u.id}
