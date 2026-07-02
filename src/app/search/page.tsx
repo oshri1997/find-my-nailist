@@ -7,10 +7,9 @@ import { Navbar } from '@/components/layout/navbar'
 import { useAuth } from '@/components/auth/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { MapPin, Search, Star, Heart, MessageCircle, Loader2, LocateFixed, Map as MapIcon, LayoutGrid, Sparkles } from 'lucide-react'
+import { MapPin, Search, Star, Heart, Loader2, LocateFixed, Map as MapIcon, LayoutGrid, Sparkles } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
 import { formatDistance } from '@/lib/format-utils'
-import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
 const NailistMap = dynamic(() => import('@/components/search/NailistMap'), { ssr: false })
@@ -18,17 +17,14 @@ const NailistMap = dynamic(() => import('@/components/search/NailistMap'), { ssr
 function NailistCardSkeleton() {
   return (
     <div className="animate-pulse rounded-2xl overflow-hidden bg-card shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-border">
-      <div className="h-44 bg-muted" />
-      <div className="p-5 space-y-3">
+      <div className="h-40 bg-muted" />
+      <div className="p-4 space-y-2.5">
         <div className="flex items-start justify-between">
           <div className="h-4 bg-muted rounded w-2/3" />
-          <div className="h-5 w-12 bg-muted rounded-lg shrink-0 ml-2" />
+          <div className="h-3.5 w-10 bg-muted rounded shrink-0 ml-2" />
         </div>
         <div className="h-3 bg-muted rounded w-1/3" />
-        <div className="h-3 bg-muted rounded w-1/2" />
-        <div className="flex justify-end pt-2 border-t border-border">
-          <div className="h-8 w-20 bg-muted rounded-xl" />
-        </div>
+        <div className="h-3 bg-muted rounded w-4/5" />
       </div>
     </div>
   )
@@ -395,10 +391,10 @@ export default function SearchPage() {
                 transition={{ duration: 0.35, delay: Math.min(i * 0.06, 0.4) }}
                 whileHover={{ y: -3, transition: { duration: 0.2 } }}
                 onClick={() => router.push(`/nailists/${nailist.id}`)}
-                className="bg-card rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_32px_rgba(236,72,153,0.12)] transition-all duration-300 cursor-pointer group border border-border hover:border-pink-200"
+                className="bg-card rounded-2xl overflow-hidden shadow-[0_1px_8px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_24px_rgba(236,72,153,0.10)] transition-all duration-300 cursor-pointer group border border-border hover:border-pink-200"
               >
                 {/* Cover */}
-                <div className="h-44 relative flex items-center justify-center overflow-hidden bg-pink-50">
+                <div className="h-40 relative flex items-center justify-center overflow-hidden bg-pink-50">
                   {nailist.coverPhotoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -410,81 +406,62 @@ export default function SearchPage() {
                     />
                   ) : (
                     <div className="flex items-center justify-center w-full h-full">
-                      <div className="w-16 h-16 rounded-2xl bg-card/80 flex items-center justify-center shadow-[0_2px_12px_rgba(236,72,153,0.12)]">
-                        <Sparkles className="w-8 h-8 text-primary/60" />
-                      </div>
+                      <Sparkles className="w-8 h-8 text-primary/40" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
                   <button
                     onClick={(e) => toggleFavorite(e, nailist.id)}
                     disabled={togglingFav === nailist.id}
-                    className="absolute top-3 left-3 w-9 h-9 bg-card/80 rounded-full flex items-center justify-center hover:bg-card transition-colors shadow-sm cursor-pointer disabled:opacity-60"
+                    className="absolute top-2.5 left-2.5 w-8 h-8 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-card transition-colors cursor-pointer disabled:opacity-60"
                   >
                     <Heart className={`h-4 w-4 transition-all ${favorites.has(nailist.id) ? 'fill-pink-500 text-pink-500 scale-110' : 'text-muted-foreground/60'}`} />
                   </button>
                   {nailist.distanceKm != null && (
-                    <div className="absolute top-3 right-3 bg-card/90 rounded-full px-3 py-1 text-foreground text-xs font-bold flex items-center gap-1 shadow-sm">
+                    <div className="absolute top-2.5 right-2.5 bg-card/80 backdrop-blur-sm rounded-full px-2.5 py-1 text-foreground text-xs font-semibold flex items-center gap-1">
                       <MapPin className="h-3 w-3 text-primary" />
                       {formatDistance(nailist.distanceKm)}
-                    </div>
-                  )}
-                  {nailist.whatsappPhone && (
-                    <div className="absolute bottom-3 left-3">
-                      <span className="bg-[#25D366]/90 text-white text-xs font-bold rounded-full px-2.5 py-1 flex items-center gap-1">
-                        <MessageCircle className="h-3 w-3" />
-                        WhatsApp
-                      </span>
                     </div>
                   )}
                 </div>
 
                 {/* Card body */}
-                <div className="p-5">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-black text-foreground text-base leading-tight">{nailist.businessName}</h3>
-                    <div className="flex items-center gap-1 text-sm shrink-0 bg-amber-50 dark:bg-amber-950/30 rounded-lg px-2 py-0.5 ml-2 border border-amber-100 dark:border-amber-900/40">
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <h3 className="font-black text-foreground text-base leading-tight truncate">{nailist.businessName}</h3>
+                    <div className="flex items-center gap-1 text-xs shrink-0 text-amber-600 dark:text-amber-400 font-bold">
                       <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                      <span className="font-black text-amber-600 dark:text-amber-400 text-xs">{nailist.avgRating > 0 ? nailist.avgRating.toFixed(1) : '—'}</span>
-                      {nailist.reviewCount > 0 && <span className="text-amber-400/60 text-xs">({nailist.reviewCount})</span>}
+                      <span>{nailist.avgRating > 0 ? nailist.avgRating.toFixed(1) : '—'}</span>
+                      {nailist.reviewCount > 0 && <span className="text-muted-foreground font-medium">({nailist.reviewCount})</span>}
                     </div>
                   </div>
 
                   {nailist.city && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
                       <MapPin className="h-3.5 w-3.5" />
                       <span>{nailist.city}</span>
                     </div>
                   )}
 
                   {nailist.bio && (
-                    <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{nailist.bio}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{nailist.bio}</p>
                   )}
 
-                  <div className="flex items-center justify-end border-t border-border pt-4 gap-2">
-                    {nailist.whatsappPhone && (
+                  {nailist.whatsappPhone && (
+                    <div className="flex justify-end mt-3 pt-3 border-t border-border">
                       <a
                         href={toWhatsAppUrl(nailist.whatsappPhone, whatsAppBookingMessage(nailist.businessName))}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#22c55e] text-white text-xs font-bold rounded-xl px-3 py-2 shadow-sm transition-colors cursor-pointer"
+                        className="flex items-center gap-1.5 text-[#25D366] hover:text-[#22c55e] text-xs font-bold transition-colors cursor-pointer"
                       >
-                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-white">
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current">
                           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                         </svg>
                         וואטסאפ
                       </a>
-                    )}
-                    <Link href={`/nailists/${nailist.id}`} onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        size="sm"
-                        className="bg-primary hover:bg-primary/90 text-white border-0 rounded-xl shadow-[0_2px_8px_rgba(236,72,153,0.25)] font-bold cursor-pointer"
-                      >
-                        לפרופיל
-                      </Button>
-                    </Link>
-                  </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))}
