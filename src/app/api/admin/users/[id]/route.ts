@@ -52,10 +52,6 @@ export async function DELETE(
 
     const role = userDoc.data()?.role
 
-    if (role === 'ADMIN') {
-      return NextResponse.json({ error: 'לא ניתן למחוק חשבון אדמין' }, { status: 403 })
-    }
-
     if (role === 'NAILIST') {
       const profileSnap = await db.collection(COLLECTIONS.NAILIST_PROFILES)
         .where('userId', '==', id).limit(1).get()

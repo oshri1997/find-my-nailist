@@ -9,6 +9,7 @@ import { LogOut, LayoutDashboard, ChevronDown, CalendarDays, Shield, Heart } fro
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { ADMIN_EMAIL } from '@/lib/constants'
 
 export function Navbar() {
   const { user, role, signOut } = useAuth()
@@ -87,7 +88,7 @@ export function Navbar() {
             <ThemeToggle />
             {user ? (
               <>
-                {(role === 'NAILIST' || role === 'ADMIN') && (
+                {role === 'NAILIST' && (
                   <Link href="/dashboard/nailist">
                     <Button size="sm" variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground gap-2 cursor-pointer">
                       <LayoutDashboard className="h-4 w-4" />
@@ -150,7 +151,7 @@ export function Navbar() {
                         <Heart className="h-4 w-4 text-pink-500" />
                         המועדפות שלי
                       </Link>
-                      {role === 'ADMIN' && (
+                      {user.email === ADMIN_EMAIL && (
                         <Link
                           href="/admin"
                           onClick={() => setShowMenu(false)}
