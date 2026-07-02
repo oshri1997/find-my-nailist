@@ -195,23 +195,16 @@ export default function NailistProfileClient({ id }: { id: string }) {
     <div className="min-h-screen flex flex-col bg-muted/50" dir="rtl">
       <Navbar />
 
-      {/* Hero */}
-      <div className={`relative text-white overflow-hidden ${!profile.coverPhotoUrl ? 'bg-gradient-to-br from-pink-500 via-purple-600 to-violet-600' : ''}`}>
-        {profile.coverPhotoUrl && (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={profile.coverPhotoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-br from-pink-900/60 via-purple-900/50 to-violet-900/60" />
-          </>
-        )}
-
+      {/* Hero — a consistent gradient, never a nailist-uploaded photo, so the header
+          always looks clean regardless of what image someone sets as their cover */}
+      <div className="relative text-white overflow-hidden bg-gradient-to-br from-pink-500 via-purple-600 to-violet-600">
         {/* Owner edit buttons */}
         {isOwner === true && (
           <div className="absolute top-3 left-3 flex gap-2 z-10">
             <Link href="/dashboard/nailist/portfolio">
               <button className="bg-white/20 backdrop-blur text-white text-xs font-bold rounded-full px-3 py-1.5 hover:bg-white/35 transition-colors flex items-center gap-1.5 border border-white/20">
                 <ImageIcon className="h-3 w-3" />
-                שני רקע
+                תמונות
               </button>
             </Link>
             <Link href="/dashboard/nailist/settings">
@@ -223,53 +216,58 @@ export default function NailistProfileClient({ id }: { id: string }) {
           </div>
         )}
 
-        <div className="container mx-auto max-w-4xl px-6 py-10 relative z-10">
+        <div className="container mx-auto max-w-2xl px-6 py-12 relative z-10">
           <Link href="/search" className="flex items-center gap-1 text-white/70 text-sm mb-6 hover:text-white transition-colors w-fit">
             <ChevronRight className="h-4 w-4" />
             חזרה לחיפוש
           </Link>
-          <div className="flex items-start gap-5">
+
+          <div className="flex flex-col items-center text-center">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur shrink-0 overflow-hidden flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full bg-white/15 backdrop-blur ring-4 ring-white/25 shadow-xl overflow-hidden flex items-center justify-center mb-4">
               {profile.photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={profile.photoUrl} alt={profile.businessName} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-2xl font-black text-white">{initials(profile.businessName)}</span>
+                <span className="text-3xl font-black text-white">{initials(profile.businessName)}</span>
               )}
             </div>
 
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-black mb-1">{profile.businessName}</h1>
+            <h1 className="text-2xl font-black mb-1.5">{profile.businessName}</h1>
+
+            <div className="flex items-center flex-wrap justify-center gap-x-3 gap-y-1 text-sm mb-1">
               {profile.city && (
-                <div className="flex items-center gap-1 text-white/80 text-sm mb-2">
+                <div className="flex items-center gap-1 text-white/80">
                   <MapPin className="h-3.5 w-3.5" />
                   {profile.city}
                 </div>
               )}
               {profile.avgRating > 0 && (
-                <div className="flex items-center gap-1 text-sm">
+                <div className="flex items-center gap-1">
                   <Star className="h-4 w-4 fill-amber-300 text-amber-300" />
                   <span className="font-black">{profile.avgRating.toFixed(1)}</span>
                   <span className="text-white/60">({profile.reviewCount} ביקורות)</span>
                 </div>
               )}
             </div>
+
+            {profile.bio && (
+              <p className="mt-3 text-white/80 text-sm leading-relaxed max-w-md">{profile.bio}</p>
+            )}
           </div>
 
-          {profile.bio && (
-            <p className="mt-4 text-white/80 text-sm leading-relaxed">{profile.bio}</p>
-          )}
-
-          <div className="flex flex-wrap gap-2 mt-5">
-            {isOwner === false && profile.services.length > 0 && (
+          {isOwner === false && profile.services.length > 0 && (
+            <div className="flex justify-center mt-6">
               <Button
                 onClick={() => openBooking()}
-                className="bg-white text-pink-600 hover:bg-pink-50 border-0 rounded-2xl font-black shadow-lg"
+                className="bg-white text-pink-600 hover:bg-pink-50 border-0 rounded-2xl font-black shadow-lg px-8 h-11"
               >
                 קביעת תור
               </Button>
-            )}
+            </div>
+          )}
+
+          <div className="flex flex-wrap justify-center gap-2 mt-4">
             {user ? (
               <>
                 {profile.whatsappPhone && (
