@@ -24,6 +24,7 @@ const baseProfile = {
   whatsappPhone: '+972501234567',
   instagramUrl: 'https://instagram.com/studio',
   tiktokUrl: 'https://tiktok.com/studio',
+  hasContactInfo: true,
   avgRating: 4.8,
   reviewCount: 12,
   latitude: 32.08,
@@ -83,6 +84,7 @@ describe('NailistProfileClient — contact info gating', () => {
       whatsappPhone: undefined as unknown as string,
       instagramUrl: undefined as unknown as string,
       tiktokUrl: undefined as unknown as string,
+      hasContactInfo: false,
       latitude: undefined as unknown as number,
       longitude: undefined as unknown as number,
     })
@@ -92,5 +94,25 @@ describe('NailistProfileClient — contact info gating', () => {
       expect(screen.getByText('סטודיו יופי')).toBeInTheDocument()
     })
     expect(screen.queryByText('כניסה לצפייה בפרטי קשר')).not.toBeInTheDocument()
+  })
+
+  it('shows the login CTA from hasContactInfo alone, even when the raw fields are already stripped and there are no coordinates', async () => {
+    // Regression: the API strips whatsappPhone/instagramUrl/tiktokUrl for anonymous
+    // callers, so the CTA must not depend on those fields being present client-side.
+    mockUseAuth.mockReturnValue({ user: null, role: null })
+    mockProfileFetch({
+      ...baseProfile,
+      whatsappPhone: undefined as unknown as string,
+      instagramUrl: undefined as unknown as string,
+      tiktokUrl: undefined as unknown as string,
+      hasContactInfo: true,
+      latitude: undefined as unknown as number,
+      longitude: undefined as unknown as number,
+    })
+    render(<NailistProfileClient id="nailist-1" />)
+
+    await waitFor(() => {
+      expect(screen.getByText('כניסה לצפייה בפרטי קשר')).toBeInTheDocument()
+    })
   })
 })

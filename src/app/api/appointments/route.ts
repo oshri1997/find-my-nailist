@@ -301,7 +301,9 @@ export async function GET(request: NextRequest) {
     const expiredIds = new Set(expired.map((d) => d.id))
     const staleIds = new Set(stale.map((d) => d.id))
     const appointments = appointmentsSnap.docs.map((d) => {
-      const data = d.data()
+      // confirmToken/declineToken authorize the email confirm/decline links with no
+      // other auth check — never expose them to either party via this API.
+      const { confirmToken, confirmTokenExpiresAt, declineToken, declineTokenExpiresAt, ...data } = d.data()
       return {
         id: d.id,
         ...data,

@@ -2,10 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { geocodeAddress } from '@/lib/geocoding'
+import { isAuthenticatedRequest, computeHasContactInfo, stripNailistContactFields } from '@/lib/nailist-contact'
+import { z } from 'zod'
 
-// Direct contact info is only returned to authenticated callers — keeps the
-// profile itself public for SEO while forcing anonymous visitors through login.
-const CONTACT_FIELDS = ['whatsappPhone', 'instagramUrl', 'tiktokUrl'] as const
+// Trust fields (isVerified, avgRating, reviewCount, userId) are deliberately
+// excluded — those are computed/assigned server-side only, never client-writable.
+const patchSchema = z.object({
+  businessName: z.string().optional(),
+  bio: z.string().optional(),
+  city: z.string().optional(),
+  address: z.string().optional(),
+  phoneNumber: z.string().optional(),
+  whatsappPhone: z.string().optional(),
+  instagramUrl: z.string().optional(),
+  tiktokUrl: z.string().optional(),
+  coverPhotoUrl: z.string().optional(),
+  isActive: z.boolean().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+}).strict()
 
 export async function GET(
   request: NextRequest,
@@ -13,16 +28,7 @@ export async function GET(
 ) {
   const { id } = await params
   try {
-    const token = request.cookies.get('auth-token')?.value
-    let isAuthenticated = false
-    if (token) {
-      try {
-        await adminAuth().verifyIdToken(token)
-        isAuthenticated = true
-      } catch {
-        isAuthenticated = false
-      }
-    }
+    const isAuthenticated = await isAuthenticatedRequest(request)
 
     const db = adminDb()
     const snap = await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(id).get()
@@ -32,8 +38,9 @@ export async function GET(
     }
 
     const profileData = snap.data()!
+    const hasContactInfo = computeHasContactInfo(profileData)
     if (!isAuthenticated) {
-      for (const field of CONTACT_FIELDS) delete profileData[field]
+      stripNailistContactFields(profileData)
     }
 
     const [servicesSnap, portfolioSnap, hoursSnap, reviewsSnap] = await Promise.all([
@@ -60,6 +67,7 @@ export async function GET(
       data: {
         id: snap.id,
         ...profileData,
+        hasContactInfo,
         services: servicesSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
         portfolio: (portfolioSnap.docs
           .map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown>>)
@@ -112,7 +120,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await request.json()
+    const body = patchSchema.parse(await request.json())
     const { FieldValue } = await import('firebase-admin/firestore')
 
     const update: Record<string, unknown> = { ...body, updatedAt: FieldValue.serverTimestamp() }
@@ -138,6 +146,9 @@ export async function PATCH(
 
     return NextResponse.json({ message: 'Profile updated' })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.issues }, { status: 400 })
+    }
     console.error(`PATCH /api/nailists/${id} error:`, error)
     return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
   }

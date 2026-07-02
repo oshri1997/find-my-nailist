@@ -2,8 +2,10 @@
  * @jest-environment node
  *
  * Covers the bugfix where GET /api/nailists/[id] leaked contact info
- * (whatsappPhone/instagramUrl/tiktokUrl) to unauthenticated callers even
- * though the UI hides the corresponding buttons behind a login gate.
+ * (whatsappPhone/instagramUrl/tiktokUrl/phoneNumber/email/address/userId) to
+ * unauthenticated callers even though the UI hides the corresponding buttons
+ * behind a login gate, and the `hasContactInfo` flag that lets the anonymous
+ * UI show a login CTA without needing the raw (stripped) fields.
  */
 import { NextRequest } from 'next/server'
 
@@ -66,6 +68,10 @@ describe('GET /api/nailists/[id] — contact info gating', () => {
       whatsappPhone: '+972501234567',
       instagramUrl: 'https://instagram.com/studio',
       tiktokUrl: 'https://tiktok.com/@studio',
+      phoneNumber: '0501234567',
+      email: 'owner@example.com',
+      address: 'הרצל 1, תל אביב',
+      userId: 'firebase-uid-secret',
     }
   })
 
@@ -77,6 +83,10 @@ describe('GET /api/nailists/[id] — contact info gating', () => {
     expect(json.data.whatsappPhone).toBeUndefined()
     expect(json.data.instagramUrl).toBeUndefined()
     expect(json.data.tiktokUrl).toBeUndefined()
+    expect(json.data.phoneNumber).toBeUndefined()
+    expect(json.data.email).toBeUndefined()
+    expect(json.data.address).toBeUndefined()
+    expect(json.data.userId).toBeUndefined()
   })
 
   it('strips contact fields when the auth token is invalid or expired', async () => {
@@ -86,6 +96,7 @@ describe('GET /api/nailists/[id] — contact info gating', () => {
     expect(json.data.whatsappPhone).toBeUndefined()
     expect(json.data.instagramUrl).toBeUndefined()
     expect(json.data.tiktokUrl).toBeUndefined()
+    expect(json.data.email).toBeUndefined()
   })
 
   it('includes contact fields for authenticated callers', async () => {
@@ -94,10 +105,27 @@ describe('GET /api/nailists/[id] — contact info gating', () => {
     expect(json.data.whatsappPhone).toBe('+972501234567')
     expect(json.data.instagramUrl).toBe('https://instagram.com/studio')
     expect(json.data.tiktokUrl).toBe('https://tiktok.com/@studio')
+    expect(json.data.phoneNumber).toBe('0501234567')
+    expect(json.data.email).toBe('owner@example.com')
+    expect(json.data.address).toBe('הרצל 1, תל אביב')
   })
 
   it('returns 404 when the profile does not exist, regardless of auth', async () => {
     const res = await GET(makeRequest('valid-token'), { params: Promise.resolve({ id: 'missing-profile' }) })
     expect(res.status).toBe(404)
+  })
+
+  it('reports hasContactInfo=true for anonymous callers even though the fields are stripped', async () => {
+    const res = await GET(makeRequest(), mockParams)
+    const json = await res.json()
+    expect(json.data.hasContactInfo).toBe(true)
+    expect(json.data.whatsappPhone).toBeUndefined()
+  })
+
+  it('reports hasContactInfo=false when the nailist has no contact info at all', async () => {
+    docStore['nailistProfiles/nailist-profile-1'] = { businessName: 'סטודיו יופי' }
+    const res = await GET(makeRequest(), mockParams)
+    const json = await res.json()
+    expect(json.data.hasContactInfo).toBe(false)
   })
 })

@@ -43,6 +43,7 @@ interface NailistProfile {
   whatsappPhone?: string
   instagramUrl?: string
   tiktokUrl?: string
+  hasContactInfo?: boolean
   avgRating: number
   reviewCount: number
   latitude?: number
@@ -332,7 +333,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                 )}
               </>
             ) : (
-              (profile.whatsappPhone || profile.instagramUrl || profile.tiktokUrl || wazeUrl()) && (
+              (profile.hasContactInfo || wazeUrl()) && (
                 <Link
                   href={`/login?redirect=/nailists/${id}`}
                   className="flex items-center gap-2 bg-white/20 backdrop-blur hover:bg-white/30 text-white rounded-2xl px-4 py-2 font-bold text-sm transition-colors border border-white/30"

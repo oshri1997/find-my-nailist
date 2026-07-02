@@ -306,4 +306,26 @@ describe('GET /api/appointments — edge cases', () => {
     const calledCollections = (mockDb.collection as jest.Mock).mock.calls.map(([n]: [string]) => n)
     expect(calledCollections).toContain('nailistProfiles')
   })
+
+  it('never exposes confirmToken/declineToken — they authorize the email confirm/decline links with no other auth check', async () => {
+    collectionStore['appointments'] = [{
+      __id: 'apt-1',
+      nailistProfileId: 'nailist-profile-1',
+      status: 'PENDING',
+      confirmToken: 'secret-confirm-token',
+      confirmTokenExpiresAt: { toDate: () => new Date(Date.now() + 60 * 60 * 1000) },
+      declineToken: 'secret-decline-token',
+      declineTokenExpiresAt: { toDate: () => new Date(Date.now() + 60 * 60 * 1000) },
+      createdAt: { toDate: () => new Date() },
+      startTime: { toDate: () => new Date(Date.now() + 60 * 60 * 1000) },
+      endTime: { toDate: () => new Date(Date.now() + 2 * 60 * 60 * 1000) },
+    }]
+    const req = makeRequest('GET', undefined, 'valid-token', 'role=nailist')
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.data[0].confirmToken).toBeUndefined()
+    expect(json.data[0].declineToken).toBeUndefined()
+    expect(json.data[0].confirmTokenExpiresAt).toBeUndefined()
+    expect(json.data[0].declineTokenExpiresAt).toBeUndefined()
+  })
 })
