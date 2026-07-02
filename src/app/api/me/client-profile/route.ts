@@ -12,6 +12,7 @@ const patchSchema = z.object({
   address: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  photoUrl: z.string().optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -79,6 +80,7 @@ export async function PATCH(request: NextRequest) {
     if (parsed.data.address !== undefined) updates.address = parsed.data.address
     if (parsed.data.latitude !== undefined) updates.latitude = parsed.data.latitude
     if (parsed.data.longitude !== undefined) updates.longitude = parsed.data.longitude
+    if (parsed.data.photoUrl !== undefined) updates.photoUrl = parsed.data.photoUrl
 
     await snap.docs[0].ref.update(updates)
     return NextResponse.json({ data: { id: snap.docs[0].id, ...updates } })

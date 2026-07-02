@@ -7,6 +7,8 @@ import { z } from 'zod'
 
 // Trust fields (isVerified, avgRating, reviewCount, userId) are deliberately
 // excluded — those are computed/assigned server-side only, never client-writable.
+// coverPhotoUrl is intentionally not writable — the profile hero is a fixed
+// gradient now, so there's no "set as cover" flow left to write it.
 const patchSchema = z.object({
   businessName: z.string().optional(),
   bio: z.string().optional(),
@@ -16,7 +18,7 @@ const patchSchema = z.object({
   whatsappPhone: z.string().optional(),
   instagramUrl: z.string().optional(),
   tiktokUrl: z.string().optional(),
-  coverPhotoUrl: z.string().optional(),
+  photoUrl: z.string().optional(),
   isActive: z.boolean().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),

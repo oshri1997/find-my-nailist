@@ -116,11 +116,20 @@ describe('PATCH /api/nailists/[id]', () => {
         businessName: 'Studio', bio: 'Bio', city: 'תל אביב', address: 'הרצל 1',
         phoneNumber: '0501234567', whatsappPhone: '0501234567',
         instagramUrl: 'https://instagram.com/x', tiktokUrl: 'https://tiktok.com/@x',
-        coverPhotoUrl: 'https://example.com/cover.jpg', isActive: true,
+        photoUrl: 'https://example.com/avatar.jpg', isActive: true,
         latitude: 32.08, longitude: 34.78,
       }, 'token'),
       mockParams
     )
     expect(res.status).toBe(200)
+  })
+
+  it('rejects coverPhotoUrl — the cover-photo picker UI was removed, so this field is no longer writable', async () => {
+    const res = await PATCH(
+      makeRequest({ businessName: 'Studio', coverPhotoUrl: 'https://example.com/cover.jpg' }, 'token'),
+      mockParams
+    )
+    expect(res.status).toBe(400)
+    expect(mockUpdateFn).not.toHaveBeenCalled()
   })
 })

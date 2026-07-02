@@ -25,7 +25,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = p.businessName as string
   const city = p.city as string | undefined
   const bio = p.bio as string | undefined
-  const coverPhotoUrl = p.coverPhotoUrl as string | undefined
+  // coverPhotoUrl is legacy (no UI sets it anymore) — fall back to the avatar for social share images
+  const coverPhotoUrl = (p.coverPhotoUrl as string | undefined) ?? (p.photoUrl as string | undefined)
 
   const title = city ? `${name} — נייליסטית ב${city}` : `${name} — נייליסטית`
   const description = bio
@@ -78,7 +79,7 @@ export default async function NailistProfilePage({ params }: Props) {
                 worstRating: 1,
               }
             : undefined,
-        image: p.coverPhotoUrl ?? undefined,
+        image: (p.coverPhotoUrl as string | undefined) ?? (p.photoUrl as string | undefined) ?? undefined,
         geo:
           p.latitude && p.longitude
             ? { '@type': 'GeoCoordinates', latitude: p.latitude, longitude: p.longitude }

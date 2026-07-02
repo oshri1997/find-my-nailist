@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, ImagePlus, Plus, X, Loader2, MapPin, Check } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ImagePlus, Plus, X, Loader2, MapPin, Check, Camera } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 
 const STEPS = [
   { label: 'כתובת העסק' },
+  { label: 'תמונת פרופיל' },
   { label: 'תמונות עבודות' },
   { label: 'שירותים' },
   { label: 'רשתות חברתיות' },
@@ -54,7 +55,12 @@ export default function OnboardingPage() {
   const [lat, setLat] = useState<number | undefined>()
   const [lng, setLng] = useState<number | undefined>()
 
-  // Step 2 — photos
+  // Step 2 — profile picture (optional)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement>(null)
+
+  // Step 3 — photos
   const [photos, setPhotos] = useState<Photo[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -108,6 +114,35 @@ export default function OnboardingPage() {
       setError('שגיאה בשמירת הכתובת — נסי שוב')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !profileId) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('הקובץ גדול מדי — מקסימום 5MB')
+      return
+    }
+
+    setError('')
+    setPhotoUploading(true)
+    try {
+      const { uploadProfilePhoto } = await import('@/lib/firebase/storage')
+      const { url } = await uploadProfilePhoto(profileId, file)
+      const res = await fetch(`/api/nailists/${profileId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoUrl: url }),
+      })
+      if (!res.ok) throw new Error()
+      setPhotoUrl(url)
+    } catch {
+      setError('שגיאה בהעלאת התמונה — נסי שוב')
+    } finally {
+      setPhotoUploading(false)
+      if (photoInputRef.current) photoInputRef.current.value = ''
     }
   }
 
@@ -210,7 +245,7 @@ export default function OnboardingPage() {
           }),
         })
       }
-      setStep(4)
+      setStep(5)
     } catch {
       setError('שגיאה בשמירת הקישורים — נסי שוב')
     } finally {
@@ -325,6 +360,52 @@ export default function OnboardingPage() {
 
             {step === 1 && (
               <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-xl font-black text-foreground">תמונת פרופיל</h2>
+                  <span className="text-xs font-bold bg-muted text-muted-foreground rounded-full px-2.5 py-0.5">אופציונלי</span>
+                </div>
+                <p className="text-muted-foreground text-sm mb-6">התמונה תוצג בפרופיל הציבורי ובתוצאות החיפוש</p>
+
+                <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+
+                <div className="flex justify-center mb-6">
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={photoUploading}
+                    className="relative w-28 h-28 rounded-full bg-muted border-2 border-dashed border-border hover:border-pink-300 hover:bg-pink-50/30 transition-all flex items-center justify-center overflow-hidden disabled:opacity-60 group"
+                  >
+                    {photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+                    ) : photoUploading ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-pink-400" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-pink-400 transition-colors">
+                        <Camera className="h-6 w-6" />
+                        <span className="text-xs font-bold">העלי תמונה</span>
+                      </div>
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep(0)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
+                    <ArrowRight className="h-4 w-4" /> חזרה
+                  </Button>
+                  <Button
+                    onClick={() => setStep(2)}
+                    disabled={photoUploading}
+                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
+                  >
+                    {photoUrl ? 'המשיכי' : 'דלגי לעת עתה'} <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                 <h2 className="text-xl font-black text-foreground mb-1">תמונות של העבודות שלך</h2>
                 <p className="text-muted-foreground text-sm mb-5">
                   העלי לפחות 3 תמונות כדי להמשיך
@@ -369,11 +450,11 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(0)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
+                  <Button variant="outline" onClick={() => setStep(1)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
                     <ArrowRight className="h-4 w-4" /> חזרה
                   </Button>
                   <Button
-                    onClick={() => setStep(2)}
+                    onClick={() => setStep(3)}
                     disabled={photos.length < 3}
                     className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
@@ -383,8 +464,8 @@ export default function OnboardingPage() {
               </motion.div>
             )}
 
-            {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+            {step === 3 && (
+              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                 <h2 className="text-xl font-black text-foreground mb-1">מה השירותים שלך?</h2>
                 <p className="text-muted-foreground text-sm mb-5">הוסיפי לפחות שירות אחד כדי שלקוחות יוכלו להזמין</p>
 
@@ -471,11 +552,11 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="flex gap-3 mt-5">
-                  <Button variant="outline" onClick={() => setStep(1)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
+                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
                     <ArrowRight className="h-4 w-4" /> חזרה
                   </Button>
                   <Button
-                    onClick={() => { setError(''); setStep(3) }}
+                    onClick={() => { setError(''); setStep(4) }}
                     disabled={services.length === 0}
                     className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
@@ -485,8 +566,8 @@ export default function OnboardingPage() {
               </motion.div>
             )}
 
-            {step === 3 && (
-              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+            {step === 4 && (
+              <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                 <div className="flex items-center gap-2 mb-1">
                   <h2 className="text-xl font-black text-foreground">רשתות חברתיות</h2>
                   <span className="text-xs font-bold bg-muted text-muted-foreground rounded-full px-2.5 py-0.5">אופציונלי</span>
@@ -532,7 +613,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
+                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
                     <ArrowRight className="h-4 w-4" /> חזרה
                   </Button>
                   <Button
@@ -546,8 +627,8 @@ export default function OnboardingPage() {
               </motion.div>
             )}
 
-            {step === 4 && (
-              <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+            {step === 5 && (
+              <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                 <h2 className="text-xl font-black text-foreground mb-1">שעות פעילות</h2>
                 <p className="text-muted-foreground text-sm mb-5">הגדירי באילו ימים ושעות את זמינה ללקוחות</p>
 
@@ -611,7 +692,7 @@ export default function OnboardingPage() {
                 </label>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
+                  <Button variant="outline" onClick={() => setStep(4)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
                     <ArrowRight className="h-4 w-4" /> חזרה
                   </Button>
                   <Button

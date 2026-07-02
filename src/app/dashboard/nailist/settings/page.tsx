@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
-import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
+import { CheckCircle2, Loader2, AlertCircle, Camera } from 'lucide-react'
 
 const EMPTY_FORM = {
   businessName: '',
@@ -21,9 +21,17 @@ const EMPTY_FORM = {
   longitude: undefined as number | undefined,
 }
 
+function initials(name: string) {
+  return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+}
+
 export default function NailistSettingsPage() {
   const [profileId, setProfileId] = useState<string | null>(null)
   const [form, setForm] = useState<typeof EMPTY_FORM>(EMPTY_FORM)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [photoError, setPhotoError] = useState('')
+  const photoInputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -39,6 +47,7 @@ export default function NailistSettingsPage() {
         const { data } = await r.json()
         if (!data) return
         setProfileId(data.id)
+        setPhotoUrl(data.photoUrl ?? null)
         setForm({
           businessName: data.businessName ?? '',
           bio: data.bio ?? '',
@@ -59,6 +68,36 @@ export default function NailistSettingsPage() {
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !profileId) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('הקובץ גדול מדי — מקסימום 5MB')
+      return
+    }
+
+    setPhotoError('')
+    setPhotoUploading(true)
+    try {
+      const { uploadProfilePhoto } = await import('@/lib/firebase/storage')
+      const { url } = await uploadProfilePhoto(profileId, file)
+
+      const res = await fetch(`/api/nailists/${profileId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoUrl: url }),
+      })
+      if (!res.ok) throw new Error()
+      setPhotoUrl(url)
+    } catch {
+      setPhotoError('שגיאה בהעלאת התמונה — נסי שוב')
+    } finally {
+      setPhotoUploading(false)
+      if (photoInputRef.current) photoInputRef.current.value = ''
+    }
   }
 
   function handlePlaceSelect(result: PlaceResult) {
@@ -106,6 +145,39 @@ export default function NailistSettingsPage() {
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
         <h1 className="text-3xl font-black text-foreground mb-1">הגדרות פרופיל</h1>
         <p className="text-muted-foreground font-medium">עדכני את פרטי העסק שלך</p>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        className="bg-card rounded-3xl border border-border p-6 shadow-sm flex items-center gap-4 mb-6">
+        <div className="relative shrink-0">
+          <div className="w-20 h-20 rounded-full bg-muted overflow-hidden flex items-center justify-center border-2 border-border">
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-xl font-black text-muted-foreground">{initials(form.businessName || 'N')}</span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => photoInputRef.current?.click()}
+            disabled={photoUploading || !profileId}
+            className="absolute -bottom-1 -left-1 w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white flex items-center justify-center shadow-lg border-2 border-card disabled:opacity-60"
+          >
+            {photoUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+          </button>
+          <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+        </div>
+        <div>
+          <h2 className="font-black text-foreground text-base">תמונת פרופיל</h2>
+          <p className="text-sm text-muted-foreground font-medium">מוצגת בפרופיל הציבורי ובתוצאות החיפוש</p>
+          {photoError && (
+            <p className="text-xs text-red-500 font-semibold mt-1 flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" />
+              {photoError}
+            </p>
+          )}
+        </div>
       </motion.div>
 
       <form onSubmit={handleSave} className="space-y-6">

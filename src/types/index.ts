@@ -27,6 +27,8 @@ export interface NailistProfileDoc {
   latitude?: number
   longitude?: number
   geohash?: string
+  photoUrl?: string
+  coverPhotoUrl?: string
   instagramUrl?: string
   tiktokUrl?: string
   whatsappPhone?: string   // Israeli format: 0501234567 or +972501234567
@@ -46,6 +48,7 @@ export interface ClientProfileDoc {
   country?: string
   latitude?: number
   longitude?: number
+  photoUrl?: string
   createdAt: Timestamp
   updatedAt: Timestamp
 }

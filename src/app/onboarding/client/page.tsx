@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, Phone, Loader2, Check, User } from 'lucide-react'
+import { ArrowLeft, Phone, Loader2, Check, User, Camera } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,6 +14,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 const STEPS = [
   { label: 'שם' },
   { label: 'טלפון' },
+  { label: 'תמונה' },
   { label: 'מיקום' },
 ]
 
@@ -28,6 +29,9 @@ export default function ClientOnboardingPage() {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [photoError, setPhotoError] = useState('')
   const [address, setAddress] = useState('')
   const [city, setCity] = useState('')
   const [lat, setLat] = useState<number | undefined>()
@@ -38,6 +42,28 @@ export default function ClientOnboardingPage() {
     if (authLoading) return
     if (!user) router.replace('/login')
   }, [user, authLoading, router])
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('הקובץ גדול מדי — מקסימום 5MB')
+      return
+    }
+
+    setPhotoError('')
+    setPhotoUploading(true)
+    try {
+      const { uploadProfilePhoto } = await import('@/lib/firebase/storage')
+      const { url } = await uploadProfilePhoto(user.uid, file)
+      setPhotoUrl(url)
+    } catch {
+      setPhotoError('שגיאה בהעלאת התמונה — נסי שוב')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
 
   async function handleFinish() {
     setSaving(true)
@@ -50,6 +76,7 @@ export default function ClientOnboardingPage() {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           phoneNumber: phone,
+          photoUrl: photoUrl || undefined,
           address: address || undefined,
           city: city || undefined,
           latitude: lat,
@@ -224,9 +251,64 @@ export default function ClientOnboardingPage() {
                 </div>
               </motion.div>
 
-            ) : (
+            ) : step === 2 ? (
               <motion.div
                 key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <h2 className="text-xl font-black text-foreground mb-1">תמונת פרופיל</h2>
+                <p className="text-sm text-muted-foreground mb-6">אופציונלי — כך הנייליסטית תזהה אותך</p>
+
+                <input type="file" accept="image/*" id="clientPhotoInput" className="hidden" onChange={handlePhotoChange} />
+
+                <div className="flex justify-center mb-6">
+                  <label
+                    htmlFor="clientPhotoInput"
+                    className="relative w-28 h-28 rounded-full bg-muted border-2 border-dashed border-border hover:border-primary/50 hover:bg-pink-50/30 transition-all flex items-center justify-center overflow-hidden cursor-pointer group"
+                  >
+                    {photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+                    ) : photoUploading ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-primary transition-colors">
+                        <Camera className="h-6 w-6" />
+                        <span className="text-xs font-bold">העלי תמונה</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
+
+                {photoError && <p className="text-sm text-red-500 font-semibold mb-4 text-center">{photoError}</p>}
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(1)}
+                    className="flex-1 rounded-xl h-12 border-border font-semibold cursor-pointer"
+                  >
+                    חזרה
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={photoUploading}
+                    onClick={() => setStep(3)}
+                    className="flex-1 bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black shadow-[0_4px_16px_rgba(236,72,153,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
+                  >
+                    {photoUrl ? 'המשיכי' : 'דלגי לעת עתה'}
+                    <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                  </Button>
+                </div>
+              </motion.div>
+
+            ) : (
+              <motion.div
+                key="step3"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -271,7 +353,7 @@ export default function ClientOnboardingPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setStep(1)}
+                    onClick={() => setStep(2)}
                     disabled={saving}
                     className="flex-1 rounded-xl h-12 border-border font-semibold cursor-pointer"
                   >

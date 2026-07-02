@@ -44,6 +44,7 @@ interface Nailist {
   whatsappPhone?: string
   distanceKm?: number
   coverPhotoUrl?: string
+  photoUrl?: string
   serviceNames?: string[]
 }
 
@@ -140,7 +141,7 @@ export default function SearchPage() {
   // Pre-load all cover images; only show real cards once they're all ready
   useEffect(() => {
     if (loading) return
-    const urls = nailists.map(n => n.coverPhotoUrl).filter(Boolean) as string[]
+    const urls = nailists.map(n => n.coverPhotoUrl ?? n.photoUrl).filter(Boolean) as string[]
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (urls.length === 0) { setImagesReady(true); return }
 
@@ -399,10 +400,10 @@ export default function SearchPage() {
               >
                 {/* Cover */}
                 <div className="h-44 relative flex items-center justify-center overflow-hidden bg-pink-50">
-                  {nailist.coverPhotoUrl ? (
+                  {(nailist.coverPhotoUrl ?? nailist.photoUrl) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={nailist.coverPhotoUrl}
+                      src={nailist.coverPhotoUrl ?? nailist.photoUrl}
                       alt={nailist.businessName}
                       className="w-full h-full object-cover"
                       style={{ opacity: 0, transition: 'opacity 0.4s' }}
