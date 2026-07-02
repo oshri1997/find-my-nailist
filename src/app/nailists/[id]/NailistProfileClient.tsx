@@ -198,9 +198,11 @@ export default function NailistProfileClient({ id }: { id: string }) {
       {/* Hero — a consistent gradient, never a nailist-uploaded photo, so the header
           always looks clean regardless of what image someone sets as their cover */}
       <div className="relative text-white overflow-hidden bg-gradient-to-br from-pink-500 via-purple-600 to-violet-600">
-        {/* Owner edit buttons */}
+        {/* Owner edit buttons — z-20 so they stay above the content container below,
+            which shares the hero's stacking context and would otherwise intercept
+            clicks in this region via its own (invisible) top padding */}
         {isOwner === true && (
-          <div className="absolute top-3 left-3 flex gap-2 z-10">
+          <div className="absolute top-3 left-3 flex gap-2 z-20">
             <Link href="/dashboard/nailist/portfolio">
               <button className="bg-white/20 backdrop-blur text-white text-xs font-bold rounded-full px-3 py-1.5 hover:bg-white/35 transition-colors flex items-center gap-1.5 border border-white/20">
                 <ImageIcon className="h-3 w-3" />
