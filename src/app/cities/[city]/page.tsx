@@ -7,6 +7,8 @@ import { Navbar } from '@/components/layout/navbar'
 import { MapPin, Star, Sparkles } from 'lucide-react'
 import { CITIES, type CityEntry } from '@/lib/cities'
 
+export const dynamic = 'force-dynamic'
+
 const BASE_URL = 'https://nailistiot.fun'
 
 function getCity(slug: string): CityEntry | undefined {
@@ -21,6 +23,7 @@ interface NailistRow {
   avgRating: number
   reviewCount: number
   coverPhotoUrl?: string
+  photoUrl?: string
 }
 
 async function getNailistsByCity(cityName: string, altNames: string[]): Promise<NailistRow[]> {
@@ -53,6 +56,7 @@ async function getNailistsByCity(cityName: string, altNames: string[]): Promise<
           avgRating: (d.avgRating as number) ?? 0,
           reviewCount: (d.reviewCount as number) ?? 0,
           coverPhotoUrl: d.coverPhotoUrl as string | undefined,
+          photoUrl: d.photoUrl as string | undefined,
         })
       }
     }
@@ -178,10 +182,10 @@ export default async function CityPage({ params }: Props) {
                 className="bg-card rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_32px_rgba(236,72,153,0.12)] transition-all duration-300 border border-border hover:border-pink-200 block group"
               >
                 <div className="h-44 relative flex items-center justify-center overflow-hidden bg-pink-50">
-                  {nailist.coverPhotoUrl ? (
+                  {(nailist.coverPhotoUrl ?? nailist.photoUrl) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={nailist.coverPhotoUrl}
+                      src={nailist.coverPhotoUrl ?? nailist.photoUrl}
                       alt={nailist.businessName}
                       className="w-full h-full object-cover"
                     />

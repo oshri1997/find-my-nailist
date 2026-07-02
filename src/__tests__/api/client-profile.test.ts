@@ -238,6 +238,15 @@ describe('PATCH /api/me/client-profile', () => {
     )
   })
 
+  it('updates photoUrl successfully (client onboarding profile-picture step)', async () => {
+    const req = makePatchRequest({ photoUrl: 'https://example.com/avatar.jpg' })
+    const res = await PATCH(req)
+    expect(res.status).toBe(200)
+    expect(mockUpdateFn).toHaveBeenCalledWith(
+      expect.objectContaining({ photoUrl: 'https://example.com/avatar.jpg' })
+    )
+  })
+
   it('returns 400 on invalid body (phoneNumber empty string)', async () => {
     const req = makePatchRequest({ phoneNumber: '' })
     const res = await PATCH(req)

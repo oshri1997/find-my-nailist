@@ -111,7 +111,7 @@ export default function PortfolioPage() {
       })
       setCoverPhotoUrl(newUrl)
     } catch {
-      setError('שגיאה בהגדרת תמונת רקע')
+      setError('שגיאה בהגדרת תמונת הכרטיס')
     }
   }
 
@@ -124,7 +124,7 @@ export default function PortfolioPage() {
             <p className="text-muted-foreground font-medium">העלי תמונות של עבודות שלך</p>
             <p className="text-xs text-amber-500 font-medium mt-0.5 flex items-center gap-1">
               <Star className="h-3 w-3 fill-amber-400" />
-              לחצי על הכוכב שבתמונה כדי להגדיר אותה כתמונת הרקע של הכרטיס שלך
+              לחצי על הכוכב שבתמונה כדי להגדיר אותה כתמונת הכרטיס שלך בתוצאות החיפוש
             </p>
           </div>
           <Button
@@ -205,7 +205,7 @@ export default function PortfolioPage() {
                 {coverPhotoUrl === photo.url && (
                   <div className="absolute top-2 left-2 bg-amber-400 text-white rounded-full px-2 py-0.5 text-xs font-black flex items-center gap-1 shadow">
                     <Star className="h-3 w-3 fill-white" />
-                    רקע
+                    כרטיס
                   </div>
                 )}
 
@@ -220,7 +220,7 @@ export default function PortfolioPage() {
                 {/* Set/unset cover */}
                 <button
                   onClick={() => handleSetCover(photo)}
-                  title={coverPhotoUrl === photo.url ? 'הסרי תמונת רקע' : 'הגדרי כתמונת רקע לכרטיס'}
+                  title={coverPhotoUrl === photo.url ? 'הסירי תמונת כרטיס' : 'הגדרי כתמונת הכרטיס'}
                   className={`absolute bottom-2 left-2 w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm ${
                     coverPhotoUrl === photo.url
                       ? 'bg-amber-400 text-white'

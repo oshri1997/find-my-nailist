@@ -36,15 +36,30 @@ export async function uploadPortfolioPhoto(
 
 export async function uploadProfilePhoto(
   userId: string,
-  file: File
+  file: File,
+  onProgress?: (percent: number) => void
 ): Promise<{ url: string; storageKey: string }> {
   const storage = await getStorage()
   const ext = file.name.split('.').pop() ?? 'jpg'
+  // Fixed filename (not timestamped like portfolio photos) — re-uploading overwrites in place.
   const storageKey = `avatars/${userId}/profile.${ext}`
   const storageRef = ref(storage, storageKey)
-  await uploadBytesResumable(storageRef, file, { contentType: file.type })
-  const url = await getDownloadURL(storageRef)
-  return { url, storageKey }
+
+  return new Promise((resolve, reject) => {
+    const task = uploadBytesResumable(storageRef, file, { contentType: file.type })
+    task.on(
+      'state_changed',
+      (snapshot) => {
+        const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        onProgress?.(Math.round(percent))
+      },
+      reject,
+      async () => {
+        const url = await getDownloadURL(task.snapshot.ref)
+        resolve({ url, storageKey })
+      }
+    )
+  })
 }
 
 export async function uploadCoverPhoto(

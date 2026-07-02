@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft, Eye, EyeOff, Star, Scissors, Users, Wallet, Calendar, Inbox, MessageSquare, FileText, Zap } from 'lucide-react'
+import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft, Eye, EyeOff, Star, Scissors, Users, Wallet, Calendar, Inbox, MessageSquare, FileText } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 function CountUp({ to, prefix = '', decimals = 0, duration = 1500 }: {
@@ -88,12 +88,6 @@ function formatAppointmentTime(iso: string) {
   const time = d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
   return { day, time }
 }
-
-const quickActions = [
-  { label: 'הגדרת שעות עבודה', icon: Clock, href: '/dashboard/nailist/hours' },
-  { label: 'הוספת שירות חדש', icon: Scissors, href: '/dashboard/nailist/services' },
-  { label: 'צפייה בפרופיל ציבורי', icon: Eye, href: '/search' },
-]
 
 interface NailistProfile {
   id?: string
@@ -426,8 +420,8 @@ export default function NailistDashboard() {
           )}
         </motion.div>
 
-        {/* Profile completion */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+        {/* Profile completion — hidden once fully complete */}
+        {completionPct < 100 && <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
           className="bg-card rounded-3xl border border-border p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div>
@@ -452,29 +446,7 @@ export default function NailistDashboard() {
               </motion.div>
             ))}
           </div>
-        </motion.div>
-
-        {/* Quick actions */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-          className="bg-card rounded-3xl border border-border p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className="text-lg font-black text-foreground">פעולות מהירות</h3>
-              <p className="text-sm text-muted-foreground font-medium">קיצורי דרך שימושיים</p>
-            </div>
-            <Zap className="h-5 w-5 text-muted-foreground" />
-          </div>
-          <div className="space-y-3">
-            {quickActions.map((action, i) => (
-              <motion.a key={action.label} href={action.href} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.55 + i * 0.07 }} whileHover={{ x: -4 }}
-                className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-border text-sm font-bold text-muted-foreground hover:border-pink-200 hover:text-pink-600 hover:bg-pink-50/30 dark:hover:bg-pink-950/20 transition-all">
-                <action.icon className="h-4 w-4 shrink-0" />
-                {action.label}
-              </motion.a>
-            ))}
-          </div>
-        </motion.div>
+        </motion.div>}
       </div>
     </div>
   )

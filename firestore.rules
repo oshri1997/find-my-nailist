@@ -15,10 +15,15 @@ service cloud.firestore {
     }
 
     // ── nailistProfiles ────────────────────────────────────────────────
-    // Publicly readable for search and profile pages.
+    // No direct client reads — the app serves search/profile pages exclusively
+    // through Admin SDK API routes, which gate contact fields (whatsappPhone/
+    // instagramUrl/tiktokUrl/phoneNumber/email/address) behind login. A public
+    // read rule here would let anyone bypass that gate via the Firestore SDK
+    // or REST API directly. Requiring auth still permits nothing today (no
+    // client code reads this collection directly) but keeps the door closed.
     // avgRating / reviewCount are computed server-side — never written by clients.
     match /nailistProfiles/{profileId} {
-      allow read: if true;
+      allow read: if isAuthed();
       allow write: if false;
     }
 

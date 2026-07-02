@@ -9,6 +9,7 @@ import NailistSettingsPage from '@/app/dashboard/nailist/settings/page'
 
 jest.mock('@/lib/firebase/storage', () => ({
   uploadCoverPhoto: jest.fn(),
+  uploadProfilePhoto: jest.fn(),
 }))
 
 const profile = {
@@ -51,7 +52,7 @@ describe('Nailist settings — card image upload', () => {
     await waitFor(() => expect(screen.getByText('תמונת כרטיס')).toBeInTheDocument())
 
     const file = new File(['x'], 'cover.jpg', { type: 'image/jpeg' })
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement
     fireEvent.change(input, { target: { files: [file] } })
 
     await waitFor(() => {
@@ -80,7 +81,7 @@ describe('Nailist settings — card image upload', () => {
     await waitFor(() => expect(screen.getByText('תמונת כרטיס')).toBeInTheDocument())
 
     const bigFile = new File([new ArrayBuffer(6 * 1024 * 1024)], 'big.jpg', { type: 'image/jpeg' })
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement
     fireEvent.change(input, { target: { files: [bigFile] } })
 
     await waitFor(() => expect(screen.getByText(/גדול מדי/)).toBeInTheDocument())

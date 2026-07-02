@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
+import { isAuthenticatedRequest, computeHasContactInfo, stripNailistContactFields } from '@/lib/nailist-contact'
 
 import { geohashQueryBounds, distanceBetween } from 'geofire-common'
 import type { Firestore } from 'firebase-admin/firestore'
+
+function sanitizeNailists(nailists: Array<Record<string, unknown>>, isAuthenticated: boolean): void {
+  nailists.forEach((n) => {
+    n.hasContactInfo = computeHasContactInfo(n)
+    if (!isAuthenticated) stripNailistContactFields(n)
+  })
+}
 
 async function attachServiceNames(
   db: Firestore,
@@ -47,6 +55,7 @@ export async function GET(request: NextRequest) {
     const pageSize = Number(searchParams.get('pageSize') ?? '12')
 
     const db = adminDb()
+    const isAuthenticated = await isAuthenticatedRequest(request)
 
     if (lat && lng) {
       const center: [number, number] = [Number(lat), Number(lng)]
@@ -82,6 +91,7 @@ export async function GET(request: NextRequest) {
       nailists.sort((a, b) => (a.distanceKm as number) - (b.distanceKm as number))
       const page = nailists.slice(0, pageSize)
       await attachServiceNames(db, page)
+      sanitizeNailists(page, isAuthenticated)
 
       return NextResponse.json({
         data: page,
@@ -100,6 +110,7 @@ export async function GET(request: NextRequest) {
     const nailists = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
     const page = nailists.slice(0, pageSize)
     await attachServiceNames(db, page)
+    sanitizeNailists(page, isAuthenticated)
 
     return NextResponse.json({
       data: page,

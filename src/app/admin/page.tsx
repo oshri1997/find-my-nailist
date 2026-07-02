@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Users, Scissors, Calendar, Star, TrendingUp, CheckCircle2, Clock, XCircle, UserPlus } from 'lucide-react'
+import { Users, Scissors, Calendar, Star, TrendingUp, CheckCircle2, UserPlus } from 'lucide-react'
 
 interface Stats {
   totalUsers: number
@@ -111,22 +111,6 @@ export default function AdminDashboard() {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Quick nav */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {[
-          { href: '/admin/users', label: 'ניהול משתמשים', desc: `${stats.totalUsers} משתמשים`, icon: Users },
-          { href: '/admin/nailists', label: 'ניהול נייליסטיות', desc: `${stats.activeNailists} פעילות`, icon: Scissors },
-          { href: '/admin/appointments', label: 'הזמנות', desc: `${stats.appointmentsByStatus.PENDING ?? 0} ממתינות`, icon: Clock },
-          { href: '/admin/reviews', label: 'ביקורות', desc: `${stats.totalReviews} ביקורות`, icon: Star },
-        ].map(({ href, label, desc, icon: Icon }) => (
-          <a key={href} href={href} className="bg-card border border-border rounded-2xl p-5 hover:border-primary/40 hover:shadow-lg transition-all group">
-            <Icon className="w-6 h-6 text-primary mb-3" />
-            <p className="font-bold text-foreground text-sm group-hover:text-primary transition-colors">{label}</p>
-            <p className="text-xs text-muted-foreground mt-1">{desc}</p>
-          </a>
-        ))}
       </div>
     </div>
   )

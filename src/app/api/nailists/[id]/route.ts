@@ -2,18 +2,49 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { geocodeAddress } from '@/lib/geocoding'
+import { isAuthenticatedRequest, computeHasContactInfo, stripNailistContactFields } from '@/lib/nailist-contact'
+import { z } from 'zod'
+
+// Trust fields (isVerified, avgRating, reviewCount, userId) are deliberately
+// excluded — those are computed/assigned server-side only, never client-writable.
+// photoUrl is the profile avatar (hero + card fallback); coverPhotoUrl is the
+// search-card image, set from Settings or the portfolio picker — the profile
+// hero itself stays a fixed gradient regardless of coverPhotoUrl.
+const patchSchema = z.object({
+  businessName: z.string().optional(),
+  bio: z.string().optional(),
+  city: z.string().optional(),
+  address: z.string().optional(),
+  phoneNumber: z.string().optional(),
+  whatsappPhone: z.string().optional(),
+  instagramUrl: z.string().optional(),
+  tiktokUrl: z.string().optional(),
+  photoUrl: z.string().optional(),
+  coverPhotoUrl: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+}).strict()
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
   try {
+    const isAuthenticated = await isAuthenticatedRequest(request)
+
     const db = adminDb()
     const snap = await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(id).get()
 
     if (!snap.exists) {
       return NextResponse.json({ error: 'Nailist not found' }, { status: 404 })
+    }
+
+    const profileData = snap.data()!
+    const hasContactInfo = computeHasContactInfo(profileData)
+    if (!isAuthenticated) {
+      stripNailistContactFields(profileData)
     }
 
     const [servicesSnap, portfolioSnap, hoursSnap, reviewsSnap] = await Promise.all([
@@ -39,7 +70,8 @@ export async function GET(
     return NextResponse.json({
       data: {
         id: snap.id,
-        ...snap.data(),
+        ...profileData,
+        hasContactInfo,
         services: servicesSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
         portfolio: (portfolioSnap.docs
           .map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown>>)
@@ -92,7 +124,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await request.json()
+    const body = patchSchema.parse(await request.json())
     const { FieldValue } = await import('firebase-admin/firestore')
 
     const update: Record<string, unknown> = { ...body, updatedAt: FieldValue.serverTimestamp() }
@@ -118,6 +150,9 @@ export async function PATCH(
 
     return NextResponse.json({ message: 'Profile updated' })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.issues }, { status: 400 })
+    }
     console.error(`PATCH /api/nailists/${id} error:`, error)
     return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
   }

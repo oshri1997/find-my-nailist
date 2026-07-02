@@ -100,4 +100,35 @@ describe('PATCH /api/nailists/[id]', () => {
       expect.objectContaining({ businessName: 'Updated Studio' })
     )
   })
+
+  it('rejects mass-assignment of trust fields (isVerified, avgRating, reviewCount, userId)', async () => {
+    const res = await PATCH(
+      makeRequest({ businessName: 'Updated Studio', isVerified: true, avgRating: 5, reviewCount: 9999, userId: 'attacker-uid' }, 'token'),
+      mockParams
+    )
+    expect(res.status).toBe(400)
+    expect(mockUpdateFn).not.toHaveBeenCalled()
+  })
+
+  it('accepts every field the settings/onboarding forms actually send', async () => {
+    const res = await PATCH(
+      makeRequest({
+        businessName: 'Studio', bio: 'Bio', city: 'תל אביב', address: 'הרצל 1',
+        phoneNumber: '0501234567', whatsappPhone: '0501234567',
+        instagramUrl: 'https://instagram.com/x', tiktokUrl: 'https://tiktok.com/@x',
+        photoUrl: 'https://example.com/avatar.jpg', coverPhotoUrl: 'https://example.com/cover.jpg',
+        isActive: true, latitude: 32.08, longitude: 34.78,
+      }, 'token'),
+      mockParams
+    )
+    expect(res.status).toBe(200)
+  })
+
+  it('accepts coverPhotoUrl: null to clear the search-card image', async () => {
+    const res = await PATCH(
+      makeRequest({ businessName: 'Studio', coverPhotoUrl: null }, 'token'),
+      mockParams
+    )
+    expect(res.status).toBe(200)
+  })
 })

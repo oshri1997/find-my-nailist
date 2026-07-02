@@ -4,22 +4,25 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Loader2, Menu, X, Search } from 'lucide-react'
+import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Loader2, Menu, X, Search, Eye, Shield } from 'lucide-react'
 import NextImage from 'next/image'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { ADMIN_EMAIL } from '@/lib/constants'
 
 const primaryNavLinks = [
-  { href: '/dashboard/nailist', label: 'סקירה', Icon: LayoutDashboard },
-  { href: '/dashboard/nailist/appointments', label: 'תורים', Icon: Calendar },
-  { href: '/dashboard/nailist/services', label: 'שירותים', Icon: Scissors },
-  { href: '/dashboard/nailist/settings', label: 'הגדרות', Icon: Settings },
+  { href: '/dashboard/nailist', label: 'סקירה', Icon: LayoutDashboard, dynamic: false },
+  { href: '/dashboard/nailist/appointments', label: 'תורים', Icon: Calendar, dynamic: false },
+  { href: '/dashboard/nailist/services', label: 'שירותים', Icon: Scissors, dynamic: false },
+  { href: '/dashboard/nailist/settings', label: 'הגדרות', Icon: Settings, dynamic: false },
 ]
 
 const secondaryNavLinks = [
-  { href: '/dashboard/nailist/hours', label: 'שעות פעילות', Icon: Clock },
-  { href: '/dashboard/nailist/portfolio', label: 'פורטפוליו', Icon: ImageIcon },
-  { href: '/dashboard/nailist/reviews', label: 'ביקורות', Icon: Star },
+  { href: '/dashboard/nailist/hours', label: 'שעות פעילות', Icon: Clock, dynamic: false },
+  { href: '/dashboard/nailist/portfolio', label: 'פורטפוליו', Icon: ImageIcon, dynamic: false },
+  { href: '/dashboard/nailist/reviews', label: 'ביקורות', Icon: Star, dynamic: false },
+  // href is resolved at render time from the caller's own nailist profile id — see resolveHref below
+  { href: null as string | null, label: 'פרופיל ציבורי', Icon: Eye, dynamic: true },
 ]
 
 const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks]
@@ -30,6 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [showMoreSheet, setShowMoreSheet] = useState(false)
+  const [profileId, setProfileId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) { router.replace('/login'); return }
@@ -55,6 +59,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => { clearTimeout(timeout); controller.abort() }
   }, [user, router])
 
+  useEffect(() => {
+    if (!authorized) return
+    fetch('/api/me/nailist-profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(json => setProfileId(json?.data?.id ?? null))
+      .catch(() => {})
+  }, [authorized])
+
+  // Dynamic entries (public profile link) resolve their href from profileId once it loads.
+  function resolveHref(link: { href: string | null; dynamic: boolean }): string | null {
+    return link.dynamic ? (profileId ? `/nailists/${profileId}` : null) : link.href
+  }
+
   const displayName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
 
   function handleSignOut() {
@@ -63,6 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const secondaryActive = secondaryNavLinks.some(l => pathname === l.href)
+  const isAdmin = user?.email === ADMIN_EMAIL
 
   if (authorized === null) {
     return (
@@ -137,18 +155,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Nav links */}
           <nav className="flex-1 p-3 space-y-0.5">
             {allNavLinks.map((link, i) => {
-              const isActive = pathname === link.href
+              const href = resolveHref(link)
+              const isActive = href !== null && pathname === href
+              const pending = href === null
               return (
                 <motion.div
-                  key={link.href}
+                  key={link.label}
                   initial={{ opacity: 0, x: 16 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.05 + i * 0.04 }}
                 >
                   <Link
-                    href={link.href}
+                    href={pending ? '#' : href}
+                    aria-disabled={pending}
+                    onClick={pending ? (e) => e.preventDefault() : undefined}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                      isActive
+                      pending
+                        ? 'text-muted-foreground/40 cursor-not-allowed'
+                        : isActive
                         ? 'bg-primary text-white shadow-[0_4px_12px_rgba(236,72,153,0.30)]'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
@@ -170,6 +194,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Search className="h-4 w-4" />
               חיפוש נייליסטיות
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-primary hover:bg-primary/8 transition-all"
+              >
+                <Shield className="h-4 w-4" />
+                פאנל ניהול
+              </Link>
+            )}
             <div className="flex items-center justify-between px-3 py-2">
               <span className="text-sm font-semibold text-muted-foreground">מצב תצוגה</span>
               <ThemeToggle />
@@ -262,16 +295,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </button>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="grid grid-cols-2 gap-2 mb-4">
                 {secondaryNavLinks.map((link) => {
-                  const isActive = pathname === link.href
+                  const href = resolveHref(link)
+                  const isActive = href !== null && pathname === href
+                  const pending = href === null
                   return (
                     <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setShowMoreSheet(false)}
+                      key={link.label}
+                      href={pending ? '#' : href}
+                      aria-disabled={pending}
+                      onClick={pending ? (e) => e.preventDefault() : () => setShowMoreSheet(false)}
                       className={`flex flex-col items-center gap-2 py-4 rounded-2xl text-xs font-bold transition-colors ${
-                        isActive
+                        pending
+                          ? 'bg-muted/30 text-muted-foreground/40 cursor-not-allowed'
+                          : isActive
                           ? 'bg-primary/10 text-primary'
                           : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                       }`}
@@ -284,6 +322,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
 
               <div className="border-t border-border pt-3 space-y-1">
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setShowMoreSheet(false)}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-primary hover:bg-primary/8 transition-colors"
+                  >
+                    <Shield className="h-4 w-4" />
+                    פאנל ניהול
+                  </Link>
+                )}
                 <div className="flex items-center justify-between px-4 py-2.5 rounded-xl">
                   <span className="text-sm font-semibold text-muted-foreground">מצב תצוגה</span>
                   <ThemeToggle />
