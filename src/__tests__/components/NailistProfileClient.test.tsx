@@ -174,4 +174,14 @@ describe('NailistProfileClient — owner avatar edit', () => {
       expect(img.src).toBe('https://example.com/new-avatar.jpg')
     })
   })
+
+  it('shows a photo-edit button for an admin account that owns the profile (role is ADMIN, not NAILIST)', async () => {
+    mockUseAuth.mockReturnValue({ user: { uid: 'u1' }, role: 'ADMIN' })
+    mockProfileFetch(baseProfile, { asOwner: true })
+    const { container } = render(<NailistProfileClient id="nailist-1" />)
+
+    await waitFor(() => {
+      expect(container.querySelector('input[type="file"]')).toBeInTheDocument()
+    })
+  })
 })

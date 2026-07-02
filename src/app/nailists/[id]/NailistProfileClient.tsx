@@ -130,8 +130,10 @@ export default function NailistProfileClient({ id }: { id: string }) {
   }, [id])
 
   useEffect(() => {
+    // Admins get owner controls too, since the same account can be both the
+    // platform admin and a working nailist (role is 'ADMIN', not 'NAILIST').
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!user || role !== 'NAILIST') { setIsOwner(false); return }
+    if (!user || (role !== 'NAILIST' && role !== 'ADMIN')) { setIsOwner(false); return }
     fetch('/api/me/nailist-profile')
       .then(r => r.ok ? r.json() : null)
       .then(json => { setIsOwner(json?.data?.id === id) })
