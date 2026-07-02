@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Navbar } from '@/components/layout/navbar'
 import { Button } from '@/components/ui/button'
-import { MapPin, Star, Clock, MessageCircle, Navigation, ExternalLink, ChevronRight, Settings, ImageIcon, Share2, Check, Heart, AlertCircle, Scissors, MessageSquare } from 'lucide-react'
+import { MapPin, Star, Clock, MessageCircle, Navigation, ExternalLink, ChevronRight, Settings, ImageIcon, Share2, Check, Heart, AlertCircle, Scissors, MessageSquare, Camera, Loader2 } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
 import BookingModal from '@/components/booking/BookingModal'
 import Link from 'next/link'
@@ -67,6 +67,38 @@ export default function NailistProfileClient({ id }: { id: string }) {
   const [copied, setCopied] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [photoError, setPhotoError] = useState('')
+  const photoInputRef = useRef<HTMLInputElement>(null)
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('הקובץ גדול מדי — מקסימום 5MB')
+      return
+    }
+
+    setPhotoError('')
+    setPhotoUploading(true)
+    try {
+      const { uploadProfilePhoto } = await import('@/lib/firebase/storage')
+      const { url } = await uploadProfilePhoto(id, file)
+      const res = await fetch(`/api/nailists/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoUrl: url }),
+      })
+      if (!res.ok) throw new Error()
+      setProfile((prev) => (prev ? { ...prev, photoUrl: url } : prev))
+    } catch {
+      setPhotoError('שגיאה בהעלאת התמונה — נסי שוב')
+    } finally {
+      setPhotoUploading(false)
+      if (photoInputRef.current) photoInputRef.current.value = ''
+    }
+  }
 
   function openBooking(serviceId?: string) {
     if (!user) {
@@ -226,14 +258,35 @@ export default function NailistProfileClient({ id }: { id: string }) {
 
           <div className="flex flex-col items-center text-center">
             {/* Avatar */}
-            <div className="w-24 h-24 rounded-full bg-white/15 backdrop-blur ring-4 ring-white/25 shadow-xl overflow-hidden flex items-center justify-center mb-4">
-              {profile.photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={profile.photoUrl} alt={profile.businessName} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-3xl font-black text-white">{initials(profile.businessName)}</span>
+            <div className="relative mb-4">
+              <div className="w-24 h-24 rounded-full bg-white/15 backdrop-blur ring-4 ring-white/25 shadow-xl overflow-hidden flex items-center justify-center">
+                {profile.photoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={profile.photoUrl} alt={profile.businessName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-3xl font-black text-white">{initials(profile.businessName)}</span>
+                )}
+              </div>
+              {isOwner === true && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={photoUploading}
+                    className="absolute -bottom-1 -left-1 w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white flex items-center justify-center shadow-lg border-2 border-white/80 disabled:opacity-60"
+                  >
+                    {photoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                  </button>
+                  <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                </>
               )}
             </div>
+            {photoError && (
+              <p className="text-xs text-red-200 font-semibold mb-2 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {photoError}
+              </p>
+            )}
 
             <h1 className="text-2xl font-black mb-1.5">{profile.businessName}</h1>
 

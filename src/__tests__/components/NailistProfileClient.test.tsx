@@ -2,8 +2,13 @@
  * Covers the bugfix where contact buttons (WhatsApp/Instagram/TikTok/Waze/Maps)
  * are gated behind login — anonymous visitors should see a login CTA instead.
  */
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import NailistProfileClient from '@/app/nailists/[id]/NailistProfileClient'
+
+const uploadProfilePhotoMock = jest.fn()
+jest.mock('@/lib/firebase/storage', () => ({
+  uploadProfilePhoto: (...args: unknown[]) => uploadProfilePhotoMock(...args),
+}))
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
@@ -34,8 +39,17 @@ const baseProfile = {
   reviews: [],
 }
 
-function mockProfileFetch(profile: typeof baseProfile) {
-  global.fetch = jest.fn().mockImplementation((url: string) => {
+function mockProfileFetch(profile: typeof baseProfile, opts?: { asOwner?: boolean }) {
+  global.fetch = jest.fn().mockImplementation((url: string, init?: RequestInit) => {
+    if (url.includes('/api/me/nailist-profile')) {
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ data: opts?.asOwner ? { id: profile.id } : { id: 'someone-else' } }),
+      } as Response)
+    }
+    if (url.includes('/api/nailists/') && init?.method === 'PATCH') {
+      return Promise.resolve({ ok: true, json: async () => ({ message: 'ok' }) } as Response)
+    }
     if (url.includes('/api/nailists/')) {
       return Promise.resolve({ ok: true, json: async () => ({ data: profile }) } as Response)
     }
@@ -113,6 +127,51 @@ describe('NailistProfileClient — contact info gating', () => {
 
     await waitFor(() => {
       expect(screen.getByText('כניסה לצפייה בפרטי קשר')).toBeInTheDocument()
+    })
+  })
+})
+
+describe('NailistProfileClient — owner avatar edit', () => {
+  it('does not show a photo-edit button for non-owner visitors', async () => {
+    mockUseAuth.mockReturnValue({ user: { uid: 'u1' }, role: 'NAILIST' })
+    mockProfileFetch(baseProfile, { asOwner: false })
+    const { container } = render(<NailistProfileClient id="nailist-1" />)
+
+    await waitFor(() => {
+      expect(screen.getByText('סטודיו יופי')).toBeInTheDocument()
+    })
+    expect(container.querySelector('input[type="file"]')).not.toBeInTheDocument()
+  })
+
+  it('shows a photo-edit button for the owner, uploads, and PATCHes photoUrl', async () => {
+    mockUseAuth.mockReturnValue({ user: { uid: 'u1' }, role: 'NAILIST' })
+    mockProfileFetch(baseProfile, { asOwner: true })
+    uploadProfilePhotoMock.mockResolvedValue({ url: 'https://example.com/new-avatar.jpg', storageKey: 'avatars/nailist-1/profile.jpg' })
+    const { container } = render(<NailistProfileClient id="nailist-1" />)
+
+    await waitFor(() => {
+      expect(container.querySelector('input[type="file"]')).toBeInTheDocument()
+    })
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+    const file = new File(['bytes'], 'avatar.jpg', { type: 'image/jpeg' })
+    fireEvent.change(fileInput, { target: { files: [file] } })
+
+    await waitFor(() => {
+      expect(uploadProfilePhotoMock).toHaveBeenCalledWith('nailist-1', file)
+    })
+
+    await waitFor(() => {
+      const patchCall = (global.fetch as jest.Mock).mock.calls.find(
+        ([url, opts]: [string, RequestInit]) => url === '/api/nailists/nailist-1' && opts?.method === 'PATCH'
+      )
+      expect(patchCall).toBeDefined()
+      expect(JSON.parse(patchCall[1].body as string)).toEqual({ photoUrl: 'https://example.com/new-avatar.jpg' })
+    })
+
+    await waitFor(() => {
+      const img = container.querySelector('img[alt="סטודיו יופי"]') as HTMLImageElement
+      expect(img.src).toBe('https://example.com/new-avatar.jpg')
     })
   })
 })
