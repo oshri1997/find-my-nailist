@@ -1,8 +1,8 @@
 /**
- * Covers two bugfixes on the nailist dashboard:
- *  - the "profile completion" card hides once the checklist reaches 100%
- *  - the "view public profile" quick action is disabled (not a stale /search
- *    link) until the profile has actually loaded
+ * Covers the "profile completion" card hiding once the checklist reaches 100%.
+ * The old "quick actions" card (including the public-profile shortcut) was
+ * removed from this page — see NailistLayoutMoreMenu.test.tsx for its
+ * replacement in the dashboard layout's "עוד" menu.
  */
 import { render, screen, waitFor } from '@testing-library/react'
 import NailistDashboard from '@/app/dashboard/nailist/page'
@@ -80,41 +80,15 @@ describe('NailistDashboard — profile completion card', () => {
     })
     expect(screen.getByText('השלמת פרופיל')).toBeInTheDocument()
   })
-})
 
-describe('NailistDashboard — public profile quick action', () => {
-  it('disables the public-profile link until the profile has loaded, then links to it', async () => {
-    let resolveProfile: (value: unknown) => void = () => {}
-    const profilePromise = new Promise((resolve) => { resolveProfile = resolve })
-
-    global.fetch = jest.fn().mockImplementation((url: string) => {
-      if (url.includes('/api/me/nailist-profile')) return profilePromise
-      if (url.includes('/api/portfolio')) return Promise.resolve({ ok: true, json: async () => ({ data: [{ id: 'p1' }] }) } as Response)
-      if (url.includes('/api/services')) return Promise.resolve({ ok: true, json: async () => ({ data: [{ id: 's1' }] }) } as Response)
-      if (url.includes('/api/working-hours')) return Promise.resolve({ ok: true, json: async () => ({ data: [{ isActive: true }] }) } as Response)
-      if (url.includes('/api/appointments')) return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
-      if (url.includes('/api/nailists/')) return Promise.resolve({ ok: true, json: async () => ({ data: { reviews: [], avgRating: 0, reviewCount: 0 } }) } as Response)
-      return Promise.resolve({ ok: true, json: async () => ({ data: null }) } as Response)
-    })
-
+  it('no longer renders the old "quick actions" card', async () => {
+    mockFetchResponses()
     render(<NailistDashboard />)
 
-    // Profile hasn't resolved yet — the link must not point at the stale /search fallback
-    const pendingLink = screen.getByText('צפייה בפרופיל ציבורי').closest('a')!
-    expect(pendingLink).toHaveAttribute('aria-disabled', 'true')
-    expect(pendingLink).not.toHaveAttribute('href')
-
-    // Static quick actions (not profile-dependent) remain fully functional while loading
-    const hoursLink = screen.getByText('הגדרת שעות עבודה').closest('a')!
-    expect(hoursLink).toHaveAttribute('href', '/dashboard/nailist/hours')
-    expect(hoursLink).not.toHaveAttribute('aria-disabled', 'true')
-
-    resolveProfile({ ok: true, json: async () => ({ data: fullProfile }) })
-
     await waitFor(() => {
-      const resolvedLink = screen.getByText('צפייה בפרופיל ציבורי').closest('a')!
-      expect(resolvedLink).toHaveAttribute('href', '/nailists/nailist-1')
-      expect(resolvedLink).not.toHaveAttribute('aria-disabled', 'true')
+      expect(screen.getByText('הנה סקירה של העסק שלך')).toBeInTheDocument()
     })
+    expect(screen.queryByText('פעולות מהירות')).not.toBeInTheDocument()
+    expect(screen.queryByText('צפייה בפרופיל ציבורי')).not.toBeInTheDocument()
   })
 })
