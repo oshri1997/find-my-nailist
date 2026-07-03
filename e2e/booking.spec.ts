@@ -1,14 +1,5 @@
-import { test, expect } from '@playwright/test'
-import path from 'path'
-import fs from 'fs'
-
-const authFile = path.join(__dirname, '.auth/user.json')
-const hasAuth = () => {
-  try {
-    const state = JSON.parse(fs.readFileSync(authFile, 'utf8'))
-    return state.cookies?.length > 0
-  } catch { return false }
-}
+import { test, expect, type Page, type BrowserContext } from '@playwright/test'
+import { hasRealCreds, loginAsRealUser } from './real-session-helper'
 
 const MOCK_PROFILE = {
   id: 'n1',
@@ -77,13 +68,26 @@ test.describe('Nailist public profile page', () => {
 
 // Opening the booking modal requires a real signed-in user (openBooking()
 // checks useAuth().user, which only a real Firebase client session
-// populates), so these need a real session from auth.setup.ts.
-test.describe('Booking modal (real session)', () => {
-  test.skip(() => !hasAuth(), 'Skipped — run auth.setup first with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
-  test.use({ storageState: authFile })
-  test.setTimeout(60_000)
+// populates). See real-session-helper.ts for why this signs in once per
+// file (a live context) rather than replaying a storageState snapshot.
+test.describe.serial('Booking modal (real session)', () => {
+  test.skip(() => !hasRealCreds(), 'Skipped — run with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
+  test.setTimeout(30_000)
 
-  test.beforeEach(async ({ page }) => {
+  let context: BrowserContext
+  let page: Page
+
+  test.beforeAll(async ({ browser }) => {
+    if (!hasRealCreds()) return
+    ;({ context, page } = await loginAsRealUser(browser))
+  })
+
+  test.afterAll(async () => {
+    if (context) await context.close()
+  })
+
+  test.beforeEach(async () => {
+    await page.unrouteAll({ behavior: 'ignoreErrors' })
     await page.route('/api/me/role', route =>
       route.fulfill({ json: { role: 'NAILIST', isAdmin: false } })
     )
@@ -95,46 +99,46 @@ test.describe('Booking modal (real session)', () => {
     )
   })
 
-  test('clicking book opens booking modal', async ({ page }) => {
+  test('clicking book opens booking modal', async () => {
     await page.goto('/nailists/n1')
     const servicesTab = page.getByRole('button', { name: /שירותים/ })
     await servicesTab.click()
     const bookBtn = page.getByRole('button', { name: /קביעת תור/ }).first()
     await bookBtn.click()
-    await expect(page.getByText('הזמנת תור', { exact: true })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('הזמנת תור', { exact: true })).toBeVisible({ timeout: 10_000 })
   })
 
-  test('step 1 shows services', async ({ page }) => {
+  test('step 1 shows services', async () => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
 
-    await expect(page.getByText("מניקור ג'ל")).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText("מניקור ג'ל")).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('פדיקור')).toBeVisible()
     await expect(page.getByRole('button', { name: /המשך/ })).toBeDisabled()
   })
 
-  test('selecting service enables continue', async ({ page }) => {
+  test('selecting service enables continue', async () => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
 
     await page.getByText("מניקור ג'ל").click()
-    await expect(page.getByRole('button', { name: /המשך/ })).toBeEnabled({ timeout: 15_000 })
+    await expect(page.getByRole('button', { name: /המשך/ })).toBeEnabled({ timeout: 10_000 })
   })
 
-  test('step 2 shows date picker', async ({ page }) => {
+  test('step 2 shows date picker', async () => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
     await page.getByText("מניקור ג'ל").click()
     await page.getByRole('button', { name: /המשך/ }).click()
 
-    await expect(page.getByText(/בחרי תאריך ושעה/)).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText(/בחרי תאריך ושעה/)).toBeVisible({ timeout: 10_000 })
     await expect(page.getByLabel('תאריך')).toBeVisible()
   })
 
-  test('selecting date shows time slots', async ({ page }) => {
+  test('selecting date shows time slots', async () => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
@@ -146,11 +150,11 @@ test.describe('Booking modal (real session)', () => {
     const dateStr = tomorrow.toISOString().split('T')[0]
     await page.getByLabel('תאריך').fill(dateStr)
 
-    await expect(page.getByText('08:00')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('08:00')).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('09:00')).toBeVisible()
   })
 
-  test('step 3 shows confirmation summary', async ({ page }) => {
+  test('step 3 shows confirmation summary', async () => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()

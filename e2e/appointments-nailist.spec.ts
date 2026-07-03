@@ -1,6 +1,5 @@
-import { test, expect } from '@playwright/test'
-import path from 'path'
-import fs from 'fs'
+import { test, expect, type Page, type BrowserContext } from '@playwright/test'
+import { hasRealCreds, loginAsRealUser } from './real-session-helper'
 
 /**
  * Nailist appointment management:
@@ -11,18 +10,12 @@ import fs from 'fs'
  *
  * These pages gate on the real Firebase client-side auth state
  * (useAuth().user), not just the auth-token cookie, so a real signed-in
- * session (from auth.setup.ts) is required — a spoofed cookie alone leaves
- * useAuth().user null and the dashboard layout redirects to /login. All
- * business data is still mocked via page.route() for determinism; only the
- * session itself is real.
+ * session is required — a spoofed cookie alone leaves useAuth().user null
+ * and the dashboard layout redirects to /login. All business data is still
+ * mocked via page.route() for determinism; only the session itself is real.
+ * See real-session-helper.ts for why this signs in once per file instead of
+ * replaying a storageState snapshot into a fresh context per test.
  */
-const authFile = path.join(__dirname, '.auth/user.json')
-const hasAuth = () => {
-  try {
-    const state = JSON.parse(fs.readFileSync(authFile, 'utf8'))
-    return state.cookies?.length > 0
-  } catch { return false }
-}
 
 const MOCK_PROFILE = {
   id: 'profile1',
@@ -68,12 +61,24 @@ const CONFIRMED_APPT = { ...PENDING_APPT, id: 'a2', status: 'CONFIRMED' }
 const COMPLETED_APPT = { ...PENDING_APPT, id: 'a3', status: 'COMPLETED', startTime: past.toISOString(), endTime: pastEnd.toISOString() }
 const CANCELLED_APPT = { ...PENDING_APPT, id: 'a4', status: 'CANCELLED', startTime: past.toISOString(), endTime: pastEnd.toISOString() }
 
-test.describe('Nailist appointments dashboard', () => {
-  test.skip(() => !hasAuth(), 'Skipped — run auth.setup first with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
-  test.use({ storageState: authFile })
-  test.setTimeout(60_000)
+test.describe.serial('Nailist appointments dashboard', () => {
+  test.skip(() => !hasRealCreds(), 'Skipped — run with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
+  test.setTimeout(30_000)
 
-  test.beforeEach(async ({ page }) => {
+  let context: BrowserContext
+  let page: Page
+
+  test.beforeAll(async ({ browser }) => {
+    if (!hasRealCreds()) return
+    ;({ context, page } = await loginAsRealUser(browser))
+  })
+
+  test.afterAll(async () => {
+    if (context) await context.close()
+  })
+
+  test.beforeEach(async () => {
+    await page.unrouteAll({ behavior: 'ignoreErrors' })
     await page.route('/api/me/role', route =>
       route.fulfill({ json: { role: 'NAILIST', isAdmin: false } })
     )
@@ -90,41 +95,41 @@ test.describe('Nailist appointments dashboard', () => {
 
   // ─── Empty state ────────────────────────────────────────────────────────────
 
-  test('shows empty state when no appointments', async ({ page }) => {
+  test('shows empty state when no appointments', async () => {
     await page.route('/api/appointments**', route =>
       route.fulfill({ json: { data: [] } })
     )
 
     await page.goto('/dashboard/nailist/appointments')
-    await expect(page.getByText('אין תורים עדיין')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('אין תורים עדיין')).toBeVisible({ timeout: 10_000 })
   })
 
   // ─── Pending appointment ─────────────────────────────────────────────────────
 
-  test('pending appointment shows "אשר" and "בטל" buttons', async ({ page }) => {
+  test('pending appointment shows "אשר" and "בטל" buttons', async () => {
     await page.route('/api/appointments**', route =>
       route.fulfill({ json: { data: [PENDING_APPT] } })
     )
 
     await page.goto('/dashboard/nailist/appointments')
-    await expect(page.getByText("מניקור ג'ל").first()).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText("מניקור ג'ל").first()).toBeVisible({ timeout: 10_000 })
     await expect(page.getByRole('button', { name: 'אשר' }).first()).toBeVisible()
     await expect(page.getByRole('button', { name: 'בטל' }).first()).toBeVisible()
   })
 
-  test('pending appointment shows client name and price', async ({ page }) => {
+  test('pending appointment shows client name and price', async () => {
     await page.route('/api/appointments**', route =>
       route.fulfill({ json: { data: [PENDING_APPT] } })
     )
 
     await page.goto('/dashboard/nailist/appointments')
-    await expect(page.getByText('שרה כ.').first()).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('שרה כ.').first()).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('₪150').first()).toBeVisible()
   })
 
   // ─── Confirm appointment ────────────────────────────────────────────────────
 
-  test('clicking "אשר" calls PATCH status=CONFIRMED', async ({ page }) => {
+  test('clicking "אשר" calls PATCH status=CONFIRMED', async () => {
     let patchedStatus: string | undefined
 
     await page.route('/api/appointments**', route => {
@@ -142,7 +147,7 @@ test.describe('Nailist appointments dashboard', () => {
     await expect.poll(() => patchedStatus, { timeout: 5_000 }).toBe('CONFIRMED')
   })
 
-  test('after confirm, appointment shows "הושלם" button', async ({ page }) => {
+  test('after confirm, appointment shows "הושלם" button', async () => {
     let confirmed = false
 
     await page.route('/api/appointments**', route => {
@@ -159,12 +164,12 @@ test.describe('Nailist appointments dashboard', () => {
 
     // Reload to see updated status
     await page.reload()
-    await expect(page.getByRole('button', { name: 'הושלם' }).first()).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('button', { name: 'הושלם' }).first()).toBeVisible({ timeout: 10_000 })
   })
 
   // ─── Cancel appointment ─────────────────────────────────────────────────────
 
-  test('clicking "בטל" calls PATCH status=CANCELLED', async ({ page }) => {
+  test('clicking "בטל" calls PATCH status=CANCELLED', async () => {
     let patchedStatus: string | undefined
 
     await page.route('/api/appointments**', route => {
@@ -182,7 +187,7 @@ test.describe('Nailist appointments dashboard', () => {
     await expect.poll(() => patchedStatus, { timeout: 5_000 }).toBe('CANCELLED')
   })
 
-  test('cancelling confirmed appointment also works', async ({ page }) => {
+  test('cancelling confirmed appointment also works', async () => {
     let patchedStatus: string | undefined
 
     await page.route('/api/appointments**', route => {
@@ -202,7 +207,7 @@ test.describe('Nailist appointments dashboard', () => {
 
   // ─── Complete appointment ────────────────────────────────────────────────────
 
-  test('clicking "הושלם" calls PATCH status=COMPLETED', async ({ page }) => {
+  test('clicking "הושלם" calls PATCH status=COMPLETED', async () => {
     let patchedStatus: string | undefined
 
     await page.route('/api/appointments**', route => {
@@ -222,29 +227,29 @@ test.describe('Nailist appointments dashboard', () => {
 
   // ─── History section ─────────────────────────────────────────────────────────
 
-  test('completed and cancelled appointments appear in history section', async ({ page }) => {
+  test('completed and cancelled appointments appear in history section', async () => {
     await page.route('/api/appointments**', route =>
       route.fulfill({ json: { data: [COMPLETED_APPT, CANCELLED_APPT, PENDING_APPT] } })
     )
 
     await page.goto('/dashboard/nailist/appointments')
-    await expect(page.getByText('היסטוריה')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('היסטוריה')).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('הושלם').first()).toBeVisible()
     await expect(page.getByText('בוטל').first()).toBeVisible()
   })
 
-  test('status badge shows "ממתין" for pending appointments', async ({ page }) => {
+  test('status badge shows "ממתין" for pending appointments', async () => {
     await page.route('/api/appointments**', route =>
       route.fulfill({ json: { data: [PENDING_APPT] } })
     )
 
     await page.goto('/dashboard/nailist/appointments')
-    await expect(page.getByText('ממתין').first()).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('ממתין').first()).toBeVisible({ timeout: 10_000 })
   })
 
   // ─── Error handling ──────────────────────────────────────────────────────────
 
-  test('API error on status update shows error feedback', async ({ page }) => {
+  test('API error on status update shows error feedback', async () => {
     await page.route('/api/appointments**', route => {
       if (route.request().method() === 'PATCH')
         route.fulfill({ status: 500, json: { error: 'שגיאת שרת' } })
@@ -261,7 +266,7 @@ test.describe('Nailist appointments dashboard', () => {
     expect(stillOnPage).toBeGreaterThanOrEqual(0) // Page didn't crash
   })
 
-  test('no console errors on appointments page', async ({ page }) => {
+  test('no console errors on appointments page', async () => {
     const errors: string[] = []
     page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()) })
 

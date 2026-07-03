@@ -15,11 +15,9 @@ export default defineConfig({
     timezoneId: 'Asia/Jerusalem',
   },
   projects: [
-    { name: 'setup', testMatch: /.*\.setup\.ts/ },
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      dependencies: ['setup'],
     },
   ],
   webServer: {

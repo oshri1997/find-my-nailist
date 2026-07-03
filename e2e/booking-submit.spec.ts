@@ -1,6 +1,5 @@
-import { test, expect } from '@playwright/test'
-import path from 'path'
-import fs from 'fs'
+import { test, expect, type Page, type BrowserContext } from '@playwright/test'
+import { hasRealCreds, loginAsRealUser } from './real-session-helper'
 
 /**
  * Full booking submission flow:
@@ -8,15 +7,9 @@ import fs from 'fs'
  *
  * Opening the booking modal requires a real signed-in user (openBooking()
  * checks useAuth().user, which only a real Firebase client session
- * populates), so this needs a real session from auth.setup.ts.
+ * populates). See real-session-helper.ts for why this signs in once per
+ * file (a live context) rather than replaying a storageState snapshot.
  */
-const authFile = path.join(__dirname, '.auth/user.json')
-const hasAuth = () => {
-  try {
-    const state = JSON.parse(fs.readFileSync(authFile, 'utf8'))
-    return state.cookies?.length > 0
-  } catch { return false }
-}
 
 const MOCK_PROFILE = {
   id: 'n1',
@@ -41,13 +34,13 @@ const MOCK_CLIENT_PROFILE = {
   email: 'sarah@example.com',
 }
 
-async function openBookingModal(page: import('@playwright/test').Page) {
+async function openBookingModal(page: Page) {
   await page.goto('/nailists/n1')
   await page.getByRole('button', { name: /שירותים/ }).click()
   await page.getByRole('button', { name: /קביעת תור/ }).first().click()
 }
 
-async function selectServiceAndTime(page: import('@playwright/test').Page) {
+async function selectServiceAndTime(page: Page) {
   await page.getByText("מניקור ג'ל").click()
   await page.getByRole('button', { name: /המשך/ }).click()
 
@@ -58,12 +51,24 @@ async function selectServiceAndTime(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: /המשך/ }).click()
 }
 
-test.describe('Booking — full submission flow', () => {
-  test.skip(() => !hasAuth(), 'Skipped — run auth.setup first with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
-  test.use({ storageState: authFile })
-  test.setTimeout(60_000)
+test.describe.serial('Booking — full submission flow', () => {
+  test.skip(() => !hasRealCreds(), 'Skipped — run with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
+  test.setTimeout(30_000)
 
-  test.beforeEach(async ({ page }) => {
+  let context: BrowserContext
+  let page: Page
+
+  test.beforeAll(async ({ browser }) => {
+    if (!hasRealCreds()) return
+    ;({ context, page } = await loginAsRealUser(browser))
+  })
+
+  test.afterAll(async () => {
+    if (context) await context.close()
+  })
+
+  test.beforeEach(async () => {
+    await page.unrouteAll({ behavior: 'ignoreErrors' })
     await page.route('/api/me/role', route =>
       route.fulfill({ json: { role: 'NAILIST', isAdmin: false } })
     )
@@ -78,7 +83,7 @@ test.describe('Booking — full submission flow', () => {
     )
   })
 
-  test('step 3 shows summary with price and service name', async ({ page }) => {
+  test('step 3 shows summary with price and service name', async () => {
     await openBookingModal(page)
     await selectServiceAndTime(page)
 
@@ -88,7 +93,7 @@ test.describe('Booking — full submission flow', () => {
     await expect(page.getByText('סטודיו שרה')).toBeVisible()
   })
 
-  test('successful booking shows done step', async ({ page }) => {
+  test('successful booking shows done step', async () => {
     await page.route('/api/appointments', route => {
       if (route.request().method() === 'POST')
         route.fulfill({ json: { data: { id: 'appt1', status: 'PENDING' } } })
@@ -100,10 +105,10 @@ test.describe('Booking — full submission flow', () => {
     await selectServiceAndTime(page)
     await page.getByRole('button', { name: /אישור הזמנה/ }).click()
 
-    await expect(page.getByText(/הזמנה נשלחה|הצלחה|ממתין לאישור/)).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText(/הזמנה נשלחה|הצלחה|ממתין לאישור/)).toBeVisible({ timeout: 10_000 })
   })
 
-  test('booking sends correct payload to API', async ({ page }) => {
+  test('booking sends correct payload to API', async () => {
     let sentBody: Record<string, unknown> | null = null
 
     await page.route('/api/appointments', async route => {
@@ -126,7 +131,7 @@ test.describe('Booking — full submission flow', () => {
     })
   })
 
-  test('API error shows error message and stay on step 3', async ({ page }) => {
+  test('API error shows error message and stay on step 3', async () => {
     await page.route('/api/appointments', route => {
       if (route.request().method() === 'POST')
         route.fulfill({ status: 500, json: { error: 'שגיאת שרת' } })
@@ -138,10 +143,10 @@ test.describe('Booking — full submission flow', () => {
     await selectServiceAndTime(page)
     await page.getByRole('button', { name: /אישור הזמנה/ }).click()
 
-    await expect(page.getByText(/שגיאה|לא הצלחנו/)).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText(/שגיאה|לא הצלחנו/)).toBeVisible({ timeout: 10_000 })
   })
 
-  test('unauthorized booking redirects or shows login prompt', async ({ page }) => {
+  test('unauthorized booking redirects or shows login prompt', async () => {
     await page.route('/api/me/client-profile', route =>
       route.fulfill({ status: 401, json: { error: 'Unauthorized' } })
     )
@@ -160,10 +165,10 @@ test.describe('Booking — full submission flow', () => {
     await page.getByRole('button', { name: /המשך/ }).click()
     await page.getByRole('button', { name: /אישור הזמנה/ }).click()
 
-    await expect(page.getByText(/יש להתחבר|התחברות|login/i)).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText(/יש להתחבר|התחברות|login/i)).toBeVisible({ timeout: 10_000 })
   })
 
-  test('back button returns from step 3 to step 2', async ({ page }) => {
+  test('back button returns from step 3 to step 2', async () => {
     await openBookingModal(page)
     await selectServiceAndTime(page)
 
@@ -174,7 +179,7 @@ test.describe('Booking — full submission flow', () => {
     }
   })
 
-  test('closing modal removes it from DOM', async ({ page }) => {
+  test('closing modal removes it from DOM', async () => {
     await openBookingModal(page)
     await expect(page.getByText('הזמנת תור')).toBeVisible()
 
