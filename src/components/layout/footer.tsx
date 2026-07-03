@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { JoinLink } from '@/components/auth/JoinLink'
 
 const FOOTER_CITIES = [
   { slug: 'tel-aviv', name: 'תל אביב' },
@@ -33,7 +34,7 @@ export function Footer() {
             <h4 className="font-black text-foreground mb-4 text-sm">ללקוחות</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li><Link href="/search" className="hover:text-primary transition-colors">חיפוש נייליסטיות</Link></li>
-              <li><Link href="/login?tab=register" className="hover:text-primary transition-colors">הרשמה חינמית</Link></li>
+              <li><JoinLink href="/login?tab=register" className="hover:text-primary transition-colors">הרשמה חינמית</JoinLink></li>
               <li><Link href="/how-it-works" className="hover:text-primary transition-colors">איך זה עובד</Link></li>
             </ul>
           </div>
@@ -41,7 +42,7 @@ export function Footer() {
           <div>
             <h4 className="font-black text-foreground mb-4 text-sm">לנייליסטיות</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
-              <li><Link href="/login?tab=register" className="hover:text-primary transition-colors">הצטרפי כנייליסטית</Link></li>
+              <li><JoinLink href="/login?tab=register" className="hover:text-primary transition-colors">הצטרפי כנייליסטית</JoinLink></li>
               <li><Link href="/dashboard/nailist" className="hover:text-primary transition-colors">לוח הבקרה</Link></li>
             </ul>
           </div>

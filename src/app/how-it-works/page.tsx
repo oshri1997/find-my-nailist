@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 import Link from 'next/link'
+import { JoinLink } from '@/components/auth/JoinLink'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
@@ -203,11 +204,11 @@ export default function HowItWorksPage() {
                 חפשי נייליסטית
               </Button>
             </Link>
-            <Link href="/login?tab=register">
+            <JoinLink href="/login?tab=register">
               <Button variant="outline" className="rounded-2xl h-12 px-7 font-bold border-border hover:border-pink-300 hover:text-pink-600">
                 הצטרפי כנייליסטית
               </Button>
-            </Link>
+            </JoinLink>
           </motion.div>
         </div>
       </section>
@@ -293,11 +294,11 @@ export default function HowItWorksPage() {
           </div>
 
           <Section className="mt-10 text-center">
-            <Link href="/login?tab=register">
+            <JoinLink href="/login?tab=register">
               <Button className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 border-0 rounded-2xl h-11 px-8 font-bold shadow-md shadow-purple-200">
                 הצטרפי כנייליסטית חינם →
               </Button>
-            </Link>
+            </JoinLink>
           </Section>
         </div>
       </section>
@@ -379,11 +380,11 @@ export default function HowItWorksPage() {
                 חפשי נייליסטית
               </Button>
             </Link>
-            <Link href="/login?tab=register">
+            <JoinLink href="/login?tab=register">
               <Button className="bg-white/20 hover:bg-white/30 text-white border border-white/30 rounded-2xl h-12 px-8 font-bold backdrop-blur">
                 הצטרפי חינם
               </Button>
-            </Link>
+            </JoinLink>
           </div>
         </Section>
       </section>

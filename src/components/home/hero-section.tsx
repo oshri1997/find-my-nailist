@@ -3,10 +3,12 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, ArrowLeft, Star, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/components/auth/auth-provider'
+import { AlreadyRegisteredModal } from '@/components/auth/AlreadyRegisteredModal'
 
 const mockCards = [
   { name: 'גל כהן', service: "ג'ל + נייל ארט", price: '₪120', stars: 5 },
@@ -17,10 +19,16 @@ const mockCards = [
 export function HeroSection() {
   const { user, role } = useAuth()
   const router = useRouter()
+  const [showAlreadyRegistered, setShowAlreadyRegistered] = useState(false)
 
   function handleNailistClick() {
     if (user && role === 'NAILIST') {
       router.push('/dashboard/nailist')
+    } else if (user) {
+      // Logged in but not as a nailist (e.g. a client account) — the register
+      // flow would just bounce them straight back with an "already registered"
+      // error, so show it here instead of navigating away.
+      setShowAlreadyRegistered(true)
     } else {
       router.push('/login?tab=register')
     }
@@ -96,6 +104,10 @@ export function HeroSection() {
             </motion.div>
 
           </div>
+
+          {showAlreadyRegistered && (
+            <AlreadyRegisteredModal role={role} onClose={() => setShowAlreadyRegistered(false)} />
+          )}
 
           {/* Visual side — phone mockup */}
           <div className="relative hidden lg:flex justify-center">

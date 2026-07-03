@@ -1,11 +1,11 @@
 'use client'
 
-import Link from 'next/link'
 import Image from 'next/image'
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Users, Zap, Sparkles } from 'lucide-react'
+import { JoinLink } from '@/components/auth/JoinLink'
 
 const perks = [
   { Icon: Sparkles, text: 'פרופיל חינמי לחלוטין' },
@@ -57,7 +57,7 @@ export function NailistCtaSection() {
               ))}
             </div>
 
-            <Link href="/login?tab=register">
+            <JoinLink href="/login?tab=register">
               <Button
                 size="lg"
                 className="bg-white text-primary hover:bg-white/90 font-black text-base rounded-xl px-10 h-12 shadow-[0_8px_30px_rgba(0,0,0,0.20)] gap-2 group border-0 cursor-pointer"
@@ -65,7 +65,7 @@ export function NailistCtaSection() {
                 התחילי עכשיו — בחינם
                 <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
               </Button>
-            </Link>
+            </JoinLink>
           </div>
         </motion.div>
       </div>
