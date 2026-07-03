@@ -169,13 +169,24 @@ body {
   background-size: 28px 28px;
 }
 
-/* Force UserWay accessibility button to bottom-left */
+/* Force UserWay accessibility button to bottom-left — 80px on mobile to clear
+   the dashboard's fixed bottom nav (md:hidden), 16px on desktop where there's
+   no bottom nav to avoid. The inline script in layout.tsx sets the same
+   values directly on the widget's element; this is the pre-JS fallback. */
 #userwayAccessibilityIcon,
 [id*="userway"],
 [class*="userway"] {
   position: fixed !important;
-  bottom: 16px !important;
+  bottom: 80px !important;
   left: 16px !important;
   top: auto !important;
   right: auto !important;
+}
+
+@media (min-width: 768px) {
+  #userwayAccessibilityIcon,
+  [id*="userway"],
+  [class*="userway"] {
+    bottom: 16px !important;
+  }
 }
