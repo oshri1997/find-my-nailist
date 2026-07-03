@@ -82,7 +82,7 @@ const mockDb = {
 
 jest.mock('@/lib/firebase/admin', () => ({
   adminAuth: jest.fn(() => ({
-    verifyIdToken: jest.fn().mockResolvedValue({ uid: 'user-123', email: 'client@test.com' }),
+    verifyIdToken: jest.fn().mockResolvedValue({ uid: 'user-123', email: 'client@test.com', email_verified: true }),
   })),
   adminDb: jest.fn(() => mockDb),
 }))
@@ -106,6 +106,7 @@ jest.mock('crypto', () => ({
 // ── Import after mocks ──────────────────────────────────────────────────────
 
 import { GET, POST } from '@/app/api/appointments/route'
+import { adminAuth } from '@/lib/firebase/admin'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -174,6 +175,17 @@ describe('POST /api/appointments', () => {
     const req = makeRequest('POST', { ...validBody, clientProfileId: 'other-profile' }, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(403)
+  })
+
+  it('returns 403 when the caller has not verified their email', async () => {
+    ;(adminAuth as jest.Mock).mockReturnValueOnce({
+      verifyIdToken: jest.fn().mockResolvedValue({ uid: 'user-123', email: 'client@test.com', email_verified: false }),
+    })
+    const req = makeRequest('POST', validBody, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(403)
+    const json = await res.json()
+    expect(json.error).toBe('יש לאמת את כתובת המייל לפני קביעת תור')
   })
 
   it('returns 404 when service does not exist', async () => {

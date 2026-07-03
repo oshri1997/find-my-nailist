@@ -269,7 +269,7 @@ export default function OnboardingPage() {
           ? fetch(`/api/nailists/${profileId}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ isActive: true }),
+              body: JSON.stringify({ isActive: true, onboardingCompleted: true }),
             })
           : Promise.resolve(),
       ])

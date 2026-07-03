@@ -38,10 +38,11 @@ async function sendResend(to: string, subject: string, html: string, text: strin
   console.log('[email] sent to', to, '| id:', data.id)
 }
 
-function formatDate(d: Date) {
+export function formatDate(d: Date) {
   return d.toLocaleString('he-IL', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     hour: '2-digit', minute: '2-digit',
+    timeZone: 'Asia/Jerusalem',
   })
 }
 

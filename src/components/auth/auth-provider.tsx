@@ -11,6 +11,7 @@ interface AuthContextValue {
   loading: boolean
   role: UserRole
   isAdmin: boolean
+  onboardingCompleted: boolean
   signOut: () => Promise<void>
   refreshRole: () => Promise<void>
 }
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
   role: null,
   isAdmin: false,
+  onboardingCompleted: true,
   signOut: async () => {},
   refreshRole: async () => {},
 })
@@ -29,15 +31,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState<UserRole>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [onboardingCompleted, setOnboardingCompleted] = useState(true)
   const skipCallbackRef = useRef(false)
 
   const refreshRole = useCallback(async () => {
     try {
       const roleRes = await fetch('/api/me/role')
       if (roleRes.ok) {
-        const { role: fetchedRole, isAdmin: fetchedIsAdmin } = await roleRes.json()
+        const { role: fetchedRole, isAdmin: fetchedIsAdmin, onboardingCompleted: fetchedOnboarded } = await roleRes.json()
         setRole(fetchedRole ?? null)
         setIsAdmin(fetchedIsAdmin === true)
+        setOnboardingCompleted(fetchedOnboarded !== false)
       }
     } catch {}
   }, [])
@@ -51,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     setRole(null)
     setIsAdmin(false)
+    setOnboardingCompleted(true)
     skipCallbackRef.current = false
     setLoading(false)
   }, [])
@@ -76,17 +81,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             })
             const roleRes = await fetch('/api/me/role')
             if (roleRes.ok) {
-              const { role: fetchedRole, isAdmin: fetchedIsAdmin } = await roleRes.json()
+              const { role: fetchedRole, isAdmin: fetchedIsAdmin, onboardingCompleted: fetchedOnboarded } = await roleRes.json()
               setRole(fetchedRole ?? null)
               setIsAdmin(fetchedIsAdmin === true)
+              setOnboardingCompleted(fetchedOnboarded !== false)
             } else {
               setRole(null)
               setIsAdmin(false)
+              setOnboardingCompleted(true)
             }
           } else {
             await fetch('/api/auth/session', { method: 'DELETE' })
             setRole(null)
             setIsAdmin(false)
+            setOnboardingCompleted(true)
           }
         } catch {
           // session sync failed — auth state is still valid, don't block the UI
@@ -112,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, role, isAdmin, signOut, refreshRole }}>
+    <AuthContext.Provider value={{ user, loading, role, isAdmin, onboardingCompleted, signOut, refreshRole }}>
       {children}
     </AuthContext.Provider>
   )

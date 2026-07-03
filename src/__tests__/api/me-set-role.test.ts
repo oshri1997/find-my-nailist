@@ -173,4 +173,12 @@ describe('PATCH /api/me/set-role', () => {
       expect.objectContaining({ businessName: 'Test User' })
     )
   })
+
+  it('creates a new nailist profile with onboardingCompleted: false', async () => {
+    const req = makeRequest({ role: 'NAILIST' })
+    await PATCH(req)
+    expect(mockAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ onboardingCompleted: false })
+    )
+  })
 })

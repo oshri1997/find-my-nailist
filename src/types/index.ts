@@ -34,6 +34,7 @@ export interface NailistProfileDoc {
   whatsappPhone?: string   // Israeli format: 0501234567 or +972501234567
   isVerified: boolean
   isActive: boolean
+  onboardingCompleted?: boolean   // false right after signup; true once the onboarding wizard's last step (working hours) is saved
   avgRating: number
   reviewCount: number
   createdAt: Timestamp

@@ -81,7 +81,7 @@ const mockDb = {
 
 jest.mock('@/lib/firebase/admin', () => ({
   adminAuth: jest.fn(() => ({
-    verifyIdToken: jest.fn().mockResolvedValue({ uid: 'user-123', email: 'client@test.com' }),
+    verifyIdToken: jest.fn().mockResolvedValue({ uid: 'user-123', email: 'client@test.com', email_verified: true }),
   })),
   adminDb: jest.fn(() => mockDb),
 }))

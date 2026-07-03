@@ -117,7 +117,7 @@ describe('PATCH /api/nailists/[id]', () => {
         phoneNumber: '0501234567', whatsappPhone: '0501234567',
         instagramUrl: 'https://instagram.com/x', tiktokUrl: 'https://tiktok.com/@x',
         photoUrl: 'https://example.com/avatar.jpg', coverPhotoUrl: 'https://example.com/cover.jpg',
-        isActive: true, latitude: 32.08, longitude: 34.78,
+        isActive: true, onboardingCompleted: true, latitude: 32.08, longitude: 34.78,
       }, 'token'),
       mockParams
     )

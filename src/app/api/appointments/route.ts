@@ -33,11 +33,15 @@ export async function POST(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let decoded: { uid: string }
+  let decoded: { uid: string; email_verified?: boolean }
   try {
     decoded = await adminAuth().verifyIdToken(token)
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!decoded.email_verified) {
+    return NextResponse.json({ error: 'יש לאמת את כתובת המייל לפני קביעת תור' }, { status: 403 })
   }
 
   try {

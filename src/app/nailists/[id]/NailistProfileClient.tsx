@@ -9,6 +9,7 @@ import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
 import BookingModal from '@/components/booking/BookingModal'
 import Link from 'next/link'
 import { useAuth } from '@/components/auth/auth-provider'
+import { VerifyEmailModal } from '@/components/auth/VerifyEmailModal'
 
 interface Service {
   id: string
@@ -61,6 +62,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
   const [loading, setLoading] = useState(true)
   const [isOwner, setIsOwner] = useState<boolean | null>(null)
   const [showBooking, setShowBooking] = useState(false)
+  const [showVerifyEmail, setShowVerifyEmail] = useState(false)
   const [bookingServiceId, setBookingServiceId] = useState<string | undefined>(undefined)
   const [activeTab, setActiveTab] = useState<'portfolio' | 'services' | 'reviews'>('portfolio')
   const [copied, setCopied] = useState(false)
@@ -104,6 +106,10 @@ export default function NailistProfileClient({ id }: { id: string }) {
   function openBooking(serviceId?: string) {
     if (!user) {
       router.push(`/login?redirect=/nailists/${id}`)
+      return
+    }
+    if (!user.emailVerified) {
+      setShowVerifyEmail(true)
       return
     }
     setBookingServiceId(serviceId)
@@ -568,6 +574,10 @@ export default function NailistProfileClient({ id }: { id: string }) {
           initialServiceId={bookingServiceId}
           onClose={() => setShowBooking(false)}
         />
+      )}
+
+      {showVerifyEmail && user && (
+        <VerifyEmailModal user={user} onClose={() => setShowVerifyEmail(false)} />
       )}
     </div>
   )

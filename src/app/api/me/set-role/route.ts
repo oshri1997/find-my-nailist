@@ -41,6 +41,7 @@ export async function PATCH(request: NextRequest) {
           businessName: userData?.displayName || decoded.name || 'My Nail Studio',
           photoUrl: decoded.picture ?? null,
           isActive: true,
+          onboardingCompleted: false,
           isVerified: false,
           avgRating: 0,
           reviewCount: 0,
