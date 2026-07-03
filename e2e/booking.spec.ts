@@ -105,7 +105,7 @@ test.describe.serial('Booking modal (real session)', () => {
     await servicesTab.click()
     const bookBtn = page.getByRole('button', { name: /קביעת תור/ }).first()
     await bookBtn.click()
-    await expect(page.getByText('הזמנת תור', { exact: true })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('בחרי שירות', { exact: true })).toBeVisible({ timeout: 10_000 })
   })
 
   test('step 1 shows services', async () => {
@@ -113,8 +113,11 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
 
-    await expect(page.getByText("מניקור ג'ל")).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByText('פדיקור')).toBeVisible()
+    // The underlying services tab is already open in the background (from
+    // the click above), so it also renders these same service names — .last()
+    // targets the modal's own copy, which is appended later in DOM order.
+    await expect(page.getByText("מניקור ג'ל").last()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('פדיקור').last()).toBeVisible()
     await expect(page.getByRole('button', { name: /המשך/ })).toBeDisabled()
   })
 
@@ -123,7 +126,7 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
 
-    await page.getByText("מניקור ג'ל").click()
+    await page.getByText("מניקור ג'ל").last().click()
     await expect(page.getByRole('button', { name: /המשך/ })).toBeEnabled({ timeout: 10_000 })
   })
 
@@ -131,7 +134,7 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
-    await page.getByText("מניקור ג'ל").click()
+    await page.getByText("מניקור ג'ל").last().click()
     await page.getByRole('button', { name: /המשך/ }).click()
 
     await expect(page.getByText(/בחרי תאריך ושעה/)).toBeVisible({ timeout: 10_000 })
@@ -142,7 +145,7 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
-    await page.getByText("מניקור ג'ל").click()
+    await page.getByText("מניקור ג'ל").last().click()
     await page.getByRole('button', { name: /המשך/ }).click()
 
     const tomorrow = new Date()
@@ -158,7 +161,7 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
-    await page.getByText("מניקור ג'ל").click()
+    await page.getByText("מניקור ג'ל").last().click()
     await page.getByRole('button', { name: /המשך/ }).click()
 
     const tomorrow = new Date()
@@ -168,6 +171,6 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.getByRole('button', { name: /המשך/ }).click()
 
     await expect(page.getByText('אישור הזמנה')).toBeVisible()
-    await expect(page.getByText('₪150')).toBeVisible()
+    await expect(page.getByText('₪150').last()).toBeVisible()
   })
 })

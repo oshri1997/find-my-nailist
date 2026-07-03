@@ -64,7 +64,7 @@ test.describe.serial('Dashboard (mocked data, real session)', () => {
 
   test('dashboard home renders', async () => {
     await page.goto('/dashboard/nailist')
-    await expect(page.getByText('תורים קרובים')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: 'תורים קרובים' })).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('השלמת פרופיל')).toBeVisible()
   })
 
@@ -140,6 +140,6 @@ test.describe.serial('Dashboard (real auth, real data)', () => {
     // No mocks here — hits the real backend. "תורים קרובים" is a static
     // section heading (unconditional, unlike the empty-state message inside
     // it), so this holds regardless of whether the account has appointments.
-    await expect(page.getByText('תורים קרובים')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: 'תורים קרובים' })).toBeVisible({ timeout: 10_000 })
   })
 })

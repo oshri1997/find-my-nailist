@@ -41,7 +41,10 @@ async function openBookingModal(page: Page) {
 }
 
 async function selectServiceAndTime(page: Page) {
-  await page.getByText("מניקור ג'ל").click()
+  // The underlying services tab is already open in the background (from
+  // openBookingModal's tab click), so it renders the same service name —
+  // .last() targets the modal's own copy, appended later in DOM order.
+  await page.getByText("מניקור ג'ל").last().click()
   await page.getByRole('button', { name: /המשך/ }).click()
 
   const tomorrow = new Date()
@@ -88,9 +91,9 @@ test.describe.serial('Booking — full submission flow', () => {
     await selectServiceAndTime(page)
 
     await expect(page.getByText(/אישור הזמנה/)).toBeVisible()
-    await expect(page.getByText("מניקור ג'ל")).toBeVisible()
-    await expect(page.getByText('₪150')).toBeVisible()
-    await expect(page.getByText('סטודיו שרה')).toBeVisible()
+    await expect(page.getByText("מניקור ג'ל").last()).toBeVisible()
+    await expect(page.getByText('₪150').last()).toBeVisible()
+    await expect(page.getByText('סטודיו שרה').last()).toBeVisible()
   })
 
   test('successful booking shows done step', async () => {
@@ -155,7 +158,7 @@ test.describe.serial('Booking — full submission flow', () => {
     )
 
     await openBookingModal(page)
-    await page.getByText("מניקור ג'ל").click()
+    await page.getByText("מניקור ג'ל").last().click()
     await page.getByRole('button', { name: /המשך/ }).click()
 
     const tomorrow = new Date()
@@ -181,12 +184,12 @@ test.describe.serial('Booking — full submission flow', () => {
 
   test('closing modal removes it from DOM', async () => {
     await openBookingModal(page)
-    await expect(page.getByText('הזמנת תור')).toBeVisible()
+    await expect(page.getByText('בחרי שירות')).toBeVisible()
 
     const closeBtn = page.getByRole('button', { name: /סגור|✕|×/ }).first()
     if (await closeBtn.count() > 0) {
       await closeBtn.click()
-      await expect(page.getByText('הזמנת תור')).not.toBeVisible({ timeout: 3_000 })
+      await expect(page.getByText('בחרי שירות')).not.toBeVisible({ timeout: 3_000 })
     }
   })
 })
