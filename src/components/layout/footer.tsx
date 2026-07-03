@@ -30,7 +30,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-black text-foreground mb-4 text-xs uppercase tracking-widest">ללקוחות</h4>
+            <h4 className="font-black text-foreground mb-4 text-sm">ללקוחות</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li><Link href="/search" className="hover:text-primary transition-colors">חיפוש נייליסטיות</Link></li>
               <li><Link href="/login?tab=register" className="hover:text-primary transition-colors">הרשמה חינמית</Link></li>
@@ -39,7 +39,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-black text-foreground mb-4 text-xs uppercase tracking-widest">לנייליסטיות</h4>
+            <h4 className="font-black text-foreground mb-4 text-sm">לנייליסטיות</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li><Link href="/login?tab=register" className="hover:text-primary transition-colors">הצטרפי כנייליסטית</Link></li>
               <li><Link href="/dashboard/nailist" className="hover:text-primary transition-colors">לוח הבקרה</Link></li>
@@ -47,7 +47,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-black text-foreground mb-4 text-xs uppercase tracking-widest">מדיניות ונגישות</h4>
+            <h4 className="font-black text-foreground mb-4 text-sm">מדיניות ונגישות</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li>
                 <Link href="/terms" className="hover:text-primary transition-colors">
@@ -70,7 +70,7 @@ export function Footer() {
 
         {/* City links — helps Google discover city landing pages */}
         <div className="mt-10 pt-8 border-t border-border">
-          <h4 className="font-black text-foreground mb-4 text-xs uppercase tracking-widest">חפשי נייליסטית לפי עיר</h4>
+          <h4 className="font-black text-foreground mb-4 text-sm">חפשי נייליסטית לפי עיר</h4>
           <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
             {FOOTER_CITIES.map((c) => (
               <li key={c.slug}>
