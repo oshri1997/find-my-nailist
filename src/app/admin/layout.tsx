@@ -40,16 +40,16 @@ function NavLinks({ pathname, onNav }: { pathname: string; onNav?: () => void })
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, role, signOut } = useAuth()
+  const { user, loading, isAdmin, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
-    if (!loading && (!user || role !== 'ADMIN')) {
+    if (!loading && (!user || !isAdmin)) {
       router.replace('/')
     }
-  }, [user, role, loading, router])
+  }, [user, isAdmin, loading, router])
 
   // Close drawer on route change
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     void close()
   }, [pathname])
 
-  if (loading || !user || role !== 'ADMIN') {
+  if (loading || !user || !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />

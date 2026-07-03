@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
       displayName: data.displayName ?? '',
       photoUrl: data.photoUrl ?? null,
       role: data.role ?? 'CLIENT',
+      isAdmin: data.isAdmin === true,
       createdAt: data.createdAt?.toDate?.()?.toISOString() ?? null,
     }
   }).filter(u => {

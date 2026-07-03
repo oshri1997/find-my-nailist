@@ -101,4 +101,21 @@ describe('GET /api/me/role', () => {
     const json = await res.json()
     expect(json.role).toBe('CLIENT')
   })
+
+  it('returns isAdmin: true alongside role for an admin nailist', async () => {
+    docStore['users/user-123'] = { role: 'NAILIST', isAdmin: true, email: 'admin@test.com' }
+    const req = makeRequest()
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.role).toBe('NAILIST')
+    expect(json.isAdmin).toBe(true)
+  })
+
+  it('defaults isAdmin to false when the field is absent', async () => {
+    docStore['users/user-123'] = { role: 'NAILIST', email: 'nail@test.com' }
+    const req = makeRequest()
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.isAdmin).toBe(false)
+  })
 })

@@ -28,7 +28,7 @@ const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { user, role, signOut } = useAuth()
+  const { user, isAdmin, signOut } = useAuth()
   const router = useRouter()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [showMoreSheet, setShowMoreSheet] = useState(false)
@@ -44,9 +44,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       .then(r => r.json())
       .then(({ role: fetchedRole }) => {
         clearTimeout(timeout)
-        // Admins get superuser access to the nailist dashboard too (e.g. an
-        // admin account that's also a working nailist testing the product).
-        if (fetchedRole === 'NAILIST' || fetchedRole === 'ADMIN') {
+        if (fetchedRole === 'NAILIST') {
           setAuthorized(true)
         } else {
           router.replace('/search')
@@ -81,7 +79,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const secondaryActive = secondaryNavLinks.some(l => pathname === l.href)
-  const isAdmin = role === 'ADMIN'
 
   if (authorized === null) {
     return (

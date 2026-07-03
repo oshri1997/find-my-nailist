@@ -8,7 +8,7 @@ export async function verifyAdmin(request: NextRequest): Promise<{ uid: string; 
   try {
     const decoded = await adminAuth().verifyIdToken(token)
     const snap = await adminDb().collection(COLLECTIONS.USERS).doc(decoded.uid).get()
-    if (snap.data()?.role !== 'ADMIN') return null
+    if (snap.data()?.isAdmin !== true) return null
     return { uid: decoded.uid, email: decoded.email ?? '' }
   } catch {
     return null

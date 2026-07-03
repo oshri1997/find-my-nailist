@@ -66,19 +66,19 @@ const mockDb = {
 
 // ── Admin auth mock ────────────────────────────────────────────────────────
 
-// verifyAdmin now looks up the caller's role from Firestore rather than
-// comparing a hardcoded email, so these helpers seed a `users` doc for the
-// token's uid alongside whatever business data each describe block set up.
-function seedCallerUser(uid: string, role: string) {
+// verifyAdmin now looks up the caller's isAdmin flag from Firestore rather
+// than comparing a hardcoded email, so these helpers seed a `users` doc for
+// the token's uid alongside whatever business data each describe block set up.
+function seedCallerUser(uid: string, role: string, isAdmin: boolean) {
   collectionStore.users = [
     ...(collectionStore.users ?? []).filter(u => u.__id !== uid),
-    { __id: uid, email: `${uid}@test.com`, role },
+    { __id: uid, email: `${uid}@test.com`, role, isAdmin },
   ]
 }
 
 function adminRequest(path = '/api/admin/stats') {
   mockVerifyIdToken.mockResolvedValue({ uid: 'admin-uid', email: 'oshri19970@gmail.com' })
-  seedCallerUser('admin-uid', 'ADMIN')
+  seedCallerUser('admin-uid', 'NAILIST', true)
   const req = new NextRequest(`http://localhost${path}`)
   Object.defineProperty(req, 'cookies', {
     value: { get: (key: string) => key === 'auth-token' ? { value: 'valid-token' } : undefined },
@@ -88,7 +88,7 @@ function adminRequest(path = '/api/admin/stats') {
 
 function nonAdminRequest(path = '/api/admin/stats') {
   mockVerifyIdToken.mockResolvedValue({ uid: 'other-uid', email: 'other@gmail.com' })
-  seedCallerUser('other-uid', 'CLIENT')
+  seedCallerUser('other-uid', 'CLIENT', false)
   const req = new NextRequest(`http://localhost${path}`)
   Object.defineProperty(req, 'cookies', {
     value: { get: (key: string) => key === 'auth-token' ? { value: 'non-admin-token' } : undefined },
@@ -169,6 +169,20 @@ describe('GET /api/admin/users', () => {
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(Array.isArray(json.data)).toBe(true)
+  })
+
+  it('includes isAdmin: true for a user with the flag set, false otherwise', async () => {
+    collectionStore.users = [
+      { __id: 'u1', email: 'alice@test.com', displayName: 'Alice', role: 'CLIENT', createdAt: { toDate: () => new Date() } },
+      { __id: 'u2', email: 'admin2@test.com', displayName: 'Admin2', role: 'NAILIST', isAdmin: true, createdAt: { toDate: () => new Date() } },
+    ]
+    const { GET } = await import('@/app/api/admin/users/route')
+    const res = await GET(adminRequest('/api/admin/users'))
+    const json = await res.json()
+    const alice = json.data.find((u: { email: string }) => u.email === 'alice@test.com')
+    const admin2 = json.data.find((u: { email: string }) => u.email === 'admin2@test.com')
+    expect(alice.isAdmin).toBe(false)
+    expect(admin2.isAdmin).toBe(true)
   })
 })
 

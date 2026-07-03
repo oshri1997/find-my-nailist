@@ -50,9 +50,10 @@ export async function DELETE(
     const userDoc = await db.collection(COLLECTIONS.USERS).doc(id).get()
     if (!userDoc.exists) return NextResponse.json({ error: 'משתמש לא נמצא' }, { status: 404 })
 
-    const role = userDoc.data()?.role
+    const userData = userDoc.data()
+    const role = userData?.role
 
-    if (role === 'ADMIN') {
+    if (userData?.isAdmin === true) {
       return NextResponse.json({ error: 'לא ניתן למחוק חשבון אדמין' }, { status: 403 })
     }
 

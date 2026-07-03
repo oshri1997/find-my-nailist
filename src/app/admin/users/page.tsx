@@ -10,14 +10,13 @@ interface AdminUser {
   displayName: string
   photoUrl: string | null
   role: string
+  isAdmin: boolean
   createdAt: string | null
 }
 
-const ROLE_LABELS: Record<string, string> = { CLIENT: 'לקוח', NAILIST: 'נייליסטית', ADMIN: 'אדמין' }
 const ROLE_COLORS: Record<string, string> = {
   CLIENT: 'bg-blue-50 text-blue-600 border-blue-200',
   NAILIST: 'bg-pink-50 text-primary border-pink-200',
-  ADMIN: 'bg-purple-50 text-purple-600 border-purple-200',
 }
 
 export default function AdminUsersPage() {
@@ -125,46 +124,45 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">{u.email}</td>
                     <td className="px-5 py-3">
-                      {u.role === 'ADMIN' ? (
-                        <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${ROLE_COLORS.ADMIN}`}>
-                          {ROLE_LABELS.ADMIN}
-                        </span>
-                      ) : (
-                        <div className="flex items-center gap-1.5">
-                          {changingRole === u.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => handleRoleChange(u, 'NAILIST')}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                                  u.role === 'NAILIST'
-                                    ? ROLE_COLORS.NAILIST
-                                    : 'bg-muted/40 text-muted-foreground border-border hover:border-pink-300 hover:text-primary'
-                                }`}
-                              >
-                                נייליסטית
-                              </button>
-                              <button
-                                onClick={() => handleRoleChange(u, 'CLIENT')}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                                  u.role === 'CLIENT'
-                                    ? ROLE_COLORS.CLIENT
-                                    : 'bg-muted/40 text-muted-foreground border-border hover:border-blue-300 hover:text-blue-600'
-                                }`}
-                              >
-                                לקוח
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {u.isAdmin && (
+                          <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-purple-50 text-purple-600 border-purple-200">
+                            אדמין
+                          </span>
+                        )}
+                        {changingRole === u.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleRoleChange(u, 'NAILIST')}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                                u.role === 'NAILIST'
+                                  ? ROLE_COLORS.NAILIST
+                                  : 'bg-muted/40 text-muted-foreground border-border hover:border-pink-300 hover:text-primary'
+                              }`}
+                            >
+                              נייליסטית
+                            </button>
+                            <button
+                              onClick={() => handleRoleChange(u, 'CLIENT')}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                                u.role === 'CLIENT'
+                                  ? ROLE_COLORS.CLIENT
+                                  : 'bg-muted/40 text-muted-foreground border-border hover:border-blue-300 hover:text-blue-600'
+                              }`}
+                            >
+                              לקוח
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">
                       {u.createdAt ? new Date(u.createdAt).toLocaleDateString('he-IL') : '—'}
                     </td>
                     <td className="px-5 py-3">
-                      {u.role !== 'ADMIN' && (
+                      {!u.isAdmin && (
                         <button
                           onClick={() => setConfirmDelete(u)}
                           disabled={deleting === u.id}
