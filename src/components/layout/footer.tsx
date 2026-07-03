@@ -46,27 +46,28 @@ export function Footer() {
               <li><Link href="/dashboard/nailist" className="hover:text-primary transition-colors">לוח הבקרה</Link></li>
             </ul>
           </div>
+        </div>
 
-          <div>
-            <h4 className="font-black text-foreground mb-4 text-sm">מדיניות ונגישות</h4>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li>
-                <Link href="/terms" className="hover:text-primary transition-colors">
-                  תנאי שימוש
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="hover:text-primary transition-colors">
-                  מדיניות פרטיות
-                </Link>
-              </li>
-              <li>
-                <Link href="/accessibility" className="hover:text-primary transition-colors">
-                  הצהרת נגישות
-                </Link>
-              </li>
-            </ul>
-          </div>
+        {/* Policy links */}
+        <div className="mt-10 pt-8 border-t border-border">
+          <h4 className="font-black text-foreground mb-4 text-sm">מדיניות ונגישות</h4>
+          <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+            <li>
+              <Link href="/terms" className="hover:text-primary transition-colors">
+                תנאי שימוש
+              </Link>
+            </li>
+            <li>
+              <Link href="/privacy" className="hover:text-primary transition-colors">
+                מדיניות פרטיות
+              </Link>
+            </li>
+            <li>
+              <Link href="/accessibility" className="hover:text-primary transition-colors">
+                הצהרת נגישות
+              </Link>
+            </li>
+          </ul>
         </div>
 
         {/* City links — helps Google discover city landing pages */}
