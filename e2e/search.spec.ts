@@ -108,3 +108,50 @@ test.describe('Search page', () => {
     expect(criticalErrors).toHaveLength(0)
   })
 })
+
+test.describe('Search page pagination', () => {
+  test('load more button appends the next page and hides once exhausted', async ({ page }) => {
+    const page2 = [{
+      id: 'n3',
+      businessName: 'עדן ציפורניים',
+      city: 'חיפה',
+      avgRating: 4.2,
+      reviewCount: 5,
+      latitude: 32.8,
+      longitude: 34.99,
+    }]
+
+    await page.route('/api/nailists**', route => {
+      const url = new URL(route.request().url())
+      const offset = url.searchParams.get('offset')
+      if (offset === '0' || offset === null) {
+        route.fulfill({ json: { data: MOCK_NAILISTS, total: 3, hasMore: true } })
+      } else {
+        route.fulfill({ json: { data: page2, total: 3, hasMore: false } })
+      }
+    })
+
+    await page.goto('/search')
+    await expect(page.getByText('סטודיו שרה')).toBeVisible()
+
+    const loadMoreBtn = page.getByRole('button', { name: 'טעני עוד נייליסטיות' })
+    await expect(loadMoreBtn).toBeVisible()
+    await loadMoreBtn.click()
+
+    await expect(page.getByText('עדן ציפורניים')).toBeVisible({ timeout: 10_000 })
+    // Original page 1 results stay in place — load more appends, not replaces
+    await expect(page.getByText('סטודיו שרה')).toBeVisible()
+    await expect(page.getByText('נייל ארט רחל')).toBeVisible()
+    // No more pages left — the button disappears
+    await expect(loadMoreBtn).not.toBeVisible()
+  })
+
+  test('load more button is absent when hasMore is false', async ({ page }) => {
+    await page.route('/api/nailists**', route =>
+      route.fulfill({ json: { data: MOCK_NAILISTS, total: 2, hasMore: false } })
+    )
+    await page.goto('/search')
+    await expect(page.getByText('סטודיו שרה')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'טעני עוד נייליסטיות' })).not.toBeVisible()
+  })
+})

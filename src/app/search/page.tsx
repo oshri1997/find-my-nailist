@@ -112,15 +112,27 @@ export default function SearchPage() {
   const [sortBy, setSortBy] = useState<SortKey>('rating')
   const [activeFilter, setActiveFilter] = useState('הכל')
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   const fetchIdRef = useRef(0)
+  const PAGE_SIZE = 24
+  // Coords used for the current result set — "load more" reuses these rather
+  // than whatever's in the location input right now, so it can't silently
+  // switch search context mid-scroll.
+  const activeCoordsRef = useRef<{ lat?: number; lng?: number }>({})
 
-  const fetchNailists = useCallback(async (lat?: number, lng?: number) => {
-    const myId = ++fetchIdRef.current
-    setLoading(true)
-    setImagesReady(false)
+  const fetchNailists = useCallback(async (lat?: number, lng?: number, offset = 0) => {
+    const myId = offset === 0 ? ++fetchIdRef.current : fetchIdRef.current
+    if (offset === 0) {
+      setLoading(true)
+      setImagesReady(false)
+      activeCoordsRef.current = { lat, lng }
+    } else {
+      setLoadingMore(true)
+    }
     try {
-      const params = new URLSearchParams({ pageSize: '24' })
+      const params = new URLSearchParams({ pageSize: String(PAGE_SIZE), offset: String(offset) })
       if (lat != null && lng != null) {
         params.set('lat', String(lat))
         params.set('lng', String(lng))
@@ -128,16 +140,27 @@ export default function SearchPage() {
       }
       const res = await fetch(`/api/nailists?${params}`)
       if (!res.ok) return
-      const { data } = await res.json()
+      const { data, hasMore: more } = await res.json()
       if (myId !== fetchIdRef.current) return  // stale — a newer fetch is in flight
-      setNailists(data)
-      const count = Math.max(1, (data as Nailist[]).length)
-      setSkeletonCount(count)
-      try { localStorage.setItem('nailists-count', String(count)) } catch {}
+      setNailists((prev) => (offset === 0 ? data : [...prev, ...data]))
+      setHasMore(!!more)
+      if (offset === 0) {
+        const count = Math.max(1, (data as Nailist[]).length)
+        setSkeletonCount(count)
+        try { localStorage.setItem('nailists-count', String(count)) } catch {}
+      }
     } finally {
-      if (myId === fetchIdRef.current) setLoading(false)
+      if (myId === fetchIdRef.current) {
+        setLoading(false)
+        setLoadingMore(false)
+      }
     }
   }, [])
+
+  function loadMore() {
+    if (loadingMore || !hasMore) return
+    fetchNailists(activeCoordsRef.current.lat, activeCoordsRef.current.lng, nailists.length)
+  }
 
   // Pre-load all cover images; only show real cards once they're all ready
   useEffect(() => {
@@ -491,6 +514,19 @@ export default function SearchPage() {
                 </div>
               </motion.div>
             ))}
+          </div>
+        )}
+
+        {!loading && imagesReady && viewMode === 'grid' && hasMore && (
+          <div className="flex justify-center mt-8">
+            <Button
+              onClick={loadMore}
+              disabled={loadingMore}
+              variant="outline"
+              className="rounded-xl h-11 px-8 font-bold border-border hover:border-primary/40 hover:bg-pink-50/50 gap-2 cursor-pointer disabled:opacity-60"
+            >
+              {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : 'טעני עוד נייליסטיות'}
+            </Button>
           </div>
         )}
       </div>

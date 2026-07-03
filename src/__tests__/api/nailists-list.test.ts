@@ -31,8 +31,9 @@ jest.mock('@/lib/firebase/admin', () => ({
 
 import { GET } from '@/app/api/nailists/route'
 
-function makeRequest(cookie?: string): NextRequest {
-  const req = new NextRequest('http://localhost/api/nailists', { method: 'GET' })
+function makeRequest(cookie?: string, searchParams?: string): NextRequest {
+  const url = `http://localhost/api/nailists${searchParams ? `?${searchParams}` : ''}`
+  const req = new NextRequest(url, { method: 'GET' })
   if (cookie) {
     Object.defineProperty(req, 'cookies', {
       get: () => ({ get: (name: string) => (name === 'auth-token' ? { value: cookie } : undefined) }),
@@ -87,5 +88,46 @@ describe('GET /api/nailists — contact info gating on list results', () => {
     const res = await GET(makeRequest('bad-token'))
     const json = await res.json()
     expect(json.data[0].whatsappPhone).toBeUndefined()
+  })
+})
+
+describe('GET /api/nailists — pagination (no location)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    verifyIdTokenMock.mockResolvedValue({ uid: 'some-user' })
+    collectionStore['nailistProfiles'] = Array.from({ length: 15 }, (_, i) => ({
+      __id: `nailist-${i}`,
+      businessName: `סטודיו ${i}`,
+      isActive: true,
+    }))
+    collectionStore['services'] = []
+  })
+
+  it('defaults to a page of 12 with hasMore: true when more results exist', async () => {
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    expect(json.data).toHaveLength(12)
+    expect(json.hasMore).toBe(true)
+  })
+
+  it('returns the next page via offset, with hasMore: false once exhausted', async () => {
+    const res = await GET(makeRequest(undefined, 'offset=12'))
+    const json = await res.json()
+    expect(json.data).toHaveLength(3)
+    expect(json.hasMore).toBe(false)
+  })
+
+  it('returns an empty page with hasMore: false when offset exceeds the result count', async () => {
+    const res = await GET(makeRequest(undefined, 'offset=100'))
+    const json = await res.json()
+    expect(json.data).toHaveLength(0)
+    expect(json.hasMore).toBe(false)
+  })
+
+  it('respects a custom pageSize', async () => {
+    const res = await GET(makeRequest(undefined, 'pageSize=5'))
+    const json = await res.json()
+    expect(json.data).toHaveLength(5)
+    expect(json.hasMore).toBe(true)
   })
 })

@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
     const lng = searchParams.get('lng')
     const radius = Number(searchParams.get('radius') ?? '20')
     const pageSize = Number(searchParams.get('pageSize') ?? '12')
+    const offset = Math.max(0, Number(searchParams.get('offset') ?? '0'))
 
     const db = adminDb()
     const isAuthenticated = await isAuthenticatedRequest(request)
@@ -89,33 +90,36 @@ export async function GET(request: NextRequest) {
       }
 
       nailists.sort((a, b) => (a.distanceKm as number) - (b.distanceKm as number))
-      const page = nailists.slice(0, pageSize)
+      const page = nailists.slice(offset, offset + pageSize)
       await attachServiceNames(db, page)
       sanitizeNailists(page, isAuthenticated)
 
       return NextResponse.json({
         data: page,
         total: nailists.length,
-        hasMore: nailists.length > pageSize,
+        hasMore: nailists.length > offset + pageSize,
       })
     }
 
-    // No location — return most recent active profiles
+    // No location — return most recent active profiles. Fetch one extra doc
+    // beyond the requested page to detect hasMore without a separate count
+    // query (Firestore has no cheap COUNT — this is the standard workaround).
     const snap = await db
       .collection(COLLECTIONS.NAILIST_PROFILES)
       .where('isActive', '==', true)
-      .limit(50)
+      .limit(offset + pageSize + 1)
       .get()
 
     const nailists = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-    const page = nailists.slice(0, pageSize)
+    const hasMore = nailists.length > offset + pageSize
+    const page = nailists.slice(offset, offset + pageSize)
     await attachServiceNames(db, page)
     sanitizeNailists(page, isAuthenticated)
 
     return NextResponse.json({
       data: page,
       total: nailists.length,
-      hasMore: nailists.length > pageSize,
+      hasMore,
     })
   } catch (error) {
     console.error('GET /api/nailists error:', error)
