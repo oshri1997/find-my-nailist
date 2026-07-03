@@ -384,12 +384,9 @@ export default function SearchPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {sorted.map((nailist, i) => (
+            {sorted.map((nailist) => (
               <motion.div
                 key={nailist.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: Math.min(i * 0.06, 0.4) }}
                 whileHover={{ y: -3, transition: { duration: 0.2 } }}
                 onClick={() => router.push(`/nailists/${nailist.id}`)}
                 className="bg-card rounded-2xl overflow-hidden shadow-[0_1px_8px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_24px_rgba(236,72,153,0.10)] transition-all duration-300 cursor-pointer group border border-border hover:border-pink-200"
