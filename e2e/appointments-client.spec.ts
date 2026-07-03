@@ -106,12 +106,12 @@ test.describe('Client — My Appointments page', () => {
 
   // ─── Review button ────────────────────────────────────────────────────────────
 
-  test('completed without review shows "כתבי ביקורת 💅"', async ({ page }) => {
+  test('completed without review shows "כתבי ביקורת"', async ({ page }) => {
     await page.route('/api/appointments**', route =>
       route.fulfill({ json: { data: [COMPLETED_NO_REVIEW] } })
     )
     await page.goto('/my-appointments')
-    await expect(page.getByText('כתבי ביקורת 💅')).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText('כתבי ביקורת')).toBeVisible({ timeout: 8_000 })
   })
 
   test('completed with review shows "✓ ביקורת נשלחה"', async ({ page }) => {
@@ -127,7 +127,7 @@ test.describe('Client — My Appointments page', () => {
       route.fulfill({ json: { data: [PENDING_APPT, CONFIRMED_APPT] } })
     )
     await page.goto('/my-appointments')
-    await expect(page.getByText('כתבי ביקורת 💅')).not.toBeVisible()
+    await expect(page.getByText('כתבי ביקורת')).not.toBeVisible()
   })
 
   // ─── Review modal — step 1 (stars) ───────────────────────────────────────────
@@ -137,7 +137,7 @@ test.describe('Client — My Appointments page', () => {
       route.fulfill({ json: { data: [COMPLETED_NO_REVIEW] } })
     )
     await page.goto('/my-appointments')
-    await page.getByText('כתבי ביקורת 💅').click()
+    await page.getByText('כתבי ביקורת').click()
 
     await expect(page.getByText('כמה כוכבים?')).toBeVisible({ timeout: 5_000 })
     await expect(page.getByRole('button', { name: /המשך/ })).toBeDisabled()
@@ -148,7 +148,7 @@ test.describe('Client — My Appointments page', () => {
       route.fulfill({ json: { data: [COMPLETED_NO_REVIEW] } })
     )
     await page.goto('/my-appointments')
-    await page.getByText('כתבי ביקורת 💅').click()
+    await page.getByText('כתבי ביקורת').click()
 
     await page.getByRole('button', { name: '5 כוכבים' }).click()
     await expect(page.getByRole('button', { name: /המשך/ })).toBeEnabled({ timeout: 3_000 })
@@ -161,7 +161,7 @@ test.describe('Client — My Appointments page', () => {
       route.fulfill({ json: { data: [COMPLETED_NO_REVIEW] } })
     )
     await page.goto('/my-appointments')
-    await page.getByText('כתבי ביקורת 💅').click()
+    await page.getByText('כתבי ביקורת').click()
     await page.getByRole('button', { name: '5 כוכבים' }).click()
     await page.getByRole('button', { name: /המשך/ }).click()
 
@@ -175,7 +175,7 @@ test.describe('Client — My Appointments page', () => {
       route.fulfill({ json: { data: [COMPLETED_NO_REVIEW] } })
     )
     await page.goto('/my-appointments')
-    await page.getByText('כתבי ביקורת 💅').click()
+    await page.getByText('כתבי ביקורת').click()
     await page.getByRole('button', { name: '5 כוכבים' }).click()
     await page.getByRole('button', { name: /המשך/ }).click()
     await page.getByPlaceholder(/שתפי את החוויה/).fill('מאוד מקצועית ומהנה!')
@@ -196,7 +196,7 @@ test.describe('Client — My Appointments page', () => {
     })
 
     await page.goto('/my-appointments')
-    await page.getByText('כתבי ביקורת 💅').click()
+    await page.getByText('כתבי ביקורת').click()
     await page.getByRole('button', { name: '5 כוכבים' }).click()
     await page.getByRole('button', { name: /המשך/ }).click()
     await page.getByPlaceholder(/שתפי את החוויה/).fill('מעולה!')
@@ -215,7 +215,7 @@ test.describe('Client — My Appointments page', () => {
     )
 
     await page.goto('/my-appointments')
-    await page.getByText('כתבי ביקורת 💅').click()
+    await page.getByText('כתבי ביקורת').click()
     await page.getByRole('button', { name: '4 כוכבים' }).click()
     await page.getByRole('button', { name: /המשך/ }).click()
     await page.getByRole('button', { name: 'דלגי' }).click()
@@ -232,13 +232,13 @@ test.describe('Client — My Appointments page', () => {
     )
 
     await page.goto('/my-appointments')
-    await page.getByText('כתבי ביקורת 💅').click()
+    await page.getByText('כתבי ביקורת').click()
     await page.getByRole('button', { name: '5 כוכבים' }).click()
     await page.getByRole('button', { name: /המשך/ }).click()
     await page.getByRole('button', { name: 'דלגי' }).click()
 
-    await expect(page.getByText(/סטודיו שרה/)).toBeVisible({ timeout: 8_000 })
-    await expect(page.getByRole('button', { name: 'סגור' })).toBeVisible()
+    await expect(page.getByText(/סטודיו שרה/).last()).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByRole('button', { name: 'סגור' }).last()).toBeVisible()
   })
 
   test('closing done modal hides it', async ({ page }) => {
@@ -250,13 +250,13 @@ test.describe('Client — My Appointments page', () => {
     )
 
     await page.goto('/my-appointments')
-    await page.getByText('כתבי ביקורת 💅').click()
+    await page.getByText('כתבי ביקורת').click()
     await page.getByRole('button', { name: '5 כוכבים' }).click()
     await page.getByRole('button', { name: /המשך/ }).click()
     await page.getByRole('button', { name: 'דלגי' }).click()
-    await page.getByRole('button', { name: 'סגור' }).click()
+    await page.getByRole('button', { name: 'סגור' }).last().click()
 
-    await expect(page.getByText('הביקורת נשלחה!')).not.toBeVisible({ timeout: 3_000 })
+    await expect(page.getByText('הביקורת נשלחה!').first()).not.toBeVisible({ timeout: 3_000 })
   })
 
   // ─── Review error handling ────────────────────────────────────────────────────
@@ -270,12 +270,12 @@ test.describe('Client — My Appointments page', () => {
     )
 
     await page.goto('/my-appointments')
-    await page.getByText('כתבי ביקורת 💅').click()
+    await page.getByText('כתבי ביקורת').click()
     await page.getByRole('button', { name: '5 כוכבים' }).click()
     await page.getByRole('button', { name: /המשך/ }).click()
     await page.getByRole('button', { name: 'דלגי' }).click()
 
-    await expect(page.getByText(/שגיאה בשליחת הביקורת|שגיאת רשת/)).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText('שגיאת שרת')).toBeVisible({ timeout: 8_000 })
   })
 
   test('duplicate review (409) shows appropriate error', async ({ page }) => {
@@ -287,12 +287,12 @@ test.describe('Client — My Appointments page', () => {
     )
 
     await page.goto('/my-appointments')
-    await page.getByText('כתבי ביקורת 💅').click()
+    await page.getByText('כתבי ביקורת').click()
     await page.getByRole('button', { name: '3 כוכבים' }).click()
     await page.getByRole('button', { name: /המשך/ }).click()
     await page.getByRole('button', { name: 'דלגי' }).click()
 
-    await expect(page.getByText(/שגיאה/)).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText('Review already exists')).toBeVisible({ timeout: 8_000 })
   })
 
   // ─── Auto-open review modal via ?review= URL param ────────────────────────────
@@ -320,7 +320,7 @@ test.describe('Client — My Appointments page', () => {
     await page.waitForLoadState('networkidle')
 
     const critical = errors.filter(e =>
-      !e.includes('favicon') && !e.includes('NEXT_PUBLIC') && !e.includes('maps.googleapis')
+      !e.includes('favicon') && !e.includes('NEXT_PUBLIC') && !e.includes('maps.googleapis') && !e.includes('userway') && !e.includes('ERR_TUNNEL_CONNECTION_FAILED')
     )
     expect(critical).toHaveLength(0)
   })

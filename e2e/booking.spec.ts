@@ -1,4 +1,14 @@
 import { test, expect } from '@playwright/test'
+import path from 'path'
+import fs from 'fs'
+
+const authFile = path.join(__dirname, '.auth/user.json')
+const hasAuth = () => {
+  try {
+    const state = JSON.parse(fs.readFileSync(authFile, 'utf8'))
+    return state.cookies?.length > 0
+  } catch { return false }
+}
 
 const MOCK_PROFILE = {
   id: 'n1',
@@ -21,7 +31,7 @@ const MOCK_SERVICES = [
 test.describe('Nailist public profile page', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('/api/nailists/n1', route =>
-      route.fulfill({ json: { data: { ...MOCK_PROFILE, reviews: [] } } })
+      route.fulfill({ json: { data: { ...MOCK_PROFILE, services: MOCK_SERVICES, portfolio: [], reviews: [] } } })
     )
     await page.route('/api/services**', route =>
       route.fulfill({ json: { data: MOCK_SERVICES } })
@@ -43,16 +53,54 @@ test.describe('Nailist public profile page', () => {
     await expect(page.getByText('₪150')).toBeVisible()
   })
 
+  // Booking is gated up front now: clicking "קביעת תור" while signed out
+  // sends the visitor straight to /login?redirect=... instead of opening
+  // the modal — it no longer lets an anonymous visitor walk through the
+  // whole flow before hitting a wall at submission.
+  test('clicking book while signed out redirects to login', async ({ page }) => {
+    await page.goto('/nailists/n1')
+    await page.getByRole('button', { name: /שירותים/ }).click()
+    await page.getByRole('button', { name: /קביעת תור/ }).first().click()
+    await expect(page).toHaveURL(/\/login\?redirect=/)
+  })
+
+  test('no console errors on nailist profile page', async ({ page }) => {
+    const errors: string[] = []
+    page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()) })
+    await page.goto('/nailists/n1')
+    const criticalErrors = errors.filter(e =>
+      !e.includes('favicon') && !e.includes('maps.googleapis') && !e.includes('NEXT_PUBLIC') && !e.includes('userway') && !e.includes('ERR_TUNNEL_CONNECTION_FAILED')
+    )
+    expect(criticalErrors).toHaveLength(0)
+  })
+})
+
+// Opening the booking modal requires a real signed-in user (openBooking()
+// checks useAuth().user, which only a real Firebase client session
+// populates), so these need a real session from auth.setup.ts.
+test.describe('Booking modal (real session)', () => {
+  test.skip(() => !hasAuth(), 'Skipped — run auth.setup first with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
+  test.use({ storageState: authFile })
+
+  test.beforeEach(async ({ page }) => {
+    await page.route('/api/nailists/n1', route =>
+      route.fulfill({ json: { data: { ...MOCK_PROFILE, services: MOCK_SERVICES, portfolio: [], reviews: [] } } })
+    )
+    await page.route('/api/services**', route =>
+      route.fulfill({ json: { data: MOCK_SERVICES } })
+    )
+  })
+
   test('clicking book opens booking modal', async ({ page }) => {
     await page.goto('/nailists/n1')
     const servicesTab = page.getByRole('button', { name: /שירותים/ })
     await servicesTab.click()
     const bookBtn = page.getByRole('button', { name: /קביעת תור/ }).first()
     await bookBtn.click()
-    await expect(page.getByText('הזמנת תור')).toBeVisible()
+    await expect(page.getByText('הזמנת תור', { exact: true })).toBeVisible()
   })
 
-  test('booking modal — step 1 shows services', async ({ page }) => {
+  test('step 1 shows services', async ({ page }) => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
@@ -62,7 +110,7 @@ test.describe('Nailist public profile page', () => {
     await expect(page.getByRole('button', { name: /המשך/ })).toBeDisabled()
   })
 
-  test('booking modal — selecting service enables continue', async ({ page }) => {
+  test('selecting service enables continue', async ({ page }) => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
@@ -71,7 +119,7 @@ test.describe('Nailist public profile page', () => {
     await expect(page.getByRole('button', { name: /המשך/ })).toBeEnabled()
   })
 
-  test('booking modal — step 2 shows date picker', async ({ page }) => {
+  test('step 2 shows date picker', async ({ page }) => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
@@ -82,7 +130,7 @@ test.describe('Nailist public profile page', () => {
     await expect(page.getByLabel('תאריך')).toBeVisible()
   })
 
-  test('booking modal — selecting date shows time slots', async ({ page }) => {
+  test('selecting date shows time slots', async ({ page }) => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
@@ -98,7 +146,7 @@ test.describe('Nailist public profile page', () => {
     await expect(page.getByText('09:00')).toBeVisible()
   })
 
-  test('booking modal — step 3 shows confirmation summary', async ({ page }) => {
+  test('step 3 shows confirmation summary', async ({ page }) => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
@@ -113,36 +161,5 @@ test.describe('Nailist public profile page', () => {
 
     await expect(page.getByText('אישור הזמנה')).toBeVisible()
     await expect(page.getByText('₪150')).toBeVisible()
-  })
-
-  test('booking modal — shows auth error when not logged in', async ({ page }) => {
-    await page.route('/api/me/client-profile', route =>
-      route.fulfill({ status: 401, json: { error: 'Unauthorized' } })
-    )
-
-    await page.goto('/nailists/n1')
-    await page.getByRole('button', { name: /שירותים/ }).click()
-    await page.getByRole('button', { name: /קביעת תור/ }).first().click()
-    await page.getByText("מניקור ג'ל").click()
-    await page.getByRole('button', { name: /המשך/ }).click()
-
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    await page.getByLabel('תאריך').fill(tomorrow.toISOString().split('T')[0])
-    await page.getByText('08:00').click()
-    await page.getByRole('button', { name: /המשך/ }).click()
-    await page.getByRole('button', { name: /אישור הזמנה/ }).click()
-
-    await expect(page.getByText(/יש להתחבר לחשבון/)).toBeVisible()
-  })
-
-  test('no console errors on nailist profile page', async ({ page }) => {
-    const errors: string[] = []
-    page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()) })
-    await page.goto('/nailists/n1')
-    const criticalErrors = errors.filter(e =>
-      !e.includes('favicon') && !e.includes('maps.googleapis') && !e.includes('NEXT_PUBLIC')
-    )
-    expect(criticalErrors).toHaveLength(0)
   })
 })

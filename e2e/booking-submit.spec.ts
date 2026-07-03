@@ -1,9 +1,22 @@
 import { test, expect } from '@playwright/test'
+import path from 'path'
+import fs from 'fs'
 
 /**
  * Full booking submission flow:
  * service → date/time → confirmation summary → POST /api/appointments → success
+ *
+ * Opening the booking modal requires a real signed-in user (openBooking()
+ * checks useAuth().user, which only a real Firebase client session
+ * populates), so this needs a real session from auth.setup.ts.
  */
+const authFile = path.join(__dirname, '.auth/user.json')
+const hasAuth = () => {
+  try {
+    const state = JSON.parse(fs.readFileSync(authFile, 'utf8'))
+    return state.cookies?.length > 0
+  } catch { return false }
+}
 
 const MOCK_PROFILE = {
   id: 'n1',
@@ -46,9 +59,12 @@ async function selectServiceAndTime(page: import('@playwright/test').Page) {
 }
 
 test.describe('Booking — full submission flow', () => {
+  test.skip(() => !hasAuth(), 'Skipped — run auth.setup first with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
+  test.use({ storageState: authFile })
+
   test.beforeEach(async ({ page }) => {
     await page.route('/api/nailists/n1', route =>
-      route.fulfill({ json: { data: { ...MOCK_PROFILE, reviews: [] } } })
+      route.fulfill({ json: { data: { ...MOCK_PROFILE, services: MOCK_SERVICES, portfolio: [], reviews: [] } } })
     )
     await page.route('/api/services**', route =>
       route.fulfill({ json: { data: MOCK_SERVICES } })

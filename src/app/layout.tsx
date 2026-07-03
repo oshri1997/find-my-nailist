@@ -89,13 +89,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ConditionalNavbar />
           {children}
         </Providers>
-        {/* UserWay accessibility widget */}
-        <script dangerouslySetInnerHTML={{ __html: `(function(d){var s=d.createElement("script");s.setAttribute("data-account","z8YM8BPOF6");s.setAttribute("data-position","2");s.setAttribute("src","https://cdn.userway.org/widget.js");(d.body||d.head).appendChild(s)})(document)` }} />
-        {/* Force UserWay button to bottom-left — 80px on mobile to clear the dashboard's
-            fixed bottom nav (md:hidden, so mobile-only), 16px on desktop where there's
-            no bottom nav to avoid. MutationObserver stops as soon as element is found;
-            a resize listener keeps the offset correct across the md (768px) breakpoint. */}
-        <script dangerouslySetInnerHTML={{ __html: `(function(){var target=null;function fix(el){var bottom=window.innerWidth<768?'80px':'16px';el.style.setProperty('position','fixed','important');el.style.setProperty('bottom',bottom,'important');el.style.setProperty('left','16px','important');el.style.setProperty('top','auto','important');el.style.setProperty('right','auto','important');}var obs=new MutationObserver(function(ml){ml.forEach(function(m){m.addedNodes.forEach(function(n){if(n.nodeType!==1)return;var el=n.id&&n.id.toLowerCase().includes('userway')?n:n.querySelector&&n.querySelector('[id*="userway"],[class*="userway"]');if(el){target=el;fix(el);obs.disconnect();}});});});obs.observe(document.body,{childList:true,subtree:true});window.addEventListener('resize',function(){if(target)fix(target);});})()` }} />
+        {/* UserWay accessibility widget, plus positioning fix combined into a single
+            script tag — two separate dangerouslySetInnerHTML scripts here would let the
+            first one's synchronous DOM injection (the widget's own <script> tag) shift
+            sibling positions before hydration finishes, which desyncs React's hydration
+            match for the second script and throws a false "attributes didn't match"
+            hydration error. One script tag avoids that race entirely.
+            Bottom offset: 80px on mobile to clear the dashboard's fixed bottom nav
+            (md:hidden, so mobile-only), 16px on desktop where there's no bottom nav to
+            avoid. MutationObserver stops as soon as the widget button is found; a resize
+            listener keeps the offset correct across the md (768px) breakpoint. */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(d){var s=d.createElement("script");s.setAttribute("data-account","z8YM8BPOF6");s.setAttribute("data-position","2");s.setAttribute("src","https://cdn.userway.org/widget.js");(d.body||d.head).appendChild(s);var target=null;function fix(el){var bottom=window.innerWidth<768?'80px':'16px';el.style.setProperty('position','fixed','important');el.style.setProperty('bottom',bottom,'important');el.style.setProperty('left','16px','important');el.style.setProperty('top','auto','important');el.style.setProperty('right','auto','important');}var obs=new MutationObserver(function(ml){ml.forEach(function(m){m.addedNodes.forEach(function(n){if(n.nodeType!==1)return;var el=n.id&&n.id.toLowerCase().includes('userway')?n:n.querySelector&&n.querySelector('[id*="userway"],[class*="userway"]');if(el){target=el;fix(el);obs.disconnect();}});});});obs.observe(d.body,{childList:true,subtree:true});window.addEventListener('resize',function(){if(target)fix(target);});})(document)` }} />
       </body>
     </html>
   )

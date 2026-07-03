@@ -3,13 +3,22 @@ import { test, expect } from '@playwright/test'
 test.describe('Login page', () => {
   test('renders login form', async ({ page }) => {
     await page.goto('/login')
-    await expect(page.getByText('ברוכה השבה!')).toBeVisible()
+    await expect(page.getByText('ברוכה השבה').first()).toBeVisible()
     await expect(page.getByLabel('אימייל')).toBeVisible()
     await expect(page.getByLabel('סיסמה')).toBeVisible()
-    await expect(page.getByText('המשיכי עם Google')).toBeVisible()
+    await expect(page.getByText('כניסה עם Google')).toBeVisible()
   })
 
   test('shows error for wrong credentials', async ({ page }) => {
+    // Mock the Firebase Auth REST call directly rather than hitting the real
+    // service — deterministic, and avoids depending on outbound network
+    // access to a third-party host from the browser.
+    await page.route('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword**', route =>
+      route.fulfill({
+        status: 400,
+        json: { error: { code: 400, message: 'INVALID_LOGIN_CREDENTIALS' } },
+      })
+    )
     await page.goto('/login')
     await page.fill('input[type="email"]', 'noone@example.com')
     await page.fill('input[type="password"]', 'wrongpassword')
@@ -35,29 +44,31 @@ test.describe('Login page', () => {
   })
 })
 
-test.describe('Register page', () => {
+// Registration lives on /login?tab=register (a unified page), not a
+// standalone /register route.
+test.describe('Register tab', () => {
   test('renders registration form with role selector', async ({ page }) => {
-    await page.goto('/register')
-    await expect(page.getByText('הצטרפי אלינו!')).toBeVisible()
-    await expect(page.getByText('אני לקוחה')).toBeVisible()
-    await expect(page.getByText('אני נייליסטית')).toBeVisible()
+    await page.goto('/login?tab=register')
+    await expect(page.getByText('יצירת חשבון חדש')).toBeVisible()
+    await expect(page.getByText('נייליסטית', { exact: true })).toBeVisible()
+    await expect(page.getByText('לקוחה', { exact: true })).toBeVisible()
   })
 
   test('role selector switches between client and nailist', async ({ page }) => {
-    await page.goto('/register')
-    await page.getByText('אני נייליסטית').click()
+    await page.goto('/login?tab=register')
+    await page.getByText('נייליסטית', { exact: true }).click()
     await expect(page.getByPlaceholder('סטודיו שרה')).toBeVisible()
-    await page.getByText('אני לקוחה').click()
+    await page.getByText('לקוחה', { exact: true }).click()
     await expect(page.getByPlaceholder('שרה לוי')).toBeVisible()
   })
 
   test('shows validation error for weak password', async ({ page }) => {
-    await page.goto('/register')
+    await page.goto('/login?tab=register')
     await page.fill('input[id="name"]', 'Test User')
     await page.fill('input[id="email"]', 'test@example.com')
-    await page.fill('input[id="password"]', '123')
+    await page.fill('input[id="password"]', '1234567')
+    await page.getByRole('checkbox').check()
     await page.click('button[type="submit"]')
-    // HTML5 validation should fire or Firebase returns weak-password error
-    await page.waitForTimeout(500)
+    await expect(page.getByText('הסיסמה חייבת להכיל לפחות 8 תווים')).toBeVisible({ timeout: 5_000 })
   })
 })

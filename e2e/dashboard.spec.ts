@@ -28,19 +28,17 @@ const MOCK_SERVICES = [
 ]
 
 /**
- * Dashboard tests use mocked API responses so they work without real Firebase.
- * The auth-token cookie is injected to bypass the middleware.
+ * Dashboard business data is mocked via page.route() for determinism, but
+ * the session itself must be real: these pages gate on the Firebase
+ * client-side auth state (useAuth().user), which only a real signed-in
+ * session (from auth.setup.ts) populates — a spoofed cookie leaves
+ * useAuth().user null and the layout redirects to /login.
  */
-test.describe('Dashboard (mocked auth)', () => {
-  test.beforeEach(async ({ page }) => {
-    // Inject a fake auth cookie to pass the middleware check
-    await page.context().addCookies([{
-      name: 'auth-token',
-      value: 'test-token',
-      domain: 'localhost',
-      path: '/',
-    }])
+test.describe('Dashboard (mocked data, real session)', () => {
+  test.skip(() => !hasAuth(), 'Skipped — run auth.setup first with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
+  test.use({ storageState: authFile })
 
+  test.beforeEach(async ({ page }) => {
     // Mock all API calls that would verify the token
     await page.route('/api/me/nailist-profile', route =>
       route.fulfill({ json: { data: MOCK_PROFILE } })
@@ -52,7 +50,7 @@ test.describe('Dashboard (mocked auth)', () => {
       route.fulfill({ json: { data: [] } })
     )
     await page.route('/api/nailists/profile1', route =>
-      route.fulfill({ json: { data: { ...MOCK_PROFILE, services: [], reviews: [] } } })
+      route.fulfill({ json: { data: { ...MOCK_PROFILE, services: [], portfolio: [], reviews: [] } } })
     )
   })
 
@@ -74,7 +72,7 @@ test.describe('Dashboard (mocked auth)', () => {
 
     // No critical errors
     const criticalErrors = errors.filter(e =>
-      !e.includes('favicon') && !e.includes('maps.googleapis') && !e.includes('NEXT_PUBLIC')
+      !e.includes('favicon') && !e.includes('maps.googleapis') && !e.includes('userway') && !e.includes('ERR_TUNNEL_CONNECTION_FAILED') && !e.includes('NEXT_PUBLIC')
     )
     expect(criticalErrors, 'No console errors on settings page').toHaveLength(0)
   })

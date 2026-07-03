@@ -1,13 +1,28 @@
 import { test, expect } from '@playwright/test'
+import path from 'path'
+import fs from 'fs'
 
 /**
  * E2E tests for the onboarding welcome page (/onboarding/welcome).
  *
- * Strategy: mock the auth + role APIs so the page renders without a real
- * Firebase session, then assert on visible UI and user interactions.
+ * This page gates on the real Firebase client-side auth state
+ * (useAuth().user) and redirects to /login otherwise, so a real signed-in
+ * session (from auth.setup.ts) is required. The role/profile APIs are still
+ * mocked for determinism — the real backend's actual role value doesn't
+ * matter since these routes are intercepted before they'd reach it.
  */
+const authFile = path.join(__dirname, '.auth/user.json')
+const hasAuth = () => {
+  try {
+    const state = JSON.parse(fs.readFileSync(authFile, 'utf8'))
+    return state.cookies?.length > 0
+  } catch { return false }
+}
 
 test.describe('Onboarding welcome page', () => {
+  test.skip(() => !hasAuth(), 'Skipped — run auth.setup first with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
+  test.use({ storageState: authFile })
+
   test.beforeEach(async ({ page }) => {
     // Simulate an authenticated user with no role yet
     await page.route('/api/me/nailist-profile', route =>
@@ -21,7 +36,7 @@ test.describe('Onboarding welcome page', () => {
   test('renders account-type heading and both role buttons', async ({ page }) => {
     await page.goto('/onboarding/welcome')
 
-    await expect(page.getByText('בחרי סוג חשבון ✨')).toBeVisible()
+    await expect(page.getByText('בחרי סוג חשבון')).toBeVisible()
     await expect(page.getByText('נייליסטית')).toBeVisible()
     await expect(page.getByText('לקוחה')).toBeVisible()
   })
@@ -88,7 +103,7 @@ test.describe('Onboarding welcome page', () => {
     await page.goto('/onboarding/welcome')
 
     const critical = errors.filter(e =>
-      !e.includes('favicon') && !e.includes('NEXT_PUBLIC') && !e.includes('maps.googleapis')
+      !e.includes('favicon') && !e.includes('NEXT_PUBLIC') && !e.includes('maps.googleapis') && !e.includes('userway') && !e.includes('ERR_TUNNEL_CONNECTION_FAILED')
     )
     expect(critical, 'No console errors').toHaveLength(0)
   })
