@@ -87,7 +87,7 @@ test.describe.serial('Dashboard (mocked data, real session)', () => {
 
   test('settings page shows business name from profile', async () => {
     await page.goto('/dashboard/nailist/settings')
-    const input = page.locator('input').first()
+    const input = page.locator('input[name="businessName"]')
     await expect(input).toHaveValue('סטודיו דמו', { timeout: 10_000 })
   })
 

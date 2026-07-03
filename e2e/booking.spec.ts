@@ -19,6 +19,12 @@ const MOCK_SERVICES = [
   { id: 's2', name: 'פדיקור', durationMinutes: 45, price: 120, currency: 'ILS', isActive: true, description: 'טיפול מלא' },
 ]
 
+// The date step is a rendered month calendar (buttons with data-date="YYYY-MM-DD"),
+// not a fillable <input> — matches BookingModal.tsx's own toDateStr (local date parts).
+function toDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 test.describe('Nailist public profile page', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('/api/nailists/n1', route =>
@@ -97,6 +103,12 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.route('/api/services**', route =>
       route.fulfill({ json: { data: MOCK_SERVICES } })
     )
+    await page.route(/\/api\/nailists\/n1\/availability\/batch/, route =>
+      route.fulfill({ json: { data: {} } })
+    )
+    await page.route(/\/api\/nailists\/n1\/availability\?/, route =>
+      route.fulfill({ json: { data: { workingDay: true, startTime: '08:00', endTime: '18:00', bookedSlots: [] } } })
+    )
   })
 
   test('clicking book opens booking modal', async () => {
@@ -118,7 +130,11 @@ test.describe.serial('Booking modal (real session)', () => {
     // targets the modal's own copy, which is appended later in DOM order.
     await expect(page.getByText("מניקור ג'ל").last()).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('פדיקור').last()).toBeVisible()
-    await expect(page.getByRole('button', { name: /המשך/ })).toBeDisabled()
+
+    // Continue isn't disabled — clicking with no service selected shows an
+    // inline validation message instead and stays on step 1.
+    await page.getByRole('button', { name: /המשך/ }).click()
+    await expect(page.getByText('יש לבחור שירות כדי להמשיך')).toBeVisible()
   })
 
   test('selecting service enables continue', async () => {
@@ -127,7 +143,8 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
 
     await page.getByText("מניקור ג'ל").last().click()
-    await expect(page.getByRole('button', { name: /המשך/ })).toBeEnabled({ timeout: 10_000 })
+    await page.getByRole('button', { name: /המשך/ }).click()
+    await expect(page.getByText(/בחרי תאריך ושעה/)).toBeVisible({ timeout: 10_000 })
   })
 
   test('step 2 shows date picker', async () => {
@@ -138,7 +155,7 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.getByRole('button', { name: /המשך/ }).click()
 
     await expect(page.getByText(/בחרי תאריך ושעה/)).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByLabel('תאריך')).toBeVisible()
+    await expect(page.getByTestId('date-btn').first()).toBeVisible()
   })
 
   test('selecting date shows time slots', async () => {
@@ -150,8 +167,7 @@ test.describe.serial('Booking modal (real session)', () => {
 
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
-    const dateStr = tomorrow.toISOString().split('T')[0]
-    await page.getByLabel('תאריך').fill(dateStr)
+    await page.locator(`[data-date="${toDateStr(tomorrow)}"]`).click()
 
     await expect(page.getByText('08:00')).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('09:00')).toBeVisible()
@@ -166,7 +182,7 @@ test.describe.serial('Booking modal (real session)', () => {
 
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
-    await page.getByLabel('תאריך').fill(tomorrow.toISOString().split('T')[0])
+    await page.locator(`[data-date="${toDateStr(tomorrow)}"]`).click()
     await page.getByText('08:00').click()
     await page.getByRole('button', { name: /המשך/ }).click()
 

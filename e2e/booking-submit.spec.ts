@@ -34,6 +34,12 @@ const MOCK_CLIENT_PROFILE = {
   email: 'sarah@example.com',
 }
 
+// The date step is a rendered month calendar (buttons with data-date="YYYY-MM-DD"),
+// not a fillable <input> — matches BookingModal.tsx's own toDateStr (local date parts).
+function toDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 async function openBookingModal(page: Page) {
   await page.goto('/nailists/n1')
   await page.getByRole('button', { name: /שירותים/ }).click()
@@ -49,7 +55,7 @@ async function selectServiceAndTime(page: Page) {
 
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
-  await page.getByLabel('תאריך').fill(tomorrow.toISOString().split('T')[0])
+  await page.locator(`[data-date="${toDateStr(tomorrow)}"]`).click()
   await page.getByText('08:00').click()
   await page.getByRole('button', { name: /המשך/ }).click()
 }
@@ -83,6 +89,12 @@ test.describe.serial('Booking — full submission flow', () => {
     )
     await page.route('/api/me/client-profile', route =>
       route.fulfill({ json: { data: MOCK_CLIENT_PROFILE } })
+    )
+    await page.route(/\/api\/nailists\/n1\/availability\/batch/, route =>
+      route.fulfill({ json: { data: {} } })
+    )
+    await page.route(/\/api\/nailists\/n1\/availability\?/, route =>
+      route.fulfill({ json: { data: { workingDay: true, startTime: '08:00', endTime: '18:00', bookedSlots: [] } } })
     )
   })
 
@@ -163,7 +175,7 @@ test.describe.serial('Booking — full submission flow', () => {
 
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
-    await page.getByLabel('תאריך').fill(tomorrow.toISOString().split('T')[0])
+    await page.locator(`[data-date="${toDateStr(tomorrow)}"]`).click()
     await page.getByText('08:00').click()
     await page.getByRole('button', { name: /המשך/ }).click()
     await page.getByRole('button', { name: /אישור הזמנה/ }).click()
