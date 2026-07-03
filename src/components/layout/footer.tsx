@@ -51,6 +51,20 @@ export function Footer() {
               </div>
             </div>
 
+            {/* City links — helps Google discover city landing pages */}
+            <div className="pt-8 border-t border-border">
+              <h4 className="font-black text-foreground mb-4 text-sm">חפשי נייליסטית לפי עיר</h4>
+              <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+                {FOOTER_CITIES.map((c) => (
+                  <li key={c.slug}>
+                    <Link href={`/cities/${c.slug}`} className="hover:text-primary transition-colors">
+                      נייליסטית ב{c.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
             {/* Policy links */}
             <div className="pt-8 border-t border-border">
               <h4 className="font-black text-foreground mb-4 text-sm">מדיניות ונגישות</h4>
@@ -70,20 +84,6 @@ export function Footer() {
                     הצהרת נגישות
                   </Link>
                 </li>
-              </ul>
-            </div>
-
-            {/* City links — helps Google discover city landing pages */}
-            <div className="pt-8 border-t border-border">
-              <h4 className="font-black text-foreground mb-4 text-sm">חפשי נייליסטית לפי עיר</h4>
-              <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-                {FOOTER_CITIES.map((c) => (
-                  <li key={c.slug}>
-                    <Link href={`/cities/${c.slug}`} className="hover:text-primary transition-colors">
-                      נייליסטית ב{c.name}
-                    </Link>
-                  </li>
-                ))}
               </ul>
             </div>
           </div>
