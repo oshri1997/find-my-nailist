@@ -158,7 +158,7 @@ test.describe.serial('Booking — full submission flow', () => {
     await selectServiceAndTime(page)
     await page.getByRole('button', { name: /אישור וקביעת תור/ }).click()
 
-    await expect(page.getByText(/שגיאה|לא הצלחנו/)).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('שגיאת שרת')).toBeVisible({ timeout: 10_000 })
   })
 
   test('unauthorized booking redirects or shows login prompt', async () => {
