@@ -3,6 +3,7 @@ import { Heebo } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 import { Providers } from '@/components/providers'
+import { ConditionalNavbar } from '@/components/layout/conditional-navbar'
 
 const heebo = Heebo({ subsets: ['hebrew', 'latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
 
@@ -84,7 +85,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
         />
-        <Providers>{children}</Providers>
+        <Providers>
+          <ConditionalNavbar />
+          {children}
+        </Providers>
         {/* UserWay accessibility widget */}
         <script dangerouslySetInnerHTML={{ __html: `(function(d){var s=d.createElement("script");s.setAttribute("data-account","z8YM8BPOF6");s.setAttribute("data-position","2");s.setAttribute("src","https://cdn.userway.org/widget.js");(d.body||d.head).appendChild(s)})(document)` }} />
         {/* Force UserWay button to bottom-left — 80px on mobile to clear the dashboard's

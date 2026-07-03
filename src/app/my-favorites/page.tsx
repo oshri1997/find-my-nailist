@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
 import { MapPin, Star, Heart, Search } from 'lucide-react'
@@ -60,8 +59,6 @@ export default function MyFavoritesPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/40" dir="rtl">
-      <Navbar />
-
       <div className="container mx-auto max-w-5xl px-4 py-10 flex-1">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-2xl bg-pink-100 dark:bg-pink-950 flex items-center justify-center">

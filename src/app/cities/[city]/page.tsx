@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
-import { Navbar } from '@/components/layout/navbar'
 import { MapPin, Star, Sparkles } from 'lucide-react'
 import { CITIES, type CityEntry } from '@/lib/cities'
 
@@ -137,7 +136,6 @@ export default async function CityPage({ params }: Props) {
     <div className="min-h-screen flex flex-col bg-background" dir="rtl">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(cityPageJsonLd) }} />
-      <Navbar />
 
       <main className="flex-1 container mx-auto max-w-6xl px-6 py-10">
         {/* Breadcrumb */}

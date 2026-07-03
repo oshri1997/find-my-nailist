@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Navbar } from '@/components/layout/navbar'
 import { Button } from '@/components/ui/button'
 import { MapPin, Star, Clock, MessageCircle, Navigation, ExternalLink, ChevronRight, Settings, ImageIcon, Share2, Check, Heart, AlertCircle, Scissors, MessageSquare, Camera, Loader2 } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
@@ -191,7 +190,6 @@ export default function NailistProfileClient({ id }: { id: string }) {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-muted/30">
-        <Navbar />
         <div className="animate-pulse">
           <div className="h-64 bg-gradient-to-br from-pink-400 via-purple-500 to-violet-500 opacity-60" />
           <div className="container mx-auto max-w-4xl px-6 py-6 space-y-4">
@@ -211,7 +209,6 @@ export default function NailistProfileClient({ id }: { id: string }) {
   if (!profile) {
     return (
       <div className="min-h-screen flex flex-col bg-muted/50">
-        <Navbar />
         <div className="flex-1 flex items-center justify-center flex-col gap-3" dir="rtl">
           <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center">
             <AlertCircle className="h-6 w-6 text-muted-foreground" />
@@ -227,8 +224,6 @@ export default function NailistProfileClient({ id }: { id: string }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/50" dir="rtl">
-      <Navbar />
-
       {/* Hero — a consistent gradient, never a nailist-uploaded photo, so the header
           always looks clean regardless of what image someone sets as their cover */}
       <div className="relative text-white overflow-hidden bg-gradient-to-br from-pink-500 via-purple-600 to-violet-600">

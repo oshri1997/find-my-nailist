@@ -4,7 +4,6 @@ import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 import Link from 'next/link'
 import { JoinLink } from '@/components/auth/JoinLink'
-import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
 import { MapPin, Star, Calendar, Camera, ChevronDown, Scissors, Smartphone, Lock, Zap, MessageCircle, Gift } from 'lucide-react'
@@ -163,8 +162,6 @@ function Section({ children, className = '' }: { children: React.ReactNode; clas
 export default function HowItWorksPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
-      <Navbar />
-
       {/* Hero */}
       <section className="relative py-20 md:py-28 overflow-hidden bg-background">
         <div className="absolute inset-0 bg-mesh opacity-40" />

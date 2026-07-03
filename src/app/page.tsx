@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { HeroSection } from '@/components/home/hero-section'
 import { HowItWorksSection } from '@/components/home/how-it-works'
@@ -60,7 +59,6 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
       <HomeRedirect />
-      <Navbar />
       <HeroSection />
       <HowItWorksSection />
       <FeaturesSection />

@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 
 export const metadata = {
@@ -10,8 +9,6 @@ export const metadata = {
 export default function AccessibilityPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background" dir="rtl">
-      <Navbar />
-
       <main className="flex-1 container mx-auto max-w-3xl px-6 py-16">
         <h1 className="text-3xl font-black text-foreground mb-2">הצהרת נגישות</h1>
         <p className="text-muted-foreground mb-10 text-sm">עודכן לאחרונה: יוני 2026</p>

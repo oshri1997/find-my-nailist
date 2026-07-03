@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { Navbar } from '@/components/layout/navbar'
 import { useAuth } from '@/components/auth/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -259,8 +258,6 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-
       {/* Search controls bar */}
       <div className="bg-card border-b border-border sticky top-16 z-30 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
         <div className="container mx-auto max-w-7xl px-6 py-4">
