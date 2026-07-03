@@ -120,7 +120,7 @@ test.describe.serial('Booking — full submission flow', () => {
     await selectServiceAndTime(page)
     await page.getByRole('button', { name: /אישור וקביעת תור/ }).click()
 
-    await expect(page.getByText(/הזמנה נשלחה|הצלחה|ממתין לאישור/)).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('התור נקבע!')).toBeVisible({ timeout: 10_000 })
   })
 
   test('booking sends correct payload to API', async () => {
