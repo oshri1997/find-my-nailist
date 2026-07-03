@@ -232,6 +232,18 @@ export default function NailistProfileClient({ id }: { id: string }) {
       {/* Hero — a consistent gradient, never a nailist-uploaded photo, so the header
           always looks clean regardless of what image someone sets as their cover */}
       <div className="relative text-white overflow-hidden bg-gradient-to-br from-pink-500 via-purple-600 to-violet-600">
+        {/* Mobile-only back-to-search — the navbar's own "חיפוש" link is desktop-only
+            (hidden md:flex), so mobile visitors would otherwise have no way back.
+            Absolutely positioned at top-3 to sit on the same baseline as the owner
+            edit buttons below instead of being pushed down by the content padding. */}
+        <Link
+          href="/search"
+          className="md:hidden absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-white/20 backdrop-blur text-white text-xs font-bold rounded-full px-3 py-1.5 hover:bg-white/35 transition-colors border border-white/20"
+        >
+          <ChevronRight className="h-3 w-3" />
+          חזרה לחיפוש
+        </Link>
+
         {/* Owner edit buttons — z-20 so they stay above the content container below,
             which shares the hero's stacking context and would otherwise intercept
             clicks in this region via its own (invisible) top padding */}
@@ -253,11 +265,6 @@ export default function NailistProfileClient({ id }: { id: string }) {
         )}
 
         <div className="container mx-auto max-w-2xl px-6 py-12 relative z-10">
-          <Link href="/search" className="flex items-center gap-1 text-white/70 text-sm mb-6 hover:text-white transition-colors w-fit">
-            <ChevronRight className="h-4 w-4" />
-            חזרה לחיפוש
-          </Link>
-
           <div className="flex flex-col items-center text-center">
             {/* Avatar */}
             <div className="relative mb-4">
