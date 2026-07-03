@@ -88,6 +88,12 @@ export function matchesFilter(serviceNames: string[], filter: string): boolean {
   )
 }
 
+export function matchesQuery(nailist: { businessName: string; city?: string }, query: string): boolean {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  return nailist.businessName.toLowerCase().includes(q) || (nailist.city?.toLowerCase().includes(q) ?? false)
+}
+
 export default function SearchPage() {
   const router = useRouter()
   const { user } = useAuth()
@@ -225,6 +231,7 @@ export default function SearchPage() {
 
   const sorted = [...nailists]
     .filter((n) => matchesFilter(n.serviceNames ?? [], activeFilter))
+    .filter((n) => matchesQuery(n, locationLabel))
     .sort((a, b) => {
       if (sortBy === 'distance' && a.distanceKm != null && b.distanceKm != null) {
         return a.distanceKm - b.distanceKm
@@ -245,8 +252,14 @@ export default function SearchPage() {
               <Input
                 value={locationLabel}
                 onChange={(e) => setLocationLabel(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    fetchNailists(coords?.lat, coords?.lng)
+                  }
+                }}
                 className="pr-9 rounded-xl border-border focus:border-primary h-11 bg-card"
-                placeholder="הכניסי מיקום..."
+                placeholder="עיר או שם עסק..."
                 readOnly={!!coords}
               />
             </div>

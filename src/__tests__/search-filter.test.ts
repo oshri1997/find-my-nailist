@@ -1,4 +1,4 @@
-import { matchesFilter, FILTER_KEYWORDS, filterTags } from '@/app/search/page'
+import { matchesFilter, matchesQuery, FILTER_KEYWORDS, filterTags } from '@/app/search/page'
 
 describe('matchesFilter', () => {
   it('returns true for "הכל" regardless of services', () => {
@@ -94,6 +94,33 @@ describe('matchesFilter', () => {
   it('matches if any service in the list matches', () => {
     expect(matchesFilter(['פדיקור', "מניקור ג'ל", 'אקריל'], 'אקריל')).toBe(true)
     expect(matchesFilter(['פדיקור', 'מניקור'], 'אקריל')).toBe(false)
+  })
+})
+
+describe('matchesQuery', () => {
+  it('returns true for an empty or blank query', () => {
+    expect(matchesQuery({ businessName: 'סטודיו שרה', city: 'תל אביב' }, '')).toBe(true)
+    expect(matchesQuery({ businessName: 'סטודיו שרה', city: 'תל אביב' }, '   ')).toBe(true)
+  })
+
+  it('matches by city', () => {
+    expect(matchesQuery({ businessName: 'סטודיו שרה', city: 'רחובות' }, 'רחובות')).toBe(true)
+    expect(matchesQuery({ businessName: 'סטודיו שרה', city: 'ראשון לציון' }, 'רחובות')).toBe(false)
+  })
+
+  it('matches by business name', () => {
+    expect(matchesQuery({ businessName: 'סטודיו שרה', city: 'רחובות' }, 'שרה')).toBe(true)
+    expect(matchesQuery({ businessName: 'סטודיו דנה', city: 'רחובות' }, 'שרה')).toBe(false)
+  })
+
+  it('is case-insensitive and matches partial substrings', () => {
+    expect(matchesQuery({ businessName: 'Nail Studio', city: 'Tel Aviv' }, 'nail')).toBe(true)
+    expect(matchesQuery({ businessName: 'Nail Studio', city: 'Tel Aviv' }, 'AVIV')).toBe(true)
+  })
+
+  it('handles a missing city without throwing', () => {
+    expect(matchesQuery({ businessName: 'סטודיו שרה' }, 'שרה')).toBe(true)
+    expect(matchesQuery({ businessName: 'סטודיו שרה' }, 'תל אביב')).toBe(false)
   })
 })
 
