@@ -3,14 +3,14 @@
 import { motion } from 'framer-motion'
 
 /*
-  NailLoader v2 - Premium 3D Realism Edition
-  Inspired by watermarked_img_1159717097582209269.png
+  NailLoader v3 - Natural Shorter Nail Edition
+  Inspired by watermarked_img_2404484961621109400.png
 */
 
 const SPARKLES = [
-  { x: -55, y: -25, delay: 0.1, size: 24 }, // כוכב גדול משמאל
-  { x: 55, y: 10, delay: 0.4, size: 20 },   // כוכב בינוני מימין
-  { x: -65, y: 15, delay: 0.7, size: 14 },  // כוכבים קטנים מסביב
+  { x: -55, y: -25, delay: 0.1, size: 24 },
+  { x: 55, y: 10, delay: 0.4, size: 20 },
+  { x: -65, y: 15, delay: 0.7, size: 14 },
   { x: 45, y: -30, delay: 0.25, size: 12 },
   { x: -35, y: 35, delay: 0.9, size: 6 },
   { x: 35, y: -10, delay: 0.5, size: 6 },
@@ -31,27 +31,26 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
     >
       <div className="relative select-none" style={{ width: 160, height: 200 }}>
 
-        {/* ── אשליות רקע וצלליות רכות ── */}
+        {/* אפקט זוהר אחורי רך */}
         <div
           className="absolute inset-0 blur-2xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(251,207,232,0.3) 0%, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, rgba(251,207,232,0.2) 0%, transparent 70%)' }}
         />
 
-        {/* ── נצנצים יוקרתיים (Sparkles) ── */}
+        {/* נצנצים עדינים מסביב */}
         {SPARKLES.map((s, i) => (
           <motion.div
             key={i}
-            className="absolute pointer-events-none drop-shadow-[0_0_4px_rgba(236,72,153,0.6)]"
-            style={{ left: `calc(50% + ${s.x}px)`, top: `${70 + s.y}px` }}
+            className="absolute pointer-events-none drop-shadow-[0_0_4px_rgba(236,72,153,0.5)]"
+            style={{ left: `calc(50% + ${s.x}px)`, top: `${80 + s.y}px` }}
             animate={{
-              opacity: [0, 0.9, 0],
-              scale: [0.4, 1.1, 0.4],
-              rotate: [0, 15, 30],
+              opacity: [0, 0.8, 0],
+              scale: [0.5, 1, 0.5],
+              rotate: [0, 20, 40],
             }}
-            transition={{ duration: 2.2, delay: s.delay, repeat: Infinity, ease: 'easeInOut' }}
+            transition={{ duration: 2.4, delay: s.delay, repeat: Infinity, ease: 'easeInOut' }}
           >
             <svg width={s.size} height={s.size} viewBox="0 0 24 24" fill="none">
-              {/* כוכב 4 קצוות חד וריאליסטי */}
               <path d="M12 0L14.3 9.7L24 12L14.3 14.3L12 24L9.7 14.3L0 12L9.7 9.7Z" fill={`url(#sparkle-grad-${i})`} />
               <defs>
                 <linearGradient id={`sparkle-grad-${i}`} x1="0" y1="0" x2="24" y2="24">
@@ -64,13 +63,13 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
           </motion.div>
         ))}
 
-        {/* ── האצבע והציפורן ── */}
+        {/* ── האצבע והציפורן (בפרופורציה קצרה וטבעית) ── */}
         <svg
           width="90" height="180" viewBox="0 0 90 180"
           fill="none" className="absolute left-1/2 -translate-x-1/2 bottom-0"
         >
           <defs>
-            {/* גרדיאנט עור ריאליסטי תלת מימדי */}
+            {/* גוון עור ריאליסטי */}
             <linearGradient id="skin-base" x1="0" y1="0" x2="90" y2="0" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stopColor="#e2b19d" />
               <stop offset="25%" stopColor="#f5d6ca" />
@@ -79,60 +78,58 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
             </linearGradient>
 
             <linearGradient id="skin-shadow" x1="0" y1="0" x2="0" y2="180" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#000000" stopOpacity="0.05" />
-              <stop offset="40%" stopColor="#000000" stopOpacity="0" />
-              <stop offset="100%" stopColor="#bd8168" stopOpacity="0.4" />
+              <stop offset="0%" stopColor="#000000" stopOpacity="0.03" />
+              <stop offset="50%" stopColor="#bd8168" stopOpacity="0" />
+              <stop offset="100%" stopColor="#bd8168" stopOpacity="0.35" />
             </linearGradient>
 
-            {/* בסיס הציפורן הטבעית */}
-            <linearGradient id="nail-bed" x1="45" y1="50" x2="45" y2="130" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#fbfbfc" />
-              <stop offset="15%" stopColor="#f4e5e2" />
-              <stop offset="85%" stopColor="#f3d1cb" />
+            {/* מיטת הציפורן הטבעית */}
+            <linearGradient id="nail-bed" x1="45" y1="65" x2="45" y2="135" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#f4e5e2" />
+              <stop offset="70%" stopColor="#f3d1cb" />
               <stop offset="100%" stopColor="#eac2ba" />
             </linearGradient>
           </defs>
 
           {/* גוף האצבע */}
           <path
-            d="M12,180 C12,140 10,95 10,75 C10,35 30,22 45,22 C60,22 80,35 80,75 C80,95 78,140 78,180 Z"
+            d="M12,180 C12,145 12,105 12,85 C12,50 28,38 45,38 C62,38 78,50 78,85 C78,105 78,145 78,180 Z"
             fill="url(#skin-base)"
           />
           <path
-            d="M12,180 C12,140 10,95 10,75 C10,35 30,22 45,22 C60,22 80,35 80,75 C80,95 78,140 78,180 Z"
+            d="M12,180 C12,145 12,105 12,85 C12,50 28,38 45,38 C62,38 78,50 78,85 C78,105 78,145 78,180 Z"
             fill="url(#skin-shadow)"
           />
 
-          {/* קמטוטים באצבע (ריאליזם רך) */}
-          <path d="M22,150 Q45,156 68,150" stroke="#cd957f" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-          <path d="M25,155 Q45,160 65,155" stroke="#cd957f" strokeWidth="1" strokeLinecap="round" opacity="0.4" />
+          {/* קמטוטי פרק אצבע עדינים */}
+          <path d="M24,152 Q45,157 66,152" stroke="#cd957f" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
 
-          {/* הציפורן עצמה */}
+          {/* הציפורן הקצרה והטבעית (הנמכנו את החלק העליון מ-32 ל-50) */}
           <path
-            d="M18,125 C15,70 20,32 45,32 C70,32 75,70 72,125 C55,134 35,134 18,125 Z"
+            d="M19,125 C16,85 22,50 45,50 C68,50 74,85 71,125 C55,134 35,134 19,125 Z"
             fill="url(#nail-bed)"
           />
 
-          {/* הסהר הלבן בבסיס הציפורן (Lunula) */}
-          <path d="M30,121 C33,114 57,114 60,121 C53,124 37,124 30,121 Z" fill="rgba(255,255,255,0.55)" />
+          {/* סהר הציפורן (Lunula) */}
+          <path d="M32,122 C35,116 55,116 58,122 C52,125 38,125 32,122 Z" fill="rgba(255,255,255,0.5)" />
 
-          {/* קו הקוטיקולה (הצללה מעל הציפורן) */}
-          <path d="M18,125 C35,134 55,134 72,125" stroke="#ba826c" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.5" />
+          {/* קו הקוטיקולה התחתון */}
+          <path d="M19,125 C35,134 55,134 71,125" stroke="#ba826c" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.45" />
         </svg>
 
-        {/* ── הלק (הצבע הגדל על הציפורן) ── */}
+        {/* ── הלק (הצבע - מותאם לציפורן הקצרה) ── */}
         <div
           className="absolute overflow-hidden"
           style={{
             left: '50%',
             transform: 'translateX(-50%)',
-            bottom: 55, // ממוקם בדיוק מעל בסיס הציפורן
-            width: 58,
-            height: 94,
-            clipPath: 'path("M3,93 C0,38 2,0 29,0 C56,0 58,38 55,93 C40,102 18,102 3,93 Z")',
+            bottom: 55,
+            width: 56,
+            height: 76, // קוצר מ-94 ל-76 כדי להתאים לציפורן החדשה
+            clipPath: 'path("M2,75 C-1,35 2,0 28,0 C54,0 57,35 54,75 C40,84 16,84 2,75 Z")',
           }}
         >
-          {/* גרדיאנט הציפורן - אומברה יוקרתי */}
+          {/* אפקט האומברה המשודרג */}
           <motion.div
             animate={{ scaleY: [0, 1, 1, 0] }}
             transition={{
@@ -144,26 +141,26 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(180deg, #d946ef 0%, #a855f7 40%, #db2777 85%, #be185d 100%)',
+              background: 'linear-gradient(180deg, #d946ef 0%, #a855f7 35%, #db2777 75%, #be185d 100%)',
               transformOrigin: 'center bottom',
             }}
           >
-            {/* אפקט מבריק (Gloss 3D) קבוע על הלק */}
+            {/* ברק (Gloss) קבוע לאורך הלק */}
             <div
               className="absolute inset-0"
               style={{
-                background: 'linear-gradient(90deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.25) 30%, rgba(255,255,255,0) 45%)',
+                background: 'linear-gradient(90deg, rgba(255,255,255,0) 25%, rgba(255,255,255,0.2) 33%, rgba(255,255,255,0) 45%)',
               }}
             />
           </motion.div>
         </div>
 
-        {/* ── טפטפת כרום יוקרתית עם טיפת ג'ל תלת מימדית ── */}
+        {/* ── טפטפת יוקרתית עם טיפה רטובה ── */}
         <motion.div
           className="absolute left-1/2"
-          style={{ x: '-50%', top: -10, zIndex: 10 }}
+          style={{ x: '-50%', top: 10, zIndex: 10 }} // הזזנו מעט את נקודת ההתחלה להתאמה מושלמת
           animate={{
-            y: [-35, 42, 42, -35],
+            y: [-35, 38, 38, -35],
             scale: [0.95, 1, 1.02, 0.95],
           }}
           transition={{
@@ -175,7 +172,6 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
         >
           <svg width="46" height="95" viewBox="0 0 46 95" fill="none">
             <defs>
-              {/* גרדיאנט מתכת כרום מטאלי */}
               <linearGradient id="chrome-grad" x1="0" y1="0" x2="46" y2="0">
                 <stop offset="0%" stopColor="#475569" />
                 <stop offset="25%" stopColor="#cbd5e1" />
@@ -184,7 +180,6 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
                 <stop offset="100%" stopColor="#334155" />
               </linearGradient>
 
-              {/* גרדיאנט זכוכית שקופה לפיפטה */}
               <linearGradient id="glass-grad" x1="0" y1="0" x2="16" y2="0">
                 <stop offset="0%" stopColor="rgba(255,255,255,0.6)" />
                 <stop offset="30%" stopColor="rgba(255,255,255,0.2)" />
@@ -192,7 +187,6 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
                 <stop offset="100%" stopColor="rgba(200,200,250,0.4)" />
               </linearGradient>
 
-              {/* ג'ל ורוד מבריק ותלת מימדי בטיפה */}
               <radialGradient id="drop-gel" cx="45%" cy="35%" r="60%">
                 <stop offset="0%" stopColor="#f472b6" />
                 <stop offset="40%" stopColor="#db2777" />
@@ -201,29 +195,26 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
               </radialGradient>
             </defs>
 
-            {/* ידית מתכת עליונה */}
+            {/* ידית הכרום */}
             <path d="M8,0 L38,0 C41,0 43,2 43,5 L43,28 C43,31 41,33 38,33 L8,33 C5,33 3,31 3,28 L3,5 C3,2 5,0 8,0 Z" fill="url(#chrome-grad)" />
             <rect x="2" y="24" width="42" height="3" fill="#1e293b" opacity="0.3" />
 
-            {/* חיבור פיפטת הזכוכית */}
+            {/* בסיס הפיפטה */}
             <path d="M15,33 L31,33 L29,45 L17,45 Z" fill="url(#chrome-grad)" />
 
-            {/* צינורית זכוכית שקופה */}
+            {/* הצינורית השקופה */}
             <rect x="17" y="45" width="12" height="32" fill="url(#glass-grad)" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5" />
-            {/* צבע הלק שנמצא בתוך הזכוכית */}
             <rect x="19" y="45" width="8" height="32" fill="#db2777" opacity="0.85" />
 
-            {/* קצה הפיפטה הצר */}
+            {/* קצה הפיפטה */}
             <path d="M17,77 L21,83 L25,83 L29,77 Z" fill="url(#glass-grad)" />
 
-            {/* טיפת ה ג'ל ה רטובה והשמנה (Liquid Drop Art) */}
-            <g className="drop-shadow-[0_3px_5px_rgba(0,0,0,0.25)]">
-              {/* מבנה הטיפה הנוזלית */}
+            {/* הטיפה התלת-ממדית (המבריקה) */}
+            <g className="drop-shadow-[0_3px_4px_rgba(0,0,0,0.2)]">
               <path
                 d="M23,79 C15,82 13,95 23,95 C33,95 31,82 23,79 Z"
                 fill="url(#drop-gel)"
               />
-              {/* נקודת אור לבנה חזקה לברק של נוזל ריאליסטי */}
               <ellipse cx="20.5" cy="85.5" rx="2.5" ry="4" fill="#ffffff" transform="rotate(-15 20.5 85.5)" opacity="0.85" />
             </g>
           </svg>
@@ -231,12 +222,12 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
 
       </div>
 
-      {/* ── טקסט טעינה יוקרתי ── */}
+      {/* טקסט הטעינה המעודכן */}
       {text && (
         <motion.p
           animate={{ opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="text-sm font-medium text-pink-700/80 tracking-widest uppercase font-sans"
+          className="text-sm font-medium text-pink-700/80 tracking-widest uppercase"
         >
           {text}
         </motion.p>
