@@ -118,7 +118,7 @@ test.describe.serial('Booking — full submission flow', () => {
 
     await openBookingModal(page)
     await selectServiceAndTime(page)
-    await page.getByRole('button', { name: /אישור הזמנה/ }).click()
+    await page.getByRole('button', { name: /אישור וקביעת תור/ }).click()
 
     await expect(page.getByText(/הזמנה נשלחה|הצלחה|ממתין לאישור/)).toBeVisible({ timeout: 10_000 })
   })
@@ -137,7 +137,7 @@ test.describe.serial('Booking — full submission flow', () => {
 
     await openBookingModal(page)
     await selectServiceAndTime(page)
-    await page.getByRole('button', { name: /אישור הזמנה/ }).click()
+    await page.getByRole('button', { name: /אישור וקביעת תור/ }).click()
 
     await expect.poll(() => sentBody).not.toBeNull()
     expect(sentBody).toMatchObject({
@@ -156,7 +156,7 @@ test.describe.serial('Booking — full submission flow', () => {
 
     await openBookingModal(page)
     await selectServiceAndTime(page)
-    await page.getByRole('button', { name: /אישור הזמנה/ }).click()
+    await page.getByRole('button', { name: /אישור וקביעת תור/ }).click()
 
     await expect(page.getByText(/שגיאה|לא הצלחנו/)).toBeVisible({ timeout: 10_000 })
   })
@@ -178,7 +178,7 @@ test.describe.serial('Booking — full submission flow', () => {
     await page.locator(`[data-date="${toDateStr(tomorrow)}"]`).click()
     await page.getByText('08:00').click()
     await page.getByRole('button', { name: /המשך/ }).click()
-    await page.getByRole('button', { name: /אישור הזמנה/ }).click()
+    await page.getByRole('button', { name: /אישור וקביעת תור/ }).click()
 
     await expect(page.getByText(/יש להתחבר|התחברות|login/i)).toBeVisible({ timeout: 10_000 })
   })

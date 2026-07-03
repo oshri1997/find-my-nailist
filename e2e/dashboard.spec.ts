@@ -105,7 +105,7 @@ test.describe.serial('Dashboard (mocked data, real session)', () => {
   test('portfolio page renders', async () => {
     await page.route('/api/portfolio**', route => route.fulfill({ json: { data: [] } }))
     await page.goto('/dashboard/nailist/portfolio')
-    await expect(page.getByText(/פורטפוליו|תמונות/i)).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: 'פורטפוליו' })).toBeVisible({ timeout: 10_000 })
   })
 
   test('dashboard sidebar navigation works', async () => {
