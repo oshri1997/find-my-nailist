@@ -59,8 +59,11 @@ setup('authenticate demo user', async ({ page }) => {
     }
   }
 
+  // auth-token is httpOnly, so it's invisible to document.cookie by design —
+  // read it via the context's cookie jar instead, which sees httpOnly cookies.
   await expect.poll(async () => {
-    return page.evaluate(() => document.cookie.includes('auth-token'))
+    const cookies = await page.context().cookies()
+    return cookies.some((c) => c.name === 'auth-token')
   }, { timeout: 10_000 }).toBe(true)
 
   await page.context().storageState({ path: authFile })
