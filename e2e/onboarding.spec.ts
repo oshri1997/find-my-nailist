@@ -22,6 +22,7 @@ const hasAuth = () => {
 test.describe('Onboarding welcome page', () => {
   test.skip(() => !hasAuth(), 'Skipped — run auth.setup first with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
   test.use({ storageState: authFile })
+  test.setTimeout(60_000)
 
   test.beforeEach(async ({ page }) => {
     // Simulate an authenticated user with no role yet
@@ -36,7 +37,7 @@ test.describe('Onboarding welcome page', () => {
   test('renders account-type heading and both role buttons', async ({ page }) => {
     await page.goto('/onboarding/welcome')
 
-    await expect(page.getByText('בחרי סוג חשבון')).toBeVisible()
+    await expect(page.getByText('בחרי סוג חשבון')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('נייליסטית')).toBeVisible()
     await expect(page.getByText('לקוחה')).toBeVisible()
   })
@@ -59,10 +60,10 @@ test.describe('Onboarding welcome page', () => {
     await page.getByText('נייליסטית').click()
 
     // Should have POSTed the correct role
-    await expect.poll(() => calledWith).toBe('NAILIST')
+    await expect.poll(() => calledWith, { timeout: 15_000 }).toBe('NAILIST')
 
     // Should redirect to the nailist onboarding flow
-    await expect(page).toHaveURL(/\/onboarding(?!\/welcome)/, { timeout: 8_000 })
+    await expect(page).toHaveURL(/\/onboarding(?!\/welcome)/, { timeout: 15_000 })
   })
 
   test('clicking לקוחה calls set-role with CLIENT', async ({ page }) => {
@@ -81,8 +82,8 @@ test.describe('Onboarding welcome page', () => {
     await page.goto('/onboarding/welcome')
     await page.getByText('לקוחה').click()
 
-    await expect.poll(() => calledWith).toBe('CLIENT')
-    await expect(page).toHaveURL(/\/onboarding\/client/, { timeout: 8_000 })
+    await expect.poll(() => calledWith, { timeout: 15_000 }).toBe('CLIENT')
+    await expect(page).toHaveURL(/\/onboarding\/client/, { timeout: 15_000 })
   })
 
   test('shows error message if set-role fails', async ({ page }) => {
@@ -93,7 +94,7 @@ test.describe('Onboarding welcome page', () => {
     await page.goto('/onboarding/welcome')
     await page.getByText('נייליסטית').click()
 
-    await expect(page.getByText('שגיאה — נסי שוב')).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText('שגיאה — נסי שוב')).toBeVisible({ timeout: 15_000 })
   })
 
   test('no console errors on page load', async ({ page }) => {

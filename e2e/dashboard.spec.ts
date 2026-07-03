@@ -37,9 +37,17 @@ const MOCK_SERVICES = [
 test.describe('Dashboard (mocked data, real session)', () => {
   test.skip(() => !hasAuth(), 'Skipped — run auth.setup first with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
   test.use({ storageState: authFile })
+  test.setTimeout(60_000)
 
+  // Real-session tests hit real network for Firebase Auth rehydration plus
+  // the app's own /api/auth/session + /api/me/role calls before the page
+  // renders anything (a full-page loader blocks until useAuth() resolves) —
+  // mock what's mockable and give the first content check a generous
+  // timeout so real CI network latency doesn't flake these.
   test.beforeEach(async ({ page }) => {
-    // Mock all API calls that would verify the token
+    await page.route('/api/me/role', route =>
+      route.fulfill({ json: { role: 'NAILIST', isAdmin: false } })
+    )
     await page.route('/api/me/nailist-profile', route =>
       route.fulfill({ json: { data: MOCK_PROFILE } })
     )
@@ -56,7 +64,7 @@ test.describe('Dashboard (mocked data, real session)', () => {
 
   test('dashboard home renders', async ({ page }) => {
     await page.goto('/dashboard/nailist')
-    await expect(page.getByText('תורים קרובים')).toBeVisible()
+    await expect(page.getByText('תורים קרובים')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('השלמת פרופיל')).toBeVisible()
   })
 
@@ -67,7 +75,7 @@ test.describe('Dashboard (mocked data, real session)', () => {
     await page.goto('/dashboard/nailist/settings')
 
     // The form should show (not the error state)
-    await expect(page.getByText('שם העסק')).toBeVisible({ timeout: 8000 })
+    await expect(page.getByText('שם העסק')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByRole('button', { name: /שמרי שינויים/ })).toBeVisible()
 
     // No critical errors
@@ -80,44 +88,47 @@ test.describe('Dashboard (mocked data, real session)', () => {
   test('settings page shows business name from profile', async ({ page }) => {
     await page.goto('/dashboard/nailist/settings')
     const input = page.locator('input').first()
-    await expect(input).toHaveValue('סטודיו דמו', { timeout: 8000 })
+    await expect(input).toHaveValue('סטודיו דמו', { timeout: 15_000 })
   })
 
   test('services page renders service list', async ({ page }) => {
     await page.goto('/dashboard/nailist/services')
-    await expect(page.getByText("מניקור ג'ל")).toBeVisible({ timeout: 8000 })
+    await expect(page.getByText("מניקור ג'ל")).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('₪150')).toBeVisible()
   })
 
   test('appointments page renders empty state', async ({ page }) => {
     await page.goto('/dashboard/nailist/appointments')
-    await expect(page.getByText('אין תורים עדיין')).toBeVisible({ timeout: 8000 })
+    await expect(page.getByText('אין תורים עדיין')).toBeVisible({ timeout: 15_000 })
   })
 
   test('portfolio page renders', async ({ page }) => {
     await page.route('/api/portfolio**', route => route.fulfill({ json: { data: [] } }))
     await page.goto('/dashboard/nailist/portfolio')
-    await expect(page.getByText(/פורטפוליו|תמונות/i)).toBeVisible({ timeout: 8000 })
+    await expect(page.getByText(/פורטפוליו|תמונות/i)).toBeVisible({ timeout: 15_000 })
   })
 
   test('dashboard sidebar navigation works', async ({ page }) => {
     await page.goto('/dashboard/nailist')
     // Navigate to services via sidebar
     const servicesLink = page.getByRole('link', { name: /שירותים/ })
-    if (await servicesLink.count() > 0) {
-      await servicesLink.click()
-      await expect(page).toHaveURL(/\/services/)
-    }
+    await expect(servicesLink).toBeVisible({ timeout: 15_000 })
+    await servicesLink.click()
+    await expect(page).toHaveURL(/\/services/)
   })
 })
 
-test.describe('Dashboard (real auth)', () => {
+test.describe('Dashboard (real auth, real data)', () => {
   test.skip(() => !hasAuth(), 'Skipped — run auth.setup first with valid credentials')
   test.use({ storageState: authFile })
+  test.setTimeout(60_000)
 
   test('real user can access dashboard', async ({ page }) => {
     await page.goto('/dashboard/nailist')
     await expect(page).not.toHaveURL(/\/login/)
-    await expect(page.getByText('תורים קרובים')).toBeVisible()
+    // No mocks here — hits the real backend. "תורים קרובים" is a static
+    // section heading (unconditional, unlike the empty-state message inside
+    // it), so this holds regardless of whether the account has appointments.
+    await expect(page.getByText('תורים קרובים')).toBeVisible({ timeout: 15_000 })
   })
 })

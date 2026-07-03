@@ -61,8 +61,12 @@ async function selectServiceAndTime(page: import('@playwright/test').Page) {
 test.describe('Booking — full submission flow', () => {
   test.skip(() => !hasAuth(), 'Skipped — run auth.setup first with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
   test.use({ storageState: authFile })
+  test.setTimeout(60_000)
 
   test.beforeEach(async ({ page }) => {
+    await page.route('/api/me/role', route =>
+      route.fulfill({ json: { role: 'NAILIST', isAdmin: false } })
+    )
     await page.route('/api/nailists/n1', route =>
       route.fulfill({ json: { data: { ...MOCK_PROFILE, services: MOCK_SERVICES, portfolio: [], reviews: [] } } })
     )
@@ -96,7 +100,7 @@ test.describe('Booking — full submission flow', () => {
     await selectServiceAndTime(page)
     await page.getByRole('button', { name: /אישור הזמנה/ }).click()
 
-    await expect(page.getByText(/הזמנה נשלחה|הצלחה|ממתין לאישור/)).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText(/הזמנה נשלחה|הצלחה|ממתין לאישור/)).toBeVisible({ timeout: 15_000 })
   })
 
   test('booking sends correct payload to API', async ({ page }) => {
@@ -134,7 +138,7 @@ test.describe('Booking — full submission flow', () => {
     await selectServiceAndTime(page)
     await page.getByRole('button', { name: /אישור הזמנה/ }).click()
 
-    await expect(page.getByText(/שגיאה|לא הצלחנו/)).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText(/שגיאה|לא הצלחנו/)).toBeVisible({ timeout: 15_000 })
   })
 
   test('unauthorized booking redirects or shows login prompt', async ({ page }) => {
@@ -156,7 +160,7 @@ test.describe('Booking — full submission flow', () => {
     await page.getByRole('button', { name: /המשך/ }).click()
     await page.getByRole('button', { name: /אישור הזמנה/ }).click()
 
-    await expect(page.getByText(/יש להתחבר|התחברות|login/i)).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText(/יש להתחבר|התחברות|login/i)).toBeVisible({ timeout: 15_000 })
   })
 
   test('back button returns from step 3 to step 2', async ({ page }) => {

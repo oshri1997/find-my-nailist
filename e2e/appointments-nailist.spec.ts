@@ -71,8 +71,12 @@ const CANCELLED_APPT = { ...PENDING_APPT, id: 'a4', status: 'CANCELLED', startTi
 test.describe('Nailist appointments dashboard', () => {
   test.skip(() => !hasAuth(), 'Skipped — run auth.setup first with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
   test.use({ storageState: authFile })
+  test.setTimeout(60_000)
 
   test.beforeEach(async ({ page }) => {
+    await page.route('/api/me/role', route =>
+      route.fulfill({ json: { role: 'NAILIST', isAdmin: false } })
+    )
     await page.route('/api/me/nailist-profile', route =>
       route.fulfill({ json: { data: MOCK_PROFILE } })
     )
@@ -92,7 +96,7 @@ test.describe('Nailist appointments dashboard', () => {
     )
 
     await page.goto('/dashboard/nailist/appointments')
-    await expect(page.getByText('אין תורים עדיין')).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText('אין תורים עדיין')).toBeVisible({ timeout: 15_000 })
   })
 
   // ─── Pending appointment ─────────────────────────────────────────────────────
@@ -103,7 +107,7 @@ test.describe('Nailist appointments dashboard', () => {
     )
 
     await page.goto('/dashboard/nailist/appointments')
-    await expect(page.getByText("מניקור ג'ל").first()).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText("מניקור ג'ל").first()).toBeVisible({ timeout: 15_000 })
     await expect(page.getByRole('button', { name: 'אשר' }).first()).toBeVisible()
     await expect(page.getByRole('button', { name: 'בטל' }).first()).toBeVisible()
   })
@@ -114,7 +118,7 @@ test.describe('Nailist appointments dashboard', () => {
     )
 
     await page.goto('/dashboard/nailist/appointments')
-    await expect(page.getByText('שרה כ.').first()).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText('שרה כ.').first()).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('₪150').first()).toBeVisible()
   })
 
@@ -155,7 +159,7 @@ test.describe('Nailist appointments dashboard', () => {
 
     // Reload to see updated status
     await page.reload()
-    await expect(page.getByRole('button', { name: 'הושלם' }).first()).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByRole('button', { name: 'הושלם' }).first()).toBeVisible({ timeout: 15_000 })
   })
 
   // ─── Cancel appointment ─────────────────────────────────────────────────────
@@ -224,7 +228,7 @@ test.describe('Nailist appointments dashboard', () => {
     )
 
     await page.goto('/dashboard/nailist/appointments')
-    await expect(page.getByText('היסטוריה')).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText('היסטוריה')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('הושלם').first()).toBeVisible()
     await expect(page.getByText('בוטל').first()).toBeVisible()
   })
@@ -235,7 +239,7 @@ test.describe('Nailist appointments dashboard', () => {
     )
 
     await page.goto('/dashboard/nailist/appointments')
-    await expect(page.getByText('ממתין').first()).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText('ממתין').first()).toBeVisible({ timeout: 15_000 })
   })
 
   // ─── Error handling ──────────────────────────────────────────────────────────

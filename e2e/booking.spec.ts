@@ -81,8 +81,12 @@ test.describe('Nailist public profile page', () => {
 test.describe('Booking modal (real session)', () => {
   test.skip(() => !hasAuth(), 'Skipped — run auth.setup first with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
   test.use({ storageState: authFile })
+  test.setTimeout(60_000)
 
   test.beforeEach(async ({ page }) => {
+    await page.route('/api/me/role', route =>
+      route.fulfill({ json: { role: 'NAILIST', isAdmin: false } })
+    )
     await page.route('/api/nailists/n1', route =>
       route.fulfill({ json: { data: { ...MOCK_PROFILE, services: MOCK_SERVICES, portfolio: [], reviews: [] } } })
     )
@@ -97,7 +101,7 @@ test.describe('Booking modal (real session)', () => {
     await servicesTab.click()
     const bookBtn = page.getByRole('button', { name: /קביעת תור/ }).first()
     await bookBtn.click()
-    await expect(page.getByText('הזמנת תור', { exact: true })).toBeVisible()
+    await expect(page.getByText('הזמנת תור', { exact: true })).toBeVisible({ timeout: 15_000 })
   })
 
   test('step 1 shows services', async ({ page }) => {
@@ -105,7 +109,7 @@ test.describe('Booking modal (real session)', () => {
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
 
-    await expect(page.getByText("מניקור ג'ל")).toBeVisible()
+    await expect(page.getByText("מניקור ג'ל")).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('פדיקור')).toBeVisible()
     await expect(page.getByRole('button', { name: /המשך/ })).toBeDisabled()
   })
@@ -116,7 +120,7 @@ test.describe('Booking modal (real session)', () => {
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
 
     await page.getByText("מניקור ג'ל").click()
-    await expect(page.getByRole('button', { name: /המשך/ })).toBeEnabled()
+    await expect(page.getByRole('button', { name: /המשך/ })).toBeEnabled({ timeout: 15_000 })
   })
 
   test('step 2 shows date picker', async ({ page }) => {
@@ -126,7 +130,7 @@ test.describe('Booking modal (real session)', () => {
     await page.getByText("מניקור ג'ל").click()
     await page.getByRole('button', { name: /המשך/ }).click()
 
-    await expect(page.getByText(/בחרי תאריך ושעה/)).toBeVisible()
+    await expect(page.getByText(/בחרי תאריך ושעה/)).toBeVisible({ timeout: 15_000 })
     await expect(page.getByLabel('תאריך')).toBeVisible()
   })
 
@@ -142,7 +146,7 @@ test.describe('Booking modal (real session)', () => {
     const dateStr = tomorrow.toISOString().split('T')[0]
     await page.getByLabel('תאריך').fill(dateStr)
 
-    await expect(page.getByText('08:00')).toBeVisible()
+    await expect(page.getByText('08:00')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('09:00')).toBeVisible()
   })
 
