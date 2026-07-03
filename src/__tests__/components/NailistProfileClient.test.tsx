@@ -157,8 +157,9 @@ describe('NailistProfileClient — owner avatar edit', () => {
     const file = new File(['bytes'], 'avatar.jpg', { type: 'image/jpeg' })
     fireEvent.change(fileInput, { target: { files: [file] } })
 
+    // avatars/{userId}/ is keyed off the Firebase Auth uid, not the nailistProfiles doc id (the `id` prop)
     await waitFor(() => {
-      expect(uploadProfilePhotoMock).toHaveBeenCalledWith('nailist-1', file)
+      expect(uploadProfilePhotoMock).toHaveBeenCalledWith('u1', file)
     })
 
     await waitFor(() => {

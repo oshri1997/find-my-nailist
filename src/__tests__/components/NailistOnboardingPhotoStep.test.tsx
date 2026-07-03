@@ -77,7 +77,8 @@ describe('Nailist onboarding — profile picture step', () => {
     const file = new File(['bytes'], 'avatar.jpg', { type: 'image/jpeg' })
     fireEvent.change(fileInput, { target: { files: [file] } })
 
-    await waitFor(() => expect(uploadProfilePhotoMock).toHaveBeenCalledWith('nailist-1', file))
+    // avatars/{userId}/ is keyed off the Firebase Auth uid, not the nailistProfiles doc id
+    await waitFor(() => expect(uploadProfilePhotoMock).toHaveBeenCalledWith('nailist-user-1', file))
     await waitFor(() => expect(screen.getByText('המשיכי')).toBeInTheDocument())
     fireEvent.click(screen.getByText('המשיכי'))
 

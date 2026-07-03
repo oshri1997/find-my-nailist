@@ -73,7 +73,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || !user) return
 
     if (file.size > 5 * 1024 * 1024) {
       setPhotoError('הקובץ גדול מדי — מקסימום 5MB')
@@ -84,7 +84,9 @@ export default function NailistProfileClient({ id }: { id: string }) {
     setPhotoUploading(true)
     try {
       const { uploadProfilePhoto } = await import('@/lib/firebase/storage')
-      const { url } = await uploadProfilePhoto(id, file)
+      // Storage rules key avatars/{userId}/ off the Firebase Auth uid, not the
+      // nailistProfiles document id (this component's `id` prop) — different values.
+      const { url } = await uploadProfilePhoto(user.uid, file)
       const res = await fetch(`/api/nailists/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

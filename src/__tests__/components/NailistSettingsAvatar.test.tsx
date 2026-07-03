@@ -7,6 +7,11 @@ import NailistSettingsPage from '@/app/dashboard/nailist/settings/page'
 const uploadProfilePhotoMock = jest.fn()
 jest.mock('@/lib/firebase/storage', () => ({
   uploadProfilePhoto: (...args: unknown[]) => uploadProfilePhotoMock(...args),
+  uploadCoverPhoto: jest.fn(),
+}))
+
+jest.mock('@/components/auth/auth-provider', () => ({
+  useAuth: () => ({ user: { uid: 'nailist-user-1' } }),
 }))
 
 const baseProfile = {
@@ -63,8 +68,9 @@ describe('NailistSettingsPage — profile picture upload', () => {
     const file = new File(['fake-image-bytes'], 'avatar.jpg', { type: 'image/jpeg' })
     fireEvent.change(fileInput, { target: { files: [file] } })
 
+    // avatars/{userId}/ is keyed off the Firebase Auth uid, not the nailistProfiles doc id
     await waitFor(() => {
-      expect(uploadProfilePhotoMock).toHaveBeenCalledWith('nailist-1', file)
+      expect(uploadProfilePhotoMock).toHaveBeenCalledWith('nailist-user-1', file)
     })
 
     await waitFor(() => {

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
 import { CheckCircle2, Loader2, AlertCircle, ImagePlus, X, Camera } from 'lucide-react'
+import { useAuth } from '@/components/auth/auth-provider'
 
 const EMPTY_FORM = {
   businessName: '',
@@ -26,6 +27,7 @@ function initials(name: string) {
 }
 
 export default function NailistSettingsPage() {
+  const { user } = useAuth()
   const [profileId, setProfileId] = useState<string | null>(null)
   const [form, setForm] = useState<typeof EMPTY_FORM>(EMPTY_FORM)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
@@ -127,7 +129,7 @@ export default function NailistSettingsPage() {
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file || !profileId) return
+    if (!file || !profileId || !user) return
 
     if (file.size > 5 * 1024 * 1024) {
       setPhotoError('הקובץ גדול מדי — מקסימום 5MB')
@@ -138,7 +140,9 @@ export default function NailistSettingsPage() {
     setPhotoUploading(true)
     try {
       const { uploadProfilePhoto } = await import('@/lib/firebase/storage')
-      const { url } = await uploadProfilePhoto(profileId, file)
+      // Storage rules key avatars/{userId}/ off the Firebase Auth uid, not the
+      // nailistProfiles document id — they're different values.
+      const { url } = await uploadProfilePhoto(user.uid, file)
 
       const res = await fetch(`/api/nailists/${profileId}`, {
         method: 'PATCH',
