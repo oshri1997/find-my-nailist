@@ -67,5 +67,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── searchEvents ───────────────────────────────────────────────────
+    // Anonymous search-analytics for the admin dashboard. Written via the
+    // Admin SDK only (POST /api/analytics/search) — never readable or
+    // writable directly by clients.
+    match /searchEvents/{eventId} {
+      allow read: if false;
+      allow write: if false;
+    }
+
   }
 }

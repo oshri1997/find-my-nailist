@@ -239,6 +239,24 @@ export default function SearchPage() {
       return b.avgRating - a.avgRating
     })
 
+  // Anonymous search analytics (powers the admin "מה לקוחות מחפשות" dashboard) —
+  // debounced so typing doesn't log a row per keystroke, and only logged once
+  // the visitor has expressed actual intent (typed something or picked a filter).
+  useEffect(() => {
+    if (loading) return
+    if (!locationLabel.trim() && activeFilter === 'הכל') return
+    const resultsCount = sorted.length
+    const timeout = setTimeout(() => {
+      fetch('/api/analytics/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: locationLabel.trim() || undefined, filter: activeFilter, resultsCount }),
+      }).catch(() => {})
+    }, 900)
+    return () => clearTimeout(timeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationLabel, activeFilter, loading])
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />

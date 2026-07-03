@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Users, Scissors, Calendar, Star, LogOut, Shield, Menu, X, ArrowRight, Home } from 'lucide-react'
+import { LayoutDashboard, Users, Scissors, Calendar, Star, LogOut, Shield, Menu, X, ArrowRight, Home, TrendingUp } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 const NAV = [
@@ -12,6 +12,7 @@ const NAV = [
   { href: '/admin/nailists', label: 'נייליסטיות', icon: Scissors },
   { href: '/admin/appointments', label: 'הזמנות', icon: Calendar },
   { href: '/admin/reviews', label: 'ביקורות', icon: Star },
+  { href: '/admin/analytics', label: 'אנלטיקה', icon: TrendingUp },
 ]
 
 function NavLinks({ pathname, onNav }: { pathname: string; onNav?: () => void }) {

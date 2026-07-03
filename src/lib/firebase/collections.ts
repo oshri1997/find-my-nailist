@@ -9,4 +9,5 @@ export const COLLECTIONS = {
   APPOINTMENTS: 'appointments',
   REVIEWS: 'reviews',
   FAVORITES: 'favorites',
+  SEARCH_EVENTS: 'searchEvents',
 } as const
