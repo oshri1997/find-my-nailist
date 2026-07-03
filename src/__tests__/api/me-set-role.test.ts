@@ -174,11 +174,11 @@ describe('PATCH /api/me/set-role', () => {
     )
   })
 
-  it('creates a new nailist profile with onboardingCompleted: false', async () => {
+  it('creates a new nailist profile hidden from search until onboarding finishes', async () => {
     const req = makeRequest({ role: 'NAILIST' })
     await PATCH(req)
     expect(mockAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ onboardingCompleted: false })
+      expect.objectContaining({ onboardingCompleted: false, isActive: false })
     )
   })
 })

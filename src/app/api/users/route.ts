@@ -38,7 +38,10 @@ export async function POST(request: NextRequest) {
         email: data.email,
         businessName: data.displayName ?? 'My Nail Studio',
         photoUrl: data.photoUrl ?? null,
-        isActive: true,
+        // Hidden from search until onboarding's last step publishes the
+        // profile (or she manually publishes early from the dashboard banner)
+        // — an unfinished profile shouldn't be bookable.
+        isActive: false,
         onboardingCompleted: false,
         isVerified: false,
         avgRating: 0,

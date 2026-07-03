@@ -40,7 +40,10 @@ export async function PATCH(request: NextRequest) {
           email: decoded.email ?? '',
           businessName: userData?.displayName || decoded.name || 'My Nail Studio',
           photoUrl: decoded.picture ?? null,
-          isActive: true,
+          // Hidden from search until onboarding's last step publishes the
+          // profile (or she manually publishes early from the dashboard banner)
+          // — an unfinished profile shouldn't be bookable.
+          isActive: false,
           onboardingCompleted: false,
           isVerified: false,
           avgRating: 0,

@@ -62,11 +62,11 @@ describe('POST /api/users', () => {
     expect(res.status).toBe(400)
   })
 
-  it('creates a new nailist profile with onboardingCompleted: false', async () => {
+  it('creates a new nailist profile hidden from search until onboarding finishes', async () => {
     const res = await POST(makeRequest(validNailistBody))
     expect(res.status).toBe(201)
     expect(mockAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ onboardingCompleted: false, isActive: true })
+      expect.objectContaining({ onboardingCompleted: false, isActive: false })
     )
   })
 
