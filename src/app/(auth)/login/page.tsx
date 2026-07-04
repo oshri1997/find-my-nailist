@@ -3,11 +3,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Lock, User, ArrowLeft, AlertCircle, Check } from 'lucide-react'
+import { Mail, Lock, User, ArrowLeft, AlertCircle, Check, Eye, EyeOff } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { signInWithEmail, signInWithGoogle, signUpWithEmail, sendVerificationEmail } from '@/lib/firebase/auth-helpers'
+import { signInWithEmail, signInWithGoogle, signUpWithEmail } from '@/lib/firebase/auth-helpers'
 import { useAuth } from '@/components/auth/auth-provider'
 import Link from 'next/link'
 import LegalModal from '@/components/auth/LegalModal'
@@ -48,6 +48,7 @@ export default function AuthPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
@@ -167,17 +168,21 @@ export default function AuthPage() {
         handlingFormRef.current = false
       } else {
         const cred = await signUpWithEmail(email, password, name)
-        sendVerificationEmail(cred.user).catch(console.error)
 
-        // /api/users requires the session cookie, which AuthProvider's own
-        // onIdTokenChanged listener sets asynchronously in the background —
-        // don't race it; establish the cookie explicitly before calling in.
+        // /api/users (and /api/auth/verify-email below) require the session
+        // cookie, which AuthProvider's own onIdTokenChanged listener sets
+        // asynchronously in the background — don't race it; establish the
+        // cookie explicitly before calling in.
         const idToken = await cred.user.getIdToken()
         await fetch('/api/auth/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: idToken }),
         })
+
+        // Custom Hebrew-branded email from our own domain, same pattern as
+        // password reset — not Firebase's default English template.
+        fetch('/api/auth/verify-email', { method: 'POST' }).catch(console.error)
 
         const createUserProfile = () => fetch('/api/users', {
           method: 'POST',
@@ -354,13 +359,21 @@ export default function AuthPage() {
                   <div className="relative">
                     <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                     <Input
-                      id="password" type="password" value={password}
+                      id="password" type={showPassword ? 'text' : 'password'} value={password}
                       onChange={e => setPassword(e.target.value)}
                       placeholder={mode === 'register' ? 'לפחות 8 תווים' : '••••••••'}
                       minLength={mode === 'register' ? 8 : undefined}
                       required
-                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-card"
+                      className="pr-10 pl-10 rounded-xl border-border focus:border-primary h-12 bg-card"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(v => !v)}
+                      aria-label={showPassword ? 'הסתירי סיסמה' : 'הציגי סיסמה'}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
 

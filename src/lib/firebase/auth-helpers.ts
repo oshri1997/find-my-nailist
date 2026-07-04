@@ -46,8 +46,3 @@ export async function resetPassword(email: string) {
   const { sendPasswordResetEmail } = await import('firebase/auth')
   return sendPasswordResetEmail(await requireAuth(), email)
 }
-
-export async function sendVerificationEmail(user: User) {
-  const { sendEmailVerification } = await import('firebase/auth')
-  return sendEmailVerification(user)
-}

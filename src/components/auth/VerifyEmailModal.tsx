@@ -13,8 +13,8 @@ export function VerifyEmailModal({ user, onClose }: { user: User; onClose: () =>
     setSending(true)
     setError('')
     try {
-      const { sendVerificationEmail } = await import('@/lib/firebase/auth-helpers')
-      await sendVerificationEmail(user)
+      const res = await fetch('/api/auth/verify-email', { method: 'POST' })
+      if (!res.ok) throw new Error('failed')
       setSent(true)
     } catch {
       setError('שגיאה בשליחת המייל — נסי שוב בעוד כמה דקות')

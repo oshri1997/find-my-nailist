@@ -286,3 +286,30 @@ export async function sendPasswordResetEmail(p: {
     `איפוס סיסמה — נייליסטיות\n\nלחצי על הקישור הבא לאיפוס הסיסמה (בתוקף ל-24 שעות):\n${p.resetLink}\n\nאם לא ביקשת לאפס סיסמה, אפשר להתעלם ממייל זה.\n\nצוות נייליסטיות`
   )
 }
+
+export async function sendVerificationEmail(p: {
+  email: string
+  verifyLink: string
+}): Promise<void> {
+  await sendResend(
+    p.email,
+    'אימות כתובת מייל — נייליסטיות',
+    `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center">
+        <h1 style="color:white;margin:0;font-size:22px;font-weight:900">נייליסטיות</h1>
+      </div>
+      <div style="background:#fff;border:1px solid #f3e8ff;border-top:none;border-radius:0 0 16px 16px;padding:32px">
+        <h2 style="font-size:20px;font-weight:900;margin:0 0 8px">אימות כתובת מייל</h2>
+        <p style="color:#666;margin:0 0 24px">תודה שנרשמת! כדי להשלים את ההרשמה ולהזמין תורים, יש לאמת את כתובת המייל שלך.</p>
+        <div style="text-align:center;margin:28px 0">
+          <a href="${p.verifyLink}" style="background:linear-gradient(135deg,#ec4899,#a855f7);color:white;text-decoration:none;border-radius:12px;padding:14px 32px;font-weight:900;font-size:16px;display:inline-block">
+            אימות כתובת מייל
+          </a>
+        </div>
+        <p style="color:#999;font-size:12px;margin:24px 0 0">אם לא נרשמת לאתר, אפשר להתעלם ממייל זה.</p>
+        <p style="color:#ccc;font-size:11px;margin:8px 0 0">הקישור: <a href="${p.verifyLink}" style="color:#a855f7;word-break:break-all">${p.verifyLink}</a></p>
+      </div>
+    </div>`,
+    `אימות כתובת מייל — נייליסטיות\n\nתודה שנרשמת! לחצי על הקישור הבא כדי לאמת את כתובת המייל שלך:\n${p.verifyLink}\n\nאם לא נרשמת לאתר, אפשר להתעלם ממייל זה.\n\nצוות נייליסטיות`
+  )
+}

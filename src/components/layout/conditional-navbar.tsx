@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { Navbar } from '@/components/layout/navbar'
+import { EmailVerificationBanner } from '@/components/layout/email-verification-banner'
 
 const HIDDEN_PREFIXES = [
   '/admin',
@@ -17,5 +18,10 @@ export function ConditionalNavbar() {
   const pathname = usePathname()
   const hidden = HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))
   if (hidden) return null
-  return <Navbar />
+  return (
+    <>
+      <Navbar />
+      <EmailVerificationBanner />
+    </>
+  )
 }
