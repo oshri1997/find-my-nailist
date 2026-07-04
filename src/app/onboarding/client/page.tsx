@@ -18,7 +18,7 @@ const STEPS = [
 ]
 
 export default function ClientOnboardingPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, refreshRole } = useAuth()
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
@@ -96,6 +96,10 @@ export default function ClientOnboardingPage() {
         }),
       })
       if (!res.ok) throw new Error('failed')
+      // The API just flipped onboardingCompleted to true, but AuthProvider's
+      // context still holds the stale pre-onboarding value — without this,
+      // OnboardingGuard bounces the next page load straight back here.
+      await refreshRole()
       setDone(true)
       setTimeout(() => router.push('/search'), 1800)
     } catch {

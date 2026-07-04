@@ -41,7 +41,7 @@ function defaultHours(): DayHours[] {
 }
 
 export default function OnboardingPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, refreshRole } = useAuth()
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [profileId, setProfileId] = useState<string | null>(null)
@@ -292,6 +292,11 @@ export default function OnboardingPage() {
           : Promise.resolve(),
       ])
       if (!hoursRes.ok) throw new Error()
+      // The nailist-profile PATCH above just flipped onboardingCompleted to
+      // true, but AuthProvider's context still holds the stale pre-onboarding
+      // value — without this, OnboardingGuard bounces the dashboard load
+      // straight back here.
+      await refreshRole()
       router.replace('/dashboard/nailist')
     } catch {
       setError('שגיאה בשמירת שעות עבודה — נסי שוב')
