@@ -197,6 +197,16 @@ describe('POST /api/appointments', () => {
     expect(json.error).toBe('Service not found')
   })
 
+  it('returns 404 when the service has been deactivated (soft-deleted)', async () => {
+    // A nailist can DELETE (soft-delete → isActive:false) a service the
+    // client already has open in the booking modal — the submit must not
+    // silently succeed for a service she no longer offers.
+    docStore['services/service-1'] = { ...docStore['services/service-1'], isActive: false }
+    const req = makeRequest('POST', validBody, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(404)
+  })
+
   it('returns 409 when there is a time conflict', async () => {
     const startTime = new Date('2026-07-01T10:00:00.000Z')
     const endTime = new Date('2026-07-01T11:00:00.000Z')

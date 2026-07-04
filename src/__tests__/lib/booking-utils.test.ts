@@ -1,4 +1,12 @@
-import { generateSlots, isSlotUnavailable, buildDateStrip, buildMonthCalendar, toDateStr, computeDateAvailability, filterExpiredConfirmed } from '@/lib/booking-utils'
+import { generateSlots, isSlotUnavailable, buildDateStrip, buildMonthCalendar, toDateStr, computeDateAvailability, filterExpiredConfirmed, israelWallClockToUtc } from '@/lib/booking-utils'
+
+// bookedSlots in production are real UTC instants derived from Israel
+// wall-clock booking times — construct test fixtures the same way instead of
+// a naive `${date}T{time}:00` literal (parsed in the *test runner's* local
+// timezone, not Israel's).
+function israelSlot(date: string, time: string): string {
+  return israelWallClockToUtc(date, time).toISOString()
+}
 
 describe('buildMonthCalendar', () => {
   beforeEach(() => jest.useFakeTimers())
@@ -196,30 +204,30 @@ describe('isSlotUnavailable', () => {
   })
 
   it('is unavailable when overlapping a booked slot', () => {
-    const booked = [{ startTime: `${date}T10:00:00`, endTime: `${date}T11:00:00` }]
+    const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '11:00') }]
     // 09:30–10:30 overlaps 10:00–11:00
     expect(isSlotUnavailable('09:30', date, 60, '18:00', booked)).toBe(true)
   })
 
   it('is unavailable when fully inside a booked slot', () => {
-    const booked = [{ startTime: `${date}T10:00:00`, endTime: `${date}T12:00:00` }]
+    const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '12:00') }]
     expect(isSlotUnavailable('10:30', date, 30, '18:00', booked)).toBe(true)
   })
 
   it('is available immediately after a booked slot ends', () => {
-    const booked = [{ startTime: `${date}T10:00:00`, endTime: `${date}T11:00:00` }]
+    const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '11:00') }]
     expect(isSlotUnavailable('11:00', date, 60, '18:00', booked)).toBe(false)
   })
 
   it('is available for a slot that ends exactly when a booking starts', () => {
-    const booked = [{ startTime: `${date}T10:00:00`, endTime: `${date}T11:00:00` }]
+    const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '11:00') }]
     expect(isSlotUnavailable('09:00', date, 60, '18:00', booked)).toBe(false)
   })
 
   it('handles multiple booked slots', () => {
     const booked = [
-      { startTime: `${date}T10:00:00`, endTime: `${date}T11:00:00` },
-      { startTime: `${date}T14:00:00`, endTime: `${date}T15:00:00` },
+      { startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '11:00') },
+      { startTime: israelSlot(date, '14:00'), endTime: israelSlot(date, '15:00') },
     ]
     expect(isSlotUnavailable('10:00', date, 60, '18:00', booked)).toBe(true)
     expect(isSlotUnavailable('13:00', date, 60, '18:00', booked)).toBe(false)
@@ -249,7 +257,7 @@ describe('computeDateAvailability', () => {
   it('returns fullyBooked:true when all slots are taken', () => {
     const hours = { startTime: '09:00', endTime: '10:00', isActive: true }
     // Only slot is 09:00–10:00, which is fully booked
-    const booked = [{ startTime: `${date}T09:00:00`, endTime: `${date}T10:00:00` }]
+    const booked = [{ startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '10:00') }]
     const result = computeDateAvailability(date, hours, 60, booked)
     expect(result.workingDay).toBe(true)
     expect(result.fullyBooked).toBe(true)
@@ -258,7 +266,7 @@ describe('computeDateAvailability', () => {
   it('returns fullyBooked:false when at least one slot is free', () => {
     const hours = { startTime: '09:00', endTime: '11:00', isActive: true }
     // 09:00 is booked but 10:00 is free
-    const booked = [{ startTime: `${date}T09:00:00`, endTime: `${date}T10:00:00` }]
+    const booked = [{ startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '10:00') }]
     const result = computeDateAvailability(date, hours, 60, booked)
     expect(result.workingDay).toBe(true)
     expect(result.fullyBooked).toBe(false)

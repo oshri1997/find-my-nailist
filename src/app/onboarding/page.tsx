@@ -25,7 +25,7 @@ const DAYS_HE = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי
 const TIME_OPTIONS: string[] = []
 for (let h = 7; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:00`)
-  if (h < 23) TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
+  TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
 }
 
 interface Photo { id: string; url: string }
@@ -230,7 +230,16 @@ export default function OnboardingPage() {
   }
 
   function updateTime(i: number, field: 'startTime' | 'endTime', value: string) {
-    setWorkingHours(prev => prev.map((d, idx) => idx === i ? { ...d, [field]: value } : d))
+    setWorkingHours(prev => prev.map((d, idx) => {
+      if (idx !== i) return d
+      if (field === 'startTime' && value >= d.endTime) {
+        // Pushing startTime past (or equal to) the current endTime would leave
+        // an invalid backwards range — bump endTime to the next available slot.
+        const next = TIME_OPTIONS.find(t => t > value)
+        return { ...d, startTime: value, endTime: next ?? value }
+      }
+      return { ...d, [field]: value }
+    }))
   }
 
   async function saveSocialLinks() {
@@ -658,7 +667,7 @@ export default function OnboardingPage() {
                               onChange={e => updateTime(i, 'startTime', e.target.value)}
                               className="flex-1 h-8 rounded-lg border border-border bg-card px-1 text-xs font-semibold focus:outline-none focus:border-pink-300 cursor-pointer"
                             >
-                              {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                              {TIME_OPTIONS.slice(0, -1).map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
                             <span className="text-xs text-muted-foreground">—</span>
                             <select

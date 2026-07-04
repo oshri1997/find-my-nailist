@@ -24,7 +24,7 @@ const PRESETS = [
 const TIME_OPTIONS: string[] = []
 for (let h = 7; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:00`)
-  if (h < 23) TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
+  TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
 }
 
 interface DayHours {
@@ -41,8 +41,10 @@ const DEFAULT_HOURS: DayHours[] = DAYS.map(({ day }) => ({
   endTime: '19:00',
 }))
 
-function TimeSelect({ value, onChange, min }: { value: string; onChange: (v: string) => void; min?: string }) {
-  const options = min ? TIME_OPTIONS.filter(t => t > min) : TIME_OPTIONS
+function TimeSelect({ value, onChange, min, max }: { value: string; onChange: (v: string) => void; min?: string; max?: string }) {
+  let options = TIME_OPTIONS
+  if (min) options = options.filter(t => t > min)
+  if (max) options = options.filter(t => t < max)
   return (
     <select
       value={value}
@@ -83,7 +85,16 @@ export default function WorkingHoursPage() {
   }
 
   function setTime(day: number, field: 'startTime' | 'endTime', value: string) {
-    setHours(prev => prev.map(h => h.dayOfWeek === day ? { ...h, [field]: value } : h))
+    setHours(prev => prev.map(h => {
+      if (h.dayOfWeek !== day) return h
+      if (field === 'startTime' && value >= h.endTime) {
+        // Pushing startTime past (or equal to) the current endTime would leave
+        // an invalid backwards range — bump endTime to the next available slot.
+        const next = TIME_OPTIONS.find(t => t > value)
+        return { ...h, startTime: value, endTime: next ?? value }
+      }
+      return { ...h, [field]: value }
+    }))
   }
 
   function applyPreset(preset: typeof PRESETS[0]) {
@@ -217,7 +228,7 @@ export default function WorkingHoursPage() {
                   {/* Times or closed label */}
                   {h.isActive ? (
                     <div className="flex items-center gap-2 flex-1">
-                      <TimeSelect value={h.startTime} onChange={v => setTime(day, 'startTime', v)} />
+                      <TimeSelect value={h.startTime} onChange={v => setTime(day, 'startTime', v)} max={TIME_OPTIONS[TIME_OPTIONS.length - 1]} />
                       <span className="text-muted-foreground/40 font-bold text-sm">—</span>
                       <TimeSelect value={h.endTime} onChange={v => setTime(day, 'endTime', v)} min={h.startTime} />
                       <span className="text-xs text-muted-foreground font-medium hidden sm:block">

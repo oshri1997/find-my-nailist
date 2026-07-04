@@ -205,4 +205,46 @@ describe('PUT /api/working-hours', () => {
     const res = await PUT(req)
     expect(res.status).toBe(200)
   })
+
+  it('rejects an active day where startTime is after endTime', async () => {
+    const req = makeRequest('PUT', {
+      hours: [{ dayOfWeek: 0, isActive: true, startTime: '20:00', endTime: '09:00' }],
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(400)
+    expect(mockBatchCommit).not.toHaveBeenCalled()
+  })
+
+  it('rejects an active day where startTime equals endTime', async () => {
+    const req = makeRequest('PUT', {
+      hours: [{ dayOfWeek: 0, isActive: true, startTime: '09:00', endTime: '09:00' }],
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('allows startTime after endTime on an inactive (day off) entry', async () => {
+    // Stale leftover times on a day the nailist has toggled off shouldn't block saving
+    const req = makeRequest('PUT', {
+      hours: [{ dayOfWeek: 0, isActive: false, startTime: '20:00', endTime: '09:00' }],
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(200)
+  })
+
+  it('rejects a malformed time string', async () => {
+    const req = makeRequest('PUT', {
+      hours: [{ dayOfWeek: 0, isActive: true, startTime: '9am', endTime: '18:00' }],
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects an out-of-range dayOfWeek', async () => {
+    const req = makeRequest('PUT', {
+      hours: [{ dayOfWeek: 7, isActive: true, startTime: '09:00', endTime: '18:00' }],
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(400)
+  })
 })

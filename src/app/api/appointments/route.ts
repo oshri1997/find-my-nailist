@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       db.collection(COLLECTIONS.CLIENT_PROFILES).where('userId', '==', decoded.uid).limit(1).get(),
     ])
 
-    if (!serviceSnap.exists) {
+    if (!serviceSnap.exists || serviceSnap.data()?.isActive === false) {
       return NextResponse.json({ error: 'Service not found' }, { status: 404 })
     }
     const service = serviceSnap.data()!

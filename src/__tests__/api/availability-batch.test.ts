@@ -28,6 +28,7 @@ jest.mock('@/lib/firebase/admin', () => ({
 }))
 
 import { GET } from '@/app/api/nailists/[id]/availability/batch/route'
+import { israelWallClockToUtc } from '@/lib/booking-utils'
 
 function makeRequest(
   nailistId: string,
@@ -125,8 +126,8 @@ describe('GET /api/nailists/[id]/availability/batch', () => {
         __id: 'apt-1',
         nailistProfileId: 'nailist-1',
         status: 'CONFIRMED',
-        startTime: { toDate: () => new Date('2026-07-06T09:00:00') },
-        endTime: { toDate: () => new Date('2026-07-06T10:00:00') },
+        startTime: { toDate: () => israelWallClockToUtc('2026-07-06', '09:00') },
+        endTime: { toDate: () => israelWallClockToUtc('2026-07-06', '10:00') },
       },
     ]
     const [req, ctx] = makeRequest('nailist-1', { from: '2026-07-06', days: '1', durationMinutes: '60' })
@@ -144,8 +145,8 @@ describe('GET /api/nailists/[id]/availability/batch', () => {
         __id: 'apt-1',
         nailistProfileId: 'nailist-1',
         status: 'CANCELLED',
-        startTime: { toDate: () => new Date('2026-07-06T09:00:00') },
-        endTime: { toDate: () => new Date('2026-07-06T10:00:00') },
+        startTime: { toDate: () => israelWallClockToUtc('2026-07-06', '09:00') },
+        endTime: { toDate: () => israelWallClockToUtc('2026-07-06', '10:00') },
       },
     ]
     const [req, ctx] = makeRequest('nailist-1', { from: '2026-07-06', days: '1', durationMinutes: '60' })

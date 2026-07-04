@@ -162,6 +162,7 @@ describe('PATCH /api/appointments/[id]/status', () => {
   })
 
   it('returns 200 when status is updated to CONFIRMED', async () => {
+    docStore['appointments/appointment-1'] = { ...docStore['appointments/appointment-1'], status: 'PENDING' }
     const req = makeRequest({ status: 'CONFIRMED' }, 'valid-token')
     const res = await PATCH(req, mockParams)
     expect(res.status).toBe(200)
@@ -228,11 +229,72 @@ describe('PATCH /api/appointments/[id]/status', () => {
   })
 
   it('does NOT send cancellation email when status → CONFIRMED', async () => {
+    docStore['appointments/appointment-1'] = { ...docStore['appointments/appointment-1'], status: 'PENDING' }
     const req = makeRequest({ status: 'CONFIRMED' }, 'valid-token')
     await PATCH(req, mockParams)
 
     await new Promise((r) => setTimeout(r, 10))
 
     expect(mockSendCancellationEmail).not.toHaveBeenCalled()
+  })
+})
+
+describe('PATCH /api/appointments/[id]/status — transition validation', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    docStore['appointments/appointment-1'] = {
+      status: 'PENDING',
+      clientProfileId: 'client-profile-1',
+      nailistProfileId: 'nailist-profile-1',
+      serviceName: 'מניקור',
+      clientDisplayName: 'לקוחה',
+      reviewRequested: false,
+      startTime: { toDate: () => new Date('2026-06-20T10:00:00Z') },
+    }
+    docStore['clientProfiles/client-profile-1'] = {
+      displayName: 'לקוחה', email: 'client@test.com', userId: 'client-user-1',
+    }
+    docStore['nailistProfiles/nailist-profile-1'] = {
+      businessName: 'סטודיו נייל', userId: 'nailist-user-1',
+    }
+    docStore['users/client-user-1'] = { email: 'client@test.com' }
+    collectionStore['nailistProfiles'] = [
+      { __id: 'nailist-profile-1', userId: 'nailist-user-1', businessName: 'סטודיו נייל' },
+    ]
+  })
+
+  it('rejects PENDING → COMPLETED (must go through CONFIRMED first)', async () => {
+    const req = makeRequest({ status: 'COMPLETED' }, 'valid-token')
+    const res = await PATCH(req, mockParams)
+    expect(res.status).toBe(409)
+    expect(mockUpdateFn).not.toHaveBeenCalled()
+  })
+
+  it('rejects COMPLETED → CANCELLED (a stale tab cannot un-complete a delivered appointment)', async () => {
+    docStore['appointments/appointment-1'] = { ...docStore['appointments/appointment-1'], status: 'COMPLETED' }
+    const req = makeRequest({ status: 'CANCELLED' }, 'valid-token')
+    const res = await PATCH(req, mockParams)
+    expect(res.status).toBe(409)
+    expect(mockSendCancellationEmail).not.toHaveBeenCalled()
+  })
+
+  it('rejects CANCELLED → CONFIRMED (cancelled is terminal)', async () => {
+    docStore['appointments/appointment-1'] = { ...docStore['appointments/appointment-1'], status: 'CANCELLED' }
+    const req = makeRequest({ status: 'CONFIRMED' }, 'valid-token')
+    const res = await PATCH(req, mockParams)
+    expect(res.status).toBe(409)
+  })
+
+  it('allows PENDING → CONFIRMED', async () => {
+    const req = makeRequest({ status: 'CONFIRMED' }, 'valid-token')
+    const res = await PATCH(req, mockParams)
+    expect(res.status).toBe(200)
+  })
+
+  it('allows CONFIRMED → COMPLETED', async () => {
+    docStore['appointments/appointment-1'] = { ...docStore['appointments/appointment-1'], status: 'CONFIRMED' }
+    const req = makeRequest({ status: 'COMPLETED' }, 'valid-token')
+    const res = await PATCH(req, mockParams)
+    expect(res.status).toBe(200)
   })
 })

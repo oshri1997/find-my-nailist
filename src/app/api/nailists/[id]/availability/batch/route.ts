@@ -16,6 +16,28 @@ function addDays(dateStr: string, count: number): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
+// The `from`/`dates` range is Israel-local calendar dates (the client's own
+// "today"), but this route runs on a server with no TZ set (UTC). Deriving
+// "today" from the server's own new Date() can land on the wrong calendar
+// date entirely during the UTC-offset window around Israel's midnight, which
+// silently skips the already-elapsed-time filter for the real "today" (no
+// date in the requested range matches the server's todayStr). Read both off
+// Asia/Jerusalem explicitly instead of the runtime's local clock.
+function israelNow(): { dateStr: string; minutesSinceMidnight: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jerusalem',
+    hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).formatToParts(new Date()).reduce((acc, p) => {
+    if (p.type !== 'literal') acc[p.type] = p.value
+    return acc
+  }, {} as Record<string, string>)
+  return {
+    dateStr: `${parts.year}-${parts.month}-${parts.day}`,
+    minutesSinceMidnight: Number(parts.hour) * 60 + Number(parts.minute),
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -69,9 +91,7 @@ export async function GET(
       })
       .filter((a): a is { startTime: string; endTime: string } => a !== null)
 
-    const serverNow = new Date()
-    const todayStr = `${serverNow.getFullYear()}-${String(serverNow.getMonth() + 1).padStart(2, '0')}-${String(serverNow.getDate()).padStart(2, '0')}`
-    const todayNowMinutes = serverNow.getHours() * 60 + serverNow.getMinutes()
+    const { dateStr: todayStr, minutesSinceMidnight: todayNowMinutes } = israelNow()
 
     const result: Record<string, { workingDay: boolean; fullyBooked: boolean }> = {}
     for (const date of dates) {

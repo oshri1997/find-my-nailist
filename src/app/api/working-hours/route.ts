@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { FieldValue } from 'firebase-admin/firestore'
+import { z } from 'zod'
+
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
+
+const hoursSchema = z.object({
+  hours: z.array(
+    z.object({
+      dayOfWeek: z.number().int().min(0).max(6),
+      isActive: z.boolean(),
+      startTime: z.string().regex(TIME_RE, 'Invalid time format (expected HH:MM)'),
+      endTime: z.string().regex(TIME_RE, 'Invalid time format (expected HH:MM)'),
+    }).refine((h) => !h.isActive || h.startTime < h.endTime, {
+      message: 'startTime must be before endTime on an active working day',
+    })
+  ),
+})
 
 async function getProfileId(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value
@@ -35,9 +51,7 @@ export async function PUT(request: NextRequest) {
     const profileId = await getProfileId(request)
     if (!profileId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { hours } = await request.json() as {
-      hours: Array<{ dayOfWeek: number; isActive: boolean; startTime: string; endTime: string }>
-    }
+    const { hours } = hoursSchema.parse(await request.json())
 
     const db = adminDb()
     const batch = db.batch()
@@ -63,7 +77,10 @@ export async function PUT(request: NextRequest) {
 
     await batch.commit()
     return NextResponse.json({ message: 'Working hours updated' })
-  } catch {
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.issues }, { status: 400 })
+    }
     return NextResponse.json({ error: 'Failed to update working hours' }, { status: 500 })
   }
 }

@@ -9,6 +9,16 @@ const schema = z.object({
   status: z.enum(['CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW']),
 })
 
+// Prevents illegal transitions — e.g. a stale dashboard tab flipping an
+// already-COMPLETED appointment back to CANCELLED (re-firing the
+// cancellation email for a service already delivered), or jumping a
+// still-PENDING appointment straight to COMPLETED, skipping CONFIRMED.
+// CANCELLED/COMPLETED/NO_SHOW are terminal — nothing transitions out of them.
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  PENDING: ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED: ['CANCELLED', 'COMPLETED', 'NO_SHOW'],
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -50,6 +60,14 @@ export async function PATCH(
     }
     // Cache the nailist data — already fetched for ownership check
     const cachedNailistData = nailistProfileSnap.docs[0].data()
+
+    const currentStatus = existingData.status as string
+    if (!(VALID_TRANSITIONS[currentStatus] ?? []).includes(status)) {
+      return NextResponse.json(
+        { error: `Cannot change status from ${currentStatus} to ${status}` },
+        { status: 409 }
+      )
+    }
 
     await db.collection(COLLECTIONS.APPOINTMENTS).doc(id).update({
       status,

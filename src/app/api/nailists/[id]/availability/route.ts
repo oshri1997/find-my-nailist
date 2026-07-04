@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
+import { israelWallClockToUtc } from '@/lib/booking-utils'
 
 // Maps JS getDay() (0=Sun) to our dayOfWeek field (0=Sun)
 function getDayOfWeek(dateStr: string): number {
@@ -48,9 +49,14 @@ export async function GET(
       .where('nailistProfileId', '==', nailistProfileId)
       .get()
 
+    // Day boundaries in real Israel wall-clock time, not the server's own
+    // (UTC) local time — otherwise an appointment near local midnight could
+    // be excluded from (or wrongly included in) the wrong calendar day.
     const [y, m, d] = date.split('-').map(Number)
-    const dayStart = new Date(y, m - 1, d, 0, 0, 0)
-    const dayEnd = new Date(y, m - 1, d, 23, 59, 59)
+    const nextDay = new Date(y, m - 1, d + 1)
+    const nextDayStr = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`
+    const dayStart = israelWallClockToUtc(date, '00:00')
+    const dayEndExclusive = israelWallClockToUtc(nextDayStr, '00:00')
 
     const bookedSlots = appointmentsSnap.docs
       .map((doc) => {
@@ -58,7 +64,7 @@ export async function GET(
         if (!['PENDING', 'CONFIRMED'].includes(apt.status)) return null
         const start: Date = apt.startTime?.toDate?.() ?? new Date(apt.startTime)
         const end: Date = apt.endTime?.toDate?.() ?? new Date(apt.endTime)
-        if (start > dayEnd || end < dayStart) return null
+        if (start >= dayEndExclusive || end <= dayStart) return null
         return { startTime: start.toISOString(), endTime: end.toISOString() }
       })
       .filter(Boolean)

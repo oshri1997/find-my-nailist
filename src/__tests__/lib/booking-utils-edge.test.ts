@@ -2,7 +2,15 @@
  * Edge cases and additional coverage for booking-utils.
  * generateSlots always uses 30-min steps; durationMinutes only affects isSlotUnavailable.
  */
-import { generateSlots, isSlotUnavailable, toDateStr, computeDateAvailability } from '@/lib/booking-utils'
+import { generateSlots, isSlotUnavailable, toDateStr, computeDateAvailability, israelWallClockToUtc } from '@/lib/booking-utils'
+
+// bookedSlots in production are real UTC instants derived from Israel
+// wall-clock booking times — construct test fixtures the same way instead of
+// a raw `${date}T{time}:00Z` literal, which represents UTC (not Israel time)
+// and would silently drift by Israel's 2-3h offset from what the test means.
+function israelSlot(date: string, time: string): string {
+  return israelWallClockToUtc(date, time).toISOString()
+}
 
 describe('generateSlots — edge cases', () => {
   it('returns [] when startTime equals endTime', () => {
@@ -57,24 +65,24 @@ describe('isSlotUnavailable — edge cases', () => {
   })
 
   it('unavailable when slot overlaps the start of a booking', () => {
-    const booked = [{ startTime: `${date}T10:00:00Z`, endTime: `${date}T11:00:00Z` }]
+    const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '11:00') }]
     // 09:30 + 60min = 10:30 → overlaps [10:00, 11:00)
     expect(isSlotUnavailable('09:30', date, 60, '18:00', booked)).toBe(true)
   })
 
   it('unavailable when slot is fully inside a booking', () => {
-    const booked = [{ startTime: `${date}T09:00:00Z`, endTime: `${date}T12:00:00Z` }]
+    const booked = [{ startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '12:00') }]
     expect(isSlotUnavailable('10:00', date, 60, '18:00', booked)).toBe(true)
   })
 
   it('available when slot ends exactly when the booking starts (no overlap)', () => {
-    const booked = [{ startTime: `${date}T11:00:00Z`, endTime: `${date}T12:00:00Z` }]
+    const booked = [{ startTime: israelSlot(date, '11:00'), endTime: israelSlot(date, '12:00') }]
     // 10:00 + 60min = 11:00 = bStart → bStart < slotEnd is false (not strict <)
     expect(isSlotUnavailable('10:00', date, 60, '18:00', booked)).toBe(false)
   })
 
   it('available when slot starts exactly when the booking ends (no overlap)', () => {
-    const booked = [{ startTime: `${date}T10:00:00Z`, endTime: `${date}T11:00:00Z` }]
+    const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '11:00') }]
     // bEnd(11:00) > slotStart(11:00) is false → no overlap
     expect(isSlotUnavailable('11:00', date, 60, '18:00', booked)).toBe(false)
   })
@@ -84,14 +92,14 @@ describe('isSlotUnavailable — edge cases', () => {
   })
 
   it('blocked by a 30-min duration booking (shorter than slot step)', () => {
-    const booked = [{ startTime: `${date}T10:00:00Z`, endTime: `${date}T10:30:00Z` }]
+    const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '10:30') }]
     expect(isSlotUnavailable('10:00', date, 30, '18:00', booked)).toBe(true)
   })
 
   it('handles multiple bookings, only checks overlap not count', () => {
     const booked = [
-      { startTime: `${date}T09:00:00Z`, endTime: `${date}T10:00:00Z` },
-      { startTime: `${date}T14:00:00Z`, endTime: `${date}T15:00:00Z` },
+      { startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '10:00') },
+      { startTime: israelSlot(date, '14:00'), endTime: israelSlot(date, '15:00') },
     ]
     expect(isSlotUnavailable('12:00', date, 60, '18:00', booked)).toBe(false)
     expect(isSlotUnavailable('14:30', date, 60, '18:00', booked)).toBe(true)
@@ -161,5 +169,27 @@ describe('computeDateAvailability — edge cases', () => {
     const result = computeDateAvailability(date, hours, 60, [])
     expect(result.workingDay).toBe(true)
     expect(result.fullyBooked).toBe(false)
+  })
+})
+
+describe('israelWallClockToUtc', () => {
+  it('converts winter (standard time, UTC+2) Israel wall-clock time to the correct UTC instant', () => {
+    // Israel is UTC+2 in January (no DST) — 12:00 local = 10:00 UTC
+    const d = israelWallClockToUtc('2026-01-15', '12:00')
+    expect(d.toISOString()).toBe('2026-01-15T10:00:00.000Z')
+  })
+
+  it('converts summer (daylight saving, UTC+3) Israel wall-clock time to the correct UTC instant', () => {
+    // Israel is UTC+3 in July (DST) — 12:00 local = 09:00 UTC
+    const d = israelWallClockToUtc('2026-07-15', '12:00')
+    expect(d.toISOString()).toBe('2026-07-15T09:00:00.000Z')
+  })
+
+  it('is independent of the runtime/test-machine timezone (always targets Asia/Jerusalem)', () => {
+    // This assertion only depends on the IANA tz database, not process.env.TZ —
+    // if this ever regresses to a naive `new Date(...)` parse, its result
+    // would silently vary by whatever timezone the test runner happens to use.
+    const d = israelWallClockToUtc('2026-01-15', '00:00')
+    expect(d.toISOString()).toBe('2026-01-14T22:00:00.000Z')
   })
 })
