@@ -169,6 +169,16 @@ export default function AuthPage() {
         const cred = await signUpWithEmail(email, password, name)
         sendVerificationEmail(cred.user).catch(console.error)
 
+        // /api/users requires the session cookie, which AuthProvider's own
+        // onIdTokenChanged listener sets asynchronously in the background —
+        // don't race it; establish the cookie explicitly before calling in.
+        const idToken = await cred.user.getIdToken()
+        await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: idToken }),
+        })
+
         const createUserProfile = () => fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -84,4 +84,60 @@ describe('PortfolioPage — card image picker', () => {
 
     await waitFor(() => expect(screen.queryByText('כרטיס')).not.toBeInTheDocument())
   })
+
+  it('keeps the photo visible and shows an error when the DELETE request fails', async () => {
+    mockFetch({ coverPhotoUrl: photos[0].url })
+    ;(global.fetch as jest.Mock).mockImplementation((url: string, init?: RequestInit) => {
+      if (url.includes('/api/me/nailist-profile')) {
+        return Promise.resolve({ ok: true, json: async () => ({ data: { id: 'nailist-1', coverPhotoUrl: photos[0].url } }) } as Response)
+      }
+      if (url.includes('/api/portfolio') && init?.method !== 'DELETE') {
+        return Promise.resolve({ ok: true, json: async () => ({ data: photos }) } as Response)
+      }
+      if (init?.method === 'DELETE') {
+        return Promise.resolve({ ok: false, json: async () => ({ error: 'Forbidden' }) } as Response)
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ data: null }) } as Response)
+    })
+    render(<PortfolioPage />)
+
+    await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(photos.length))
+
+    const firstCard = screen.getAllByRole('img')[0].closest('div')!.parentElement!
+    const deleteBtn = firstCard.querySelectorAll('button')[0]
+    fireEvent.click(deleteBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText('מחיקת התמונה נכשלה — נסי שוב')).toBeInTheDocument()
+    })
+    // The photo and its cover-card status are untouched since the delete never took effect
+    expect(screen.getAllByRole('img')).toHaveLength(photos.length)
+    expect(screen.getByText('כרטיס')).toBeInTheDocument()
+  })
+
+  it('does not flip the cover locally when the set-cover PATCH request fails', async () => {
+    mockFetch()
+    ;(global.fetch as jest.Mock).mockImplementation((url: string, init?: RequestInit) => {
+      if (url.includes('/api/me/nailist-profile')) {
+        return Promise.resolve({ ok: true, json: async () => ({ data: { id: 'nailist-1' } }) } as Response)
+      }
+      if (url.includes('/api/portfolio')) {
+        return Promise.resolve({ ok: true, json: async () => ({ data: photos }) } as Response)
+      }
+      if (url === '/api/nailists/nailist-1' && init?.method === 'PATCH') {
+        return Promise.resolve({ ok: false, json: async () => ({ error: 'Forbidden' }) } as Response)
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ data: null }) } as Response)
+    })
+    render(<PortfolioPage />)
+
+    await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(photos.length))
+
+    fireEvent.click(screen.getAllByTitle('הגדרי כתמונת הכרטיס')[0])
+
+    await waitFor(() => {
+      expect(screen.getByText('הגדרת תמונת הכרטיס נכשלה — נסי שוב')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('כרטיס')).not.toBeInTheDocument()
+  })
 })

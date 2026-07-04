@@ -37,6 +37,7 @@ export default function NailistAppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -55,13 +56,23 @@ export default function NailistAppointmentsPage() {
 
   async function updateStatus(id: string, status: Appointment['status']) {
     setUpdating(id)
+    setError('')
     try {
-      await fetch(`/api/appointments/${id}/status`, {
+      const res = await fetch(`/api/appointments/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       })
+      if (!res.ok) {
+        // e.g. a stale tab: the appointment was already cancelled/completed
+        // elsewhere and the server rejected this transition — don't apply
+        // it locally, or the dashboard shows a status that never took effect.
+        setError('לא ניתן היה לעדכן את הסטטוס — ייתכן שהתור כבר עודכן במקום אחר. רעננ/י את העמוד.')
+        return
+      }
       setAppointments((prev) => prev.map((a) => a.id === id ? { ...a, status } : a))
+    } catch {
+      setError('שגיאת רשת — לא ניתן היה לעדכן את הסטטוס')
     } finally {
       setUpdating(null)
     }
@@ -76,6 +87,12 @@ export default function NailistAppointmentsPage() {
         <h1 className="text-2xl font-black text-foreground">התורים שלי</h1>
         <p className="text-muted-foreground font-medium text-sm">ניהול הזמנות</p>
       </div>
+
+      {error && (
+        <div className="mb-5 flex items-center gap-2 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400 rounded-2xl px-4 py-3 font-semibold text-sm">
+          {error}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-16">

@@ -87,12 +87,17 @@ export default function PortfolioPage() {
   }
 
   async function handleDelete(photo: Photo) {
+    setError('')
     try {
       if (photo.storageKey) {
         const { deleteStorageFile } = await import('@/lib/firebase/storage')
         await deleteStorageFile(photo.storageKey).catch(() => {})
       }
-      await fetch(`/api/portfolio/${photo.id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/portfolio/${photo.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        setError('מחיקת התמונה נכשלה — נסי שוב')
+        return
+      }
       setPhotos((prev) => prev.filter((p) => p.id !== photo.id))
       if (coverPhotoUrl === photo.url) setCoverPhotoUrl(null)
     } catch {
@@ -102,13 +107,18 @@ export default function PortfolioPage() {
 
   async function handleSetCover(photo: Photo) {
     if (!profileId) return
+    setError('')
     const newUrl = coverPhotoUrl === photo.url ? null : photo.url
     try {
-      await fetch(`/api/nailists/${profileId}`, {
+      const res = await fetch(`/api/nailists/${profileId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ coverPhotoUrl: newUrl }),
       })
+      if (!res.ok) {
+        setError('הגדרת תמונת הכרטיס נכשלה — נסי שוב')
+        return
+      }
       setCoverPhotoUrl(newUrl)
     } catch {
       setError('שגיאה בהגדרת תמונת הכרטיס')

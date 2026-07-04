@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebase/admin'
+import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue } from 'firebase-admin/firestore'
@@ -17,9 +17,27 @@ const createUserSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  // Without this, any request (no session needed) could pass an arbitrary
+  // uid/email/role and either create a profile for a uid it doesn't own or
+  // race a not-yet-provisioned uid to plant an attacker-chosen role/email.
+  const token = request.cookies.get('auth-token')?.value
+  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  let decoded: { uid: string }
+  try {
+    decoded = await adminAuth().verifyIdToken(token)
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const data = createUserSchema.parse(body)
+
+    if (data.uid !== decoded.uid) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const db = adminDb()
 
     const userRef = db.collection(COLLECTIONS.USERS).doc(data.uid)
