@@ -34,7 +34,11 @@ export function Navbar() {
     router.push('/')
   }
 
-  const displayName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? ''
+  // The compact nav button only has room for a first name, but the dropdown
+  // panel below has a dedicated header row (same width as the email under
+  // it) — show the full name there instead of truncating to one word.
+  const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? ''
+  const fullName = user?.displayName || user?.email?.split('@')[0] || ''
 
   return (
     <motion.nav
@@ -122,16 +126,16 @@ export function Navbar() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={user.photoURL}
-                        alt={displayName}
+                        alt={firstName}
                         className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/30"
                       />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-black">
-                        {displayName[0]?.toUpperCase() ?? '?'}
+                        {firstName[0]?.toUpperCase() ?? '?'}
                       </div>
                     )}
                     <span className="hidden sm:block max-w-[100px] truncate text-sm font-semibold text-foreground/80">
-                      {displayName}
+                      {firstName}
                     </span>
                     <ChevronDown className={`hidden sm:block h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${showMenu ? 'rotate-180' : ''}`} />
                   </button>
@@ -139,7 +143,7 @@ export function Navbar() {
                   {showMenu && (
                     <div className="absolute top-full mt-2 end-0 w-52 bg-card rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-border p-1 z-50">
                       <div className="px-3 py-2.5 border-b border-border mb-1">
-                        <p className="text-sm font-bold text-foreground truncate">{displayName}</p>
+                        <p className="text-sm font-bold text-foreground truncate">{fullName}</p>
                         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                       </div>
                       <Link
