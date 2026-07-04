@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import Link from 'next/link'
 import { ArrowLeft, Phone, Loader2, Check, User, Camera } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
@@ -36,7 +35,6 @@ export default function ClientOnboardingPage() {
   const [city, setCity] = useState('')
   const [lat, setLat] = useState<number | undefined>()
   const [lng, setLng] = useState<number | undefined>()
-  const [agreedToTerms, setAgreedToTerms] = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -334,21 +332,6 @@ export default function ClientOnboardingPage() {
 
                 {error && <p className="text-sm text-red-500 font-semibold mb-4">{error}</p>}
 
-                <label className="flex items-start gap-3 mb-5 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={agreedToTerms}
-                    onChange={e => setAgreedToTerms(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-border accent-pink-500 shrink-0 cursor-pointer"
-                  />
-                  <span className="text-sm text-muted-foreground leading-snug group-hover:text-foreground transition-colors">
-                    קראתי ואני מסכים/ה ל
-                    <Link href="/terms" target="_blank" className="text-primary font-semibold hover:underline">תנאי שימוש</Link>
-                    {' '}ו
-                    <Link href="/privacy" target="_blank" className="text-primary font-semibold hover:underline">מדיניות פרטיות</Link>
-                  </span>
-                </label>
-
                 <div className="flex gap-3">
                   <Button
                     type="button"
@@ -363,14 +346,14 @@ export default function ClientOnboardingPage() {
                     type="button"
                     variant="outline"
                     onClick={handleFinish}
-                    disabled={saving || !agreedToTerms}
+                    disabled={saving}
                     className="flex-1 rounded-xl h-12 border-border font-semibold cursor-pointer disabled:opacity-60"
                   >
                     דלגי
                   </Button>
                   <Button
                     type="button"
-                    disabled={saving || !agreedToTerms}
+                    disabled={saving}
                     onClick={handleFinish}
                     className="flex-1 bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black shadow-[0_4px_16px_rgba(236,72,153,0.30)] gap-2 cursor-pointer disabled:opacity-60"
                   >
