@@ -5,6 +5,16 @@ import { geocodeAddress } from '@/lib/geocoding'
 import { isAuthenticatedRequest, computeHasContactInfo, stripNailistContactFields } from '@/lib/nailist-contact'
 import { z } from 'zod'
 
+// Lenient on purpose — real-world numbers/handles come with spaces, dashes,
+// country codes, etc. This only rejects obvious garbage, not exotic formats.
+const PHONE_RE = /^[0-9+\-\s()]{7,20}$/
+const phoneOrEmpty = (label: string) =>
+  z.string().refine((v) => v === '' || PHONE_RE.test(v), { message: `${label} אינו בפורמט תקין` })
+const urlOrEmpty = (label: string) =>
+  z.string().refine((v) => v === '' || /^https?:\/\/.+/i.test(v), {
+    message: `${label} חייב להתחיל ב-https://`,
+  })
+
 // Trust fields (isVerified, avgRating, reviewCount, userId) are deliberately
 // excluded — those are computed/assigned server-side only, never client-writable.
 // photoUrl is the profile avatar (hero + card fallback); coverPhotoUrl is the
@@ -15,10 +25,10 @@ const patchSchema = z.object({
   bio: z.string().optional(),
   city: z.string().optional(),
   address: z.string().optional(),
-  phoneNumber: z.string().optional(),
-  whatsappPhone: z.string().optional(),
-  instagramUrl: z.string().optional(),
-  tiktokUrl: z.string().optional(),
+  phoneNumber: phoneOrEmpty('מספר טלפון').optional(),
+  whatsappPhone: phoneOrEmpty('מספר וואטסאפ').optional(),
+  instagramUrl: urlOrEmpty('קישור אינסטגרם').optional(),
+  tiktokUrl: urlOrEmpty('קישור טיקטוק').optional(),
   photoUrl: z.string().optional(),
   coverPhotoUrl: z.string().nullable().optional(),
   isActive: z.boolean().optional(),

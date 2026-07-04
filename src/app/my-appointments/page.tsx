@@ -49,6 +49,17 @@ function formatDateTime(iso: string) {
   })
 }
 
+async function fetchAppointmentById(id: string): Promise<Appointment | null> {
+  try {
+    const res = await fetch(`/api/appointments/${id}`)
+    if (!res.ok) return null
+    const { data } = await res.json()
+    return data ?? null
+  } catch {
+    return null
+  }
+}
+
 interface ReviewModalState {
   appointmentId: string
   nailistProfileId: string
@@ -85,10 +96,13 @@ function MyAppointmentsInner() {
         const list: Appointment[] = data ?? []
         setAppointments(list)
 
-        // Auto-open modal if ?review=<id> is in URL
+        // Auto-open modal if ?review=<id> is in URL. The list above caps at
+        // the 50 most recent appointments — an older COMPLETED one (from a
+        // review-request email sent long ago) may not be in it, so fall back
+        // to fetching it directly by id.
         const reviewId = searchParams.get('review')
         if (reviewId) {
-          const apt = list.find((a) => a.id === reviewId)
+          const apt = list.find((a) => a.id === reviewId) ?? await fetchAppointmentById(reviewId)
           if (apt && apt.status === 'COMPLETED' && !apt.hasReview) {
             setReviewModal({
               appointmentId: apt.id,

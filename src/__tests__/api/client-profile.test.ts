@@ -253,6 +253,13 @@ describe('PATCH /api/me/client-profile', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns 400 for an obviously malformed phoneNumber', async () => {
+    const req = makePatchRequest({ phoneNumber: 'call me maybe!!' })
+    const res = await PATCH(req)
+    expect(res.status).toBe(400)
+    expect(mockUpdateFn).not.toHaveBeenCalled()
+  })
+
   it('always includes updatedAt in the update', async () => {
     const req = makePatchRequest({ city: 'ירושלים' })
     await PATCH(req)

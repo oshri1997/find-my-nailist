@@ -131,4 +131,51 @@ describe('PATCH /api/nailists/[id]', () => {
     )
     expect(res.status).toBe(200)
   })
+
+  it('rejects an obviously malformed phone number', async () => {
+    const res = await PATCH(
+      makeRequest({ phoneNumber: 'not-a-phone-number!!' }, 'token'),
+      mockParams
+    )
+    expect(res.status).toBe(400)
+    expect(mockUpdateFn).not.toHaveBeenCalled()
+  })
+
+  it('rejects an obviously malformed whatsapp number', async () => {
+    const res = await PATCH(
+      makeRequest({ whatsappPhone: 'call me maybe' }, 'token'),
+      mockParams
+    )
+    expect(res.status).toBe(400)
+    expect(mockUpdateFn).not.toHaveBeenCalled()
+  })
+
+  it('rejects an instagram URL missing the https:// scheme', async () => {
+    const res = await PATCH(
+      makeRequest({ instagramUrl: 'instagram.com/x' }, 'token'),
+      mockParams
+    )
+    expect(res.status).toBe(400)
+    expect(mockUpdateFn).not.toHaveBeenCalled()
+  })
+
+  it('rejects a tiktok URL that is not a URL at all', async () => {
+    const res = await PATCH(
+      makeRequest({ tiktokUrl: 'my tiktok is @someone' }, 'token'),
+      mockParams
+    )
+    expect(res.status).toBe(400)
+    expect(mockUpdateFn).not.toHaveBeenCalled()
+  })
+
+  it('accepts empty strings to clear phone/social fields', async () => {
+    const res = await PATCH(
+      makeRequest(
+        { phoneNumber: '', whatsappPhone: '', instagramUrl: '', tiktokUrl: '' },
+        'token'
+      ),
+      mockParams
+    )
+    expect(res.status).toBe(200)
+  })
 })

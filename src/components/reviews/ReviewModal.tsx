@@ -17,6 +17,20 @@ interface ReviewModalProps {
 
 type Step = 'rating' | 'comment' | 'done'
 
+// The API sometimes returns an English error string (or a zod issues array,
+// not even a string) — never surface that raw to the Hebrew UI.
+const KNOWN_ERROR_TRANSLATIONS: Record<string, string> = {
+  Unauthorized: 'יש להתחבר מחדש כדי לשלוח ביקורת',
+  Forbidden: 'אין הרשאה לבצע פעולה זו',
+  'Invalid or incomplete appointment': 'לא ניתן לשלוח ביקורת עבור תור זה',
+  'Review already submitted for this appointment': 'כבר שלחת ביקורת לתור הזה',
+}
+
+export function translateReviewError(error: unknown): string {
+  if (typeof error !== 'string') return 'שגיאה בשליחת הביקורת'
+  return KNOWN_ERROR_TRANSLATIONS[error] ?? error
+}
+
 export default function ReviewModal({
   appointmentId,
   nailistProfileId,
@@ -52,7 +66,7 @@ export default function ReviewModal({
       })
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
-        setError((json as { error?: string }).error ?? 'שגיאה בשליחת הביקורת')
+        setError(translateReviewError((json as { error?: unknown }).error))
         return
       }
       setStep('done')

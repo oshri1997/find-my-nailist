@@ -6,7 +6,11 @@ import { COLLECTIONS } from '@/lib/firebase/collections'
 import { MapPin, Star, Sparkles } from 'lucide-react'
 import { CITIES, type CityEntry } from '@/lib/cities'
 
-export const dynamic = 'force-dynamic'
+// generateStaticParams below pre-renders every known city slug at build time;
+// force-dynamic would silently defeat that by re-rendering on every request
+// instead. Revalidate hourly so newly-active nailists show up without a
+// full redeploy.
+export const revalidate = 3600
 
 const BASE_URL = 'https://nailistiot.fun'
 

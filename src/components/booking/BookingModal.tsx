@@ -35,6 +35,20 @@ type Step = 'service' | 'datetime' | 'confirm' | 'done'
 const HE_DAYS_SHORT = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
 const HE_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר']
 
+// The API sometimes returns an English error string (or a zod issues array,
+// not even a string) — never surface that raw to the Hebrew UI.
+const KNOWN_ERROR_TRANSLATIONS: Record<string, string> = {
+  'Service not found': 'השירות המבוקש לא נמצא או שהוסר',
+  Forbidden: 'אין הרשאה לבצע פעולה זו',
+  Unauthorized: 'יש להתחבר מחדש כדי להזמין תור',
+  'Time slot not available': 'השעה הזו כבר תפוסה, אנא בחרי שעה אחרת',
+}
+
+export function translateBookingError(error: unknown): string {
+  if (typeof error !== 'string') return 'שגיאה בהזמנה, נסי שוב'
+  return KNOWN_ERROR_TRANSLATIONS[error] ?? error
+}
+
 export default function BookingModal({ nailistProfileId, businessName, services, onClose, initialServiceId }: Props) {
   const [step, setStep] = useState<Step>('service')
   const [selectedService, setSelectedService] = useState<Service | null>(
@@ -123,7 +137,11 @@ export default function BookingModal({ nailistProfileId, businessName, services,
         }),
       })
       if (res.status === 409) { setError('השעה הזו כבר תפוסה, אנא בחרי שעה אחרת'); return }
-      if (!res.ok) { const body = await res.json(); setError(body.error ?? 'שגיאה בהזמנה'); return }
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        setError(translateBookingError(body?.error))
+        return
+      }
       setStep('done')
     } catch {
       setError('שגיאה בהזמנה, נסי שוב')

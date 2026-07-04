@@ -148,9 +148,16 @@ export default function NailistServicesPage() {
 
   async function handleDelete(id: string) {
     setDeletingId(id)
+    setError('')
     try {
-      await fetch(`/api/services/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/services/${id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        setError('מחיקת השירות נכשלה, נסי שוב')
+        return
+      }
       setServices((prev) => prev.filter((s) => s.id !== id))
+    } catch {
+      setError('מחיקת השירות נכשלה, נסי שוב')
     } finally {
       setDeletingId(null)
     }
@@ -183,6 +190,20 @@ export default function NailistServicesPage() {
           >
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             {success}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Error toast — shown outside the form too, e.g. for a failed delete */}
+      <AnimatePresence>
+        {error && !showForm && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="flex items-center gap-2 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400 rounded-2xl px-4 py-3 mb-5 font-semibold text-sm"
+          >
+            {error}
           </motion.div>
         )}
       </AnimatePresence>
