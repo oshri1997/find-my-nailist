@@ -253,7 +253,11 @@ export default function SearchPage() {
 
   const sorted = [...nailists]
     .filter((n) => matchesFilter(n.serviceNames ?? [], activeFilter))
-    .filter((n) => matchesQuery(n, locationLabel))
+    // When coords are active, locationLabel is just the read-only "המיקום שלי"
+    // display placeholder, not a real search term — the server already
+    // filtered by geo-radius, so don't also substring-match against it here
+    // (that would filter out every real result, since none contain that string).
+    .filter((n) => (coords ? true : matchesQuery(n, locationLabel)))
     .sort((a, b) => {
       if (sortBy === 'distance' && a.distanceKm != null && b.distanceKm != null) {
         return a.distanceKm - b.distanceKm

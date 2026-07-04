@@ -4,7 +4,7 @@ import { COLLECTIONS } from '@/lib/firebase/collections'
 import { isAuthenticatedRequest, computeHasContactInfo, stripNailistContactFields } from '@/lib/nailist-contact'
 
 import { geohashQueryBounds, distanceBetween } from 'geofire-common'
-import type { Firestore } from 'firebase-admin/firestore'
+import { FieldPath, type Firestore } from 'firebase-admin/firestore'
 
 function sanitizeNailists(nailists: Array<Record<string, unknown>>, isAuthenticated: boolean): void {
   nailists.forEach((n) => {
@@ -101,12 +101,18 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // No location — return most recent active profiles. Fetch one extra doc
-    // beyond the requested page to detect hasMore without a separate count
-    // query (Firestore has no cheap COUNT — this is the standard workaround).
+    // No location — paginate active profiles in a stable, deterministic order.
+    // Without an explicit orderBy, Firestore doesn't guarantee the same
+    // relative ordering across repeated queries, so incrementing limit() per
+    // "load more" click could return page 2 with duplicates of or gaps from
+    // page 1. orderBy(documentId()) needs no composite index (unlike
+    // createdAt, which isn't indexed for this collection) while still being
+    // deterministic. Fetch one extra doc beyond the requested page to detect
+    // hasMore without a separate count query (Firestore has no cheap COUNT).
     const snap = await db
       .collection(COLLECTIONS.NAILIST_PROFILES)
       .where('isActive', '==', true)
+      .orderBy(FieldPath.documentId())
       .limit(offset + pageSize + 1)
       .get()
 

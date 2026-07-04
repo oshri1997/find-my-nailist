@@ -14,6 +14,7 @@ const collectionStore: Record<string, DocData[]> = {}
 function makeCollectionRef(name: string) {
   return {
     where: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     get: jest.fn().mockResolvedValue({
       docs: (collectionStore[name] ?? []).map((d) => ({ id: d.__id, data: () => d })),
@@ -129,5 +130,13 @@ describe('GET /api/nailists — pagination (no location)', () => {
     const json = await res.json()
     expect(json.data).toHaveLength(5)
     expect(json.hasMore).toBe(true)
+  })
+
+  it('sorts by a deterministic field so repeated "load more" calls cannot duplicate or skip results', async () => {
+    await GET(makeRequest())
+    const profileRefs = mockDb.collection.mock.results
+      .filter((r, i) => mockDb.collection.mock.calls[i][0] === 'nailistProfiles')
+      .map((r) => r.value)
+    expect(profileRefs.some((ref) => ref.orderBy.mock.calls.length > 0)).toBe(true)
   })
 })
