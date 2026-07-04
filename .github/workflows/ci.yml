@@ -87,6 +87,9 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 14
+      - name: Clean up E2E test data
+        if: always()
+        run: node scripts/e2e-cleanup-test-data.mjs
 
   deploy-staging:
     name: Deploy → Staging (dev.nailistiot.fun)
