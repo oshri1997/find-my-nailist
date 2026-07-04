@@ -9,6 +9,7 @@ function Content() {
   const params = useSearchParams()
   const error = params.get('error')
   const already = params.get('already')
+  const status = params.get('status')
   const emailError = params.get('emailError')
 
   if (error === 'invalid') {
@@ -43,6 +44,18 @@ function Content() {
         </div>
         <h1 className="text-2xl font-black text-foreground mb-2">שגיאה</h1>
         <p className="text-muted-foreground font-medium">אירעה שגיאה. אנא נסי שוב מאוחר יותר.</p>
+      </div>
+    )
+  }
+
+  if (already && status === 'CANCELLED') {
+    return (
+      <div className="text-center">
+        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="h-7 w-7 text-muted-foreground" />
+        </div>
+        <h1 className="text-2xl font-black text-foreground mb-2">התור בוטל</h1>
+        <p className="text-muted-foreground font-medium">התור הזה כבר בוטל ולא ניתן לאשר אותו.</p>
       </div>
     )
   }

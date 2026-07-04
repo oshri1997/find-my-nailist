@@ -3,7 +3,7 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue, Timestamp, type Firestore, type DocumentReference } from 'firebase-admin/firestore'
-import { sendAppointmentRequest, sendReviewRequestEmail } from '@/lib/email'
+import { sendAppointmentRequest, sendReviewRequestEmail, sendCancellationEmail } from '@/lib/email'
 import { randomUUID } from 'crypto'
 
 // Firestore batched writes cap at 500 operations — split larger update sets into chunks.
@@ -242,47 +242,60 @@ export async function GET(request: NextRequest) {
     })
 
     if (expired.length > 0) {
-      await chunkedBatchUpdate(db, expired.map((doc) => doc.ref), {
-        status: 'COMPLETED',
-        reviewRequested: true,
-        updatedAt: FieldValue.serverTimestamp(),
-      })
+      // Per-doc transactions (not a bulk batch write) — a plain pre-read
+      // guard on reviewRequested would race against a nailist manually
+      // completing the same appointment via PATCH .../status at nearly the
+      // same moment (e.g. she has the dashboard open as this GET fires),
+      // letting both paths see reviewRequested: false and both email.
+      const completions = await Promise.all(
+        expired.map((doc) =>
+          db.runTransaction(async (tx) => {
+            const freshSnap = await tx.get(doc.ref)
+            const wasAlreadyRequested = freshSnap.data()?.reviewRequested === true
+            tx.update(doc.ref, {
+              status: 'COMPLETED',
+              reviewRequested: true,
+              updatedAt: FieldValue.serverTimestamp(),
+            })
+            return { doc, wasAlreadyRequested }
+          })
+        )
+      )
 
-      expired.forEach((doc) => {
+      completions.forEach(({ doc, wasAlreadyRequested }) => {
+        if (wasAlreadyRequested) return
         const apt = doc.data()
-        if (!apt.reviewRequested) {
-          void (async () => {
-            try {
-              const [clientProfileSnap, nailistProfileSnap] = await Promise.all([
-                db.collection(COLLECTIONS.CLIENT_PROFILES).doc(apt.clientProfileId).get(),
-                db.collection(COLLECTIONS.NAILIST_PROFILES).doc(apt.nailistProfileId).get(),
-              ])
-              const clientProfile = clientProfileSnap.data()
-              const nailistProfile = nailistProfileSnap.data()
-              const clientUserSnap = clientProfile?.userId
-                ? await db.collection(COLLECTIONS.USERS).doc(clientProfile.userId).get()
-                : null
-              const clientEmail: string | undefined =
-                (clientProfile?.email as string | undefined) ||
-                (clientUserSnap?.data()?.email as string | undefined) ||
-                undefined
-              if (clientEmail) {
-                await sendReviewRequestEmail({
-                  clientEmail,
-                  clientName: apt.clientDisplayName ?? clientEmail,
-                  nailistBusinessName: apt.nailistBusinessName ?? nailistProfile?.businessName ?? '',
-                  serviceName: apt.serviceName,
-                  startTime: apt.startTime?.toDate?.() ?? new Date(apt.startTime),
-                  appointmentId: doc.id,
-                  appUrl: process.env.NEXT_PUBLIC_APP_URL,
-                })
-                console.log('[auto-complete] ✅ review request email sent to', clientEmail)
-              }
-            } catch (err) {
-              console.error('[auto-complete] ❌ review request email failed:', err)
+        void (async () => {
+          try {
+            const [clientProfileSnap, nailistProfileSnap] = await Promise.all([
+              db.collection(COLLECTIONS.CLIENT_PROFILES).doc(apt.clientProfileId).get(),
+              db.collection(COLLECTIONS.NAILIST_PROFILES).doc(apt.nailistProfileId).get(),
+            ])
+            const clientProfile = clientProfileSnap.data()
+            const nailistProfile = nailistProfileSnap.data()
+            const clientUserSnap = clientProfile?.userId
+              ? await db.collection(COLLECTIONS.USERS).doc(clientProfile.userId).get()
+              : null
+            const clientEmail: string | undefined =
+              (clientProfile?.email as string | undefined) ||
+              (clientUserSnap?.data()?.email as string | undefined) ||
+              undefined
+            if (clientEmail) {
+              await sendReviewRequestEmail({
+                clientEmail,
+                clientName: apt.clientDisplayName ?? clientEmail,
+                nailistBusinessName: apt.nailistBusinessName ?? nailistProfile?.businessName ?? '',
+                serviceName: apt.serviceName,
+                startTime: apt.startTime?.toDate?.() ?? new Date(apt.startTime),
+                appointmentId: doc.id,
+                appUrl: process.env.NEXT_PUBLIC_APP_URL,
+              })
+              console.log('[auto-complete] ✅ review request email sent to', clientEmail)
             }
-          })()
-        }
+          } catch (err) {
+            console.error('[auto-complete] ❌ review request email failed:', err)
+          }
+        })()
       })
     }
 
@@ -298,7 +311,49 @@ export async function GET(request: NextRequest) {
     if (stale.length > 0) {
       await chunkedBatchUpdate(db, stale.map((doc) => doc.ref), {
         status: 'CANCELLED',
+        // Clean up the confirm link's token — otherwise a nailist opening a
+        // 7-day-valid confirm email for one of these later gets a
+        // status-mismatch error/misleading message instead of a clean
+        // "already cancelled" (see /api/appointments/confirm's handling).
+        confirmToken: FieldValue.delete(),
+        confirmTokenExpiresAt: FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp(),
+      })
+
+      // Unlike a nailist-initiated cancellation (PATCH .../status) or the
+      // decline-link flow, this lazy cleanup never told the client her
+      // request timed out — she'd otherwise never hear anything at all.
+      stale.forEach((doc) => {
+        const apt = doc.data()
+        void (async () => {
+          try {
+            const [clientProfileSnap, nailistProfileSnap] = await Promise.all([
+              db.collection(COLLECTIONS.CLIENT_PROFILES).doc(apt.clientProfileId).get(),
+              db.collection(COLLECTIONS.NAILIST_PROFILES).doc(apt.nailistProfileId).get(),
+            ])
+            const clientProfile = clientProfileSnap.data()
+            const nailistProfile = nailistProfileSnap.data()
+            const clientUserSnap = clientProfile?.userId
+              ? await db.collection(COLLECTIONS.USERS).doc(clientProfile.userId).get()
+              : null
+            const clientEmail: string | undefined =
+              (clientProfile?.email as string | undefined) ||
+              (clientUserSnap?.data()?.email as string | undefined) ||
+              undefined
+            if (clientEmail) {
+              await sendCancellationEmail({
+                clientEmail,
+                clientName: apt.clientDisplayName ?? clientEmail,
+                nailistBusinessName: apt.nailistBusinessName ?? nailistProfile?.businessName ?? '',
+                serviceName: apt.serviceName,
+                startTime: apt.startTime?.toDate?.() ?? new Date(apt.startTime),
+              })
+              console.log('[auto-cancel] ✅ cancellation email sent to', clientEmail)
+            }
+          } catch (err) {
+            console.error('[auto-cancel] ❌ cancellation email failed:', err)
+          }
+        })()
       })
     }
 

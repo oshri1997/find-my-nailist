@@ -2,7 +2,8 @@
  * @jest-environment node
  *
  * Covers two bugfixes: the role-based query limit (nailist=1000, client=50)
- * and chunking Firestore batch writes to stay under the 500-op-per-batch cap.
+ * and the auto-cancel path's chunked Firestore batch writes staying under the
+ * 500-op-per-batch cap (auto-complete uses one db.runTransaction per doc instead).
  */
 import { NextRequest } from 'next/server'
 
@@ -41,7 +42,10 @@ function makeCollectionRef(name: string) {
               .map((d) => ({
                 id: d.__id,
                 data: () => d,
-                ref: { update: jest.fn().mockResolvedValue(undefined) },
+                ref: {
+                  get: jest.fn().mockImplementation(() => Promise.resolve({ exists: true, data: () => d })),
+                  update: jest.fn().mockImplementation((data: Record<string, unknown>) => Object.assign(d, data)),
+                },
               })),
           }),
         }
@@ -53,6 +57,13 @@ function makeCollectionRef(name: string) {
 const mockDb = {
   collection: jest.fn((name: string) => makeCollectionRef(name)),
   batch: batchSpy,
+  runTransaction: jest.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+    const tx = {
+      get: (ref: { get: () => unknown }) => ref.get(),
+      update: (ref: { update: (data: unknown) => unknown }, data: unknown) => ref.update(data),
+    }
+    return fn(tx)
+  }),
 }
 
 jest.mock('@/lib/firebase/admin', () => ({
@@ -63,7 +74,10 @@ jest.mock('@/lib/firebase/admin', () => ({
 }))
 
 jest.mock('firebase-admin/firestore', () => ({
-  FieldValue: { serverTimestamp: jest.fn(() => 'SERVER_TIMESTAMP') },
+  FieldValue: {
+    serverTimestamp: jest.fn(() => 'SERVER_TIMESTAMP'),
+    delete: jest.fn(() => 'FIELD_DELETE'),
+  },
 }))
 
 jest.mock('@/lib/email', () => ({
@@ -105,14 +119,14 @@ describe('GET /api/appointments — query limit by role', () => {
   })
 })
 
-describe('GET /api/appointments — batch write chunking', () => {
+describe('GET /api/appointments — auto-complete/auto-cancel write strategy', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     collectionStore['nailistProfiles'] = [{ __id: 'nailist-profile-1', userId: 'user-123' }]
     collectionStore['clientProfiles'] = []
   })
 
-  it('splits auto-complete writes into chunks of at most 500 to respect the Firestore batch limit', async () => {
+  it('auto-completes every expired CONFIRMED appointment via its own transaction (race-safe, not batched)', async () => {
     const past = new Date(Date.now() - 60 * 60 * 1000)
     collectionStore['appointments'] = Array.from({ length: 620 }, (_, i) => ({
       __id: `apt-${i}`,
@@ -130,10 +144,8 @@ describe('GET /api/appointments — batch write chunking', () => {
     expect(json.data).toHaveLength(620)
     expect(json.data.every((a: { status: string }) => a.status === 'COMPLETED')).toBe(true)
 
-    // 620 docs -> ceil(620 / 500) = 2 batches, never exceeding the 500-op cap
-    expect(batchSpy).toHaveBeenCalledTimes(2)
-    expect(mockBatch.commit).toHaveBeenCalledTimes(2)
-    expect(mockBatch.update).toHaveBeenCalledTimes(620)
+    // Each auto-complete goes through its own db.runTransaction — no batching on this path.
+    expect(mockDb.runTransaction).toHaveBeenCalledTimes(620)
   })
 
   it('splits auto-cancel writes into chunks of at most 500 to respect the Firestore batch limit', async () => {
@@ -157,7 +169,7 @@ describe('GET /api/appointments — batch write chunking', () => {
     expect(mockBatch.commit).toHaveBeenCalledTimes(2)
   })
 
-  it('uses a single batch when the update set is well under the 500-op limit', async () => {
+  it('auto-completes a small set of expired appointments, one transaction per doc', async () => {
     const past = new Date(Date.now() - 60 * 60 * 1000)
     collectionStore['appointments'] = Array.from({ length: 3 }, (_, i) => ({
       __id: `apt-${i}`,
@@ -171,7 +183,6 @@ describe('GET /api/appointments — batch write chunking', () => {
 
     const res = await GET(makeRequest('token', 'role=nailist'))
     expect(res.status).toBe(200)
-    expect(batchSpy).toHaveBeenCalledTimes(1)
-    expect(mockBatch.commit).toHaveBeenCalledTimes(1)
+    expect(mockDb.runTransaction).toHaveBeenCalledTimes(3)
   })
 })

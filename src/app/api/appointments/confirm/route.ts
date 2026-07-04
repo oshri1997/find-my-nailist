@@ -34,16 +34,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${appUrl}/appointments/confirmed?error=expired`)
     }
 
-    if (apt.status !== 'PENDING') {
-      return NextResponse.redirect(`${appUrl}/appointments/confirmed?already=1`)
-    }
-
-    await doc.ref.update({
-      status: 'CONFIRMED',
-      confirmToken: FieldValue.delete(),
-      confirmTokenExpiresAt: FieldValue.delete(),
-      updatedAt: FieldValue.serverTimestamp(),
+    // Transactional check-then-update — a plain read-then-write here would let
+    // two concurrent GETs (double-click, or an email-security scanner
+    // prefetching the link before a human opens it) both observe PENDING and
+    // both flip to CONFIRMED, each firing its own confirmation email.
+    const currentStatus = await db.runTransaction(async (tx) => {
+      const freshSnap = await tx.get(doc.ref)
+      const freshApt = freshSnap.data()!
+      if (freshApt.status !== 'PENDING') return freshApt.status as string
+      tx.update(doc.ref, {
+        status: 'CONFIRMED',
+        confirmToken: FieldValue.delete(),
+        confirmTokenExpiresAt: FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp(),
+      })
+      return null
     })
+
+    if (currentStatus !== null) {
+      // Report the appointment's real current status — "already confirmed"
+      // would be actively misleading for one that was actually auto-cancelled
+      // (e.g. a stale-PENDING cleanup) in the meantime.
+      return NextResponse.redirect(`${appUrl}/appointments/confirmed?already=1&status=${currentStatus}`)
+    }
 
     // Look up client email (CLIENT_PROFILES may lack email — fall back to USERS)
     const [clientProfileSnap, nailistSnap] = await Promise.all([

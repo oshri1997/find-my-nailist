@@ -40,13 +40,12 @@ export async function PATCH(
     const { status } = schema.parse(body)
     const db = adminDb()
 
-    // Fetch existing doc BEFORE update (ownership check + idempotency guard + email data)
+    // Fetch existing doc BEFORE update (ownership check + email data)
     const existingSnap = await db.collection(COLLECTIONS.APPOINTMENTS).doc(id).get()
     if (!existingSnap.exists) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 })
     }
     const existingData = existingSnap.data()!
-    const alreadyRequested = existingData.reviewRequested === true
 
     // Verify caller owns the nailist profile on this appointment
     const nailistProfileSnap = await db
@@ -69,10 +68,20 @@ export async function PATCH(
       )
     }
 
-    await db.collection(COLLECTIONS.APPOINTMENTS).doc(id).update({
-      status,
-      ...(status === 'COMPLETED' ? { reviewRequested: true } : {}),
-      updatedAt: FieldValue.serverTimestamp(),
+    // Transactional re-check of reviewRequested — a plain pre-read guard here
+    // would race against the lazy auto-complete path in GET /api/appointments
+    // (both can observe reviewRequested: false before either write commits),
+    // sending the client duplicate "how was your appointment" emails.
+    const appointmentRef = db.collection(COLLECTIONS.APPOINTMENTS).doc(id)
+    const alreadyRequested = await db.runTransaction(async (tx) => {
+      const freshSnap = await tx.get(appointmentRef)
+      const wasAlreadyRequested = freshSnap.data()?.reviewRequested === true
+      tx.update(appointmentRef, {
+        status,
+        ...(status === 'COMPLETED' ? { reviewRequested: true } : {}),
+        updatedAt: FieldValue.serverTimestamp(),
+      })
+      return wasAlreadyRequested
     })
 
     if (status === 'COMPLETED') {

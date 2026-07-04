@@ -55,7 +55,10 @@ function makeCollectionRef(name: string) {
             .map((d: unknown) => ({
               id: (d as Record<string, unknown>).__id,
               data: () => d,
-              ref: { update: jest.fn().mockResolvedValue(undefined) },
+              ref: {
+                update: jest.fn().mockResolvedValue(undefined),
+                get: jest.fn().mockResolvedValue({ exists: true, data: () => d }),
+              },
             })),
         }),
         orderBy: jest.fn().mockReturnThis(),
@@ -75,6 +78,7 @@ const mockDb = {
     const tx = {
       get: (queryOrRef: { get: () => Promise<unknown> }) => queryOrRef.get(),
       set: jest.fn().mockImplementation((ref: { set: (data: unknown) => unknown }, data: unknown) => ref.set(data)),
+      update: jest.fn().mockImplementation((ref: { update: (data: unknown) => unknown }, data: unknown) => ref.update(data)),
     }
     return fn(tx)
   }),
@@ -484,8 +488,7 @@ describe('GET /api/appointments', () => {
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(json.data[0].status).toBe('COMPLETED')
-    expect(mockBatch.update).toHaveBeenCalled()
-    expect(mockBatch.commit).toHaveBeenCalled()
+    expect(mockDb.runTransaction).toHaveBeenCalled()
   })
 
   it('does not auto-complete CONFIRMED appointments with future endTime', async () => {

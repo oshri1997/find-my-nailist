@@ -47,14 +47,29 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  await doc.ref.update({
-    status: 'CANCELLED',
-    declineToken: FieldValue.delete(),
-    declineTokenExpiresAt: FieldValue.delete(),
-    confirmToken: FieldValue.delete(),
-    confirmTokenExpiresAt: FieldValue.delete(),
-    updatedAt: FieldValue.serverTimestamp(),
+  // Transactional check-then-update — a plain read-then-write here would let
+  // two concurrent GETs (double-click, or an email-security scanner
+  // prefetching the link) both observe PENDING and both cancel + email.
+  const alreadyHandled = await db.runTransaction(async (tx) => {
+    const freshSnap = await tx.get(doc.ref)
+    if (freshSnap.data()?.status !== 'PENDING') return true
+    tx.update(doc.ref, {
+      status: 'CANCELLED',
+      declineToken: FieldValue.delete(),
+      declineTokenExpiresAt: FieldValue.delete(),
+      confirmToken: FieldValue.delete(),
+      confirmTokenExpiresAt: FieldValue.delete(),
+      updatedAt: FieldValue.serverTimestamp(),
+    })
+    return false
   })
+
+  if (alreadyHandled) {
+    return new NextResponse(errorPage('התור כבר טופל', 'התור כבר אושר או בוטל בעבר.'), {
+      status: 409,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    })
+  }
 
   void (async () => {
     try {

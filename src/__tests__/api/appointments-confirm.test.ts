@@ -42,7 +42,10 @@ function makeCollectionRef(name: string) {
           docs: filtered.map((d) => ({
             id: d.__id,
             data: () => d,
-            ref: makeDocRef(name, d.__id),
+            ref: {
+              get: jest.fn().mockImplementation(() => Promise.resolve({ exists: true, data: () => d })),
+              update: jest.fn().mockImplementation((data: DocData) => Object.assign(d, data)),
+            },
           })),
         }),
       }
@@ -52,6 +55,13 @@ function makeCollectionRef(name: string) {
 
 const mockDb = {
   collection: jest.fn((name: string) => makeCollectionRef(name)),
+  runTransaction: jest.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+    const tx = {
+      get: (ref: { get: () => unknown }) => ref.get(),
+      update: (ref: { update: (data: unknown) => unknown }, data: unknown) => ref.update(data),
+    }
+    return fn(tx)
+  }),
 }
 
 jest.mock('@/lib/firebase/admin', () => ({

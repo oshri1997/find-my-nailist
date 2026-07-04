@@ -51,6 +51,13 @@ function makeCollectionRef(name: string) {
 
 const mockDb = {
   collection: jest.fn((name: string) => makeCollectionRef(name)),
+  runTransaction: jest.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+    const tx = {
+      get: (ref: { get: () => unknown }) => ref.get(),
+      update: (ref: { update: (data: unknown) => unknown }, data: unknown) => ref.update(data),
+    }
+    return fn(tx)
+  }),
 }
 
 jest.mock('@/lib/firebase/admin', () => ({
