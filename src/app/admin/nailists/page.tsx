@@ -18,6 +18,8 @@ interface AdminNailist {
 
 export default function AdminNailistsPage() {
   const [nailists, setNailists] = useState<AdminNailist[]>([])
+  const [totalCount, setTotalCount] = useState<number | null>(null)
+  const [activeCount, setActiveCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [toggling, setToggling] = useState<string | null>(null)
@@ -27,6 +29,15 @@ export default function AdminNailistsPage() {
       .then(r => r.json())
       .then(j => { setNailists(j.data ?? []); setLoading(false) })
       .catch(() => setLoading(false))
+    // The list endpoint caps at 200 rows — pull the real uncapped totals
+    // from the stats endpoint so the header never understates the count.
+    fetch('/api/admin/stats')
+      .then(r => r.json())
+      .then(j => {
+        if (typeof j.data?.totalNailistProfiles === 'number') setTotalCount(j.data.totalNailistProfiles)
+        if (typeof j.data?.activeNailists === 'number') setActiveCount(j.data.activeNailists)
+      })
+      .catch(() => {})
   }, [])
 
   async function toggleActive(n: AdminNailist) {
@@ -51,7 +62,7 @@ export default function AdminNailistsPage() {
     <div className="p-4 md:p-8 space-y-5 md:space-y-6">
       <div>
         <h1 className="text-2xl font-black text-foreground">ניהול נייליסטיות</h1>
-        <p className="text-muted-foreground text-sm mt-1">{nailists.length} נייליסטיות סה״כ · {nailists.filter(n => n.isActive).length} פעילות</p>
+        <p className="text-muted-foreground text-sm mt-1">{totalCount ?? nailists.length} נייליסטיות סה״כ · {activeCount ?? nailists.filter(n => n.isActive).length} פעילות</p>
       </div>
 
       <div className="relative max-w-sm">

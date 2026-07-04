@@ -42,6 +42,14 @@
       ]
     },
     {
+      "collectionGroup": "appointments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "startTime", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "nailistProfiles",
       "queryScope": "COLLECTION",
       "fields": [

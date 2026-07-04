@@ -10,7 +10,12 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const search = searchParams.get('search')?.toLowerCase() ?? ''
 
-  const usersSnap = await db.collection(COLLECTIONS.USERS).orderBy('createdAt', 'desc').limit(200).get()
+  // A search term must scan the full collection — capping at 200 before
+  // filtering would silently miss any match outside the most-recent window.
+  const usersQuery = search
+    ? db.collection(COLLECTIONS.USERS).orderBy('createdAt', 'desc')
+    : db.collection(COLLECTIONS.USERS).orderBy('createdAt', 'desc').limit(200)
+  const usersSnap = await usersQuery.get()
 
   const users = usersSnap.docs.map(d => {
     const data = d.data()

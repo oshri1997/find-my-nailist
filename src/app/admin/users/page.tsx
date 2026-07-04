@@ -22,6 +22,7 @@ const ROLE_COLORS: Record<string, string> = {
 export default function AdminUsersPage() {
   const { user: adminUser, refreshRole } = useAuth()
   const [users, setUsers] = useState<AdminUser[]>([])
+  const [totalCount, setTotalCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [deleting, setDeleting] = useState<string | null>(null)
@@ -35,6 +36,15 @@ export default function AdminUsersPage() {
       .then(j => { setUsers(j.data ?? []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [search])
+
+  useEffect(() => {
+    // The unfiltered list caps at 200 rows — pull the real uncapped total
+    // from the stats endpoint so the header never understates the count.
+    fetch('/api/admin/stats')
+      .then(r => r.json())
+      .then(j => { if (typeof j.data?.totalUsers === 'number') setTotalCount(j.data.totalUsers) })
+      .catch(() => {})
+  }, [])
 
   async function handleRoleChange(user: AdminUser, newRole: 'CLIENT' | 'NAILIST') {
     if (user.role === newRole) return
@@ -73,7 +83,9 @@ export default function AdminUsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-black text-foreground">ניהול משתמשים</h1>
-          <p className="text-muted-foreground text-sm mt-1">{users.length} משתמשים סה״כ</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            {search ? `${users.length} תוצאות` : `${totalCount ?? users.length} משתמשים סה״כ`}
+          </p>
         </div>
       </div>
 

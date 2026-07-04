@@ -16,6 +16,7 @@ interface AdminReview {
 
 export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<AdminReview[]>([])
+  const [totalCount, setTotalCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<AdminReview | null>(null)
@@ -25,6 +26,12 @@ export default function AdminReviewsPage() {
       .then(r => r.json())
       .then(j => { setReviews(j.data ?? []); setLoading(false) })
       .catch(() => setLoading(false))
+    // The list endpoint caps at 200 rows — pull the real uncapped total
+    // from the stats endpoint so the header never understates the count.
+    fetch('/api/admin/stats')
+      .then(r => r.json())
+      .then(j => { if (typeof j.data?.totalReviews === 'number') setTotalCount(j.data.totalReviews) })
+      .catch(() => {})
   }, [])
 
   async function handleDelete(review: AdminReview) {
@@ -39,7 +46,7 @@ export default function AdminReviewsPage() {
     <div className="p-4 md:p-8 space-y-5 md:space-y-6">
       <div>
         <h1 className="text-2xl font-black text-foreground">ניהול ביקורות</h1>
-        <p className="text-muted-foreground text-sm mt-1">{reviews.length} ביקורות סה״כ</p>
+        <p className="text-muted-foreground text-sm mt-1">{totalCount ?? reviews.length} ביקורות סה״כ</p>
       </div>
 
       <div className="bg-card border border-border rounded-2xl overflow-hidden">

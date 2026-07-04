@@ -10,16 +10,14 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const status = searchParams.get('status')
 
-  let query = db.collection(COLLECTIONS.APPOINTMENTS).orderBy('startTime', 'desc').limit(100)
-  if (status) query = query.where('status', '==', status) as typeof query
+  const base = db.collection(COLLECTIONS.APPOINTMENTS)
+  const query = status
+    ? base.where('status', '==', status).orderBy('startTime', 'desc').limit(100)
+    : base.orderBy('startTime', 'desc').limit(100)
 
-  const snap = await db.collection(COLLECTIONS.APPOINTMENTS)
-    .orderBy('startTime', 'desc')
-    .limit(100)
-    .get()
+  const snap = await query.get()
 
   const appointments = snap.docs
-    .filter(d => !status || d.data().status === status)
     .map(d => {
       const data = d.data()
       return {
