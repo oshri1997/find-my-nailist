@@ -44,9 +44,18 @@ describe('HomeRedirect', () => {
     expect(mockReplace).not.toHaveBeenCalledWith('/dashboard/nailist')
   })
 
-  it('sends a client to /search regardless of onboardingCompleted', () => {
-    mockUseAuth.mockReturnValue({ user: { uid: 'u1' }, role: 'CLIENT', onboardingCompleted: false, loading: false })
+  it('sends a fully-onboarded client to /search', () => {
+    mockUseAuth.mockReturnValue({ user: { uid: 'u1' }, role: 'CLIENT', onboardingCompleted: true, loading: false })
     render(<HomeRedirect />)
     expect(mockReplace).toHaveBeenCalledWith('/search')
+  })
+
+  it('sends an incomplete-onboarding client directly to /onboarding/client, not /search first', () => {
+    // Same double-redirect concern as the nailist case above: /search would
+    // just get bounced to /onboarding/client by OnboardingGuard anyway.
+    mockUseAuth.mockReturnValue({ user: { uid: 'u1' }, role: 'CLIENT', onboardingCompleted: false, loading: false })
+    render(<HomeRedirect />)
+    expect(mockReplace).toHaveBeenCalledWith('/onboarding/client')
+    expect(mockReplace).not.toHaveBeenCalledWith('/search')
   })
 })

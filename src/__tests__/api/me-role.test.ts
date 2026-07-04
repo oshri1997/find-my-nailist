@@ -20,9 +20,10 @@ function makeDocRef(collection: string, id: string) {
   }
 }
 
-// nailistProfiles lookups (onboardingCompleted check) — empty by default so
-// existing tests (which don't seed a profile) fall back to onboardingCompleted: true
-let nailistProfileDocs: Array<{ data: () => Record<string, unknown> }> = []
+// nailistProfiles/clientProfiles lookups (onboardingCompleted check) — empty
+// by default so existing tests (which don't seed a profile) fall back to
+// onboardingCompleted: true
+let profileDocs: Array<{ data: () => Record<string, unknown> }> = []
 
 const mockDb = {
   collection: jest.fn((name: string) => ({
@@ -30,7 +31,7 @@ const mockDb = {
     where: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     get: jest.fn().mockImplementation(() =>
-      Promise.resolve({ empty: nailistProfileDocs.length === 0, docs: nailistProfileDocs })
+      Promise.resolve({ empty: profileDocs.length === 0, docs: profileDocs })
     ),
   })),
 }
@@ -56,7 +57,7 @@ describe('GET /api/me/role', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockVerifyIdToken.mockResolvedValue({ uid: 'user-123' })
-    nailistProfileDocs = []
+    profileDocs = []
   })
 
   it('returns 401 when no auth token', async () => {
@@ -131,7 +132,7 @@ describe('GET /api/me/role', () => {
 
   it('returns onboardingCompleted: false when the nailist profile has not finished onboarding', async () => {
     docStore['users/user-123'] = { role: 'NAILIST', email: 'nail@test.com' }
-    nailistProfileDocs = [{ data: () => ({ onboardingCompleted: false }) }]
+    profileDocs = [{ data: () => ({ onboardingCompleted: false }) }]
     const req = makeRequest()
     const res = await GET(req)
     const json = await res.json()
@@ -140,7 +141,7 @@ describe('GET /api/me/role', () => {
 
   it('returns onboardingCompleted: true when the nailist profile has finished onboarding', async () => {
     docStore['users/user-123'] = { role: 'NAILIST', email: 'nail@test.com' }
-    nailistProfileDocs = [{ data: () => ({ onboardingCompleted: true }) }]
+    profileDocs = [{ data: () => ({ onboardingCompleted: true }) }]
     const req = makeRequest()
     const res = await GET(req)
     const json = await res.json()
@@ -149,15 +150,42 @@ describe('GET /api/me/role', () => {
 
   it('defaults onboardingCompleted to true for nailist profiles created before the field existed', async () => {
     docStore['users/user-123'] = { role: 'NAILIST', email: 'nail@test.com' }
-    nailistProfileDocs = [{ data: () => ({}) }]
+    profileDocs = [{ data: () => ({}) }]
     const req = makeRequest()
     const res = await GET(req)
     const json = await res.json()
     expect(json.onboardingCompleted).toBe(true)
   })
 
-  it('defaults onboardingCompleted to true for CLIENT role without checking a nailist profile', async () => {
+  it('defaults onboardingCompleted to true for CLIENT role when no client profile exists yet', async () => {
     docStore['users/user-123'] = { role: 'CLIENT', email: 'client@test.com' }
+    const req = makeRequest()
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.onboardingCompleted).toBe(true)
+  })
+
+  it('returns onboardingCompleted: false when the client profile has not finished onboarding', async () => {
+    docStore['users/user-123'] = { role: 'CLIENT', email: 'client@test.com' }
+    profileDocs = [{ data: () => ({ onboardingCompleted: false }) }]
+    const req = makeRequest()
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.onboardingCompleted).toBe(false)
+  })
+
+  it('returns onboardingCompleted: true when the client profile has finished onboarding', async () => {
+    docStore['users/user-123'] = { role: 'CLIENT', email: 'client@test.com' }
+    profileDocs = [{ data: () => ({ onboardingCompleted: true }) }]
+    const req = makeRequest()
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.onboardingCompleted).toBe(true)
+  })
+
+  it('defaults onboardingCompleted to true for client profiles created before the field existed', async () => {
+    docStore['users/user-123'] = { role: 'CLIENT', email: 'client@test.com' }
+    profileDocs = [{ data: () => ({}) }]
     const req = makeRequest()
     const res = await GET(req)
     const json = await res.json()

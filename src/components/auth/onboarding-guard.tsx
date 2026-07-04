@@ -4,11 +4,13 @@ import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 
-// A nailist who registered but never finished the onboarding wizard (e.g. she
+// A user who registered but never finished the onboarding wizard (e.g. they
 // closed the tab mid-way, or logged in again from a different device) should
 // land back in onboarding instead of browsing the app half set-up. This is a
-// UX redirect, not a security boundary — /dashboard/nailist routes still work
-// without it since incomplete profiles just render with missing data.
+// UX redirect, not a security boundary — other routes still work without it
+// since an incomplete profile just renders with missing data (for a client,
+// that means no real name: appointments/reviews fall back to a generic
+// "לקוחה" instead of showing "First L.").
 const ALLOWED_PREFIXES = ['/onboarding', '/login', '/terms', '/privacy', '/accessibility', '/how-it-works']
 
 export function OnboardingGuard() {
@@ -17,9 +19,9 @@ export function OnboardingGuard() {
   const router = useRouter()
 
   useEffect(() => {
-    if (loading || role !== 'NAILIST' || onboardingCompleted) return
+    if (loading || !role || onboardingCompleted) return
     const allowed = ALLOWED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))
-    if (!allowed) router.replace('/onboarding')
+    if (!allowed) router.replace(role === 'NAILIST' ? '/onboarding' : '/onboarding/client')
   }, [loading, role, onboardingCompleted, pathname, router])
 
   return null

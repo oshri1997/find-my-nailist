@@ -79,6 +79,12 @@ export async function POST(request: NextRequest) {
     } else {
       await db.collection(COLLECTIONS.CLIENT_PROFILES).add({
         userId: data.uid,
+        email: data.email,
+        displayName: data.displayName ?? '',
+        // Hidden behind OnboardingGuard until /onboarding/client's name+phone
+        // step completes — otherwise appointments/reviews from this client
+        // carry no real name to show (e.g. "לקוחה" instead of "שרה כ.").
+        onboardingCompleted: false,
         createdAt: now,
         updatedAt: now,
       })

@@ -144,6 +144,15 @@ describe('GET /api/me/client-profile', () => {
       expect.objectContaining({ userId: 'user-123' })
     )
   })
+
+  it('auto-created profile starts with onboardingCompleted: false', async () => {
+    collectionStore['clientProfiles'] = []
+    const req = makeGetRequest('valid-token')
+    await GET(req)
+    expect(mockAddFn).toHaveBeenCalledWith(
+      expect.objectContaining({ onboardingCompleted: false })
+    )
+  })
 })
 
 describe('PATCH /api/me/client-profile', () => {
@@ -176,6 +185,23 @@ describe('PATCH /api/me/client-profile', () => {
     expect(mockUpdateFn).toHaveBeenCalledWith(
       expect.objectContaining({ phoneNumber: '0501234567' })
     )
+  })
+
+  it('marks onboardingCompleted: true when the wizard submits firstName+lastName+phoneNumber together', async () => {
+    const req = makePatchRequest({ firstName: 'שרה', lastName: 'כהן', phoneNumber: '0501234567' })
+    const res = await PATCH(req)
+    expect(res.status).toBe(200)
+    expect(mockUpdateFn).toHaveBeenCalledWith(
+      expect.objectContaining({ onboardingCompleted: true })
+    )
+  })
+
+  it('does NOT mark onboardingCompleted when only phoneNumber is updated later (not the wizard shape)', async () => {
+    const req = makePatchRequest({ phoneNumber: '0501234567' })
+    const res = await PATCH(req)
+    expect(res.status).toBe(200)
+    const updateArg = mockUpdateFn.mock.calls[0][0]
+    expect(updateArg.onboardingCompleted).toBeUndefined()
   })
 
   it('updates city successfully', async () => {

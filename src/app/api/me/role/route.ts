@@ -15,17 +15,16 @@ export async function GET(request: NextRequest) {
     const data = snap.data()
     const role = data?.role ?? 'CLIENT'
 
-    let onboardingCompleted = true
-    if (role === 'NAILIST') {
-      const profileSnap = await db
-        .collection(COLLECTIONS.NAILIST_PROFILES)
-        .where('userId', '==', decoded.uid)
-        .limit(1)
-        .get()
-      // Missing field (profiles created before this flag existed) counts as
-      // already onboarded — don't retroactively lock out existing accounts.
-      onboardingCompleted = profileSnap.empty ? true : profileSnap.docs[0].data().onboardingCompleted !== false
-    }
+    const profileCollection = role === 'NAILIST' ? COLLECTIONS.NAILIST_PROFILES : COLLECTIONS.CLIENT_PROFILES
+    const profileSnap = await db
+      .collection(profileCollection)
+      .where('userId', '==', decoded.uid)
+      .limit(1)
+      .get()
+    // Missing field (profiles created before this flag existed, or no profile
+    // yet) counts as already onboarded — don't retroactively lock out
+    // existing accounts.
+    const onboardingCompleted = profileSnap.empty ? true : profileSnap.docs[0].data().onboardingCompleted !== false
 
     return NextResponse.json({ role, isAdmin: data?.isAdmin === true, onboardingCompleted })
   } catch {

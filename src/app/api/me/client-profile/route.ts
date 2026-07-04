@@ -44,6 +44,9 @@ export async function GET(request: NextRequest) {
       userId: decoded.uid,
       email: decoded.email ?? '',
       displayName: decoded.name ?? decoded.email?.split('@')[0] ?? '',
+      // Hidden behind OnboardingGuard until /onboarding/client's name+phone
+      // step completes.
+      onboardingCompleted: false,
       createdAt: now,
       updatedAt: now,
     })
@@ -80,6 +83,11 @@ export async function PATCH(request: NextRequest) {
       updates.displayName = `${parsed.data.firstName} ${parsed.data.lastName}`
     }
     if (parsed.data.phoneNumber !== undefined) updates.phoneNumber = parsed.data.phoneNumber
+    // The onboarding wizard's final submission always sends all three
+    // together — treat that shape as "onboarding finished".
+    if (parsed.data.firstName && parsed.data.lastName && parsed.data.phoneNumber) {
+      updates.onboardingCompleted = true
+    }
     if (parsed.data.city !== undefined) updates.city = parsed.data.city
     if (parsed.data.address !== undefined) updates.address = parsed.data.address
     if (parsed.data.latitude !== undefined) updates.latitude = parsed.data.latitude

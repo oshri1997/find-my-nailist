@@ -108,11 +108,11 @@ describe('POST /api/users', () => {
     expect(mockAdd).not.toHaveBeenCalled()
   })
 
-  it('creates a client profile (no onboardingCompleted field) for CLIENT role', async () => {
+  it('creates a client profile hidden behind onboarding until name+phone are set', async () => {
     const res = await POST(makeRequest({ ...validNailistBody, role: 'CLIENT' }, 'valid-token'))
     expect(res.status).toBe(201)
     expect(mockAdd).toHaveBeenCalledWith(
-      expect.not.objectContaining({ onboardingCompleted: expect.anything() })
+      expect.objectContaining({ onboardingCompleted: false, email: 'sarah@test.com', displayName: 'Sarah Cohen' })
     )
   })
 })
