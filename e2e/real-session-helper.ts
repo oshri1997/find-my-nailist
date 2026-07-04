@@ -27,7 +27,35 @@ export function hasRealCreds() {
 // don't (e.g. dashboard.spec.ts's "real auth, real data" block) need the
 // account to actually be onboarded, so every login ensures that directly via
 // the same endpoint the onboarding wizard's last step calls.
+//
+// Registration no longer sends a role at signup (see login/page.tsx) — a
+// brand new users/{uid} doc always defaults to CLIENT. So when cleanup wipes
+// this account's Firestore docs and it then logs back in through the
+// "already exists" branch below (not the registration-fallback branch, which
+// explicitly picks NAILIST on /onboarding/welcome), the recreated doc comes
+// back as CLIENT. Self-heal it back to NAILIST the same way that welcome
+// screen would, before checking onboarding completion.
+async function ensureNailistRole(page: Page) {
+  const role = await page.evaluate(async () => {
+    const res = await fetch('/api/me/role')
+    if (!res.ok) return null
+    const json = await res.json()
+    return json.role as string | null
+  })
+  if (role === 'NAILIST') return
+
+  await page.evaluate(async () => {
+    await fetch('/api/me/set-role', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'NAILIST' }),
+    })
+  })
+}
+
 async function ensureNailistOnboarded(page: Page) {
+  await ensureNailistRole(page)
+
   const profile = await page.evaluate(async () => {
     const res = await fetch('/api/me/nailist-profile')
     if (!res.ok) return null
