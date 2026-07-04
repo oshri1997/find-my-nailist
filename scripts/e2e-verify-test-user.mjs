@@ -3,6 +3,13 @@
 // without this the real-session E2E suite can never get past step 1 of the
 // booking flow. Run once at the start of the E2E CI job — idempotent, safe
 // to run every time.
+//
+// The Auth account itself is expected to already exist and is never deleted
+// by this project's CI (see e2e-cleanup-test-data.mjs, which resets this
+// account's Firestore data every run but deliberately leaves the Auth user
+// alone) — recreating a real account in the shared Firebase project from CI
+// is a deliberately separate, manual step, not something a script does
+// unattended on every run.
 import { initializeApp, cert } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 
