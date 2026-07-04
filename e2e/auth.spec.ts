@@ -5,7 +5,9 @@ test.describe('Login page', () => {
     await page.goto('/login')
     await expect(page.getByText('ברוכה השבה').first()).toBeVisible()
     await expect(page.getByLabel('אימייל')).toBeVisible()
-    await expect(page.getByLabel('סיסמה')).toBeVisible()
+    // exact: true — the show/hide toggle button's aria-label ("הציגי סיסמה")
+    // also contains "סיסמה", so a substring match would resolve to both.
+    await expect(page.getByLabel('סיסמה', { exact: true })).toBeVisible()
     await expect(page.getByText('כניסה עם Google')).toBeVisible()
   })
 

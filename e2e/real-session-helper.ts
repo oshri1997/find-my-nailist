@@ -54,7 +54,10 @@ export async function loginAsRealUser(browser: Browser): Promise<{ context: Brow
 
   await page.goto('/login')
   await page.getByLabel('אימייל').fill(email)
-  await page.getByLabel('סיסמה').fill(password)
+  // exact: true — the password field's show/hide toggle button has an
+  // aria-label containing "סיסמה" too ("הציגי סיסמה"), so a substring match
+  // would resolve to both elements.
+  await page.getByLabel('סיסמה', { exact: true }).fill(password)
   await page.getByRole('button', { name: 'התחברי' }).click()
 
   const loggedIn = await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 15_000 }).then(() => true).catch(() => false)
