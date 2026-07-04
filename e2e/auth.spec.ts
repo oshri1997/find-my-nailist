@@ -47,26 +47,21 @@ test.describe('Login page', () => {
 })
 
 // Registration lives on /login?tab=register (a unified page), not a
-// standalone /register route.
+// standalone /register route. There's no role selector here anymore —
+// nailist vs client is chosen right after signup, at /onboarding/welcome
+// (same flow Google sign-in already used).
 test.describe('Register tab', () => {
-  test('renders registration form with role selector', async ({ page }) => {
+  test('renders registration form with first/last name fields', async ({ page }) => {
     await page.goto('/login?tab=register')
     await expect(page.getByText('יצירת חשבון חדש')).toBeVisible()
-    await expect(page.getByText('נייליסטית', { exact: true })).toBeVisible()
-    await expect(page.getByText('לקוחה', { exact: true })).toBeVisible()
-  })
-
-  test('role selector switches between client and nailist', async ({ page }) => {
-    await page.goto('/login?tab=register')
-    await page.getByText('נייליסטית', { exact: true }).click()
-    await expect(page.getByPlaceholder('סטודיו שרה')).toBeVisible()
-    await page.getByText('לקוחה', { exact: true }).click()
-    await expect(page.getByPlaceholder('שרה לוי')).toBeVisible()
+    await expect(page.locator('#firstName')).toBeVisible()
+    await expect(page.locator('#lastName')).toBeVisible()
   })
 
   test('shows validation error for weak password', async ({ page }) => {
     await page.goto('/login?tab=register')
-    await page.fill('input[id="name"]', 'Test User')
+    await page.fill('input[id="firstName"]', 'Test')
+    await page.fill('input[id="lastName"]', 'User')
     await page.fill('input[id="email"]', 'test@example.com')
     await page.fill('input[id="password"]', '1234567')
     await page.getByRole('checkbox').check()

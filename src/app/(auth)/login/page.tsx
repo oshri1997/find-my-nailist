@@ -14,7 +14,6 @@ import LegalModal from '@/components/auth/LegalModal'
 import { sanitizeRedirect } from '@/lib/sanitize-redirect'
 
 type Mode = 'login' | 'register'
-type Role = 'nailist' | 'client'
 
 const PANEL_CONTENT = {
   login: {
@@ -22,15 +21,10 @@ const PANEL_CONTENT = {
     sub: 'גלי את עולם הנייל המושלם',
     features: ['חיפוש לפי מיקום', 'הזמנת תור אונליין', 'ביקורות אמיתיות'],
   },
-  register_nailist: {
-    heading: 'הצטרפי כנייליסטית',
-    sub: 'פרופיל עסקי מקצועי בכמה שניות',
-    features: ['פרופיל עסקי מקצועי', 'לקוחות חדשות כל יום', 'ניהול תורים אוטומטי'],
-  },
-  register_client: {
+  register: {
     heading: 'הצטרפי אלינו',
-    sub: 'מצאי את הנייליסטית המושלמת',
-    features: ['חיפוש לפי מיקום', 'הזמנת תור אונליין בקלות', 'ביקורות אמיתיות'],
+    sub: 'בין אם את מחפשת נייליסטית או שאת אחת כזו',
+    features: ['הצטרפות תוך שניות', 'פרופיל מותאם אישית', 'קהילה של נייליסטיות ולקוחות'],
   },
 }
 
@@ -44,8 +38,8 @@ export default function AuthPage() {
   const [mode, setMode] = useState<Mode>(() =>
     searchParams.get('tab') === 'register' ? 'register' : 'login'
   )
-  const [role, setRole] = useState<Role>('nailist')
-  const [name, setName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -58,9 +52,7 @@ export default function AuthPage() {
   // Auth-state redirect (handles Google OAuth callback + email login)
   useEffect(() => {
     if (authLoading || !user || handlingFormRef.current) return
-    const pendingRole = (sessionStorage.getItem('pendingRole') as Role | null) ?? role
     const pendingMode = (sessionStorage.getItem('pendingMode') as Mode | null) ?? mode
-    sessionStorage.removeItem('pendingRole')
     sessionStorage.removeItem('pendingMode')
 
     fetch('/api/users', {
@@ -71,15 +63,10 @@ export default function AuthPage() {
         email: user.email ?? '',
         displayName: user.displayName ?? '',
         photoUrl: user.photoURL ?? undefined,
-        role: pendingRole === 'nailist' ? 'NAILIST' : 'CLIENT',
       }),
     })
-      .then(async r => {
-        const isNew = r.status === 201
-        const json = await r.json()
-        return { isNew, data: json.data }
-      })
-      .then(({ isNew, data }) => {
+      .then(r => ({ isNew: r.status === 201 }))
+      .then(({ isNew }) => {
         // Brand new user → role selection onboarding, always — a deep-link
         // redirect (e.g. bounced here from a protected page) must not skip
         // mandatory onboarding for an account that doesn't exist yet.
@@ -88,28 +75,12 @@ export default function AuthPage() {
           return
         }
 
-        const actualRole: Role = data?.role === 'NAILIST' ? 'nailist' : 'client'
-
-        // Registering via Google but account already exists with a different role
-        if (pendingMode === 'register' && actualRole !== pendingRole) {
-          setError(
-            actualRole === 'nailist'
-              ? 'כתובת האימייל כבר רשומה כנייליסטית — אנא התחברי כנייליסטית'
-              : 'כתובת האימייל כבר רשומה כלקוחה — אנא התחברי כלקוחה'
-          )
-          handlingFormRef.current = false
-          setLoading(false)
-          return
-        }
-
-        // Redirect existing user based on actual role stored in DB
-        if (redirectTo) {
-          router.replace(redirectTo)
-        } else if (actualRole === 'nailist') {
-          router.replace(pendingMode === 'register' ? '/onboarding' : '/')
-        } else {
-          router.replace(pendingMode === 'register' ? '/onboarding/client' : '/search')
-        }
+        // Existing account — role/onboarding-aware routing already lives in
+        // HomeRedirect (mounted at '/'), so land there instead of
+        // duplicating that logic here. No more "registered as a different
+        // role" mismatch check: with no role pre-declared at registration,
+        // there's nothing left to mismatch — just sign the account in.
+        router.replace(redirectTo || '/')
       })
       .catch(() => {
         // Network failure fallback — a registration attempt might be a brand
@@ -118,12 +89,8 @@ export default function AuthPage() {
         // via redirectTo, same reasoning as the isNew branch above.
         if (pendingMode === 'register') {
           router.replace('/onboarding/welcome')
-        } else if (redirectTo) {
-          router.replace(redirectTo)
-        } else if (pendingRole === 'nailist') {
-          router.replace('/')
         } else {
-          router.replace('/search')
+          router.replace(redirectTo || '/')
         }
       })
   }, [user, authLoading]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -131,7 +98,8 @@ export default function AuthPage() {
   function switchMode(m: Mode) {
     setMode(m)
     setError('')
-    setName('')
+    setFirstName('')
+    setLastName('')
     setEmail('')
     setPassword('')
     setAgreedToTerms(false)
@@ -142,8 +110,8 @@ export default function AuthPage() {
     setError('')
 
     // Manual Hebrew validation (avoids English browser messages)
-    if (mode === 'register' && !name.trim()) {
-      setError('יש להזין שם מלא')
+    if (mode === 'register' && (!firstName.trim() || !lastName.trim())) {
+      setError('יש להזין שם פרטי ושם משפחה')
       return
     }
     if (!email.trim() || !email.includes('@')) {
@@ -167,7 +135,8 @@ export default function AuthPage() {
         // Allow useEffect to run and redirect based on actual DB role
         handlingFormRef.current = false
       } else {
-        const cred = await signUpWithEmail(email, password, name)
+        const fullName = `${firstName} ${lastName}`.trim()
+        const cred = await signUpWithEmail(email, password, fullName)
 
         // /api/users (and /api/auth/verify-email below) require the session
         // cookie, which AuthProvider's own onIdTokenChanged listener sets
@@ -190,8 +159,9 @@ export default function AuthPage() {
           body: JSON.stringify({
             uid: cred.user.uid,
             email,
-            displayName: name,
-            role: role === 'nailist' ? 'NAILIST' : 'CLIENT',
+            displayName: fullName,
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
           }),
         })
 
@@ -207,7 +177,9 @@ export default function AuthPage() {
         }
         if (!createRes.ok) throw new Error('Failed to create user profile')
 
-        router.push(redirectTo || (role === 'nailist' ? '/onboarding' : '/onboarding/client'))
+        // Role isn't chosen at registration anymore — /onboarding/welcome
+        // decides nailist vs client next, same as Google sign-up.
+        router.push('/onboarding/welcome')
         handlingFormRef.current = false
         setLoading(false)
       }
@@ -221,7 +193,6 @@ export default function AuthPage() {
   async function handleGoogle() {
     setError('')
     setLoading(true)
-    sessionStorage.setItem('pendingRole', role)
     sessionStorage.setItem('pendingMode', mode)
     try {
       await signInWithGoogle()
@@ -231,8 +202,7 @@ export default function AuthPage() {
     }
   }
 
-  const panelKey = mode === 'login' ? 'login' : `register_${role}`
-  const panel = PANEL_CONTENT[panelKey as keyof typeof PANEL_CONTENT]
+  const panel = PANEL_CONTENT[mode]
 
   return (
     <>
@@ -284,26 +254,6 @@ export default function AuthPage() {
                 </p>
               </div>
 
-              {/* Role selector — only relevant when registering */}
-              {mode === 'register' && (
-                <div className="flex rounded-xl bg-muted p-1 mb-6">
-                  {(['nailist', 'client'] as Role[]).map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => setRole(r)}
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
-                        role === r
-                          ? 'bg-card text-primary shadow-sm shadow-primary/30'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      {r === 'nailist' ? 'נייליסטית' : 'לקוחה'}
-                    </button>
-                  ))}
-                </div>
-              )}
-
               {error && (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
@@ -317,19 +267,32 @@ export default function AuthPage() {
 
               <form onSubmit={handleSubmit} noValidate className="space-y-4">
                 {mode === 'register' && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-foreground" htmlFor="name">
-                      {role === 'nailist' ? 'שם העסק / שם מלא' : 'שם מלא'}
-                    </label>
-                    <div className="relative">
-                      <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
-                      <Input
-                        id="name" type="text" value={name}
-                        onChange={e => setName(e.target.value)}
-                        placeholder={role === 'nailist' ? 'סטודיו שרה' : 'שרה לוי'}
-                        required
-                        className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-card"
-                      />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-foreground" htmlFor="firstName">שם פרטי</label>
+                      <div className="relative">
+                        <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+                        <Input
+                          id="firstName" type="text" value={firstName}
+                          onChange={e => setFirstName(e.target.value)}
+                          placeholder="שרה"
+                          required
+                          className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-card"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-foreground" htmlFor="lastName">שם משפחה</label>
+                      <div className="relative">
+                        <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+                        <Input
+                          id="lastName" type="text" value={lastName}
+                          onChange={e => setLastName(e.target.value)}
+                          placeholder="לוי"
+                          required
+                          className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-card"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -406,7 +369,7 @@ export default function AuthPage() {
                     ? (mode === 'login' ? 'מתחברת...' : 'יוצרת חשבון...')
                     : mode === 'login'
                     ? 'התחברי'
-                    : (role === 'nailist' ? 'הצטרפי כנייליסטית' : 'צרי חשבון')}
+                    : 'צרי חשבון'}
                   {!loading && <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />}
                 </Button>
               </form>
@@ -455,7 +418,7 @@ export default function AuthPage() {
 
         <AnimatePresence mode="wait">
           <motion.div
-            key={panelKey}
+            key={mode}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -24 }}

@@ -8,7 +8,13 @@ const createUserSchema = z.object({
   uid: z.string(),
   email: z.string().email(),
   displayName: z.string().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   photoUrl: z.string().url().optional(),
+  // Registration no longer asks which role you are — that's decided right
+  // after, at /onboarding/welcome (via PATCH /api/me/set-role), same as
+  // Google sign-in already worked. Every fresh account starts CLIENT here
+  // and gets converted if the user picks NAILIST.
   role: z.enum(['CLIENT', 'NAILIST']).default('CLIENT'),
   address: z.string().optional(),
   city: z.string().optional(),
@@ -77,17 +83,24 @@ export async function POST(request: NextRequest) {
       }
       await db.collection(COLLECTIONS.NAILIST_PROFILES).add(profileData)
     } else {
-      await db.collection(COLLECTIONS.CLIENT_PROFILES).add({
+      const clientProfileData: Record<string, unknown> = {
         userId: data.uid,
         email: data.email,
         displayName: data.displayName ?? '',
-        // Hidden behind OnboardingGuard until /onboarding/client's name+phone
-        // step completes — otherwise appointments/reviews from this client
-        // carry no real name to show (e.g. "לקוחה" instead of "שרה כ.").
+        // Hidden behind OnboardingGuard until /onboarding/client's phone step
+        // completes — otherwise appointments/reviews from this client carry
+        // no real name to show (e.g. "לקוחה" instead of "שרה כ.").
         onboardingCompleted: false,
         createdAt: now,
         updatedAt: now,
-      })
+      }
+      // Set directly when the registration form already collected them
+      // (email/password signup) so onboarding's own name step can skip
+      // re-asking — Google sign-in never collects these, so onboarding
+      // still asks there.
+      if (data.firstName) clientProfileData.firstName = data.firstName
+      if (data.lastName) clientProfileData.lastName = data.lastName
+      await db.collection(COLLECTIONS.CLIENT_PROFILES).add(clientProfileData)
     }
 
     return NextResponse.json({ data: { id: data.uid, ...data } }, { status: 201 })

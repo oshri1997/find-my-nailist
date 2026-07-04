@@ -115,4 +115,35 @@ describe('POST /api/users', () => {
       expect.objectContaining({ onboardingCompleted: false, email: 'sarah@test.com', displayName: 'Sarah Cohen' })
     )
   })
+
+  it('defaults to a CLIENT profile when role is omitted (registration no longer sends one)', async () => {
+    const res = await POST(makeRequest({
+      uid: 'user-123', email: 'sarah@test.com', displayName: 'Sarah Cohen',
+    }, 'valid-token'))
+    expect(res.status).toBe(201)
+    expect(mockAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ onboardingCompleted: false })
+    )
+  })
+
+  it('stores firstName/lastName on the client profile when the registration form collected them', async () => {
+    const res = await POST(makeRequest({
+      uid: 'user-123', email: 'sarah@test.com', displayName: 'שרה לוי',
+      firstName: 'שרה', lastName: 'לוי', role: 'CLIENT',
+    }, 'valid-token'))
+    expect(res.status).toBe(201)
+    expect(mockAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ firstName: 'שרה', lastName: 'לוי' })
+    )
+  })
+
+  it('does not set firstName/lastName fields on the client profile when they are absent (Google sign-in)', async () => {
+    const res = await POST(makeRequest({
+      uid: 'user-123', email: 'sarah@test.com', displayName: 'Sarah', role: 'CLIENT',
+    }, 'valid-token'))
+    expect(res.status).toBe(201)
+    const addedData = mockAdd.mock.calls[0][0]
+    expect(addedData.firstName).toBeUndefined()
+    expect(addedData.lastName).toBeUndefined()
+  })
 })

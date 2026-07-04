@@ -63,15 +63,19 @@ export async function loginAsRealUser(browser: Browser): Promise<{ context: Brow
   const loggedIn = await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 15_000 }).then(() => true).catch(() => false)
 
   if (!loggedIn) {
-    // Account doesn't exist yet — register it as a NAILIST through the real form.
+    // Account doesn't exist yet — register through the real form (no role
+    // picker there anymore) and pick NAILIST on the /onboarding/welcome
+    // screen that follows, same flow every fresh signup goes through now.
     await page.goto('/login?tab=register')
-    await page.getByRole('button', { name: 'נייליסטית', exact: true }).click()
-    await page.locator('#name').fill('Demo Nailist')
+    await page.locator('#firstName').fill('Demo')
+    await page.locator('#lastName').fill('Nailist')
     await page.locator('#email').fill(email)
     await page.locator('#password').fill(password)
     await page.getByRole('checkbox').check()
-    await page.getByRole('button', { name: /הצטרפי כנייליסטית|יוצרת חשבון/ }).click()
-    await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 20_000 })
+    await page.getByRole('button', { name: /צרי חשבון|יוצרת חשבון/ }).click()
+    await page.waitForURL(/\/onboarding\/welcome/, { timeout: 20_000 })
+    await page.getByText('נייליסטית', { exact: true }).click()
+    await page.waitForURL((url) => !url.pathname.startsWith('/onboarding/welcome'), { timeout: 20_000 })
   }
 
   await ensureNailistOnboarded(page)

@@ -38,7 +38,21 @@ export default function ClientOnboardingPage() {
 
   useEffect(() => {
     if (authLoading) return
-    if (!user) router.replace('/login')
+    if (!user) { router.replace('/login'); return }
+    // Email/password registration already collects first+last name (see
+    // login/page.tsx) — skip re-asking here if it's already on the profile.
+    // Google sign-in never collects it, so this step still shows for those.
+    fetch('/api/me/client-profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        const data = json?.data
+        if (data?.firstName && data?.lastName) {
+          setFirstName(data.firstName)
+          setLastName(data.lastName)
+          setStep(1)
+        }
+      })
+      .catch(() => {})
   }, [user, authLoading, router])
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
