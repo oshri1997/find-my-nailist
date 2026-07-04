@@ -9,7 +9,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 // land back in onboarding instead of browsing the app half set-up. This is a
 // UX redirect, not a security boundary — /dashboard/nailist routes still work
 // without it since incomplete profiles just render with missing data.
-const ALLOWED_PREFIXES = ['/onboarding', '/login', '/terms', '/privacy']
+const ALLOWED_PREFIXES = ['/onboarding', '/login', '/terms', '/privacy', '/accessibility', '/how-it-works']
 
 export function OnboardingGuard() {
   const { role, onboardingCompleted, loading } = useAuth()

@@ -87,7 +87,18 @@ export default function OnboardingPage() {
     if (!user) { router.replace('/login'); return }
     fetch('/api/me/nailist-profile')
       .then(r => r.json())
-      .then(({ data }) => setProfileId(data?.id ?? null))
+      .then(({ data }) => {
+        // An already-onboarded nailist landing here (e.g. she mistakenly hit
+        // "register" again instead of "login") should go straight to her
+        // dashboard, not restart the wizard from step 0 with blank local
+        // state — that would make her re-upload photos and re-add services,
+        // creating duplicates of what she already has.
+        if (data?.onboardingCompleted === true) {
+          router.replace('/dashboard/nailist')
+          return
+        }
+        setProfileId(data?.id ?? null)
+      })
       .catch(() => router.replace('/login'))
   }, [user, authLoading, router])
 

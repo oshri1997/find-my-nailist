@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
       email: decoded.email ?? '',
       photoUrl: decoded.picture ?? null,
       isActive: false,
+      onboardingCompleted: false,
       isVerified: false,
       avgRating: 0,
       reviewCount: 0,

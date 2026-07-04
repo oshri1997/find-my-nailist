@@ -144,6 +144,15 @@ describe('GET /api/me/nailist-profile', () => {
     )
   })
 
+  it('auto-created profile is marked onboardingCompleted: false, so OnboardingGuard redirects her back into the wizard', async () => {
+    docStore['users/user-123'] = { role: 'NAILIST' }
+    const req = makeRequest()
+    await GET(req)
+    expect(mockAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ onboardingCompleted: false })
+    )
+  })
+
   it('auto-created profile uses email from token', async () => {
     mockVerifyIdToken.mockResolvedValue({ uid: 'user-123', email: 'auto@test.com' })
     docStore['users/user-123'] = { role: 'NAILIST' }

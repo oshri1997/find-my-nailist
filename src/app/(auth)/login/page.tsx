@@ -79,9 +79,11 @@ export default function AuthPage() {
         return { isNew, data: json.data }
       })
       .then(({ isNew, data }) => {
-        // Brand new user → role selection onboarding
+        // Brand new user → role selection onboarding, always — a deep-link
+        // redirect (e.g. bounced here from a protected page) must not skip
+        // mandatory onboarding for an account that doesn't exist yet.
         if (isNew) {
-          router.replace(redirectTo || '/onboarding/welcome')
+          router.replace('/onboarding/welcome')
           return
         }
 
@@ -109,11 +111,14 @@ export default function AuthPage() {
         }
       })
       .catch(() => {
-        // Network failure fallback
-        if (redirectTo) {
-          router.replace(redirectTo)
-        } else if (pendingMode === 'register') {
+        // Network failure fallback — a registration attempt might be a brand
+        // new account (isNew is unknown here since the request itself
+        // failed), so route to onboarding first rather than risk skipping it
+        // via redirectTo, same reasoning as the isNew branch above.
+        if (pendingMode === 'register') {
           router.replace('/onboarding/welcome')
+        } else if (redirectTo) {
+          router.replace(redirectTo)
         } else if (pendingRole === 'nailist') {
           router.replace('/')
         } else {
@@ -163,7 +168,8 @@ export default function AuthPage() {
       } else {
         const cred = await signUpWithEmail(email, password, name)
         sendVerificationEmail(cred.user).catch(console.error)
-        await fetch('/api/users', {
+
+        const createUserProfile = () => fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -173,6 +179,19 @@ export default function AuthPage() {
             role: role === 'nailist' ? 'NAILIST' : 'CLIENT',
           }),
         })
+
+        // The Firebase account already exists at this point, so a failure
+        // here can't just be silently ignored — landing in onboarding with
+        // no backing profile doc is a dead end (nothing to load, forever).
+        // Retry a couple of times (transient network/500) before surfacing
+        // an error; the request itself is idempotent (existing uid → 200).
+        let createRes = await createUserProfile()
+        for (let attempt = 0; !createRes.ok && attempt < 2; attempt++) {
+          await new Promise((r) => setTimeout(r, 500 * (attempt + 1)))
+          createRes = await createUserProfile()
+        }
+        if (!createRes.ok) throw new Error('Failed to create user profile')
+
         router.push(redirectTo || (role === 'nailist' ? '/onboarding' : '/onboarding/client'))
         handlingFormRef.current = false
         setLoading(false)
