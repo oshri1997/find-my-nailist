@@ -41,9 +41,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Verify appointment exists and is completed
+    // Verify appointment exists, is completed, and actually belongs to the
+    // claimed client/nailist pair — otherwise a client could rate any nailist
+    // by citing an unrelated completed appointment of their own.
     const apptSnap = await db.collection(COLLECTIONS.APPOINTMENTS).doc(data.appointmentId).get()
-    if (!apptSnap.exists || apptSnap.data()?.status !== 'COMPLETED') {
+    const apptData = apptSnap.data()
+    if (
+      !apptSnap.exists ||
+      apptData?.status !== 'COMPLETED' ||
+      apptData.clientProfileId !== data.clientProfileId ||
+      apptData.nailistProfileId !== data.nailistProfileId
+    ) {
       return NextResponse.json({ error: 'Invalid or incomplete appointment' }, { status: 400 })
     }
 
@@ -90,7 +98,6 @@ export async function POST(request: NextRequest) {
     // Notify nailist via email (fire-and-forget)
     void (async () => {
       try {
-        const apptData = apptSnap.data()!
         const nailistUserSnap = nailistProfile?.userId
           ? await db.collection(COLLECTIONS.USERS).doc(nailistProfile.userId).get()
           : null

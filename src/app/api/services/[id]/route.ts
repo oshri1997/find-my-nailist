@@ -67,9 +67,23 @@ export async function DELETE(
   try {
     const token = request.cookies.get('auth-token')?.value
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    await adminAuth().verifyIdToken(token)
+    const decoded = await adminAuth().verifyIdToken(token)
+    const db = adminDb()
 
-    await adminDb().collection(COLLECTIONS.SERVICES).doc(id).update({
+    const svcDoc = await db.collection(COLLECTIONS.SERVICES).doc(id).get()
+    if (!svcDoc.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+    const nailistSnap = await db
+      .collection(COLLECTIONS.NAILIST_PROFILES)
+      .where('userId', '==', decoded.uid)
+      .limit(1)
+      .get()
+    const ownedProfileId = nailistSnap.empty ? null : nailistSnap.docs[0].id
+    if (!ownedProfileId || ownedProfileId !== svcDoc.data()!.nailistProfileId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    await db.collection(COLLECTIONS.SERVICES).doc(id).update({
       isActive: false,
       updatedAt: FieldValue.serverTimestamp(),
     })

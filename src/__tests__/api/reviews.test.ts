@@ -192,6 +192,27 @@ describe('POST /api/reviews', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns 400 when the appointment belongs to a different nailist than claimed', async () => {
+    // A client with a real COMPLETED appointment for nailist A tries to rate nailist B
+    // by citing the same appointment id with a different nailistProfileId in the body.
+    const req = makeRequest({ ...validBody, nailistProfileId: 'other-nailist-profile' }, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+    const json = await res.json()
+    expect(json.error).toMatch(/invalid|incomplete/i)
+  })
+
+  it('returns 400 when the appointment belongs to a different client than claimed', async () => {
+    docStore['appointments/appointment-1'] = {
+      status: 'COMPLETED',
+      clientProfileId: 'someone-elses-profile',
+      nailistProfileId: 'nailist-profile-1',
+    }
+    const req = makeRequest(validBody, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
   it('returns 409 when a review already exists for this appointment', async () => {
     collectionStore['reviews'] = [
       { __id: 'existing-review', appointmentId: 'appointment-1', rating: 4, nailistProfileId: 'nailist-profile-1' },

@@ -181,12 +181,38 @@ describe('DELETE /api/services/[id]', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     docStore['services/service-1'] = { name: 'מניקור', nailistProfileId: 'nailist-profile-1' }
+    collectionStore['nailistProfiles'] = [
+      { __id: 'nailist-profile-1', userId: 'nailist-user-1' },
+    ]
   })
 
   it('returns 401 when no auth token', async () => {
     const [req, ctx] = makeRequest('DELETE', 'service-1', undefined, false)
     const res = await DELETE(req, ctx)
     expect(res.status).toBe(401)
+  })
+
+  it('returns 404 when service does not exist', async () => {
+    const [req, ctx] = makeRequest('DELETE', 'nonexistent')
+    const res = await DELETE(req, ctx)
+    expect(res.status).toBe(404)
+  })
+
+  it('returns 403 when service belongs to a different nailist', async () => {
+    collectionStore['nailistProfiles'] = [
+      { __id: 'other-profile', userId: 'nailist-user-1' },
+    ]
+    const [req, ctx] = makeRequest('DELETE', 'service-1')
+    const res = await DELETE(req, ctx)
+    expect(res.status).toBe(403)
+    expect(mockDocUpdate).not.toHaveBeenCalled()
+  })
+
+  it('returns 403 when caller has no nailist profile', async () => {
+    collectionStore['nailistProfiles'] = []
+    const [req, ctx] = makeRequest('DELETE', 'service-1')
+    const res = await DELETE(req, ctx)
+    expect(res.status).toBe(403)
   })
 
   it('returns 200 and sets isActive=false (soft delete)', async () => {

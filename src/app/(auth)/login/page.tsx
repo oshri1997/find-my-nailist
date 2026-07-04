@@ -11,6 +11,7 @@ import { signInWithEmail, signInWithGoogle, signUpWithEmail, sendVerificationEma
 import { useAuth } from '@/components/auth/auth-provider'
 import Link from 'next/link'
 import LegalModal from '@/components/auth/LegalModal'
+import { sanitizeRedirect } from '@/lib/sanitize-redirect'
 
 type Mode = 'login' | 'register'
 type Role = 'nailist' | 'client'
@@ -38,7 +39,7 @@ export default function AuthPage() {
   const searchParams = useSearchParams()
   const { user, loading: authLoading } = useAuth()
 
-  const redirectTo = searchParams.get('redirect') ?? ''
+  const redirectTo = sanitizeRedirect(searchParams.get('redirect'))
 
   const [mode, setMode] = useState<Mode>(() =>
     searchParams.get('tab') === 'register' ? 'register' : 'login'
