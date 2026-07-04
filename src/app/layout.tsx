@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Heebo } from 'next/font/google'
-import Script from 'next/script'
 import './globals.css'
 import { Providers } from '@/components/providers'
 import { ConditionalNavbar } from '@/components/layout/conditional-navbar'
@@ -97,9 +96,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             hydration error. One script tag avoids that race entirely.
             Bottom offset: 80px on mobile to clear the dashboard's fixed bottom nav
             (md:hidden, so mobile-only), 16px on desktop where there's no bottom nav to
-            avoid. MutationObserver stops as soon as the widget button is found; a resize
-            listener keeps the offset correct across the md (768px) breakpoint. */}
-        <script dangerouslySetInnerHTML={{ __html: `(function(d){var s=d.createElement("script");s.setAttribute("data-account","z8YM8BPOF6");s.setAttribute("data-position","2");s.setAttribute("src","https://cdn.userway.org/widget.js");(d.body||d.head).appendChild(s);var target=null;function fix(el){var bottom=window.innerWidth<768?'80px':'16px';el.style.setProperty('position','fixed','important');el.style.setProperty('bottom',bottom,'important');el.style.setProperty('left','16px','important');el.style.setProperty('top','auto','important');el.style.setProperty('right','auto','important');}var obs=new MutationObserver(function(ml){ml.forEach(function(m){m.addedNodes.forEach(function(n){if(n.nodeType!==1)return;var el=n.id&&n.id.toLowerCase().includes('userway')?n:n.querySelector&&n.querySelector('[id*="userway"],[class*="userway"]');if(el){target=el;fix(el);obs.disconnect();}});});});obs.observe(d.body,{childList:true,subtree:true});window.addEventListener('resize',function(){if(target)fix(target);});})(document)` }} />
+            avoid. The body observer never disconnects (UserWay can recreate the button
+            node later) and a second observer watches the found element's style/class
+            attributes so a re-positioning from the widget's own script gets corrected
+            immediately instead of only being caught once at creation. A resize listener
+            keeps the offset correct across the md (768px) breakpoint. */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(d){var s=d.createElement("script");s.setAttribute("data-account","z8YM8BPOF6");s.setAttribute("data-position","2");s.setAttribute("src","https://cdn.userway.org/widget.js");(d.body||d.head).appendChild(s);var current=null;var attrObs=null;function bottomPx(){return window.innerWidth<768?'80px':'16px';}function needsFix(el){var cs=getComputedStyle(el);return cs.position!=='fixed'||cs.left!=='16px'||cs.bottom!==bottomPx()||cs.top!=='auto'||cs.right!=='auto';}function fix(el){if(!needsFix(el))return;el.style.setProperty('position','fixed','important');el.style.setProperty('bottom',bottomPx(),'important');el.style.setProperty('left','16px','important');el.style.setProperty('top','auto','important');el.style.setProperty('right','auto','important');}function findEl(n){if(!n)return null;if(n.id&&n.id.toLowerCase().indexOf('userway')!==-1)return n;return n.querySelector?n.querySelector('[id*="userway"],[class*="userway"]'):null;}function watch(el){current=el;fix(el);if(attrObs)attrObs.disconnect();attrObs=new MutationObserver(function(){fix(el);});attrObs.observe(el,{attributes:true,attributeFilter:['style','class']});}var existing=findEl(d.body);if(existing)watch(existing);var bodyObs=new MutationObserver(function(ml){ml.forEach(function(m){m.addedNodes.forEach(function(n){if(n.nodeType!==1)return;var el=findEl(n);if(el)watch(el);});});});bodyObs.observe(d.body,{childList:true,subtree:true});window.addEventListener('resize',function(){if(current)fix(current);});})(document)` }} />
       </body>
     </html>
   )
