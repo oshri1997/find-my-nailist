@@ -18,6 +18,33 @@ export function hasRealCreds() {
   return !!(process.env.TEST_USER_EMAIL && process.env.TEST_USER_PASSWORD && process.env.NEXT_PUBLIC_FIREBASE_API_KEY)
 }
 
+// e2e-cleanup-test-data.mjs resets this account's Firestore docs after every
+// run (see that script), so a login here can land on a brand-new,
+// not-yet-onboarded nailist profile — OnboardingGuard would then redirect
+// any "real backend, no mocks" dashboard/booking test away from the page
+// it's trying to check. Most specs sidestep this by mocking
+// /api/me/role + /api/me/nailist-profile, but the ones that deliberately
+// don't (e.g. dashboard.spec.ts's "real auth, real data" block) need the
+// account to actually be onboarded, so every login ensures that directly via
+// the same endpoint the onboarding wizard's last step calls.
+async function ensureNailistOnboarded(page: Page) {
+  const profile = await page.evaluate(async () => {
+    const res = await fetch('/api/me/nailist-profile')
+    if (!res.ok) return null
+    const { data } = await res.json()
+    return data
+  })
+  if (!profile || profile.onboardingCompleted === true) return
+
+  await page.evaluate(async (id: string) => {
+    await fetch(`/api/nailists/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ onboardingCompleted: true, isActive: true }),
+    })
+  }, profile.id)
+}
+
 export async function loginAsRealUser(browser: Browser): Promise<{ context: BrowserContext; page: Page }> {
   const email = process.env.TEST_USER_EMAIL!
   const password = process.env.TEST_USER_PASSWORD!
@@ -43,6 +70,8 @@ export async function loginAsRealUser(browser: Browser): Promise<{ context: Brow
     await page.getByRole('button', { name: /הצטרפי כנייליסטית|יוצרת חשבון/ }).click()
     await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 20_000 })
   }
+
+  await ensureNailistOnboarded(page)
 
   return { context, page }
 }
