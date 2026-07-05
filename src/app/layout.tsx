@@ -155,10 +155,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   }
   function needsFix(el){
     var cs=getComputedStyle(el);
-    return cs.position!=='fixed'||cs.left!=='16px'||cs.bottom!==bottomPx()||cs.top!=='auto'||cs.right!=='auto';
+    return el.parentElement!==d.body||cs.position!=='fixed'||cs.left!=='16px'||cs.bottom!==bottomPx()||cs.top!=='auto'||cs.right!=='auto';
   }
   function fix(el){
     if(!needsFix(el))return;
+    // Reparent to a direct child of <body> — this app uses framer-motion
+    // heavily, which sets inline transform styles on many ancestors, and ANY
+    // transformed ancestor creates a new containing block for a
+    // position:fixed descendant. That silently redirects "fixed" to be
+    // relative to that ancestor's box instead of the real viewport, which
+    // reads as "the icon drifts along with page content" even though our
+    // own position/bottom/left values are set correctly (this was observed
+    // happening — the icon moved when the wrapper-vs-real-element bug was
+    // fixed, but still wasn't pinned to the true bottom of the screen).
+    // appendChild on an existing node moves it (no clone), so listeners and
+    // internal widget state survive.
+    if(el.parentElement!==d.body)d.body.appendChild(el);
     el.style.setProperty('position','fixed','important');
     el.style.setProperty('bottom',bottomPx(),'important');
     el.style.setProperty('left','16px','important');
