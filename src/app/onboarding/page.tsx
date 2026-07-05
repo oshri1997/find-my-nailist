@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, ArrowRight, ImagePlus, Plus, X, Loader2, MapPin, Check, Camera } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ImagePlus, Plus, X, Loader2, MapPin, Check, Camera, Pencil, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -72,6 +72,8 @@ export default function OnboardingPage() {
   const [svcDuration, setSvcDuration] = useState(60)
   const [isCustomDuration, setIsCustomDuration] = useState(false)
   const [svcPrice, setSvcPrice] = useState('')
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
+  const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null)
 
   // Step 4 — social links (optional)
   const [instagramUrl, setInstagramUrl] = useState('')
@@ -201,36 +203,90 @@ export default function OnboardingPage() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  async function addService() {
+  function resetServiceForm() {
+    setSvcName('')
+    setSvcPrice('')
+    setSvcDuration(60)
+    setIsCustomDuration(false)
+    setEditingServiceId(null)
+  }
+
+  function startEditService(s: Service) {
+    setEditingServiceId(s.id)
+    setSvcName(s.name)
+    setSvcPrice(String(s.price))
+    const isStandard = [30, 45, 60, 75, 90, 120].includes(s.durationMinutes)
+    setSvcDuration(s.durationMinutes)
+    setIsCustomDuration(!isStandard)
+    setError('')
+  }
+
+  async function saveService() {
     if (!svcName.trim() || !svcPrice || !profileId) return
     setSaving(true)
     setError('')
     try {
-      const res = await fetch('/api/services', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nailistProfileId: profileId,
-          name: svcName.trim(),
-          durationMinutes: svcDuration,
-          price: parseFloat(svcPrice),
-          currency: 'ILS',
-        }),
-      })
-      if (res.ok) {
-        const { data } = await res.json()
-        setServices(prev => [...prev, data])
-        setSvcName('')
-        setSvcPrice('')
-        setSvcDuration(60)
-        setIsCustomDuration(false)
+      if (editingServiceId) {
+        const res = await fetch(`/api/services/${editingServiceId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: svcName.trim(),
+            durationMinutes: svcDuration,
+            price: parseFloat(svcPrice),
+          }),
+        })
+        if (res.ok) {
+          const editedId = editingServiceId
+          setServices(prev => prev.map(s => s.id === editedId
+            ? { ...s, name: svcName.trim(), durationMinutes: svcDuration, price: parseFloat(svcPrice) }
+            : s))
+          resetServiceForm()
+        } else {
+          setError('שגיאה בעדכון שירות')
+        }
       } else {
-        setError('שגיאה בהוספת שירות')
+        const res = await fetch('/api/services', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nailistProfileId: profileId,
+            name: svcName.trim(),
+            durationMinutes: svcDuration,
+            price: parseFloat(svcPrice),
+            currency: 'ILS',
+          }),
+        })
+        if (res.ok) {
+          const { data } = await res.json()
+          setServices(prev => [...prev, data])
+          resetServiceForm()
+        } else {
+          setError('שגיאה בהוספת שירות')
+        }
       }
     } catch {
-      setError('שגיאה בהוספת שירות')
+      setError(editingServiceId ? 'שגיאה בעדכון שירות' : 'שגיאה בהוספת שירות')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function deleteService(id: string) {
+    setDeletingServiceId(id)
+    setError('')
+    try {
+      const res = await fetch(`/api/services/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setServices(prev => prev.filter(s => s.id !== id))
+        if (editingServiceId === id) resetServiceForm()
+      } else {
+        setError('שגיאה במחיקת שירות')
+      }
+    } catch {
+      setError('שגיאה במחיקת שירות')
+    } finally {
+      setDeletingServiceId(null)
     }
   }
 
@@ -344,8 +400,11 @@ export default function OnboardingPage() {
         </div>
 
         {/* Step label */}
-        <p className="text-center text-sm font-bold text-muted-foreground mb-6">
+        <p className="text-center text-sm font-bold text-muted-foreground mb-1">
           שלב {step + 1} מתוך {STEPS.length} — {STEPS[step].label}
+        </p>
+        <p className="text-center text-xs text-muted-foreground/60 mb-6">
+          ניתן יהיה לערוך ולשנות את כל הפרטים גם מאוחר יותר בהגדרות
         </p>
 
         {/* Card */}
@@ -506,14 +565,40 @@ export default function OnboardingPage() {
                           <p className="font-bold text-foreground text-sm truncate">{s.name}</p>
                           <p className="text-xs text-muted-foreground">{s.durationMinutes} דק׳ · ₪{s.price}</p>
                         </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => startEditService(s)}
+                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/60 dark:hover:bg-white/10 text-muted-foreground/60 hover:text-pink-600 transition-colors"
+                            title="עריכה"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteService(s.id)}
+                            disabled={deletingServiceId === s.id}
+                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/60 dark:hover:bg-white/10 text-muted-foreground/60 hover:text-red-500 transition-colors"
+                            title="מחיקה"
+                          >
+                            {deletingServiceId === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* Add service form */}
+                {/* Add/edit service form */}
                 <div className="border border-border rounded-2xl p-4 bg-muted/30 space-y-3">
-                  <p className="text-xs font-bold text-muted-foreground mb-2">הוספת שירות חדש</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-bold text-muted-foreground">{editingServiceId ? 'עריכת שירות' : 'הוספת שירות חדש'}</p>
+                    {editingServiceId && (
+                      <button type="button" onClick={resetServiceForm} className="text-xs font-bold text-muted-foreground hover:text-foreground">
+                        ביטול עריכה
+                      </button>
+                    )}
+                  </div>
                   <Input
                     placeholder="שם השירות (למשל: ג׳ל צרפתי)"
                     value={svcName}
@@ -567,12 +652,18 @@ export default function OnboardingPage() {
                   </div>
                   <Button
                     type="button"
-                    onClick={addService}
+                    onClick={saveService}
                     disabled={!svcName.trim() || !svcPrice || saving || (isCustomDuration && svcDuration < 5)}
                     variant="outline"
                     className="w-full rounded-xl h-10 font-bold border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 gap-2 disabled:opacity-50"
                   >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4" /> הוסיפי שירות</>}
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : editingServiceId ? (
+                      <><Check className="h-4 w-4" /> עדכני שירות</>
+                    ) : (
+                      <><Plus className="h-4 w-4" /> הוסיפי שירות</>
+                    )}
                   </Button>
                 </div>
 
@@ -717,10 +808,6 @@ export default function OnboardingPage() {
             )}
           </AnimatePresence>
         </div>
-
-        <p className="text-center text-xs text-muted-foreground/50 mt-6">
-          תוכלי לערוך הכל מאוחר יותר בהגדרות הפרופיל
-        </p>
       </div>
     </div>
   )
