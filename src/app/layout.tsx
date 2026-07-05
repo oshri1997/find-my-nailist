@@ -90,180 +90,47 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </Providers>
         <CookieNotice />
-        {/* UserWay accessibility widget, plus positioning fix combined into a single
-            script tag — two separate dangerouslySetInnerHTML scripts here would let the
-            first one's synchronous DOM injection (the widget's own <script> tag) shift
-            sibling positions before hydration finishes, which desyncs React's hydration
-            match for the second script and throws a false "attributes didn't match"
-            hydration error. One script tag avoids that race entirely.
-            Bottom offset: 80px only on /dashboard routes on mobile, to clear THAT
-            layout's fixed bottom tab bar (md:hidden, so mobile-only) — everywhere else
-            (including the homepage) the button sits flush at 16px, same as desktop, per
-            "pin it to the bottom-left on mobile". It was previously offset 80px on
-            every mobile page regardless of route, stranding it with a pointless gap
-            above the true bottom edge where there's no nav to clear.
-            Element matching is done by manually lowercasing id/className rather than a
-            CSS `[id*="userway"]` attribute selector, since that selector is
-            case-sensitive and UserWay's real markup can use mixed-case ids/classes a
-            lowercase-only selector silently never matches — the widget then keeps
-            whatever default in-flow position it rendered with and never gets pinned at
-            all (this was observed happening, not just theoretical).
-            The body observer never disconnects (UserWay can recreate the button node
-            later), an attribute observer re-applies the fix if the widget's own script
-            repositions it, a resize listener keeps the offset correct across the md
-            (768px) breakpoint, and a 1s poll re-applies the fix after client-side route
-            changes (a plain script has no hook into the App Router, so this is the
-            simplest way to notice navigating into/out of /dashboard without a full page
-            reload). */}
+        {/* UserWay accessibility widget. Positioning/size are set via UserWay's own
+            documented config attributes (help.userway.org), not hacked via JS —
+            an earlier version of this fought the widget's own positioning with a
+            pile of MutationObservers/CSS overrides, which caused a visible
+            flash-then-jump (our JS correcting UserWay's own position-recovery
+            animation) and was fundamentally the wrong approach: data-position="2"
+            was actually "Middle right" per UserWay's own position table
+            (1=top-right, 2=middle-right, 3=bottom-right, 4=bottom-middle,
+            5=bottom-left, 6=middle-left, 7=top-left, 8=top-middle) — never
+            bottom-left at all, which was the actual root cause the whole time.
+            data-size ("small"/"large") only accepts those two discrete values,
+            set to "small" on mobile per request to shrink it there.
+            The nailist dashboard has its own fixed bottom tab bar on mobile
+            (md:hidden, see dashboard/layout.tsx) that a bottom-left icon would
+            otherwise sit on top of — clearBottomNav() ADDS extra margin there
+            without touching position/bottom/left/size at all, so it never
+            fights UserWay's own placement (no more flash/jump risk).
+            Kept in one script tag (not two) — the widget's own <script> tag
+            insertion shifts sibling positions before hydration finishes, which
+            would desync React's hydration match if split across two
+            dangerouslySetInnerHTML scripts. */}
         <script dangerouslySetInnerHTML={{ __html: `(function(d){
+  var mobile=window.innerWidth<768;
   var s=d.createElement("script");
   s.setAttribute("data-account","z8YM8BPOF6");
-  s.setAttribute("data-position","2");
+  s.setAttribute("data-position","5");
+  if(mobile)s.setAttribute("data-size","small");
   s.setAttribute("src","https://cdn.userway.org/widget.js");
   (d.body||d.head).appendChild(s);
 
-  function isDashboardRoute(){return window.location.pathname.indexOf('/dashboard')===0;}
-  function bottomPx(){return (window.innerWidth<768 && isDashboardRoute())?'80px':'16px';}
-  function matchesUserway(el){
-    if(!el||el.nodeType!==1)return false;
-    var id=(el.id||'').toLowerCase();
-    var cls=(typeof el.className==='string'?el.className:'').toLowerCase();
-    return id.indexOf('userway')!==-1||cls.indexOf('userway')!==-1;
+  function isDashboardMobile(){
+    return window.innerWidth<768&&window.location.pathname.indexOf('/dashboard')===0;
   }
-  function findWidgetEl(){
-    // The real clickable icon is #userwayAccessibilityIcon (confirmed via a
-    // live DOM dump) — it sets its own independent position:fixed with
-    // explicit top/left, ignoring whatever its ancestor wrapper does. Several
-    // OTHER elements also match "userway" in id/class (a zero-size outer
-    // wrapper, a hidden legacy icon, a panel iframe) and, critically, come
-    // FIRST in document order — a first-match-wins scan was grabbing one of
-    // those instead, so fixing it had no visible effect since the real icon
-    // never looked at it. Try the known id directly first; fall back to the
-    // first nonzero-size, non-hidden match in case UserWay ever renames it.
-    var byId=d.getElementById('userwayAccessibilityIcon');
-    if(byId)return byId;
-    var all=d.body.querySelectorAll('*');
-    var fallback=null;
-    for(var i=0;i<all.length;i++){
-      if(!matchesUserway(all[i]))continue;
-      if(!fallback)fallback=all[i];
-      var r=all[i].getBoundingClientRect();
-      var cls=(typeof all[i].className==='string'?all[i].className:'');
-      if(r.width>0&&r.height>0&&cls.indexOf('hidden')===-1)return all[i];
-    }
-    return fallback;
+  function clearBottomNav(){
+    var el=d.getElementById('userwayAccessibilityIcon');
+    if(!el)return;
+    el.style.setProperty('margin-bottom',isDashboardMobile()?'64px':'0px','important');
   }
-  function needsFix(el){
-    var cs=getComputedStyle(el);
-    return cs.position!=='fixed'||cs.left!=='16px'||cs.bottom!==bottomPx()||cs.top!=='auto'||cs.right!=='auto';
-  }
-  // Smaller on mobile — the widget's default size crowds a small screen more
-  // than it does on desktop. Scaled from the bottom-left corner (matching
-  // where it's pinned) so shrinking it doesn't shift it away from that corner.
-  // Applied unconditionally (like neutralizeContainingBlocks) rather than
-  // gated on needsFix, since it's cheap and needs to react to resizes too.
-  function applyScale(el){
-    el.style.setProperty('transform-origin','0% 100%','important');
-    el.style.setProperty('transform','scale('+scaleValue()+')','important');
-  }
-  function scaleValue(){return window.innerWidth<768?'0.8':'1';}
-  // A transform/perspective/filter/will-change:transform on ANY ancestor
-  // creates a new containing block for a position:fixed descendant, which
-  // silently redirects "fixed" to be relative to that ancestor's box instead
-  // of the real viewport — confirmed via a reconstructed-DOM simulation
-  // matching the widget's real structure. Reparenting the icon itself (a
-  // prior attempt) avoided this but broke the icon's own sizing/styling,
-  // which apparently depends on staying nested under its wrapper — so
-  // instead, neutralize the offending CSS property on the ancestor in
-  // place, without moving anything. Scoped to ancestors that themselves
-  // match "userway" (the widget's own wrapper chain) so this never touches
-  // an element that belongs to this app's own UI/animations.
-  function neutralizeContainingBlocks(el){
-    var node=el.parentElement;
-    while(node&&node!==d.body){
-      if(matchesUserway(node)){
-        var cs=getComputedStyle(node);
-        if(cs.transform!=='none')node.style.setProperty('transform','none','important');
-        if(cs.perspective!=='none')node.style.setProperty('perspective','none','important');
-        if(cs.filter!=='none')node.style.setProperty('filter','none','important');
-        if(cs.willChange!=='auto')node.style.setProperty('will-change','auto','important');
-      }
-      node=node.parentElement;
-    }
-  }
-  function fix(el){
-    neutralizeContainingBlocks(el);
-    applyScale(el);
-    if(!needsFix(el))return;
-    el.style.setProperty('position','fixed','important');
-    el.style.setProperty('bottom',bottomPx(),'important');
-    el.style.setProperty('left','16px','important');
-    el.style.setProperty('top','auto','important');
-    el.style.setProperty('right','auto','important');
-  }
-  var current=null,attrObs=null;
-  function watch(el){
-    current=el;fix(el);
-    if(attrObs)attrObs.disconnect();
-    attrObs=new MutationObserver(function(){fix(el);});
-    attrObs.observe(el,{attributes:true,attributeFilter:['style','class']});
-  }
-  var existing=findWidgetEl();if(existing)watch(existing);
-  var bodyObs=new MutationObserver(function(){
-    if(!current||!d.body.contains(current)){var el=findWidgetEl();if(el)watch(el);}
-  });
-  bodyObs.observe(d.body,{childList:true,subtree:true});
-  window.addEventListener('resize',function(){if(current)fix(current);});
-  setInterval(function(){if(current&&d.body.contains(current))fix(current);},1000);
-
-  // Temporary on-page diagnostic, only active with ?debugA11y=1 in the URL —
-  // the widget's actual markup can't be inspected from this environment (no
-  // outbound network access to the CDN or the live site), so this renders
-  // what's really in the DOM directly on-screen instead of guessing blind.
-  // Remove once the real fix is confirmed working.
-  if(window.location.search.indexOf('debugA11y')!==-1){
-    setTimeout(function(){
-      function describe(el){
-        var r=el.getBoundingClientRect();
-        var cls=typeof el.className==='string'?el.className:'';
-        return el.tagName+'#'+el.id+'.'+cls+' rect='+JSON.stringify({top:Math.round(r.top),left:Math.round(r.left),bottom:Math.round(r.bottom),right:Math.round(r.right)});
-      }
-      var allEls=d.body.querySelectorAll('*');
-      var fixedEls=[];
-      var nameMatches=[];
-      for(var i=0;i<allEls.length;i++){
-        var el=allEls[i];
-        if(getComputedStyle(el).position==='fixed')fixedEls.push(describe(el));
-        var id=(el.id||'').toLowerCase();
-        var cls2=(typeof el.className==='string'?el.className:'').toLowerCase();
-        if(id.indexOf('userway')!==-1||cls2.indexOf('userway')!==-1||id.indexOf('access')!==-1||cls2.indexOf('access')!==-1){
-          nameMatches.push(describe(el));
-        }
-      }
-      var chainLines=[];
-      if(current){
-        var node=current.parentElement;
-        while(node&&node!==d.body){
-          var cs=getComputedStyle(node);
-          var props=[];
-          if(cs.transform&&cs.transform!=='none')props.push('transform='+cs.transform);
-          if(cs.perspective&&cs.perspective!=='none')props.push('perspective='+cs.perspective);
-          if(cs.filter&&cs.filter!=='none')props.push('filter='+cs.filter);
-          if(cs.willChange&&cs.willChange!=='auto')props.push('willChange='+cs.willChange);
-          if(cs.contain&&cs.contain!=='none')props.push('contain='+cs.contain);
-          chainLines.push(describe(node)+(props.length?' ['+props.join(', ')+']':' [no containing-block props]'));
-          node=node.parentElement;
-        }
-      }
-      var panel=d.createElement('div');
-      panel.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#000;color:#0f0;font-size:10px;line-height:1.4;padding:8px;max-height:60vh;overflow:auto;white-space:pre-wrap;direction:ltr;text-align:left;font-family:monospace;';
-      panel.textContent='current found by our own logic: '+(current?describe(current):'(none)')+
-        '\\n\\nANCESTOR CHAIN (current -> body), '+chainLines.length+' node(s):\\n'+(chainLines.join('\\n')||'(current is null, or already a child of body)')+
-        '\\n\\nFIXED-POSITION ELEMENTS ('+fixedEls.length+'):\\n'+(fixedEls.join('\\n\\n')||'(none)')+
-        '\\n\\nID/CLASS CONTAINS "userway" OR "access" ('+nameMatches.length+'):\\n'+(nameMatches.join('\\n\\n')||'(none)');
-      d.body.appendChild(panel);
-    },3000);
-  }
+  var obs=new MutationObserver(clearBottomNav);
+  obs.observe(d.body,{childList:true,subtree:true});
+  window.addEventListener('resize',clearBottomNav);
 })(document)` }} />
       </body>
     </html>
