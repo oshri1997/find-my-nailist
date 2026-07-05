@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react'
 import type { User } from 'firebase/auth'
+import * as Sentry from '@sentry/nextjs'
 import { NailLoader } from '@/components/ui/nail-loader'
 
 type UserRole = 'NAILIST' | 'CLIENT' | null
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(null)
     setIsAdmin(false)
     setOnboardingCompleted(true)
+    Sentry.setUser(null)
     skipCallbackRef.current = false
     setLoading(false)
   }, [])
@@ -73,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (skipCallbackRef.current) return
         try {
           if (firebaseUser) {
+            Sentry.setUser({ id: firebaseUser.uid })
             const token = await firebaseUser.getIdToken()
             await fetch('/api/auth/session', {
               method: 'POST',
@@ -91,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setOnboardingCompleted(true)
             }
           } else {
+            Sentry.setUser(null)
             await fetch('/api/auth/session', { method: 'DELETE' })
             setRole(null)
             setIsAdmin(false)
