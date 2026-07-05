@@ -161,6 +161,39 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   bodyObs.observe(d.body,{childList:true,subtree:true});
   window.addEventListener('resize',function(){if(current)fix(current);});
   setInterval(function(){if(current&&d.body.contains(current))fix(current);},1000);
+
+  // Temporary on-page diagnostic, only active with ?debugA11y=1 in the URL —
+  // the widget's actual markup can't be inspected from this environment (no
+  // outbound network access to the CDN or the live site), so this renders
+  // what's really in the DOM directly on-screen instead of guessing blind.
+  // Remove once the real fix is confirmed working.
+  if(window.location.search.indexOf('debugA11y')!==-1){
+    setTimeout(function(){
+      function describe(el){
+        var r=el.getBoundingClientRect();
+        var cls=typeof el.className==='string'?el.className:'';
+        return el.tagName+'#'+el.id+'.'+cls+' rect='+JSON.stringify({top:Math.round(r.top),left:Math.round(r.left),bottom:Math.round(r.bottom),right:Math.round(r.right)});
+      }
+      var allEls=d.body.querySelectorAll('*');
+      var fixedEls=[];
+      var nameMatches=[];
+      for(var i=0;i<allEls.length;i++){
+        var el=allEls[i];
+        if(getComputedStyle(el).position==='fixed')fixedEls.push(describe(el));
+        var id=(el.id||'').toLowerCase();
+        var cls2=(typeof el.className==='string'?el.className:'').toLowerCase();
+        if(id.indexOf('userway')!==-1||cls2.indexOf('userway')!==-1||id.indexOf('access')!==-1||cls2.indexOf('access')!==-1){
+          nameMatches.push(describe(el));
+        }
+      }
+      var panel=d.createElement('div');
+      panel.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#000;color:#0f0;font-size:10px;line-height:1.4;padding:8px;max-height:60vh;overflow:auto;white-space:pre-wrap;direction:ltr;text-align:left;font-family:monospace;';
+      panel.textContent='current found by our own logic: '+(current?describe(current):'(none)')+
+        '\\n\\nFIXED-POSITION ELEMENTS ('+fixedEls.length+'):\\n'+(fixedEls.join('\\n\\n')||'(none)')+
+        '\\n\\nID/CLASS CONTAINS "userway" OR "access" ('+nameMatches.length+'):\\n'+(nameMatches.join('\\n\\n')||'(none)');
+      d.body.appendChild(panel);
+    },3000);
+  }
 })(document)` }} />
       </body>
     </html>
