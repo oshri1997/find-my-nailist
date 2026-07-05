@@ -96,14 +96,72 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             sibling positions before hydration finishes, which desyncs React's hydration
             match for the second script and throws a false "attributes didn't match"
             hydration error. One script tag avoids that race entirely.
-            Bottom offset: 80px on mobile to clear the dashboard's fixed bottom nav
-            (md:hidden, so mobile-only), 16px on desktop where there's no bottom nav to
-            avoid. The body observer never disconnects (UserWay can recreate the button
-            node later) and a second observer watches the found element's style/class
-            attributes so a re-positioning from the widget's own script gets corrected
-            immediately instead of only being caught once at creation. A resize listener
-            keeps the offset correct across the md (768px) breakpoint. */}
-        <script dangerouslySetInnerHTML={{ __html: `(function(d){var s=d.createElement("script");s.setAttribute("data-account","z8YM8BPOF6");s.setAttribute("data-position","2");s.setAttribute("src","https://cdn.userway.org/widget.js");(d.body||d.head).appendChild(s);var current=null;var attrObs=null;function bottomPx(){return window.innerWidth<768?'80px':'16px';}function needsFix(el){var cs=getComputedStyle(el);return cs.position!=='fixed'||cs.left!=='16px'||cs.bottom!==bottomPx()||cs.top!=='auto'||cs.right!=='auto';}function fix(el){if(!needsFix(el))return;el.style.setProperty('position','fixed','important');el.style.setProperty('bottom',bottomPx(),'important');el.style.setProperty('left','16px','important');el.style.setProperty('top','auto','important');el.style.setProperty('right','auto','important');}function findEl(n){if(!n)return null;if(n.id&&n.id.toLowerCase().indexOf('userway')!==-1)return n;return n.querySelector?n.querySelector('[id*="userway"],[class*="userway"]'):null;}function watch(el){current=el;fix(el);if(attrObs)attrObs.disconnect();attrObs=new MutationObserver(function(){fix(el);});attrObs.observe(el,{attributes:true,attributeFilter:['style','class']});}var existing=findEl(d.body);if(existing)watch(existing);var bodyObs=new MutationObserver(function(ml){ml.forEach(function(m){m.addedNodes.forEach(function(n){if(n.nodeType!==1)return;var el=findEl(n);if(el)watch(el);});});});bodyObs.observe(d.body,{childList:true,subtree:true});window.addEventListener('resize',function(){if(current)fix(current);});})(document)` }} />
+            Bottom offset: 80px only on /dashboard routes on mobile, to clear THAT
+            layout's fixed bottom tab bar (md:hidden, so mobile-only) — everywhere else
+            (including the homepage) the button sits flush at 16px, same as desktop, per
+            "pin it to the bottom-left on mobile". It was previously offset 80px on
+            every mobile page regardless of route, stranding it with a pointless gap
+            above the true bottom edge where there's no nav to clear.
+            Element matching is done by manually lowercasing id/className rather than a
+            CSS `[id*="userway"]` attribute selector, since that selector is
+            case-sensitive and UserWay's real markup can use mixed-case ids/classes a
+            lowercase-only selector silently never matches — the widget then keeps
+            whatever default in-flow position it rendered with and never gets pinned at
+            all (this was observed happening, not just theoretical).
+            The body observer never disconnects (UserWay can recreate the button node
+            later), an attribute observer re-applies the fix if the widget's own script
+            repositions it, a resize listener keeps the offset correct across the md
+            (768px) breakpoint, and a 1s poll re-applies the fix after client-side route
+            changes (a plain script has no hook into the App Router, so this is the
+            simplest way to notice navigating into/out of /dashboard without a full page
+            reload). */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(d){
+  var s=d.createElement("script");
+  s.setAttribute("data-account","z8YM8BPOF6");
+  s.setAttribute("data-position","2");
+  s.setAttribute("src","https://cdn.userway.org/widget.js");
+  (d.body||d.head).appendChild(s);
+
+  function isDashboardRoute(){return window.location.pathname.indexOf('/dashboard')===0;}
+  function bottomPx(){return (window.innerWidth<768 && isDashboardRoute())?'80px':'16px';}
+  function matchesUserway(el){
+    if(!el||el.nodeType!==1)return false;
+    var id=(el.id||'').toLowerCase();
+    var cls=(typeof el.className==='string'?el.className:'').toLowerCase();
+    return id.indexOf('userway')!==-1||cls.indexOf('userway')!==-1;
+  }
+  function findWidgetEl(){
+    var all=d.body.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){if(matchesUserway(all[i]))return all[i];}
+    return null;
+  }
+  function needsFix(el){
+    var cs=getComputedStyle(el);
+    return cs.position!=='fixed'||cs.left!=='16px'||cs.bottom!==bottomPx()||cs.top!=='auto'||cs.right!=='auto';
+  }
+  function fix(el){
+    if(!needsFix(el))return;
+    el.style.setProperty('position','fixed','important');
+    el.style.setProperty('bottom',bottomPx(),'important');
+    el.style.setProperty('left','16px','important');
+    el.style.setProperty('top','auto','important');
+    el.style.setProperty('right','auto','important');
+  }
+  var current=null,attrObs=null;
+  function watch(el){
+    current=el;fix(el);
+    if(attrObs)attrObs.disconnect();
+    attrObs=new MutationObserver(function(){fix(el);});
+    attrObs.observe(el,{attributes:true,attributeFilter:['style','class']});
+  }
+  var existing=findWidgetEl();if(existing)watch(existing);
+  var bodyObs=new MutationObserver(function(){
+    if(!current||!d.body.contains(current)){var el=findWidgetEl();if(el)watch(el);}
+  });
+  bodyObs.observe(d.body,{childList:true,subtree:true});
+  window.addEventListener('resize',function(){if(current)fix(current);});
+  setInterval(function(){if(current&&d.body.contains(current))fix(current);},1000);
+})(document)` }} />
       </body>
     </html>
   )
