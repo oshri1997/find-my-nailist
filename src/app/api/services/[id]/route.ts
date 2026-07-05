@@ -88,7 +88,8 @@ export async function DELETE(
       updatedAt: FieldValue.serverTimestamp(),
     })
     return NextResponse.json({ ok: true })
-  } catch {
+  } catch (error) {
+    console.error(error)
     return NextResponse.json({ error: 'Failed to delete service' }, { status: 500 })
   }
 }

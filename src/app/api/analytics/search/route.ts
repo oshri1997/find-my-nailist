@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ message: 'ok' }, { status: 201 })
-  } catch {
+  } catch (error) {
+    console.error(error)
     return NextResponse.json({ error: 'Failed to log search' }, { status: 500 })
   }
 }

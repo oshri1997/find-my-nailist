@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
     const onboardingCompleted = profileSnap.empty ? true : profileSnap.docs[0].data().onboardingCompleted !== false
 
     return NextResponse.json({ role, isAdmin: data?.isAdmin === true, onboardingCompleted })
-  } catch {
+  } catch (error) {
+    console.error(error)
     return NextResponse.json({ role: null, isAdmin: false }, { status: 401 })
   }
 }

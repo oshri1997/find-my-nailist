@@ -38,7 +38,8 @@ export async function DELETE(
 
     await db.collection(COLLECTIONS.PORTFOLIO_PHOTOS).doc(id).delete()
     return NextResponse.json({ ok: true })
-  } catch {
+  } catch (error) {
+    console.error(error)
     return NextResponse.json({ error: 'Failed to delete photo' }, { status: 500 })
   }
 }

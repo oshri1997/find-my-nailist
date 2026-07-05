@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => ((a['displayOrder'] as number) ?? 0) - ((b['displayOrder'] as number) ?? 0))
 
     return NextResponse.json({ data: photos })
-  } catch {
+  } catch (error) {
+    console.error(error)
     return NextResponse.json({ error: 'Failed to fetch portfolio' }, { status: 500 })
   }
 }
@@ -63,7 +64,8 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ data: { id: ref.id, nailistProfileId, url, storageKey, caption, displayOrder } }, { status: 201 })
-  } catch {
+  } catch (error) {
+    console.error(error)
     return NextResponse.json({ error: 'Failed to save photo' }, { status: 500 })
   }
 }

@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
       .get()
 
     return NextResponse.json({ data: snap.docs.map((d) => ({ id: d.id, ...d.data() })) })
-  } catch {
+  } catch (error) {
+    console.error(error)
     return NextResponse.json({ error: 'Failed to fetch working hours' }, { status: 500 })
   }
 }
@@ -81,6 +82,7 @@ export async function PUT(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues }, { status: 400 })
     }
+    console.error(error)
     return NextResponse.json({ error: 'Failed to update working hours' }, { status: 500 })
   }
 }
