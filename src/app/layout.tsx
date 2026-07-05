@@ -131,9 +131,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return id.indexOf('userway')!==-1||cls.indexOf('userway')!==-1;
   }
   function findWidgetEl(){
+    // The real clickable icon is #userwayAccessibilityIcon (confirmed via a
+    // live DOM dump) — it sets its own independent position:fixed with
+    // explicit top/left, ignoring whatever its ancestor wrapper does. Several
+    // OTHER elements also match "userway" in id/class (a zero-size outer
+    // wrapper, a hidden legacy icon, a panel iframe) and, critically, come
+    // FIRST in document order — a first-match-wins scan was grabbing one of
+    // those instead, so fixing it had no visible effect since the real icon
+    // never looked at it. Try the known id directly first; fall back to the
+    // first nonzero-size, non-hidden match in case UserWay ever renames it.
+    var byId=d.getElementById('userwayAccessibilityIcon');
+    if(byId)return byId;
     var all=d.body.querySelectorAll('*');
-    for(var i=0;i<all.length;i++){if(matchesUserway(all[i]))return all[i];}
-    return null;
+    var fallback=null;
+    for(var i=0;i<all.length;i++){
+      if(!matchesUserway(all[i]))continue;
+      if(!fallback)fallback=all[i];
+      var r=all[i].getBoundingClientRect();
+      var cls=(typeof all[i].className==='string'?all[i].className:'');
+      if(r.width>0&&r.height>0&&cls.indexOf('hidden')===-1)return all[i];
+    }
+    return fallback;
   }
   function needsFix(el){
     var cs=getComputedStyle(el);
