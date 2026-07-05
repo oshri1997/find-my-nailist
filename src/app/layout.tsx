@@ -102,6 +102,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             bottom-left at all, which was the actual root cause the whole time.
             data-size ("small"/"large") only accepts those two discrete values,
             set to "small" on mobile per request to shrink it there.
+            Even with the correct config, the widget's own outer wrapper carries
+            an inline transform (confirmed via a DOM reconstruction) — ANY
+            transform on an ancestor creates a new containing block for a
+            position:fixed descendant, silently redirecting "fixed" to be
+            relative to that ancestor's box instead of the real viewport, so the
+            icon still doesn't land flush in the true corner even with
+            data-position="5" set correctly. Reparenting the icon itself (tried
+            earlier) escapes this but breaks its own sizing/styling, which
+            depends on staying nested under its wrapper — so instead,
+            neutralizeContainingBlocks() strips the offending CSS property from
+            the wrapper IN PLACE, scoped to ancestors that themselves match
+            "userway" so it can never touch an element that belongs to this
+            app's own UI/animations.
             The nailist dashboard has its own fixed bottom tab bar on mobile
             (md:hidden, see dashboard/layout.tsx) that a bottom-left icon would
             otherwise sit on top of — clearBottomNav() ADDS extra margin there
@@ -120,12 +133,32 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   s.setAttribute("src","https://cdn.userway.org/widget.js");
   (d.body||d.head).appendChild(s);
 
+  function matchesUserway(el){
+    if(!el||el.nodeType!==1)return false;
+    var id=(el.id||'').toLowerCase();
+    var cls=(typeof el.className==='string'?el.className:'').toLowerCase();
+    return id.indexOf('userway')!==-1||cls.indexOf('userway')!==-1;
+  }
+  function neutralizeContainingBlocks(el){
+    var node=el.parentElement;
+    while(node&&node!==d.body){
+      if(matchesUserway(node)){
+        var cs=getComputedStyle(node);
+        if(cs.transform!=='none')node.style.setProperty('transform','none','important');
+        if(cs.perspective!=='none')node.style.setProperty('perspective','none','important');
+        if(cs.filter!=='none')node.style.setProperty('filter','none','important');
+        if(cs.willChange!=='auto')node.style.setProperty('will-change','auto','important');
+      }
+      node=node.parentElement;
+    }
+  }
   function isDashboardMobile(){
     return window.innerWidth<768&&window.location.pathname.indexOf('/dashboard')===0;
   }
   function clearBottomNav(){
     var el=d.getElementById('userwayAccessibilityIcon');
     if(!el)return;
+    neutralizeContainingBlocks(el);
     el.style.setProperty('margin-bottom',isDashboardMobile()?'64px':'0px','important');
   }
   var obs=new MutationObserver(clearBottomNav);
