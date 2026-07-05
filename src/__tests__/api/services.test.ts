@@ -114,4 +114,18 @@ describe('POST /api/services', () => {
       expect.objectContaining({ nailistProfileId: 'nailist-profile-1', name: "ג'ל צרפתי", isActive: true })
     )
   })
+
+  it('returns the full service (name/duration/price), not just the id — the onboarding wizard renders the list straight from this response', async () => {
+    const res = await POST(makeRequest(validBody, 'valid-token'))
+    const json = await res.json()
+    expect(json.data).toEqual(
+      expect.objectContaining({
+        id: 'new-service-id',
+        name: "ג'ל צרפתי",
+        durationMinutes: 60,
+        price: 150,
+        currency: 'ILS',
+      })
+    )
+  })
 })

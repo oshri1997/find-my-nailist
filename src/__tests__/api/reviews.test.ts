@@ -72,12 +72,14 @@ function makeCollectionRef(name: string) {
   }
 }
 
+const mockTxSet = jest.fn()
+
 const mockDb = {
   collection: jest.fn((name: string) => makeCollectionRef(name)),
   runTransaction: jest.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
     const tx = {
       get: (queryOrRef: { get: () => Promise<unknown> }) => queryOrRef.get(),
-      set: jest.fn().mockResolvedValue(undefined),
+      set: mockTxSet,
     }
     return fn(tx)
   }),
@@ -128,7 +130,6 @@ describe('POST /api/reviews', () => {
     appointmentId: 'appointment-1',
     rating: 5,
     comment: 'נהדר!',
-    clientDisplayName: 'לקוחה',
   }
 
   beforeEach(() => {
@@ -139,13 +140,16 @@ describe('POST /api/reviews', () => {
       { __id: 'client-profile-1', userId: 'user-123' },
     ]
 
-    // Seed a completed appointment
+    // Seed a completed appointment — clientDisplayName here is the real name
+    // captured from the client's profile at booking time (see
+    // src/app/api/appointments/route.ts), the sole source of truth for
+    // whose name shows up on the review, not anything the client can send.
     docStore['appointments/appointment-1'] = {
       status: 'COMPLETED',
       clientProfileId: 'client-profile-1',
       nailistProfileId: 'nailist-profile-1',
       serviceName: 'מניקור',
-      clientDisplayName: 'לקוחה',
+      clientDisplayName: 'שרה כהן',
       startTime: { toDate: () => new Date('2026-06-20T10:00:00Z') },
     }
 
@@ -242,6 +246,38 @@ describe('POST /api/reviews', () => {
     expect(res.status).toBe(201)
     const json = await res.json()
     expect(json.data.id).toBe('new-review-id')
+  })
+
+  it('stores the client\'s real name from the appointment on the review, not a "לקוחה" placeholder — regardless of what the request body sends', async () => {
+    const req = makeRequest({ ...validBody, clientDisplayName: 'ignored spoof attempt' }, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(201)
+    expect(mockTxSet).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ clientDisplayName: 'שרה כהן' })
+    )
+    await new Promise(process.nextTick) // let the fire-and-forget email block run
+    expect(mockSendNailistReviewEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ clientName: 'שרה כהן' })
+    )
+  })
+
+  it('falls back to "לקוחה" only when the appointment itself has no clientDisplayName', async () => {
+    docStore['appointments/appointment-1'] = {
+      ...docStore['appointments/appointment-1'],
+      clientDisplayName: undefined,
+    }
+    const req = makeRequest(validBody, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(201)
+    expect(mockTxSet).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ clientDisplayName: undefined })
+    )
+    await new Promise(process.nextTick)
+    expect(mockSendNailistReviewEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ clientName: 'לקוחה' })
+    )
   })
 
   it('marks hasReview=true on the appointment after review is submitted', async () => {

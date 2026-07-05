@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       updatedAt: now,
     })
 
-    return NextResponse.json({ data: { id: ref.id } }, { status: 201 })
+    return NextResponse.json({ data: { id: ref.id, ...data, isActive: true } }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues }, { status: 400 })

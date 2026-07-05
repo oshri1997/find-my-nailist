@@ -11,7 +11,6 @@ const createSchema = z.object({
   appointmentId: z.string(),
   rating: z.number().int().min(1).max(5),
   comment: z.string().optional(),
-  clientDisplayName: z.string().optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -55,6 +54,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid or incomplete appointment' }, { status: 400 })
     }
 
+    // Sourced from the appointment (set from the client's profile at booking
+    // time), not from this request's body — trusting the submitter's own
+    // self-reported name would let a review show up under a spoofed identity.
+    const clientDisplayName = apptData.clientDisplayName as string | undefined
+
     // Atomically check for duplicate review and insert — prevents double-submit race
     const reviewRef = db.collection(COLLECTIONS.REVIEWS).doc()
     try {
@@ -66,7 +70,7 @@ export async function POST(request: NextRequest) {
         )
         if (!dupSnap.empty) throw new Error('DUPLICATE')
         const now = FieldValue.serverTimestamp()
-        tx.set(reviewRef, { ...data, createdAt: now, updatedAt: now })
+        tx.set(reviewRef, { ...data, clientDisplayName, createdAt: now, updatedAt: now })
       })
     } catch (txErr) {
       if (txErr instanceof Error && txErr.message === 'DUPLICATE') {
@@ -110,7 +114,7 @@ export async function POST(request: NextRequest) {
         await sendNailistReviewEmail({
           nailistEmail,
           nailistName: (nailistProfile?.businessName as string | undefined) ?? nailistEmail,
-          clientName: data.clientDisplayName ?? (apptData.clientDisplayName as string | undefined) ?? 'לקוחה',
+          clientName: clientDisplayName ?? 'לקוחה',
           rating: data.rating,
           comment: data.comment,
           serviceName: (apptData.serviceName as string | undefined) ?? '',
