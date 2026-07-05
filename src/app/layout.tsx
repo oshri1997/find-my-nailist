@@ -164,6 +164,55 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   var obs=new MutationObserver(clearBottomNav);
   obs.observe(d.body,{childList:true,subtree:true});
   window.addEventListener('resize',clearBottomNav);
+
+  // Temporary on-page diagnostic, only active with ?debugA11y=1 in the URL —
+  // the fix was verified against an ASSUMED real DOM structure (captured once,
+  // before the transform check existed) but didn't visibly change anything on
+  // the real device, meaning that assumption is wrong somewhere. This dumps
+  // the icon's actual computed style plus EVERY ancestor up to <body> (not
+  // just ones matching "userway" — neutralizeContainingBlocks only touches
+  // those on purpose, so if the real trap is on one of THIS APP'S OWN
+  // elements instead, this will show it even though our fix currently skips
+  // it) and every containing-block-relevant property on each, so there's
+  // real data instead of another guess.
+  if(window.location.search.indexOf('debugA11y')!==-1){
+    setTimeout(function(){
+      function boxProps(cs){
+        var props=[];
+        if(cs.transform&&cs.transform!=='none')props.push('transform='+cs.transform);
+        if(cs.perspective&&cs.perspective!=='none')props.push('perspective='+cs.perspective);
+        if(cs.filter&&cs.filter!=='none')props.push('filter='+cs.filter);
+        if(cs.backdropFilter&&cs.backdropFilter!=='none')props.push('backdropFilter='+cs.backdropFilter);
+        if(cs.willChange&&cs.willChange!=='auto')props.push('willChange='+cs.willChange);
+        if(cs.contain&&cs.contain!=='none')props.push('contain='+cs.contain);
+        return props;
+      }
+      function describe(el){
+        var r=el.getBoundingClientRect();
+        var cls=typeof el.className==='string'?el.className:'';
+        return el.tagName+'#'+el.id+'.'+cls+' rect='+JSON.stringify({top:Math.round(r.top),left:Math.round(r.left),bottom:Math.round(r.bottom),right:Math.round(r.right),w:Math.round(r.width),h:Math.round(r.height)});
+      }
+      var icon=d.getElementById('userwayAccessibilityIcon');
+      var iconInfo='(not found)';
+      var chainLines=[];
+      if(icon){
+        var cs=getComputedStyle(icon);
+        iconInfo=describe(icon)+' position='+cs.position+' top='+cs.top+' left='+cs.left+' bottom='+cs.bottom+' right='+cs.right+' marginBottom='+cs.marginBottom+' transform='+cs.transform;
+        var node=icon.parentElement;
+        while(node&&node!==d.body){
+          var ncs=getComputedStyle(node);
+          var props=boxProps(ncs);
+          chainLines.push(describe(node)+(props.length?' ['+props.join(', ')+']':' [no containing-block props]')+(matchesUserway(node)?' <userway-matched>':' <NOT userway-matched>'));
+          node=node.parentElement;
+        }
+      }
+      var panel=d.createElement('div');
+      panel.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#000;color:#0f0;font-size:10px;line-height:1.4;padding:8px;max-height:70vh;overflow:auto;white-space:pre-wrap;direction:ltr;text-align:left;font-family:monospace;';
+      panel.textContent='ICON: '+iconInfo+
+        '\\n\\nANCESTOR CHAIN (icon -> body), '+chainLines.length+' node(s):\\n'+(chainLines.join('\\n')||'(none — icon already a direct child of body, or not found)');
+      d.body.appendChild(panel);
+    },3000);
+  }
 })(document)` }} />
       </body>
     </html>
