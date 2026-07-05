@@ -35,12 +35,12 @@ export function HeroSection() {
   }
 
   return (
-    <section className="relative min-h-[70vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-background">
+    <section className="relative lg:min-h-[90vh] flex items-center overflow-hidden bg-background">
       {/* Subtle decorative circles */}
       <div className="absolute top-0 right-0 w-[700px] h-[700px] rounded-full opacity-[0.06] bg-primary -translate-y-1/2 translate-x-1/3 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full opacity-[0.04] bg-accent translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
-      <div className="container mx-auto max-w-7xl px-6 py-24 relative z-10">
+      <div className="container mx-auto max-w-7xl px-6 py-12 lg:py-24 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
           {/* Text side */}
