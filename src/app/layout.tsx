@@ -126,6 +126,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   function isDashboardRoute(){return window.location.pathname.indexOf('/dashboard')===0;}
   function bottomPx(){return (window.innerWidth<768&&isDashboardRoute())?'80px':'16px';}
+  // data-size="small" is UserWay's smallest documented option (the only other
+  // value is "large") — scale it down further on mobile, anchored to its own
+  // bottom-left corner so shrinking it doesn't shift it off the corner it's
+  // pinned to.
+  function scaleValue(){return window.innerWidth<768?'0.75':'1';}
   function fixPosition(){
     var el=d.getElementById('userwayAccessibilityIcon');
     if(!el)return;
@@ -134,6 +139,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     el.style.setProperty('bottom',bottomPx(),'important');
     el.style.setProperty('left','16px','important');
     el.style.setProperty('right','auto','important');
+    el.style.setProperty('transform-origin','0% 100%','important');
+    el.style.setProperty('transform','scale('+scaleValue()+')','important');
   }
   var obs=new MutationObserver(fixPosition);
   obs.observe(d.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});
