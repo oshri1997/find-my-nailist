@@ -155,22 +155,46 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   }
   function needsFix(el){
     var cs=getComputedStyle(el);
-    return el.parentElement!==d.body||cs.position!=='fixed'||cs.left!=='16px'||cs.bottom!==bottomPx()||cs.top!=='auto'||cs.right!=='auto';
+    return cs.position!=='fixed'||cs.left!=='16px'||cs.bottom!==bottomPx()||cs.top!=='auto'||cs.right!=='auto';
+  }
+  // Smaller on mobile — the widget's default size crowds a small screen more
+  // than it does on desktop. Scaled from the bottom-left corner (matching
+  // where it's pinned) so shrinking it doesn't shift it away from that corner.
+  // Applied unconditionally (like neutralizeContainingBlocks) rather than
+  // gated on needsFix, since it's cheap and needs to react to resizes too.
+  function applyScale(el){
+    el.style.setProperty('transform-origin','0% 100%','important');
+    el.style.setProperty('transform','scale('+scaleValue()+')','important');
+  }
+  function scaleValue(){return window.innerWidth<768?'0.8':'1';}
+  // A transform/perspective/filter/will-change:transform on ANY ancestor
+  // creates a new containing block for a position:fixed descendant, which
+  // silently redirects "fixed" to be relative to that ancestor's box instead
+  // of the real viewport — confirmed via a reconstructed-DOM simulation
+  // matching the widget's real structure. Reparenting the icon itself (a
+  // prior attempt) avoided this but broke the icon's own sizing/styling,
+  // which apparently depends on staying nested under its wrapper — so
+  // instead, neutralize the offending CSS property on the ancestor in
+  // place, without moving anything. Scoped to ancestors that themselves
+  // match "userway" (the widget's own wrapper chain) so this never touches
+  // an element that belongs to this app's own UI/animations.
+  function neutralizeContainingBlocks(el){
+    var node=el.parentElement;
+    while(node&&node!==d.body){
+      if(matchesUserway(node)){
+        var cs=getComputedStyle(node);
+        if(cs.transform!=='none')node.style.setProperty('transform','none','important');
+        if(cs.perspective!=='none')node.style.setProperty('perspective','none','important');
+        if(cs.filter!=='none')node.style.setProperty('filter','none','important');
+        if(cs.willChange!=='auto')node.style.setProperty('will-change','auto','important');
+      }
+      node=node.parentElement;
+    }
   }
   function fix(el){
+    neutralizeContainingBlocks(el);
+    applyScale(el);
     if(!needsFix(el))return;
-    // Reparent to a direct child of <body> — this app uses framer-motion
-    // heavily, which sets inline transform styles on many ancestors, and ANY
-    // transformed ancestor creates a new containing block for a
-    // position:fixed descendant. That silently redirects "fixed" to be
-    // relative to that ancestor's box instead of the real viewport, which
-    // reads as "the icon drifts along with page content" even though our
-    // own position/bottom/left values are set correctly (this was observed
-    // happening — the icon moved when the wrapper-vs-real-element bug was
-    // fixed, but still wasn't pinned to the true bottom of the screen).
-    // appendChild on an existing node moves it (no clone), so listeners and
-    // internal widget state survive.
-    if(el.parentElement!==d.body)d.body.appendChild(el);
     el.style.setProperty('position','fixed','important');
     el.style.setProperty('bottom',bottomPx(),'important');
     el.style.setProperty('left','16px','important');
@@ -216,9 +240,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           nameMatches.push(describe(el));
         }
       }
+      var chainLines=[];
+      if(current){
+        var node=current.parentElement;
+        while(node&&node!==d.body){
+          var cs=getComputedStyle(node);
+          var props=[];
+          if(cs.transform&&cs.transform!=='none')props.push('transform='+cs.transform);
+          if(cs.perspective&&cs.perspective!=='none')props.push('perspective='+cs.perspective);
+          if(cs.filter&&cs.filter!=='none')props.push('filter='+cs.filter);
+          if(cs.willChange&&cs.willChange!=='auto')props.push('willChange='+cs.willChange);
+          if(cs.contain&&cs.contain!=='none')props.push('contain='+cs.contain);
+          chainLines.push(describe(node)+(props.length?' ['+props.join(', ')+']':' [no containing-block props]'));
+          node=node.parentElement;
+        }
+      }
       var panel=d.createElement('div');
       panel.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#000;color:#0f0;font-size:10px;line-height:1.4;padding:8px;max-height:60vh;overflow:auto;white-space:pre-wrap;direction:ltr;text-align:left;font-family:monospace;';
       panel.textContent='current found by our own logic: '+(current?describe(current):'(none)')+
+        '\\n\\nANCESTOR CHAIN (current -> body), '+chainLines.length+' node(s):\\n'+(chainLines.join('\\n')||'(current is null, or already a child of body)')+
         '\\n\\nFIXED-POSITION ELEMENTS ('+fixedEls.length+'):\\n'+(fixedEls.join('\\n\\n')||'(none)')+
         '\\n\\nID/CLASS CONTAINS "userway" OR "access" ('+nameMatches.length+'):\\n'+(nameMatches.join('\\n\\n')||'(none)');
       d.body.appendChild(panel);
