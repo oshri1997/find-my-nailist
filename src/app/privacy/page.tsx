@@ -125,7 +125,7 @@ export default function PrivacyPage() {
             </p>
           </section>
 
-          <section className="space-y-3">
+          <section id="cookies" className="space-y-3 scroll-mt-24">
             <h2 className="text-xl font-bold text-foreground">9. עוגיות (Cookies)</h2>
             <p className="text-muted-foreground leading-relaxed">
               האתר משתמש בעוגיות הכרחיות לצורך שמירת מצב ההתחברות. אין שימוש בעוגיות פרסומיות או ניתוח התנהגות מעבר לנדרש לתפעול השירות.

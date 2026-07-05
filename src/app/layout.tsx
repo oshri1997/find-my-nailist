@@ -3,6 +3,7 @@ import { Heebo } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 import { ConditionalNavbar } from '@/components/layout/conditional-navbar'
+import { CookieNotice } from '@/components/layout/cookie-notice'
 
 const heebo = Heebo({ subsets: ['hebrew', 'latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
 
@@ -88,6 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ConditionalNavbar />
           {children}
         </Providers>
+        <CookieNotice />
         {/* UserWay accessibility widget, plus positioning fix combined into a single
             script tag — two separate dangerouslySetInnerHTML scripts here would let the
             first one's synchronous DOM injection (the widget's own <script> tag) shift
