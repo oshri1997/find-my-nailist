@@ -6,9 +6,11 @@ import { Cookie } from 'lucide-react'
 
 const STORAGE_KEY = 'cookieNoticeDismissed'
 
-// The site only ever sets one, strictly-necessary session cookie (see
+// The site today only ever sets one, strictly-necessary session cookie (see
 // src/app/privacy/page.tsx's "עוגיות" section) — nothing optional to opt in
-// or out of, so this is a one-button acknowledgment, not a consent form.
+// or out of yet, so this is a one-button acknowledgment, not a consent form.
+// The copy below intentionally also mentions analytics/personalization ahead
+// of those actually existing, so it won't need revisiting the moment they do.
 export function CookieNotice() {
   const [visible, setVisible] = useState(false)
 
@@ -29,10 +31,12 @@ export function CookieNotice() {
       <div className="container mx-auto max-w-7xl px-6 py-3 flex flex-wrap items-center justify-center gap-3 text-center text-sm">
         <Cookie className="h-4 w-4 shrink-0 text-muted-foreground" />
         <span className="text-foreground/80">
-          האתר משתמש בעוגיות חיוניות בלבד לצורך שמירת ההתחברות שלך.{' '}
+          אנו מכבדים את פרטיותכם - לידיעתכם, אתר זה עושה שימוש בקובצי Cookie ובטכנולוגיות דומות לצורך שיפור חוויית המשתמש,
+          התאמת תוכן אישי, ולביצוע ניתוחים סטטיסטיים. למידע נוסף, אנא עיינו ב
           <Link href="/privacy#cookies" className="font-bold underline underline-offset-2 hover:text-foreground">
-            למידע נוסף
+            מדיניות הפרטיות שלנו
           </Link>
+          .
         </span>
         <button
           type="button"

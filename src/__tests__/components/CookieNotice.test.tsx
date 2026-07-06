@@ -8,13 +8,13 @@ beforeEach(() => {
 describe('CookieNotice', () => {
   it('shows the notice on first visit', () => {
     render(<CookieNotice />)
-    expect(screen.getByText(/האתר משתמש בעוגיות חיוניות בלבד/)).toBeInTheDocument()
+    expect(screen.getByText(/אנו מכבדים את פרטיותכם/)).toBeInTheDocument()
   })
 
   it('dismissing it hides it and remembers the choice', () => {
     render(<CookieNotice />)
     fireEvent.click(screen.getByRole('button', { name: 'הבנתי' }))
-    expect(screen.queryByText(/האתר משתמש בעוגיות חיוניות בלבד/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/אנו מכבדים את פרטיותכם/)).not.toBeInTheDocument()
     expect(localStorage.getItem('cookieNoticeDismissed')).toBe('1')
   })
 
