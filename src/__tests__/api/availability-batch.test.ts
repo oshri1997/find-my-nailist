@@ -44,6 +44,19 @@ function makeRequest(
 }
 
 describe('GET /api/nailists/[id]/availability/batch', () => {
+  // Fixtures below hardcode 2026-07-06 as "today" (a Monday) with slots
+  // starting at 09:00 — pin the real clock well before that so the route's
+  // already-elapsed-time filter never kicks in regardless of when this suite
+  // actually runs (it previously broke the instant the real calendar caught
+  // up to this fixture date).
+  beforeAll(() => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-06T06:00:00+03:00'))
+  })
+
+  afterAll(() => {
+    jest.useRealTimers()
+  })
+
   beforeEach(() => {
     jest.clearAllMocks()
     collectionStore['workingHours'] = []
