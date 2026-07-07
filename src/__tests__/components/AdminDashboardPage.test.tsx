@@ -18,6 +18,7 @@ const stats = {
   avgRating: 4.5,
   newUsersThisWeek: 2,
   totalRevenue: 3000,
+  today: { newUsers: 1, newAppointments: 2, cancelledAppointments: 0, newReviews: 1 },
 }
 
 beforeEach(() => {
@@ -48,5 +49,17 @@ describe('AdminDashboard — quick nav grid removed', () => {
       expect(screen.getByText('סה״כ משתמשים')).toBeInTheDocument()
     })
     expect(screen.getByText('הזמנות לפי סטטוס')).toBeInTheDocument()
+  })
+
+  it('renders the "today at a glance" section from stats.today', async () => {
+    render(<AdminDashboard />)
+
+    await waitFor(() => {
+      expect(screen.getByText('מה קרה היום')).toBeInTheDocument()
+    })
+    expect(screen.getByText('הצטרפו היום')).toBeInTheDocument()
+    expect(screen.getByText('הזמנות חדשות היום')).toBeInTheDocument()
+    expect(screen.getByText('בוטלו היום')).toBeInTheDocument()
+    expect(screen.getByText('ביקורות היום')).toBeInTheDocument()
   })
 })

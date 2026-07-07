@@ -2,20 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { verifyAdmin, adminUnauthorized } from '@/lib/admin-auth'
+import { writeAuditLog } from '@/lib/audit-log'
 import { FieldValue } from 'firebase-admin/firestore'
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!await verifyAdmin(request)) return adminUnauthorized()
+  const admin = await verifyAdmin(request)
+  if (!admin) return adminUnauthorized()
 
   const { id } = await params
   const db = adminDb()
   const reviewSnap = await db.collection(COLLECTIONS.REVIEWS).doc(id).get()
   if (!reviewSnap.exists) return NextResponse.json({ error: 'ביקורת לא נמצאה' }, { status: 404 })
 
-  const { nailistProfileId } = reviewSnap.data()!
+  const { nailistProfileId, rating, clientDisplayName } = reviewSnap.data()!
 
   await reviewSnap.ref.delete()
 
@@ -32,6 +34,15 @@ export async function DELETE(
     avgRating: Math.round(avg * 10) / 10,
     reviewCount: count,
     updatedAt: FieldValue.serverTimestamp(),
+  })
+
+  await writeAuditLog({
+    actorUid: admin.uid,
+    actorEmail: admin.email,
+    action: 'REVIEW_DELETE',
+    targetType: 'review',
+    targetId: id,
+    metadata: { nailistProfileId, rating, clientDisplayName },
   })
 
   return NextResponse.json({ message: 'הביקורת נמחקה' })

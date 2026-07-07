@@ -28,6 +28,20 @@ export function israelWallClockToUtc(dateStr: string, timeStr: string): Date {
   return new Date(naiveUtc.getTime() - (asIfUtc - naiveUtc.getTime()))
 }
 
+// Today's calendar date as Israel wall-clock sees it, regardless of the
+// runtime's own timezone (see israelWallClockToUtc's comment above for why
+// that distinction matters on a UTC server).
+export function todayInIsrael(): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jerusalem',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date()).reduce((acc, p) => {
+    if (p.type !== 'literal') acc[p.type] = p.value
+    return acc
+  }, {} as Record<string, string>)
+  return `${parts.year}-${parts.month}-${parts.day}`
+}
+
 export function toDateStr(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }

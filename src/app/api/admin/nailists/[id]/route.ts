@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { verifyAdmin, adminUnauthorized } from '@/lib/admin-auth'
+import { writeAuditLog } from '@/lib/audit-log'
 import { FieldValue } from 'firebase-admin/firestore'
 
 export async function GET(
@@ -30,7 +31,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!await verifyAdmin(request)) return adminUnauthorized()
+  const admin = await verifyAdmin(request)
+  if (!admin) return adminUnauthorized()
 
   const { id } = await params
   const db = adminDb()
@@ -44,6 +46,15 @@ export async function PATCH(
   await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(id).update({
     isActive,
     updatedAt: FieldValue.serverTimestamp(),
+  })
+
+  await writeAuditLog({
+    actorUid: admin.uid,
+    actorEmail: admin.email,
+    action: 'NAILIST_TOGGLE_ACTIVE',
+    targetType: 'nailistProfile',
+    targetId: id,
+    metadata: { isActive },
   })
 
   return NextResponse.json({ message: isActive ? 'הנייליסטית הופעלה' : 'הנייליסטית הושבתה' })

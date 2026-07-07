@@ -1,4 +1,4 @@
-import { generateSlots, isSlotUnavailable, buildDateStrip, buildMonthCalendar, toDateStr, computeDateAvailability, filterExpiredConfirmed, israelWallClockToUtc } from '@/lib/booking-utils'
+import { generateSlots, isSlotUnavailable, buildDateStrip, buildMonthCalendar, toDateStr, computeDateAvailability, filterExpiredConfirmed, israelWallClockToUtc, todayInIsrael } from '@/lib/booking-utils'
 
 // bookedSlots in production are real UTC instants derived from Israel
 // wall-clock booking times — construct test fixtures the same way instead of
@@ -311,5 +311,22 @@ describe('filterExpiredConfirmed', () => {
 
   it('handles empty list', () => {
     expect(filterExpiredConfirmed([], now)).toEqual([])
+  })
+})
+
+describe('todayInIsrael', () => {
+  afterEach(() => jest.useRealTimers())
+
+  it('returns the Israel calendar date even when UTC is still on the previous day', () => {
+    jest.useFakeTimers()
+    // 23:00 UTC on Jan 15 is already 01:00 on Jan 16 in Israel (UTC+2 in January)
+    jest.setSystemTime(new Date('2026-01-15T23:00:00.000Z'))
+    expect(todayInIsrael()).toBe('2026-01-16')
+  })
+
+  it('returns a plain YYYY-MM-DD string mid-day', () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-06-10T09:00:00.000Z'))
+    expect(todayInIsrael()).toBe('2026-06-10')
   })
 })

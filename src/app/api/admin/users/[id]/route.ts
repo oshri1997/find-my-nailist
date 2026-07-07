@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { verifyAdmin, adminUnauthorized } from '@/lib/admin-auth'
+import { writeAuditLog } from '@/lib/audit-log'
 import { FieldValue } from 'firebase-admin/firestore'
 
 // Portfolio photo docs store their own storageKey, but the profile
@@ -46,7 +47,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!await verifyAdmin(request)) return adminUnauthorized()
+  const admin = await verifyAdmin(request)
+  if (!admin) return adminUnauthorized()
 
   const { id } = await params
   const body = await request.json()
@@ -72,6 +74,16 @@ export async function PATCH(
   }
 
   await db.collection(COLLECTIONS.USERS).doc(id).update({ role: newRole })
+
+  await writeAuditLog({
+    actorUid: admin.uid,
+    actorEmail: admin.email,
+    action: 'USER_ROLE_CHANGE',
+    targetType: 'user',
+    targetId: id,
+    metadata: { targetEmail: userDoc.data()?.email, oldRole: currentRole, newRole },
+  })
+
   return NextResponse.json({ message: 'התפקיד עודכן בהצלחה' })
 }
 
@@ -79,7 +91,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!await verifyAdmin(request)) return adminUnauthorized()
+  const admin = await verifyAdmin(request)
+  if (!admin) return adminUnauthorized()
 
   const { id } = await params
   const db = adminDb()
@@ -172,6 +185,15 @@ export async function DELETE(
     } catch {
       // Firebase Auth user may not exist — Firestore cleanup already done
     }
+
+    await writeAuditLog({
+      actorUid: admin.uid,
+      actorEmail: admin.email,
+      action: 'USER_DELETE',
+      targetType: 'user',
+      targetId: id,
+      metadata: { email: userData?.email, role, displayName: userData?.displayName },
+    })
 
     return NextResponse.json({ message: 'המשתמש נמחק בהצלחה' })
   } catch (err) {

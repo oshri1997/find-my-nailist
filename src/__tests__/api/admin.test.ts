@@ -124,6 +124,37 @@ describe('GET /api/admin/stats', () => {
     collectionStore.reviews = [{ __id: 'r1', rating: 5 }]
   })
 
+  it('scopes the "today" block to Israel-calendar-day boundaries, not lifetime totals', async () => {
+    const now = new Date()
+    const longAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    collectionStore.users = [
+      { __id: 'u1', email: 'today@test.com', role: 'CLIENT', createdAt: { toDate: () => now } },
+      { __id: 'u2', email: 'old@test.com', role: 'CLIENT', createdAt: { toDate: () => longAgo } },
+    ]
+    collectionStore.appointments = [
+      { __id: 'a1', status: 'PENDING', price: 100, createdAt: { toDate: () => now }, updatedAt: { toDate: () => now } },
+      { __id: 'a2', status: 'CANCELLED', price: 0, createdAt: { toDate: () => longAgo }, updatedAt: { toDate: () => now } },
+      { __id: 'a3', status: 'CANCELLED', price: 0, createdAt: { toDate: () => longAgo }, updatedAt: { toDate: () => longAgo } },
+    ]
+    collectionStore.reviews = [
+      { __id: 'r1', rating: 5, createdAt: { toDate: () => now } },
+      { __id: 'r2', rating: 4, createdAt: { toDate: () => longAgo } },
+    ]
+
+    const { GET } = await import('@/app/api/admin/stats/route')
+    const res = await GET(adminRequest())
+    const json = await res.json()
+
+    // u1 signed up today, u2 30 days ago -> only u1 counts
+    expect(json.data.today.newUsers).toBe(1)
+    // a1 created today -> counts; a2/a3 created 30 days ago -> don't, regardless of updatedAt
+    expect(json.data.today.newAppointments).toBe(1)
+    // a2 is CANCELLED and updated today -> counts; a3 is CANCELLED but updated 30 days ago -> doesn't
+    expect(json.data.today.cancelledAppointments).toBe(1)
+    // r1 created today -> counts; r2 30 days ago -> doesn't
+    expect(json.data.today.newReviews).toBe(1)
+  })
+
   it('returns 403 for unauthenticated request', async () => {
     const { GET } = await import('@/app/api/admin/stats/route')
     const res = await GET(unauthRequest())
@@ -145,6 +176,15 @@ describe('GET /api/admin/stats', () => {
     expect(json.data).toHaveProperty('totalNailists')
     expect(json.data).toHaveProperty('totalAppointments')
     expect(json.data).toHaveProperty('appointmentsByStatus')
+    expect(json.data).toHaveProperty('today')
+    expect(json.data.today).toEqual(
+      expect.objectContaining({
+        newUsers: expect.any(Number),
+        newAppointments: expect.any(Number),
+        cancelledAppointments: expect.any(Number),
+        newReviews: expect.any(Number),
+      })
+    )
   })
 })
 

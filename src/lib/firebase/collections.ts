@@ -10,4 +10,5 @@ export const COLLECTIONS = {
   REVIEWS: 'reviews',
   FAVORITES: 'favorites',
   SEARCH_EVENTS: 'searchEvents',
+  AUDIT_LOGS: 'auditLogs',
 } as const

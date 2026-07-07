@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Users, Scissors, Calendar, Star, TrendingUp, CheckCircle2, UserPlus } from 'lucide-react'
+import { Users, Scissors, Calendar, Star, TrendingUp, CheckCircle2, UserPlus, Sunrise, XCircle } from 'lucide-react'
 
 interface Stats {
   totalUsers: number
@@ -14,6 +14,12 @@ interface Stats {
   avgRating: number
   newUsersThisWeek: number
   totalRevenue: number
+  today: {
+    newUsers: number
+    newAppointments: number
+    cancelledAppointments: number
+    newReviews: number
+  }
 }
 
 const STATUS_HE: Record<string, string> = {
@@ -86,6 +92,20 @@ export default function AdminDashboard() {
       <div>
         <h1 className="text-2xl font-black text-foreground">דשבורד</h1>
         <p className="text-muted-foreground text-sm mt-1">סקירה כללית של המערכת</p>
+      </div>
+
+      {/* Today at a glance */}
+      <div>
+        <h2 className="font-black text-foreground mb-3 flex items-center gap-2">
+          <Sunrise className="w-4 h-4 text-primary" />
+          מה קרה היום
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard label="הצטרפו היום" value={stats.today.newUsers} icon={UserPlus} />
+          <StatCard label="הזמנות חדשות היום" value={stats.today.newAppointments} icon={Calendar} />
+          <StatCard label="בוטלו היום" value={stats.today.cancelledAppointments} icon={XCircle} color="text-destructive" />
+          <StatCard label="ביקורות היום" value={stats.today.newReviews} icon={Star} />
+        </div>
       </div>
 
       {/* Main stats */}

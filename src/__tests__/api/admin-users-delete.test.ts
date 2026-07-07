@@ -12,6 +12,7 @@ import { NextRequest } from 'next/server'
 type DocData = Record<string, unknown>
 const collectionStore: Record<string, (DocData & { __id: string })[]> = {}
 const deletedDocIds: Record<string, string[]> = {}
+const addedDocs: Record<string, DocData[]> = {}
 const deletedStorageKeys: string[] = []
 const mockDeleteUser = jest.fn().mockResolvedValue(undefined)
 const mockUpdateFn = jest.fn().mockResolvedValue(undefined)
@@ -54,6 +55,10 @@ function makeCollectionRef(name: string) {
         collectionStore[name] = (collectionStore[name] ?? []).filter((x) => x.__id !== id)
       }),
       update: mockUpdateFn,
+    }),
+    add: jest.fn().mockImplementation(async (data: DocData) => {
+      addedDocs[name] = [...(addedDocs[name] ?? []), data]
+      return { id: 'new-doc-id' }
     }),
   }
 }
@@ -109,6 +114,7 @@ const mockParams = { params: Promise.resolve({ id: 'target-uid' }) }
 function resetStore() {
   for (const key of Object.keys(collectionStore)) delete collectionStore[key]
   for (const key of Object.keys(deletedDocIds)) delete deletedDocIds[key]
+  for (const key of Object.keys(addedDocs)) delete addedDocs[key]
   deletedStorageKeys.length = 0
   batchOps = []
 }
@@ -179,6 +185,17 @@ describe('DELETE /api/admin/users/[id]', () => {
     expect(deletedStorageKeys).not.toContain('https://accounts.google.com/pic.jpg')
 
     expect(mockDeleteUser).toHaveBeenCalledWith('target-uid')
+
+    expect(addedDocs.auditLogs).toEqual([
+      expect.objectContaining({
+        actorUid: 'admin-1',
+        actorEmail: 'admin@test.com',
+        action: 'USER_DELETE',
+        targetType: 'user',
+        targetId: 'target-uid',
+        metadata: { email: undefined, role: 'NAILIST', displayName: undefined },
+      }),
+    ])
   })
 
   it('cascades a CLIENT deletion, deletes their own favorites, and recalculates ratings for nailists they reviewed', async () => {
@@ -220,5 +237,14 @@ describe('DELETE /api/admin/users/[id]', () => {
     )
 
     expect(mockDeleteUser).toHaveBeenCalledWith('target-uid')
+
+    expect(addedDocs.auditLogs).toEqual([
+      expect.objectContaining({
+        action: 'USER_DELETE',
+        targetType: 'user',
+        targetId: 'target-uid',
+        metadata: { email: undefined, role: 'CLIENT', displayName: undefined },
+      }),
+    ])
   })
 })

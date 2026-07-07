@@ -114,6 +114,18 @@ export interface ReviewDoc {
   updatedAt: Timestamp
 }
 
+export type AuditAction = 'USER_ROLE_CHANGE' | 'USER_DELETE' | 'REVIEW_DELETE' | 'NAILIST_TOGGLE_ACTIVE'
+
+export interface AuditLogDoc {
+  actorUid: string
+  actorEmail: string
+  action: AuditAction
+  targetType: 'user' | 'review' | 'nailistProfile'
+  targetId: string
+  metadata?: Record<string, unknown>
+  createdAt: Timestamp
+}
+
 // Serialized types for client-side use (Timestamps converted to strings)
 export interface User extends Omit<UserDoc, 'createdAt' | 'updatedAt'> {
   id: string
@@ -164,6 +176,11 @@ export interface Review extends Omit<ReviewDoc, 'createdAt' | 'updatedAt'> {
   id: string
   createdAt: string
   updatedAt: string
+}
+
+export interface AuditLog extends Omit<AuditLogDoc, 'createdAt'> {
+  id: string
+  createdAt: string
 }
 
 export interface ApiResponse<T> {
