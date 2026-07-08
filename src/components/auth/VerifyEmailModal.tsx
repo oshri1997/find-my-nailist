@@ -70,8 +70,6 @@ export function VerifyEmailModal({ user, onClose }: { user: User; onClose: () =>
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : sent ? (
               <><Check className="h-4 w-4" /> נשלח!</>
-            ) : retryAfterSeconds > 0 ? (
-              `נסי שוב בעוד ${Math.ceil(retryAfterSeconds / 60)} דק'`
             ) : (
               'שליחה מחדש'
             )}

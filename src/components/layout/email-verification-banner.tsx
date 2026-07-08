@@ -54,8 +54,6 @@ export function EmailVerificationBanner() {
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : sent ? (
             <><Check className="h-3.5 w-3.5" /> נשלח!</>
-          ) : retryAfterSeconds > 0 ? (
-            `נסי שוב בעוד ${Math.ceil(retryAfterSeconds / 60)} דק'`
           ) : (
             'שליחה מחדש'
           )}

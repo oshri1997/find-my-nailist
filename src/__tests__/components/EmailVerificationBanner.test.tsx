@@ -53,8 +53,10 @@ describe('EmailVerificationBanner', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'שליחה מחדש' }))
 
+    // Shown once, in red, as the error message — the button itself stays
+    // disabled with its normal label rather than repeating the same text.
     expect(await screen.findByText('ניתן לשלוח שוב רק בעוד 10 דקות')).toBeInTheDocument()
-    const button = await screen.findByRole('button', { name: /נסי שוב בעוד/ })
+    const button = await screen.findByRole('button', { name: 'שליחה מחדש' })
     expect(button).toBeDisabled()
   })
 })
