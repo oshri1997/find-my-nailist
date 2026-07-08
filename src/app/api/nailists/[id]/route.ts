@@ -1,9 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Firestore } from 'firebase-admin/firestore'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { geocodeAddress } from '@/lib/geocoding'
 import { isAuthenticatedRequest, computeHasContactInfo, stripNailistContactFields } from '@/lib/nailist-contact'
 import { z } from 'zod'
+
+// Older reviews can have an empty clientDisplayName — it's a snapshot taken
+// at booking time, and some client accounts predate a fix that made sure
+// firstName/lastName always get collected before booking. Rather than a
+// one-time backfill migration, resolve it live from the current profile —
+// self-healing for any future gap too, not just this one.
+async function resolveClientDisplayName(db: Firestore, clientProfileId: string): Promise<string> {
+  const profileSnap = await db.collection(COLLECTIONS.CLIENT_PROFILES).doc(clientProfileId).get()
+  const profile = profileSnap.data()
+  if (profile?.firstName && profile?.lastName) return `${profile.firstName} ${profile.lastName}`
+  if (profile?.displayName) return profile.displayName as string
+  if (profile?.userId) {
+    const userSnap = await db.collection(COLLECTIONS.USERS).doc(profile.userId as string).get()
+    const userDisplayName = userSnap.data()?.displayName as string | undefined
+    if (userDisplayName) return userDisplayName
+  }
+  return ''
+}
 
 // Lenient on purpose — real-world numbers/handles come with spaces, dashes,
 // country codes, etc. This only rejects obvious garbage, not exotic formats.
@@ -78,6 +97,21 @@ export async function GET(
         .get(),
     ])
 
+    const reviews = await Promise.all(
+      reviewsSnap.docs.map(async (d) => {
+        const rd = d.data()
+        const clientDisplayName = rd.clientDisplayName
+          || (rd.clientProfileId ? await resolveClientDisplayName(db, rd.clientProfileId as string) : '')
+        return {
+          id: d.id,
+          ...rd,
+          clientDisplayName,
+          createdAt: rd.createdAt?.toDate?.()?.toISOString() ?? rd.createdAt,
+          updatedAt: rd.updatedAt?.toDate?.()?.toISOString() ?? rd.updatedAt,
+        }
+      })
+    )
+
     return NextResponse.json({
       data: {
         id: snap.id,
@@ -88,15 +122,7 @@ export async function GET(
           .map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown>>)
           .sort((a, b) => ((a['displayOrder'] as number) ?? 0) - ((b['displayOrder'] as number) ?? 0)),
         workingHours: hoursSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
-        reviews: reviewsSnap.docs.map((d) => {
-          const rd = d.data()
-          return {
-            id: d.id,
-            ...rd,
-            createdAt: rd.createdAt?.toDate?.()?.toISOString() ?? rd.createdAt,
-            updatedAt: rd.updatedAt?.toDate?.()?.toISOString() ?? rd.updatedAt,
-          }
-        }),
+        reviews,
       },
     })
   } catch (error) {

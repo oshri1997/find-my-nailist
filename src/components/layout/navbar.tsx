@@ -91,10 +91,12 @@ export function Navbar() {
             <ThemeToggle />
             {user ? (
               <>
-                <Link href="/search">
+                {/* Desktop already has a /search link in the center nav row
+                    (hidden below md) — only fill the gap here for mobile,
+                    where that row is hidden, instead of showing it twice. */}
+                <Link href="/search" className="md:hidden" aria-label="חיפוש">
                   <Button size="sm" variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground gap-2 cursor-pointer">
                     <Search className="h-4 w-4" />
-                    <span className="hidden sm:inline">חיפוש</span>
                   </Button>
                 </Link>
                 {role === 'NAILIST' && (
