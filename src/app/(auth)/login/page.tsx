@@ -145,10 +145,10 @@ export default function AuthPage() {
         const fullName = `${firstName} ${lastName}`.trim()
         const cred = await signUpWithEmail(email, password, fullName)
 
-        // /api/users (and /api/auth/verify-email below) require the session
-        // cookie, which AuthProvider's own onIdTokenChanged listener sets
-        // asynchronously in the background — don't race it; establish the
-        // cookie explicitly before calling in.
+        // /api/users below requires the session cookie, which AuthProvider's
+        // own onIdTokenChanged listener sets asynchronously in the
+        // background — don't race it; establish the cookie explicitly
+        // before calling in.
         const idToken = await cred.user.getIdToken()
         await fetch('/api/auth/session', {
           method: 'POST',
@@ -156,10 +156,9 @@ export default function AuthPage() {
           body: JSON.stringify({ token: idToken }),
         })
 
-        // Custom Hebrew-branded email from our own domain, same pattern as
-        // password reset — not Firebase's default English template.
-        fetch('/api/auth/verify-email', { method: 'POST' }).catch(console.error)
-
+        // The verification email itself is sent later, once the role is
+        // chosen (/api/me/set-role) — its copy is role-aware (nailist vs
+        // client), which isn't possible yet at this point in the flow.
         const createUserProfile = () => fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

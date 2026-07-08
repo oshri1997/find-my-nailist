@@ -290,7 +290,18 @@ export async function sendPasswordResetEmail(p: {
 export async function sendVerificationEmail(p: {
   email: string
   verifyLink: string
+  role?: 'NAILIST' | 'CLIENT'
 }): Promise<void> {
+  const copy = p.role === 'NAILIST'
+    ? {
+        intro: 'תודה שנרשמת כנייליסטית! כדי להתחיל להגדיר את הפרופיל העסקי שלך ולקבל לקוחות חדשות, יש לאמת קודם את כתובת המייל שלך.',
+        cta: 'אימות והתחלת ההגדרה',
+      }
+    : {
+        intro: 'תודה שנרשמת! כדי להשלים את ההרשמה ולהזמין תורים אצל נייליסטיות מומלצות, יש לאמת את כתובת המייל שלך.',
+        cta: 'אימות כתובת מייל',
+      }
+
   await sendResend(
     p.email,
     'אימות כתובת מייל — נייליסטיות',
@@ -300,16 +311,16 @@ export async function sendVerificationEmail(p: {
       </div>
       <div style="background:#fff;border:1px solid #f3e8ff;border-top:none;border-radius:0 0 16px 16px;padding:32px">
         <h2 style="font-size:20px;font-weight:900;margin:0 0 8px">אימות כתובת מייל</h2>
-        <p style="color:#666;margin:0 0 24px">תודה שנרשמת! כדי להשלים את ההרשמה ולהזמין תורים, יש לאמת את כתובת המייל שלך.</p>
+        <p style="color:#666;margin:0 0 24px">${copy.intro}</p>
         <div style="text-align:center;margin:28px 0">
           <a href="${p.verifyLink}" style="background:linear-gradient(135deg,#ec4899,#a855f7);color:white;text-decoration:none;border-radius:12px;padding:14px 32px;font-weight:900;font-size:16px;display:inline-block">
-            אימות כתובת מייל
+            ${copy.cta}
           </a>
         </div>
         <p style="color:#999;font-size:12px;margin:24px 0 0">אם לא נרשמת לאתר, אפשר להתעלם ממייל זה.</p>
         <p style="color:#ccc;font-size:11px;margin:8px 0 0">הקישור: <a href="${p.verifyLink}" style="color:#a855f7;word-break:break-all">${p.verifyLink}</a></p>
       </div>
     </div>`,
-    `אימות כתובת מייל — נייליסטיות\n\nתודה שנרשמת! לחצי על הקישור הבא כדי לאמת את כתובת המייל שלך:\n${p.verifyLink}\n\nאם לא נרשמת לאתר, אפשר להתעלם ממייל זה.\n\nצוות נייליסטיות`
+    `אימות כתובת מייל — נייליסטיות\n\n${copy.intro}\n\nלחצי על הקישור הבא:\n${p.verifyLink}\n\nאם לא נרשמת לאתר, אפשר להתעלם ממייל זה.\n\nצוות נייליסטיות`
   )
 }

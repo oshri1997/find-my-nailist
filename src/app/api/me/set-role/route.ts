@@ -3,6 +3,7 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { FieldValue } from 'firebase-admin/firestore'
 import { z } from 'zod'
+import { sendRoleAwareVerificationEmail } from '@/lib/verification-email'
 
 const schema = z.object({
   role: z.enum(['NAILIST', 'CLIENT']),
@@ -81,6 +82,19 @@ export async function PATCH(request: NextRequest) {
           createdAt: now,
           updatedAt: now,
         })
+      }
+    }
+
+    // Registration itself no longer sends a verification email — at that
+    // point the role isn't chosen yet, so the copy couldn't be role-aware.
+    // This is the first moment the role is definitively known (Google
+    // sign-ins land here too, though their email is already
+    // provider-verified, so the send is skipped for them).
+    if (!decoded.email_verified && decoded.email) {
+      try {
+        await sendRoleAwareVerificationEmail(uid, decoded.email, role)
+      } catch (err) {
+        console.error('[set-role] verification email send failed:', err)
       }
     }
 

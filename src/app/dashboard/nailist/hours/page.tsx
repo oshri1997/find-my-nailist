@@ -41,7 +41,7 @@ const DEFAULT_HOURS: DayHours[] = DAYS.map(({ day }) => ({
   endTime: '19:00',
 }))
 
-function TimeSelect({ value, onChange, min, max }: { value: string; onChange: (v: string) => void; min?: string; max?: string }) {
+function TimeSelect({ value, onChange, min, max, label }: { value: string; onChange: (v: string) => void; min?: string; max?: string; label?: string }) {
   let options = TIME_OPTIONS
   if (min) options = options.filter(t => t > min)
   if (max) options = options.filter(t => t < max)
@@ -49,6 +49,7 @@ function TimeSelect({ value, onChange, min, max }: { value: string; onChange: (v
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
+      aria-label={label}
       className="h-9 rounded-xl border border-border bg-card px-2 text-sm font-semibold text-foreground focus:outline-none focus:border-pink-300 cursor-pointer"
     >
       {options.map(t => <option key={t} value={t}>{t}</option>)}
@@ -62,6 +63,8 @@ export default function WorkingHoursPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [bulkStart, setBulkStart] = useState('09:00')
+  const [bulkEnd, setBulkEnd] = useState('19:00')
 
   useEffect(() => {
     fetch('/api/working-hours')
@@ -97,10 +100,19 @@ export default function WorkingHoursPage() {
     }))
   }
 
-  function applyToAll(day: number) {
-    const source = hours.find(h => h.dayOfWeek === day)
-    if (!source) return
-    setHours(prev => prev.map(h => ({ ...h, isActive: source.isActive, startTime: source.startTime, endTime: source.endTime })))
+  function setBulkStartTime(value: string) {
+    if (value >= bulkEnd) {
+      // Same backwards-range guard as the per-day selects.
+      const next = TIME_OPTIONS.find(t => t > value)
+      setBulkStart(value)
+      setBulkEnd(next ?? value)
+    } else {
+      setBulkStart(value)
+    }
+  }
+
+  function applyBulkTimes() {
+    setHours(prev => prev.map(h => ({ ...h, startTime: bulkStart, endTime: bulkEnd })))
   }
 
   function applyPreset(preset: typeof PRESETS[0]) {
@@ -152,22 +164,45 @@ export default function WorkingHoursPage() {
 
       {/* Quick presets */}
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-        className="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-950/30 dark:to-purple-950/30 rounded-2xl p-4 mb-5 border border-pink-100 dark:border-pink-900/50">
-        <p className="text-xs font-black text-muted-foreground mb-3 flex items-center gap-1.5">
-          <Clock className="h-3.5 w-3.5" />
-          תבניות מהירות
-        </p>
-        <div className="flex gap-2 flex-wrap">
-          {PRESETS.map(preset => (
-            <button
-              key={preset.label}
+        className="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-950/30 dark:to-purple-950/30 rounded-2xl p-4 mb-5 border border-pink-100 dark:border-pink-900/50 space-y-4">
+        <div>
+          <p className="text-xs font-black text-muted-foreground mb-3 flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5" />
+            תבניות מהירות
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            {PRESETS.map(preset => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => applyPreset(preset)}
+                className="px-4 py-1.5 rounded-xl bg-card border border-pink-200 text-sm font-bold text-pink-600 hover:bg-pink-500 hover:text-white hover:border-pink-500 transition-all shadow-sm"
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-pink-200/60 dark:border-pink-900/40">
+          <p className="text-xs font-black text-muted-foreground mb-3 flex items-center gap-1.5">
+            <CopyCheck className="h-3.5 w-3.5" />
+            שעה אחידה לכל הימים
+          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <TimeSelect value={bulkStart} onChange={setBulkStartTime} max={TIME_OPTIONS[TIME_OPTIONS.length - 1]} label="שעת התחלה כללית" />
+            <span className="text-muted-foreground/40 font-bold text-sm">—</span>
+            <TimeSelect value={bulkEnd} onChange={setBulkEnd} min={bulkStart} label="שעת סיום כללית" />
+            <Button
               type="button"
-              onClick={() => applyPreset(preset)}
-              className="px-4 py-1.5 rounded-xl bg-card border border-pink-200 text-sm font-bold text-pink-600 hover:bg-pink-500 hover:text-white hover:border-pink-500 transition-all shadow-sm"
+              onClick={applyBulkTimes}
+              size="sm"
+              className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl font-bold shadow-sm gap-1.5 cursor-pointer"
             >
-              {preset.label}
-            </button>
-          ))}
+              <CopyCheck className="h-3.5 w-3.5" />
+              החל על כל הימים
+            </Button>
+          </div>
         </div>
       </motion.div>
 
@@ -250,15 +285,6 @@ export default function WorkingHoursPage() {
                       <span className="text-sm font-medium">סגור</span>
                     </div>
                   )}
-
-                  <button
-                    type="button"
-                    onClick={() => applyToAll(day)}
-                    title="החילי הגדרה זו על כל הימים"
-                    className="shrink-0 p-2 rounded-lg text-muted-foreground/50 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-950/30 transition-colors cursor-pointer"
-                  >
-                    <CopyCheck className="h-4 w-4" />
-                  </button>
                 </div>
               </motion.div>
             )

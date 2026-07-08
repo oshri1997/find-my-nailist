@@ -3,10 +3,11 @@
  */
 import { NextRequest } from 'next/server'
 
-const mockVerifyIdToken = jest.fn().mockResolvedValue({ uid: 'user-123', email: 'user@test.com', name: 'Test User' })
+const mockVerifyIdToken = jest.fn().mockResolvedValue({ uid: 'user-123', email: 'user@test.com', name: 'Test User', email_verified: false })
 const mockDocUpdate = jest.fn().mockResolvedValue(undefined)
 const mockAdd = jest.fn().mockResolvedValue({ id: 'new-profile-id' })
 const mockProfileUpdate = jest.fn().mockResolvedValue(undefined)
+const mockSendRoleAwareVerificationEmail = jest.fn().mockResolvedValue(undefined)
 
 const docStore: Record<string, Record<string, unknown> | null> = {}
 const collectionStore: Record<string, (Record<string, unknown> & { __id: string })[]> = {}
@@ -54,6 +55,10 @@ jest.mock('@/lib/firebase/admin', () => ({
 
 jest.mock('firebase-admin/firestore', () => ({
   FieldValue: { serverTimestamp: jest.fn(() => 'SERVER_TIMESTAMP') },
+}))
+
+jest.mock('@/lib/verification-email', () => ({
+  sendRoleAwareVerificationEmail: (...args: unknown[]) => mockSendRoleAwareVerificationEmail(...args),
 }))
 
 import { PATCH } from '@/app/api/me/set-role/route'
@@ -193,5 +198,36 @@ describe('PATCH /api/me/set-role', () => {
     expect(mockAdd).toHaveBeenCalledWith(
       expect.objectContaining({ onboardingCompleted: false })
     )
+  })
+
+  it('sends a role-aware verification email once the role is known, for an unverified account', async () => {
+    // Registration itself no longer sends the verification email — role
+    // isn't chosen yet at that point, so the copy couldn't be role-aware.
+    // This is the first moment the role is definitively known.
+    const req = makeRequest({ role: 'NAILIST' })
+    await PATCH(req)
+    expect(mockSendRoleAwareVerificationEmail).toHaveBeenCalledWith('user-123', 'user@test.com', 'NAILIST')
+  })
+
+  it('sends the CLIENT-flavored email when CLIENT is chosen', async () => {
+    const req = makeRequest({ role: 'CLIENT' })
+    await PATCH(req)
+    expect(mockSendRoleAwareVerificationEmail).toHaveBeenCalledWith('user-123', 'user@test.com', 'CLIENT')
+  })
+
+  it('does not send a verification email when the account is already verified (e.g. Google sign-in)', async () => {
+    mockVerifyIdToken.mockResolvedValueOnce({ uid: 'user-123', email: 'user@test.com', name: 'Test User', email_verified: true })
+    const req = makeRequest({ role: 'NAILIST' })
+    await PATCH(req)
+    expect(mockSendRoleAwareVerificationEmail).not.toHaveBeenCalled()
+  })
+
+  it('still succeeds and sets the role even when the verification email send fails', async () => {
+    mockSendRoleAwareVerificationEmail.mockRejectedValueOnce(new Error('boom'))
+    const req = makeRequest({ role: 'NAILIST' })
+    const res = await PATCH(req)
+    expect(res.status).toBe(200)
+    const json = await res.json()
+    expect(json.data.role).toBe('NAILIST')
   })
 })

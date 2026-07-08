@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
-import { sendVerificationEmail } from '@/lib/email'
-import { FieldValue } from 'firebase-admin/firestore'
+import { sendRoleAwareVerificationEmail } from '@/lib/verification-email'
 
 const RESEND_COOLDOWN_MS = 10 * 60 * 1000
 
@@ -36,7 +35,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // resend clicks (deliberate spam or an impatient double-click) only makes
   // failures more likely, not less.
   const userSnap = await userRef.get()
-  const lastSentAt = userSnap.data()?.lastVerificationEmailSentAt?.toDate?.() as Date | undefined
+  const userData = userSnap.data()
+  const lastSentAt = userData?.lastVerificationEmailSentAt?.toDate?.() as Date | undefined
   if (lastSentAt) {
     const elapsedMs = Date.now() - lastSentAt.getTime()
     if (elapsedMs < RESEND_COOLDOWN_MS) {
@@ -49,14 +49,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // Marked before the actual send, not after — every attempt (successful or
-  // failed) counts against the cooldown, so a send that's currently failing
-  // (e.g. a provider-side outage) can't be retried in a tight loop either.
-  await userRef.set({ lastVerificationEmailSentAt: FieldValue.serverTimestamp() }, { merge: true })
+  // Role-aware wording — falls back to the client copy for a not-yet-chosen
+  // role (missing field defaults to 'CLIENT' throughout this app).
+  const role = userData?.role === 'NAILIST' ? 'NAILIST' : 'CLIENT'
 
   try {
-    const link = await adminAuth().generateEmailVerificationLink(decoded.email)
-    await sendVerificationEmail({ email: decoded.email, verifyLink: link })
+    await sendRoleAwareVerificationEmail(decoded.uid, decoded.email, role)
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[verify-email] send failed:', err)
