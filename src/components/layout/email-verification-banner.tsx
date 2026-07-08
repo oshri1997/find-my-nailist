@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Mail, Loader2, Check } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
@@ -8,14 +8,31 @@ export function EmailVerificationBanner() {
   const { user } = useAuth()
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState('')
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0)
+
+  useEffect(() => {
+    if (retryAfterSeconds <= 0) return
+    const interval = setInterval(() => setRetryAfterSeconds((s) => Math.max(0, s - 1)), 1000)
+    return () => clearInterval(interval)
+  }, [retryAfterSeconds])
 
   if (!user || user.emailVerified) return null
 
   async function handleResend() {
     setSending(true)
+    setError('')
     try {
       const res = await fetch('/api/auth/verify-email', { method: 'POST' })
-      if (res.ok) setSent(true)
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        if (res.status === 429 && typeof data.retryAfterSeconds === 'number') {
+          setRetryAfterSeconds(data.retryAfterSeconds)
+        }
+        setError(data.error || 'שגיאה בשליחה — נסי שוב מאוחר יותר')
+        return
+      }
+      setSent(true)
     } finally {
       setSending(false)
     }
@@ -30,17 +47,20 @@ export function EmailVerificationBanner() {
         <button
           type="button"
           onClick={handleResend}
-          disabled={sending || sent}
+          disabled={sending || sent || retryAfterSeconds > 0}
           className="font-bold underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-100 disabled:no-underline disabled:opacity-70 flex items-center gap-1"
         >
           {sending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : sent ? (
             <><Check className="h-3.5 w-3.5" /> נשלח!</>
+          ) : retryAfterSeconds > 0 ? (
+            `נסי שוב בעוד ${Math.ceil(retryAfterSeconds / 60)} דק'`
           ) : (
             'שליחה מחדש'
           )}
         </button>
+        {error && <span className="text-red-600 dark:text-red-400 font-semibold">{error}</span>}
       </div>
     </div>
   )

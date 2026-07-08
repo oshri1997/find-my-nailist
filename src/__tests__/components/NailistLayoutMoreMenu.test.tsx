@@ -132,3 +132,37 @@ describe('Dashboard layout — admin panel entry point', () => {
     expect(screen.queryByText('פאנל ניהול')).not.toBeInTheDocument()
   })
 })
+
+describe('Dashboard layout — email verification banner', () => {
+  // Regression: ConditionalNavbar hides EmailVerificationBanner on every
+  // /dashboard route, so a nailist (whose whole app lives there) never saw
+  // the "verify your email" notice a client would see on /search etc.
+  it('shows the verify-email banner for an unverified nailist', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { uid: 'nailist-user-1', displayName: 'Oshri Test', email: 'oshri@example.com', emailVerified: false },
+      role: 'NAILIST',
+      isAdmin: false,
+      signOut: jest.fn(),
+    })
+    mockFetch('nailist-42')
+    render(<DashboardLayout>content</DashboardLayout>)
+
+    await waitFor(() => {
+      expect(screen.getByText('כדי להזמין תור צריך קודם לאשר את ההרשמה במייל.')).toBeInTheDocument()
+    })
+  })
+
+  it('does not show the banner once the email is verified', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { uid: 'nailist-user-1', displayName: 'Oshri Test', email: 'oshri@example.com', emailVerified: true },
+      role: 'NAILIST',
+      isAdmin: false,
+      signOut: jest.fn(),
+    })
+    mockFetch('nailist-42')
+    render(<DashboardLayout>content</DashboardLayout>)
+
+    await waitFor(() => expect(screen.getAllByText('עוד')[0]).toBeInTheDocument())
+    expect(screen.queryByText('כדי להזמין תור צריך קודם לאשר את ההרשמה במייל.')).not.toBeInTheDocument()
+  })
+})

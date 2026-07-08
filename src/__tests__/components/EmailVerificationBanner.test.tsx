@@ -31,7 +31,7 @@ describe('EmailVerificationBanner', () => {
 
   it('resends the verification email and shows confirmation', async () => {
     mockUseAuth.mockReturnValue({ user: { emailVerified: false } })
-    global.fetch = jest.fn().mockResolvedValue({ ok: true } as Response)
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) } as Response)
     render(<EmailVerificationBanner />)
 
     fireEvent.click(screen.getByRole('button', { name: 'שליחה מחדש' }))
@@ -40,5 +40,21 @@ describe('EmailVerificationBanner', () => {
       expect(global.fetch).toHaveBeenCalledWith('/api/auth/verify-email', { method: 'POST' })
     })
     expect(await screen.findByText('נשלח!')).toBeInTheDocument()
+  })
+
+  it('shows the server-provided rate-limit message and disables the button until the cooldown ends', async () => {
+    mockUseAuth.mockReturnValue({ user: { emailVerified: false } })
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async () => ({ error: 'ניתן לשלוח שוב רק בעוד 10 דקות', retryAfterSeconds: 600 }),
+    } as Response)
+    render(<EmailVerificationBanner />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'שליחה מחדש' }))
+
+    expect(await screen.findByText('ניתן לשלוח שוב רק בעוד 10 דקות')).toBeInTheDocument()
+    const button = await screen.findByRole('button', { name: /נסי שוב בעוד/ })
+    expect(button).toBeDisabled()
   })
 })

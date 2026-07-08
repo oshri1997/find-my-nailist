@@ -46,3 +46,24 @@ describe('Working hours page — start/end time consistency', () => {
     expect(options).not.toContain('23:30') // the last slot has no room for an end time after it
   })
 })
+
+describe('Working hours page — apply to all days', () => {
+  it("copies the source day's active state and times to every other day", async () => {
+    render(<WorkingHoursPage />)
+    await waitFor(() => expect(screen.getAllByDisplayValue('09:00').length).toBeGreaterThan(0))
+
+    // Sunday (day 0) is active by default — give it a distinct start time.
+    const startSelects = screen.getAllByDisplayValue('09:00')
+    fireEvent.change(startSelects[0], { target: { value: '11:00' } })
+
+    const applyButtons = screen.getAllByTitle('החילי הגדרה זו על כל הימים')
+    fireEvent.click(applyButtons[0])
+
+    await waitFor(() => {
+      // Weekend days (inactive by default) are now active too, since Sunday's
+      // isActive:true propagated everywhere.
+      expect(screen.queryByText('סגור')).not.toBeInTheDocument()
+      expect(screen.getAllByDisplayValue('11:00')).toHaveLength(7)
+    })
+  })
+})

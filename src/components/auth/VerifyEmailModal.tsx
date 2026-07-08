@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { User } from 'firebase/auth'
 import { Loader2, Mail, Check } from 'lucide-react'
 
@@ -8,13 +8,27 @@ export function VerifyEmailModal({ user, onClose }: { user: User; onClose: () =>
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0)
+
+  useEffect(() => {
+    if (retryAfterSeconds <= 0) return
+    const interval = setInterval(() => setRetryAfterSeconds((s) => Math.max(0, s - 1)), 1000)
+    return () => clearInterval(interval)
+  }, [retryAfterSeconds])
 
   async function handleResend() {
     setSending(true)
     setError('')
     try {
       const res = await fetch('/api/auth/verify-email', { method: 'POST' })
-      if (!res.ok) throw new Error('failed')
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        if (res.status === 429 && typeof data.retryAfterSeconds === 'number') {
+          setRetryAfterSeconds(data.retryAfterSeconds)
+        }
+        setError(data.error || 'שגיאה בשליחת המייל — נסי שוב בעוד כמה דקות')
+        return
+      }
       setSent(true)
     } catch {
       setError('שגיאה בשליחת המייל — נסי שוב בעוד כמה דקות')
@@ -49,13 +63,15 @@ export function VerifyEmailModal({ user, onClose }: { user: User; onClose: () =>
           <button
             type="button"
             onClick={handleResend}
-            disabled={sending || sent}
+            disabled={sending || sent || retryAfterSeconds > 0}
             className="flex-1 bg-primary text-primary-foreground rounded-xl py-2.5 text-sm font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60"
           >
             {sending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : sent ? (
               <><Check className="h-4 w-4" /> נשלח!</>
+            ) : retryAfterSeconds > 0 ? (
+              `נסי שוב בעוד ${Math.ceil(retryAfterSeconds / 60)} דק'`
             ) : (
               'שליחה מחדש'
             )}

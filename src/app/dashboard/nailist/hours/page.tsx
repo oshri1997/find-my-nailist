@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, Loader2, AlertCircle, Clock } from 'lucide-react'
+import { CheckCircle2, Loader2, AlertCircle, Clock, CopyCheck } from 'lucide-react'
 
 const DAYS = [
   { day: 0, label: 'ראשון', short: 'א׳', weekend: false },
@@ -95,6 +95,12 @@ export default function WorkingHoursPage() {
       }
       return { ...h, [field]: value }
     }))
+  }
+
+  function applyToAll(day: number) {
+    const source = hours.find(h => h.dayOfWeek === day)
+    if (!source) return
+    setHours(prev => prev.map(h => ({ ...h, isActive: source.isActive, startTime: source.startTime, endTime: source.endTime })))
   }
 
   function applyPreset(preset: typeof PRESETS[0]) {
@@ -240,10 +246,19 @@ export default function WorkingHoursPage() {
                       </span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-muted-foreground flex-1">
                       <span className="text-sm font-medium">סגור</span>
                     </div>
                   )}
+
+                  <button
+                    type="button"
+                    onClick={() => applyToAll(day)}
+                    title="החילי הגדרה זו על כל הימים"
+                    className="shrink-0 p-2 rounded-lg text-muted-foreground/50 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-950/30 transition-colors cursor-pointer"
+                  >
+                    <CopyCheck className="h-4 w-4" />
+                  </button>
                 </div>
               </motion.div>
             )

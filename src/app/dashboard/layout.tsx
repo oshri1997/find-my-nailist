@@ -8,6 +8,7 @@ import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star
 import NextImage from 'next/image'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { EmailVerificationBanner } from '@/components/layout/email-verification-banner'
 
 const primaryNavLinks = [
   { href: '/dashboard/nailist', label: 'סקירה', Icon: LayoutDashboard, dynamic: false },
@@ -114,6 +115,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </header>
+
+      {/* ConditionalNavbar hides its own copy of this banner on every
+          /dashboard route (the dashboard has its own header/sidebar) —
+          without mounting it here too, a nailist never sees the "verify
+          your email" notice at all, since her whole app lives under
+          /dashboard/nailist. */}
+      <EmailVerificationBanner />
 
       <div className="flex min-h-[calc(100vh-56px)] md:min-h-screen">
 
