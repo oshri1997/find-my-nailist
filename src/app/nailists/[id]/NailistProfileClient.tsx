@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { MapPin, Star, Clock, MessageCircle, Navigation, ExternalLink, ChevronRight, Settings, ImageIcon, Share2, Check, Heart, AlertCircle, Scissors, MessageSquare, Camera, Loader2 } from 'lucide-react'
+import { MapPin, Star, Clock, MessageCircle, Navigation, ExternalLink, ChevronRight, Settings, ImageIcon, Share2, Check, Heart, AlertCircle, Scissors, MessageSquare, Camera, Loader2, BadgeCheck } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
 import BookingModal from '@/components/booking/BookingModal'
 import Link from 'next/link'
@@ -50,6 +50,7 @@ interface NailistProfile {
   longitude?: number
   photoUrl?: string
   coverPhotoUrl?: string
+  isVerified?: boolean
   services: Service[]
   portfolio: PortfolioPhoto[]
   reviews: Review[]
@@ -298,7 +299,14 @@ export default function NailistProfileClient({ id }: { id: string }) {
               </p>
             )}
 
-            <h1 className="text-2xl font-black mb-1.5">{profile.businessName}</h1>
+            <h1 className="text-2xl font-black mb-1.5 flex items-center justify-center gap-1.5">
+              {profile.businessName}
+              {profile.isVerified && (
+                <span title="נייליסטית מאומתת">
+                  <BadgeCheck className="h-5 w-5 shrink-0 text-white fill-primary" />
+                </span>
+              )}
+            </h1>
 
             <div className="flex items-center flex-wrap justify-center gap-x-3 gap-y-1 text-sm mb-1">
               {profile.city && (

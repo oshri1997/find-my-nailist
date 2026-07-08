@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { MapPin, Search, Star, Heart, Loader2, LocateFixed, Map as MapIcon, LayoutGrid, Sparkles } from 'lucide-react'
+import { MapPin, Search, Star, Heart, Loader2, LocateFixed, Map as MapIcon, LayoutGrid, Sparkles, BadgeCheck } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
 import { formatDistance } from '@/lib/format-utils'
 import dynamic from 'next/dynamic'
@@ -41,6 +41,7 @@ interface Nailist {
   coverPhotoUrl?: string
   photoUrl?: string
   serviceNames?: string[]
+  isVerified?: boolean
 }
 
 type SortKey = 'distance' | 'rating'
@@ -480,7 +481,14 @@ export default function SearchPage() {
                 {/* Card body */}
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <h3 className="font-black text-foreground text-base leading-tight truncate">{nailist.businessName}</h3>
+                    <div className="flex items-center gap-1 min-w-0">
+                      <h3 className="font-black text-foreground text-base leading-tight truncate">{nailist.businessName}</h3>
+                      {nailist.isVerified && (
+                        <span title="נייליסטית מאומתת">
+                          <BadgeCheck className="h-4 w-4 shrink-0 text-primary fill-primary/20" />
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1 text-xs shrink-0 text-amber-600 dark:text-amber-400 font-bold">
                       <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                       <span>{nailist.avgRating > 0 ? nailist.avgRating.toFixed(1) : '—'}</span>

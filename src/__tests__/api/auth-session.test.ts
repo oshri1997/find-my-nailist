@@ -4,9 +4,17 @@
 import { NextRequest } from 'next/server'
 
 const mockVerifyIdToken = jest.fn()
+let suspendedUsers: Record<string, boolean> = {}
 
 jest.mock('@/lib/firebase/admin', () => ({
   adminAuth: jest.fn(() => ({ verifyIdToken: mockVerifyIdToken })),
+  adminDb: jest.fn(() => ({
+    collection: () => ({
+      doc: (uid: string) => ({
+        get: async () => ({ data: () => ({ suspended: suspendedUsers[uid] === true }) }),
+      }),
+    }),
+  })),
 }))
 
 import { POST, DELETE } from '@/app/api/auth/session/route'
@@ -22,7 +30,10 @@ function makeRequest(method: string, body?: unknown): NextRequest {
 }
 
 describe('POST /api/auth/session', () => {
-  beforeEach(() => jest.clearAllMocks())
+  beforeEach(() => {
+    jest.clearAllMocks()
+    suspendedUsers = {}
+  })
 
   it('returns 400 when token is missing from body', async () => {
     const req = makeRequest('POST', {})
@@ -72,6 +83,25 @@ describe('POST /api/auth/session', () => {
     const req = makeRequest('POST', { token: null })
     const res = await POST(req)
     expect(res.status).toBe(400)
+  })
+
+  it('returns 403 and does not set a cookie when the account is suspended', async () => {
+    suspendedUsers['user-123'] = true
+    mockVerifyIdToken.mockResolvedValueOnce({ uid: 'user-123' })
+    const req = makeRequest('POST', { token: 'valid-id-token' })
+    const res = await POST(req)
+    expect(res.status).toBe(403)
+    const json = await res.json()
+    expect(json.error).toBe('Account suspended')
+    expect(res.headers.get('set-cookie')).toBeNull()
+  })
+
+  it('sets the cookie normally for a non-suspended account', async () => {
+    suspendedUsers['user-123'] = false
+    mockVerifyIdToken.mockResolvedValueOnce({ uid: 'user-123' })
+    const req = makeRequest('POST', { token: 'valid-id-token' })
+    const res = await POST(req)
+    expect(res.status).toBe(200)
   })
 })
 

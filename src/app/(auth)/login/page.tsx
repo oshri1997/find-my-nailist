@@ -49,6 +49,12 @@ export default function AuthPage() {
   const [legalModal, setLegalModal] = useState(false)
   const handlingFormRef = useRef(false)
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (searchParams.get('suspended') === '1') setError('החשבון הושבת')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Auth-state redirect (handles Google OAuth callback + email login)
   useEffect(() => {
     if (authLoading || !user || handlingFormRef.current) return

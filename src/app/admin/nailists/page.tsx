@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Loader2, Star, MapPin, ToggleLeft, ToggleRight, ExternalLink } from 'lucide-react'
+import { Search, Loader2, Star, MapPin, ToggleLeft, ToggleRight, ExternalLink, BadgeCheck } from 'lucide-react'
 import Link from 'next/link'
 
 interface AdminNailist {
@@ -53,6 +53,19 @@ export default function AdminNailistsPage() {
     setToggling(null)
   }
 
+  async function toggleVerified(n: AdminNailist) {
+    setToggling(`verify-${n.id}`)
+    const res = await fetch(`/api/admin/nailists/${n.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isVerified: !n.isVerified }),
+    })
+    if (res.ok) {
+      setNailists(prev => prev.map(x => x.id === n.id ? { ...x, isVerified: !x.isVerified } : x))
+    }
+    setToggling(null)
+  }
+
   const filtered = nailists.filter(n => {
     const s = search.toLowerCase()
     return !s || n.businessName.toLowerCase().includes(s) || n.city.toLowerCase().includes(s)
@@ -99,7 +112,15 @@ export default function AdminNailistsPage() {
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-foreground">{n.businessName}</span>
-                        {n.isVerified && <span className="text-xs text-primary">✓</span>}
+                        {n.isVerified && (
+                          <span
+                            title="נייליסטית מאומתת"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold border bg-pink-50 text-primary border-pink-200"
+                          >
+                            <BadgeCheck className="w-3 h-3" />
+                            מאומתת
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">
@@ -136,6 +157,17 @@ export default function AdminNailistsPage() {
                             : n.isActive
                               ? <ToggleRight className="w-5 h-5 text-green-500" />
                               : <ToggleLeft className="w-5 h-5" />
+                          }
+                        </button>
+                        <button
+                          onClick={() => toggleVerified(n)}
+                          disabled={toggling === `verify-${n.id}`}
+                          title={n.isVerified ? 'בטל אימות' : 'אמת נייליסטית'}
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
+                        >
+                          {toggling === `verify-${n.id}`
+                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                            : <BadgeCheck className={`w-5 h-5 ${n.isVerified ? 'text-primary fill-primary/20' : ''}`} />
                           }
                         </button>
                         <Link

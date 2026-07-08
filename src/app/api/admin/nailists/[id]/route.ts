@@ -37,25 +37,48 @@ export async function PATCH(
   const { id } = await params
   const db = adminDb()
   const body = await request.json()
-  const { isActive } = body
+  const { isActive, isVerified } = body
 
-  if (typeof isActive !== 'boolean') {
+  if (isActive === undefined && isVerified === undefined) {
+    return NextResponse.json({ error: 'יש לספק isActive ו/או isVerified' }, { status: 400 })
+  }
+  if (isActive !== undefined && typeof isActive !== 'boolean') {
     return NextResponse.json({ error: 'isActive חייב להיות boolean' }, { status: 400 })
   }
+  if (isVerified !== undefined && typeof isVerified !== 'boolean') {
+    return NextResponse.json({ error: 'isVerified חייב להיות boolean' }, { status: 400 })
+  }
 
-  await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(id).update({
-    isActive,
-    updatedAt: FieldValue.serverTimestamp(),
-  })
+  const updates: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() }
+  if (isActive !== undefined) updates.isActive = isActive
+  if (isVerified !== undefined) updates.isVerified = isVerified
 
-  await writeAuditLog({
-    actorUid: admin.uid,
-    actorEmail: admin.email,
-    action: 'NAILIST_TOGGLE_ACTIVE',
-    targetType: 'nailistProfile',
-    targetId: id,
-    metadata: { isActive },
-  })
+  await db.collection(COLLECTIONS.NAILIST_PROFILES).doc(id).update(updates)
 
-  return NextResponse.json({ message: isActive ? 'הנייליסטית הופעלה' : 'הנייליסטית הושבתה' })
+  if (isActive !== undefined) {
+    await writeAuditLog({
+      actorUid: admin.uid,
+      actorEmail: admin.email,
+      action: 'NAILIST_TOGGLE_ACTIVE',
+      targetType: 'nailistProfile',
+      targetId: id,
+      metadata: { isActive },
+    })
+  }
+  if (isVerified !== undefined) {
+    await writeAuditLog({
+      actorUid: admin.uid,
+      actorEmail: admin.email,
+      action: 'NAILIST_TOGGLE_VERIFIED',
+      targetType: 'nailistProfile',
+      targetId: id,
+      metadata: { isVerified },
+    })
+  }
+
+  const message = isActive !== undefined
+    ? (isActive ? 'הנייליסטית הופעלה' : 'הנייליסטית הושבתה')
+    : (isVerified ? 'הנייליסטית אומתה' : 'האימות בוטל')
+
+  return NextResponse.json({ message })
 }

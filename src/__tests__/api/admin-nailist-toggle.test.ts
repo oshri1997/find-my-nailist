@@ -90,4 +90,45 @@ describe('PATCH /api/admin/nailists/[id]', () => {
       }),
     ])
   })
+
+  it('returns 400 when neither isActive nor isVerified is provided', async () => {
+    const res = await PATCH(makeRequest({}), mockParams)
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when isVerified is not a boolean', async () => {
+    const res = await PATCH(makeRequest({ isVerified: 'yes' }), mockParams)
+    expect(res.status).toBe(400)
+  })
+
+  it('toggles isVerified independently and writes its own audit log entry', async () => {
+    const res = await PATCH(makeRequest({ isVerified: true }), mockParams)
+    expect(res.status).toBe(200)
+
+    expect(mockUpdateFn).toHaveBeenCalledWith(
+      expect.objectContaining({ isVerified: true, updatedAt: 'SERVER_TIMESTAMP' })
+    )
+    // isActive was not part of this request, so it must not appear in the update
+    expect(mockUpdateFn).not.toHaveBeenCalledWith(expect.objectContaining({ isActive: expect.anything() }))
+
+    expect(addedDocs.auditLogs).toEqual([
+      expect.objectContaining({
+        action: 'NAILIST_TOGGLE_VERIFIED',
+        targetType: 'nailistProfile',
+        targetId: 'profile-1',
+        metadata: { isVerified: true },
+      }),
+    ])
+  })
+
+  it('setting both isActive and isVerified in one call updates both and writes two audit log entries', async () => {
+    const res = await PATCH(makeRequest({ isActive: true, isVerified: true }), mockParams)
+    expect(res.status).toBe(200)
+
+    expect(mockUpdateFn).toHaveBeenCalledWith(
+      expect.objectContaining({ isActive: true, isVerified: true })
+    )
+    expect(addedDocs.auditLogs).toHaveLength(2)
+    expect(addedDocs.auditLogs.map((e) => e.action).sort()).toEqual(['NAILIST_TOGGLE_ACTIVE', 'NAILIST_TOGGLE_VERIFIED'])
+  })
 })

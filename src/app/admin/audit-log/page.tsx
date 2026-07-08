@@ -16,8 +16,11 @@ interface AuditLogEntry {
 const ACTION_LABELS: Record<string, string> = {
   USER_ROLE_CHANGE: 'שינוי תפקיד',
   USER_DELETE: 'מחיקת משתמש',
+  USER_SUSPEND: 'השעיית משתמש',
+  USER_UNSUSPEND: 'ביטול השעיה',
   REVIEW_DELETE: 'מחיקת ביקורת',
   NAILIST_TOGGLE_ACTIVE: 'שינוי סטטוס נייליסטית',
+  NAILIST_TOGGLE_VERIFIED: 'שינוי אימות נייליסטית',
 }
 
 function describe(entry: AuditLogEntry): string {
@@ -27,10 +30,15 @@ function describe(entry: AuditLogEntry): string {
       return `${m.targetEmail ?? entry.targetId}: ${m.oldRole ?? '—'} ← ${m.newRole ?? '—'}`
     case 'USER_DELETE':
       return `${m.email ?? entry.targetId}${m.role ? ` (${m.role})` : ''}`
+    case 'USER_SUSPEND':
+    case 'USER_UNSUSPEND':
+      return `${m.email ?? entry.targetId}`
     case 'REVIEW_DELETE':
       return `דירוג ${m.rating ?? '—'} מאת ${m.clientDisplayName || 'לקוחה'}`
     case 'NAILIST_TOGGLE_ACTIVE':
       return m.isActive ? 'הופעלה' : 'הושבתה'
+    case 'NAILIST_TOGGLE_VERIFIED':
+      return m.isVerified ? 'אומתה' : 'בוטל אימות'
     default:
       return entry.targetId
   }

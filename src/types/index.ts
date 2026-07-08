@@ -10,6 +10,8 @@ export interface UserDoc {
   displayName?: string
   photoUrl?: string
   role: UserRole
+  isAdmin?: boolean
+  suspended?: boolean   // blocks new sign-ins/session refresh; distinct from account deletion
   createdAt: Timestamp
   updatedAt: Timestamp
 }
@@ -114,7 +116,14 @@ export interface ReviewDoc {
   updatedAt: Timestamp
 }
 
-export type AuditAction = 'USER_ROLE_CHANGE' | 'USER_DELETE' | 'REVIEW_DELETE' | 'NAILIST_TOGGLE_ACTIVE'
+export type AuditAction =
+  | 'USER_ROLE_CHANGE'
+  | 'USER_DELETE'
+  | 'USER_SUSPEND'
+  | 'USER_UNSUSPEND'
+  | 'REVIEW_DELETE'
+  | 'NAILIST_TOGGLE_ACTIVE'
+  | 'NAILIST_TOGGLE_VERIFIED'
 
 export interface AuditLogDoc {
   actorUid: string

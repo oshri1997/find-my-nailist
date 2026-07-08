@@ -77,11 +77,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (firebaseUser) {
             Sentry.setUser({ id: firebaseUser.uid })
             const token = await firebaseUser.getIdToken()
-            await fetch('/api/auth/session', {
+            const sessionRes = await fetch('/api/auth/session', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ token }),
             })
+            if (sessionRes.status === 403) {
+              // Account was suspended after this session started — the
+              // Firebase token itself is still cryptographically valid, so
+              // this is the only place that catches it (a brand-new sign-in
+              // attempt is already blocked earlier, by Firebase's own
+              // auth/user-disabled error on the login page).
+              const { signOutUser } = await import('@/lib/firebase/auth-helpers')
+              await signOutUser()
+              window.location.assign('/login?suspended=1')
+              return
+            }
             const roleRes = await fetch('/api/me/role')
             if (roleRes.ok) {
               const { role: fetchedRole, isAdmin: fetchedIsAdmin, onboardingCompleted: fetchedOnboarded } = await roleRes.json()
