@@ -294,6 +294,20 @@ describe('POST /api/appointments', () => {
     )
   })
 
+  it('falls back to the users doc displayName when the client profile has no name fields at all', async () => {
+    // Client profiles never actually persist a displayName field in
+    // production (only firstName/lastName from onboarding) — the users doc
+    // (set at signup, from Google or the registration form) is the real
+    // second-tier fallback so a name still shows instead of "לקוחה".
+    docStore['clientProfiles/client-profile-1'] = { userId: 'user-123' }
+    docStore['users/user-123'] = { displayName: 'שרה כהן', email: 'client@test.com' }
+    const req = makeRequest('POST', validBody, 'valid-token')
+    await POST(req)
+    expect(mockAppointmentAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ clientDisplayName: 'שרה כהן' })
+    )
+  })
+
   it('stores both confirmToken and declineToken in the appointment', async () => {
     const req = makeRequest('POST', validBody, 'valid-token')
     await POST(req)

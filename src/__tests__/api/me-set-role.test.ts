@@ -181,4 +181,17 @@ describe('PATCH /api/me/set-role', () => {
       expect.objectContaining({ onboardingCompleted: false, isActive: false })
     )
   })
+
+  it('creates a new client profile with onboardingCompleted: false, gated by OnboardingGuard until the name step finishes', async () => {
+    // Regression: this branch used to omit onboardingCompleted entirely,
+    // which the "missing field = already onboarded" convention (see
+    // /api/me/role) silently treated as done — letting a client book/review
+    // with no firstName/lastName ever collected, permanently showing
+    // "לקוחה" instead of a real name.
+    const req = makeRequest({ role: 'CLIENT' })
+    await PATCH(req)
+    expect(mockAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ onboardingCompleted: false })
+    )
+  })
 })

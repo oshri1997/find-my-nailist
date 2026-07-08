@@ -73,6 +73,11 @@ export async function PATCH(request: NextRequest) {
         await db.collection(COLLECTIONS.CLIENT_PROFILES).add({
           userId: uid,
           email: decoded.email ?? '',
+          // Hidden behind OnboardingGuard until /onboarding/client's name
+          // step completes — otherwise this client could book/review with
+          // no firstName/lastName ever collected, permanently showing
+          // "לקוחה" instead of a real name. Mirrors the NAILIST branch above.
+          onboardingCompleted: false,
           createdAt: now,
           updatedAt: now,
         })

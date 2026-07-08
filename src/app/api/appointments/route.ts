@@ -69,9 +69,10 @@ export async function POST(request: NextRequest) {
     const endTime = new Date(startTime.getTime() + service.durationMinutes * 60 * 1000)
 
     // Fetch nailist + client profiles (needed for denormalized fields + email)
-    const [nailistSnap, clientProfileSnap] = await Promise.all([
+    const [nailistSnap, clientProfileSnap, clientUserSnap] = await Promise.all([
       db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).get(),
       db.collection(COLLECTIONS.CLIENT_PROFILES).doc(data.clientProfileId).get(),
+      db.collection(COLLECTIONS.USERS).doc(decoded.uid).get(),
     ])
     const nailist = nailistSnap.data()
     const clientProfile = clientProfileSnap.data()
@@ -82,9 +83,14 @@ export async function POST(request: NextRequest) {
       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     )
 
+    // Client profiles never actually store a `displayName` field (only
+    // firstName/lastName, from onboarding) — the users doc's displayName
+    // (set at signup, from Google or the registration form) is the real
+    // fallback so a client who somehow reached this without a completed
+    // name step still gets a real name instead of a permanent "לקוחה".
     const clientDisplayName = clientProfile?.firstName && clientProfile?.lastName
       ? `${clientProfile.firstName} ${clientProfile.lastName}`
-      : (clientProfile?.displayName ?? '')
+      : (clientProfile?.displayName ?? clientUserSnap.data()?.displayName ?? '')
 
     const now = FieldValue.serverTimestamp()
     const appointmentData = {
@@ -130,13 +136,14 @@ export async function POST(request: NextRequest) {
       throw txErr
     }
 
-    // Both nailist and client profiles may lack email — always fall back to USERS
-    const [nailistUserSnap, clientUserSnap] = await Promise.all([
-      nailist?.userId ? db.collection(COLLECTIONS.USERS).doc(nailist.userId).get() : Promise.resolve(null),
-      clientProfile?.userId ? db.collection(COLLECTIONS.USERS).doc(clientProfile.userId).get() : Promise.resolve(null),
-    ])
+    // Nailist profile may lack email — always fall back to USERS. The
+    // client's users doc was already fetched above (for the clientDisplayName
+    // fallback) — reuse it instead of fetching it again.
+    const nailistUserSnap = nailist?.userId
+      ? await db.collection(COLLECTIONS.USERS).doc(nailist.userId).get()
+      : null
     const nailistEmail: string | undefined = (nailist?.email as string | undefined) || (nailistUserSnap?.data()?.email as string | undefined) || undefined
-    const clientEmail: string | undefined = (clientProfile?.email as string | undefined) || (clientUserSnap?.data()?.email as string | undefined) || undefined
+    const clientEmail: string | undefined = (clientProfile?.email as string | undefined) || (clientUserSnap.data()?.email as string | undefined) || undefined
 
     console.log('[booking] email lookup — nailistEmail:', nailistEmail, 'clientEmail:', clientEmail)
 

@@ -81,11 +81,12 @@ export default function AuthPage() {
           return
         }
 
-        // Existing account — role/onboarding-aware routing already lives in
-        // HomeRedirect (mounted at '/'), so land there instead of
-        // duplicating that logic here. No more "registered as a different
-        // role" mismatch check: with no role pre-declared at registration,
-        // there's nothing left to mismatch — just sign the account in.
+        // Existing account — land on the deep-linked page if there was one,
+        // otherwise the actual homepage (no more auto-bounce to a
+        // role-specific dashboard: the navbar's own links get her there).
+        // No more "registered as a different role" mismatch check: with no
+        // role pre-declared at registration, there's nothing left to
+        // mismatch — just sign the account in.
         router.replace(redirectTo || '/')
       })
       .catch(() => {

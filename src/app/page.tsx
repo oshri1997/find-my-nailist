@@ -4,7 +4,6 @@ import { HeroSection } from '@/components/home/hero-section'
 import { HowItWorksSection } from '@/components/home/how-it-works'
 import { FeaturesSection } from '@/components/home/features-section'
 import { NailistCtaSection } from '@/components/home/nailist-cta'
-import { HomeRedirect } from '@/components/home/home-redirect'
 
 export const metadata: Metadata = {
   title: "נייליסטיות — מצאי נייליסטיות באזורך במהירות ובקלות",
@@ -58,7 +57,6 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      <HomeRedirect />
       <HeroSection />
       <HowItWorksSection />
       <FeaturesSection />

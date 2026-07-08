@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { LogOut, LayoutDashboard, ChevronDown, CalendarDays, Shield, Heart } from 'lucide-react'
+import { LogOut, LayoutDashboard, ChevronDown, CalendarDays, Shield, Heart, Search } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -91,6 +91,12 @@ export function Navbar() {
             <ThemeToggle />
             {user ? (
               <>
+                <Link href="/search">
+                  <Button size="sm" variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground gap-2 cursor-pointer">
+                    <Search className="h-4 w-4" />
+                    <span className="hidden sm:inline">חיפוש</span>
+                  </Button>
+                </Link>
                 {role === 'NAILIST' && (
                   <Link href="/dashboard/nailist">
                     <Button size="sm" variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground gap-2 cursor-pointer">
