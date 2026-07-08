@@ -11,7 +11,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
 
 export function Navbar() {
-  const { user, role, isAdmin, signOut } = useAuth()
+  const { user, role, isAdmin, displayName, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
   const [showMenu, setShowMenu] = useState(false)
@@ -34,11 +34,15 @@ export function Navbar() {
     router.push('/')
   }
 
+  // Prefer the name she actually entered in the app over the raw Firebase
+  // Auth displayName, which is whatever her sign-in provider (e.g. Google)
+  // has on file and can be an unrelated nickname/handle.
+  const resolvedName = displayName || user?.displayName || null
   // The compact nav button only has room for a first name, but the dropdown
   // panel below has a dedicated header row (same width as the email under
   // it) — show the full name there instead of truncating to one word.
-  const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? ''
-  const fullName = user?.displayName || user?.email?.split('@')[0] || ''
+  const firstName = resolvedName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? ''
+  const fullName = resolvedName || user?.email?.split('@')[0] || ''
 
   return (
     <motion.nav

@@ -28,7 +28,7 @@ const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { user, isAdmin, signOut } = useAuth()
+  const { user, isAdmin, displayName: resolvedDisplayName, signOut } = useAuth()
   const router = useRouter()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [showMoreSheet, setShowMoreSheet] = useState(false)
@@ -71,7 +71,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return link.dynamic ? (profileId ? `/nailists/${profileId}` : null) : link.href
   }
 
-  const displayName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
+  const displayName = (resolvedDisplayName || user?.displayName)?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
 
   function handleSignOut() {
     router.push('/')

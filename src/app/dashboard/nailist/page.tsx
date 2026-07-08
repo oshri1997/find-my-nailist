@@ -110,8 +110,8 @@ function formatReviewerName(displayName?: string) {
 }
 
 export default function NailistDashboard() {
-  const { user } = useAuth()
-  const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
+  const { user, displayName } = useAuth()
+  const firstName = (displayName || user?.displayName)?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
   const [profile, setProfile] = useState<NailistProfile | null>(null)
   const [hasPhotos, setHasPhotos] = useState(false)
   const [hasServices, setHasServices] = useState(false)

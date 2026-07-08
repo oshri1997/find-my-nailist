@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
+import { ImageLightbox } from '@/components/ui/image-lightbox'
 import { ImagePlus, X, Loader2, AlertCircle, Star } from 'lucide-react'
 
 interface Photo {
@@ -20,6 +21,7 @@ export default function PortfolioPage() {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
+  const [lightboxPhoto, setLightboxPhoto] = useState<Photo | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -207,7 +209,8 @@ export default function PortfolioPage() {
                 <img
                   src={photo.url}
                   alt={photo.caption ?? 'תמונת פורטפוליו'}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  onClick={() => setLightboxPhoto(photo)}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 cursor-zoom-in"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
 
@@ -253,6 +256,14 @@ export default function PortfolioPage() {
             </motion.button>
           </AnimatePresence>
         </div>
+      )}
+
+      {lightboxPhoto && (
+        <ImageLightbox
+          src={lightboxPhoto.url}
+          alt={lightboxPhoto.caption ?? 'תמונת פורטפוליו'}
+          onClose={() => setLightboxPhoto(null)}
+        />
       )}
     </div>
   )

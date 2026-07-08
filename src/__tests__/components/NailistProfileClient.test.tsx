@@ -34,9 +34,9 @@ const baseProfile = {
   reviewCount: 12,
   latitude: 32.08,
   longitude: 34.78,
-  services: [],
-  portfolio: [],
-  reviews: [],
+  services: [] as { id: string }[],
+  portfolio: [] as { id: string; url: string; caption?: string }[],
+  reviews: [] as { id: string }[],
 }
 
 function mockProfileFetch(profile: typeof baseProfile, opts?: { asOwner?: boolean }) {
@@ -174,5 +174,29 @@ describe('NailistProfileClient — owner avatar edit', () => {
       const img = container.querySelector('img[alt="סטודיו יופי"]') as HTMLImageElement
       expect(img.src).toBe('https://example.com/new-avatar.jpg')
     })
+  })
+})
+
+describe('NailistProfileClient — portfolio lightbox', () => {
+  it('opens the full-size photo in a lightbox when a portfolio thumbnail is clicked, and closes on backdrop click', async () => {
+    mockUseAuth.mockReturnValue({ user: null, role: null })
+    const profileWithPhotos = {
+      ...baseProfile,
+      portfolio: [{ id: 'photo-1', url: 'https://example.com/nail-art.jpg', caption: 'עבודה יפה' }],
+    }
+    mockProfileFetch(profileWithPhotos)
+    render(<NailistProfileClient id="nailist-1" />)
+
+    await waitFor(() => {
+      expect(screen.getByAltText('עבודה יפה')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByAltText('עבודה יפה'))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('סגירה')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByLabelText('סגירה'))
+    expect(screen.queryByLabelText('סגירה')).not.toBeInTheDocument()
   })
 })

@@ -10,6 +10,7 @@ import BookingModal from '@/components/booking/BookingModal'
 import Link from 'next/link'
 import { useAuth } from '@/components/auth/auth-provider'
 import { VerifyEmailModal } from '@/components/auth/VerifyEmailModal'
+import { ImageLightbox } from '@/components/ui/image-lightbox'
 
 interface Service {
   id: string
@@ -66,6 +67,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
   const [showVerifyEmail, setShowVerifyEmail] = useState(false)
   const [bookingServiceId, setBookingServiceId] = useState<string | undefined>(undefined)
   const [activeTab, setActiveTab] = useState<'portfolio' | 'services' | 'reviews'>('portfolio')
+  const [lightboxPhoto, setLightboxPhoto] = useState<PortfolioPhoto | null>(null)
   const [copied, setCopied] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
@@ -480,7 +482,12 @@ export default function NailistProfileClient({ id }: { id: string }) {
                     className="aspect-square rounded-2xl overflow-hidden bg-muted"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={photo.url} alt={photo.caption ?? ''} className="w-full h-full object-cover" />
+                    <img
+                      src={photo.url}
+                      alt={photo.caption ?? ''}
+                      onClick={() => setLightboxPhoto(photo)}
+                      className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-300"
+                    />
                   </motion.div>
                 ))}
               </div>
@@ -586,6 +593,14 @@ export default function NailistProfileClient({ id }: { id: string }) {
 
       {showVerifyEmail && user && (
         <VerifyEmailModal user={user} onClose={() => setShowVerifyEmail(false)} />
+      )}
+
+      {lightboxPhoto && (
+        <ImageLightbox
+          src={lightboxPhoto.url}
+          alt={lightboxPhoto.caption ?? ''}
+          onClose={() => setLightboxPhoto(null)}
+        />
       )}
     </div>
   )

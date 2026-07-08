@@ -50,4 +50,25 @@ describe('Navbar — display name', () => {
     fireEvent.click(screen.getAllByText('sarah')[0])
     expect(screen.getAllByText('sarah').length).toBeGreaterThan(0)
   })
+
+  it('prefers the app-resolved displayName over the raw Firebase Auth displayName from the sign-in provider', () => {
+    // Regression: a client who signed in with Google (whose account happens
+    // to have an unrelated nickname/handle as its Google profile name) but
+    // entered her real name during onboarding should see her real name here,
+    // not the Google-provided one.
+    mockUseAuth.mockReturnValue({
+      user: { uid: 'u1', displayName: 'DrakAtos YT', email: 'drakatosyt@gmail.com', photoURL: null },
+      role: 'CLIENT',
+      isAdmin: false,
+      displayName: 'ישראלה ישראלית',
+      signOut: jest.fn(),
+    })
+    render(<Navbar />)
+
+    expect(screen.getByText('ישראלה')).toBeInTheDocument()
+    expect(screen.queryByText('DrakAtos')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('ישראלה'))
+    expect(screen.getByText('ישראלה ישראלית')).toBeInTheDocument()
+  })
 })

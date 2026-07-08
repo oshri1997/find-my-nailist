@@ -13,6 +13,12 @@ interface AuthContextValue {
   role: UserRole
   isAdmin: boolean
   onboardingCompleted: boolean
+  // The name the client/nailist actually entered in the app (from her
+  // profile, or the users doc as set at registration) — prefer this over
+  // the raw Firebase Auth user.displayName, which is whatever the sign-in
+  // provider (e.g. Google) happens to have on file and can be an unrelated
+  // nickname/handle. Null until resolved or if nothing was ever collected.
+  displayName: string | null
   signOut: () => Promise<void>
   refreshRole: () => Promise<void>
 }
@@ -23,6 +29,7 @@ const AuthContext = createContext<AuthContextValue>({
   role: null,
   isAdmin: false,
   onboardingCompleted: true,
+  displayName: null,
   signOut: async () => {},
   refreshRole: async () => {},
 })
@@ -33,16 +40,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<UserRole>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [onboardingCompleted, setOnboardingCompleted] = useState(true)
+  const [displayName, setDisplayName] = useState<string | null>(null)
   const skipCallbackRef = useRef(false)
 
   const refreshRole = useCallback(async () => {
     try {
       const roleRes = await fetch('/api/me/role')
       if (roleRes.ok) {
-        const { role: fetchedRole, isAdmin: fetchedIsAdmin, onboardingCompleted: fetchedOnboarded } = await roleRes.json()
+        const { role: fetchedRole, isAdmin: fetchedIsAdmin, onboardingCompleted: fetchedOnboarded, displayName: fetchedDisplayName } = await roleRes.json()
         setRole(fetchedRole ?? null)
         setIsAdmin(fetchedIsAdmin === true)
         setOnboardingCompleted(fetchedOnboarded !== false)
+        setDisplayName(fetchedDisplayName ?? null)
       }
     } catch {}
   }, [])
@@ -57,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(null)
     setIsAdmin(false)
     setOnboardingCompleted(true)
+    setDisplayName(null)
     Sentry.setUser(null)
     skipCallbackRef.current = false
     setLoading(false)
@@ -95,14 +105,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             const roleRes = await fetch('/api/me/role')
             if (roleRes.ok) {
-              const { role: fetchedRole, isAdmin: fetchedIsAdmin, onboardingCompleted: fetchedOnboarded } = await roleRes.json()
+              const { role: fetchedRole, isAdmin: fetchedIsAdmin, onboardingCompleted: fetchedOnboarded, displayName: fetchedDisplayName } = await roleRes.json()
               setRole(fetchedRole ?? null)
               setIsAdmin(fetchedIsAdmin === true)
               setOnboardingCompleted(fetchedOnboarded !== false)
+              setDisplayName(fetchedDisplayName ?? null)
             } else {
               setRole(null)
               setIsAdmin(false)
               setOnboardingCompleted(true)
+              setDisplayName(null)
             }
           } else {
             Sentry.setUser(null)
@@ -110,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setRole(null)
             setIsAdmin(false)
             setOnboardingCompleted(true)
+            setDisplayName(null)
           }
         } catch {
           // session sync failed — auth state is still valid, don't block the UI
@@ -135,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, role, isAdmin, onboardingCompleted, signOut, refreshRole }}>
+    <AuthContext.Provider value={{ user, loading, role, isAdmin, onboardingCompleted, displayName, signOut, refreshRole }}>
       {children}
     </AuthContext.Provider>
   )

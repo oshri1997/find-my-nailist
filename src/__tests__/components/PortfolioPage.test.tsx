@@ -141,3 +141,30 @@ describe('PortfolioPage — card image picker', () => {
     expect(screen.queryByText('כרטיס')).not.toBeInTheDocument()
   })
 })
+
+describe('PortfolioPage — lightbox', () => {
+  it('opens the lightbox with the full-size image when a thumbnail is clicked', async () => {
+    mockFetch()
+    render(<PortfolioPage />)
+
+    await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(photos.length))
+    fireEvent.click(screen.getAllByRole('img')[0])
+
+    await waitFor(() => {
+      const images = screen.getAllByAltText('תמונת פורטפוליו') as HTMLImageElement[]
+      expect(images.some(img => img.src === photos[0].url)).toBe(true)
+    })
+  })
+
+  it('closes the lightbox when the close button is clicked', async () => {
+    mockFetch()
+    render(<PortfolioPage />)
+
+    await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(photos.length))
+    fireEvent.click(screen.getAllByRole('img')[0])
+    await waitFor(() => expect(screen.getByLabelText('סגירה')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByLabelText('סגירה'))
+    expect(screen.queryByLabelText('סגירה')).not.toBeInTheDocument()
+  })
+})

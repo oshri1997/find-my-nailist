@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Admin-only accounts have no client/nailist profile to check onboarding
     // against — they're always "onboarded" and skip that flow entirely.
     if (role === 'ADMIN') {
-      return NextResponse.json({ role, isAdmin: true, onboardingCompleted: true })
+      return NextResponse.json({ role, isAdmin: true, onboardingCompleted: true, displayName: data?.displayName ?? null })
     }
 
     const profileCollection = role === 'NAILIST' ? COLLECTIONS.NAILIST_PROFILES : COLLECTIONS.CLIENT_PROFILES
@@ -30,9 +30,21 @@ export async function GET(request: NextRequest) {
     // Missing field (profiles created before this flag existed, or no profile
     // yet) counts as already onboarded — don't retroactively lock out
     // existing accounts.
-    const onboardingCompleted = profileSnap.empty ? true : profileSnap.docs[0].data().onboardingCompleted !== false
+    const profileData = profileSnap.docs[0]?.data()
+    const onboardingCompleted = profileSnap.empty ? true : profileData?.onboardingCompleted !== false
 
-    return NextResponse.json({ role, isAdmin: data?.isAdmin === true, onboardingCompleted })
+    // Prefer the name the client actually entered in the app (firstName +
+    // lastName from onboarding) over the Firebase Auth SDK's own
+    // displayName — the latter is whatever the sign-in provider (Google)
+    // happened to have on file, which can be a nickname/handle unrelated to
+    // the name she gave us. Fall back to the users doc's displayName (set
+    // at registration) if the profile has no name fields yet.
+    const displayName =
+      (profileData?.firstName && profileData?.lastName ? `${profileData.firstName} ${profileData.lastName}` : undefined)
+      ?? data?.displayName
+      ?? null
+
+    return NextResponse.json({ role, isAdmin: data?.isAdmin === true, onboardingCompleted, displayName })
   } catch (error) {
     console.error(error)
     return NextResponse.json({ role: null, isAdmin: false }, { status: 401 })

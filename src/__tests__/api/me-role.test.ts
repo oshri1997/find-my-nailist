@@ -202,4 +202,39 @@ describe('GET /api/me/role', () => {
     expect(json.isAdmin).toBe(true)
     expect(json.onboardingCompleted).toBe(true)
   })
+
+  it('prefers the client profile firstName+lastName over the users doc displayName', async () => {
+    docStore['users/user-123'] = { role: 'CLIENT', email: 'client@test.com', displayName: 'DrakAtos YT' }
+    profileDocs = [{ data: () => ({ firstName: 'ישראלה', lastName: 'ישראלית' }) }]
+    const req = makeRequest()
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.displayName).toBe('ישראלה ישראלית')
+  })
+
+  it('falls back to the users doc displayName when the profile has no name fields', async () => {
+    docStore['users/user-123'] = { role: 'CLIENT', email: 'client@test.com', displayName: 'DrakAtos YT' }
+    profileDocs = [{ data: () => ({}) }]
+    const req = makeRequest()
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.displayName).toBe('DrakAtos YT')
+  })
+
+  it('returns displayName: null when nothing is on file', async () => {
+    docStore['users/user-123'] = { role: 'CLIENT', email: 'client@test.com' }
+    profileDocs = [{ data: () => ({}) }]
+    const req = makeRequest()
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.displayName).toBeNull()
+  })
+
+  it('returns the ADMIN fast path displayName straight from the users doc', async () => {
+    docStore['users/user-123'] = { role: 'ADMIN', isAdmin: true, email: 'admin@test.com', displayName: 'מנהל ראשי' }
+    const req = makeRequest()
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.displayName).toBe('מנהל ראשי')
+  })
 })
