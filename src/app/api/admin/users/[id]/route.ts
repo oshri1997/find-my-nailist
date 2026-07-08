@@ -17,7 +17,7 @@ export async function PATCH(
   const body = await request.json()
   const newRole: string = body.role
 
-  if (!['CLIENT', 'NAILIST'].includes(newRole)) {
+  if (!['CLIENT', 'NAILIST', 'ADMIN'].includes(newRole)) {
     return NextResponse.json({ error: 'תפקיד לא תקין' }, { status: 400 })
   }
 
@@ -25,10 +25,20 @@ export async function PATCH(
   const userDoc = await db.collection(COLLECTIONS.USERS).doc(id).get()
   if (!userDoc.exists) return NextResponse.json({ error: 'משתמש לא נמצא' }, { status: 404 })
 
-  const currentRole = userDoc.data()?.role
+  const userData = userDoc.data()
+  const currentRole = userData?.role
 
-  // If demoting from NAILIST → CLIENT, hide the nailist profile from search
-  if (currentRole === 'NAILIST' && newRole === 'CLIENT') {
+  // A pure-admin account's role can't be changed away from ADMIN through
+  // this generic endpoint — this route never touches the isAdmin flag, so
+  // demoting the role here would leave a confusing isAdmin:true + role:CLIENT
+  // hybrid instead of cleanly revoking admin access.
+  if (currentRole === 'ADMIN' && newRole !== 'ADMIN') {
+    return NextResponse.json({ error: 'לא ניתן להסיר תפקיד אדמין דרך מסך זה' }, { status: 403 })
+  }
+
+  // If moving away from NAILIST (demoting to CLIENT, or promoting to ADMIN),
+  // hide the nailist profile from search.
+  if (currentRole === 'NAILIST' && newRole !== 'NAILIST') {
     const profileSnap = await db.collection(COLLECTIONS.NAILIST_PROFILES)
       .where('userId', '==', id).limit(1).get()
     if (!profileSnap.empty) {
@@ -36,7 +46,13 @@ export async function PATCH(
     }
   }
 
-  await db.collection(COLLECTIONS.USERS).doc(id).update({ role: newRole })
+  const updates: Record<string, unknown> = { role: newRole }
+  // Promoting to ADMIN grants actual admin-panel access — role alone
+  // (checked by client-side routing/onboarding) doesn't gate /admin, isAdmin
+  // (checked by verifyAdmin()) does.
+  if (newRole === 'ADMIN') updates.isAdmin = true
+
+  await db.collection(COLLECTIONS.USERS).doc(id).update(updates)
 
   await writeAuditLog({
     actorUid: admin.uid,
@@ -44,7 +60,7 @@ export async function PATCH(
     action: 'USER_ROLE_CHANGE',
     targetType: 'user',
     targetId: id,
-    metadata: { targetEmail: userDoc.data()?.email, oldRole: currentRole, newRole },
+    metadata: { targetEmail: userData?.email, oldRole: currentRole, newRole },
   })
 
   return NextResponse.json({ message: 'התפקיד עודכן בהצלחה' })

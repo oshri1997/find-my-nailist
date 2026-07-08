@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
   if (search) {
     users = users.filter(u => u.email.toLowerCase().includes(search) || u.displayName.toLowerCase().includes(search))
   }
-  if (role === 'CLIENT' || role === 'NAILIST') {
+  if (role === 'CLIENT' || role === 'NAILIST' || role === 'ADMIN') {
     users = users.filter(u => u.role === role)
   }
   if (createdFrom) {

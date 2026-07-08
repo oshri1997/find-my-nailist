@@ -19,7 +19,7 @@ export function OnboardingGuard() {
   const router = useRouter()
 
   useEffect(() => {
-    if (loading || !role || onboardingCompleted) return
+    if (loading || !role || role === 'ADMIN' || onboardingCompleted) return
     const allowed = ALLOWED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))
     if (!allowed) router.replace(role === 'NAILIST' ? '/onboarding' : '/onboarding/client')
   }, [loading, role, onboardingCompleted, pathname, router])

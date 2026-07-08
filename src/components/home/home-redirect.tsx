@@ -16,6 +16,7 @@ export function HomeRedirect() {
     // from those too).
     if (role === 'NAILIST') router.replace(onboardingCompleted ? '/dashboard/nailist' : '/onboarding')
     else if (role === 'CLIENT') router.replace(onboardingCompleted ? '/search' : '/onboarding/client')
+    else if (role === 'ADMIN') router.replace('/admin')
   }, [user, role, onboardingCompleted, loading, router])
 
   return null

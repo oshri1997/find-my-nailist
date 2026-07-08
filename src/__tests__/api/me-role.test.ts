@@ -191,4 +191,15 @@ describe('GET /api/me/role', () => {
     const json = await res.json()
     expect(json.onboardingCompleted).toBe(true)
   })
+
+  it('returns an ADMIN fast path (isAdmin: true, onboardingCompleted: true) without any profile lookup', async () => {
+    docStore['users/user-123'] = { role: 'ADMIN', isAdmin: true, email: 'admin@test.com' }
+    const req = makeRequest()
+    const res = await GET(req)
+    expect(res.status).toBe(200)
+    const json = await res.json()
+    expect(json.role).toBe('ADMIN')
+    expect(json.isAdmin).toBe(true)
+    expect(json.onboardingCompleted).toBe(true)
+  })
 })

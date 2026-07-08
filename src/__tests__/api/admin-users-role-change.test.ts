@@ -83,7 +83,7 @@ describe('PATCH /api/admin/users/[id]', () => {
 
   it('returns 400 for an invalid role', async () => {
     collectionStore.users = [{ __id: 'target-uid', email: 'u@test.com', role: 'CLIENT' }]
-    const res = await PATCH(makeRequest({ role: 'ADMIN' }), mockParams)
+    const res = await PATCH(makeRequest({ role: 'SUPERUSER' }), mockParams)
     expect(res.status).toBe(400)
   })
 
@@ -122,5 +122,41 @@ describe('PATCH /api/admin/users/[id]', () => {
     expect(mockUpdateFn).toHaveBeenCalledWith(
       expect.objectContaining({ isActive: false, updatedAt: 'SERVER_TIMESTAMP' })
     )
+  })
+
+  it('promotes a NAILIST to ADMIN, sets isAdmin, and deactivates the nailist profile', async () => {
+    collectionStore.users = [{ __id: 'target-uid', email: 'n@test.com', role: 'NAILIST' }]
+    collectionStore.nailistProfiles = [{ __id: 'profile-1', userId: 'target-uid', isActive: true }]
+
+    const res = await PATCH(makeRequest({ role: 'ADMIN' }), mockParams)
+    expect(res.status).toBe(200)
+
+    expect(mockUpdateFn).toHaveBeenCalledWith({ role: 'ADMIN', isAdmin: true })
+    expect(mockUpdateFn).toHaveBeenCalledWith(
+      expect.objectContaining({ isActive: false, updatedAt: 'SERVER_TIMESTAMP' })
+    )
+
+    expect(addedDocs.auditLogs).toEqual([
+      expect.objectContaining({
+        action: 'USER_ROLE_CHANGE',
+        metadata: { targetEmail: 'n@test.com', oldRole: 'NAILIST', newRole: 'ADMIN' },
+      }),
+    ])
+  })
+
+  it('promotes a CLIENT to ADMIN without touching any nailist profile', async () => {
+    collectionStore.users = [{ __id: 'target-uid', email: 'c@test.com', role: 'CLIENT' }]
+
+    const res = await PATCH(makeRequest({ role: 'ADMIN' }), mockParams)
+    expect(res.status).toBe(200)
+    expect(mockUpdateFn).toHaveBeenCalledWith({ role: 'ADMIN', isAdmin: true })
+  })
+
+  it('blocks demoting a pure-ADMIN account away from ADMIN', async () => {
+    collectionStore.users = [{ __id: 'target-uid', email: 'a@test.com', role: 'ADMIN' }]
+
+    const res = await PATCH(makeRequest({ role: 'CLIENT' }), mockParams)
+    expect(res.status).toBe(403)
+    expect(mockUpdateFn).not.toHaveBeenCalled()
   })
 })

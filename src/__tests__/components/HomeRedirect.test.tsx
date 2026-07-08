@@ -58,4 +58,10 @@ describe('HomeRedirect', () => {
     expect(mockReplace).toHaveBeenCalledWith('/onboarding/client')
     expect(mockReplace).not.toHaveBeenCalledWith('/search')
   })
+
+  it('sends an admin-only user straight to /admin', () => {
+    mockUseAuth.mockReturnValue({ user: { uid: 'u1' }, role: 'ADMIN', onboardingCompleted: true, loading: false })
+    render(<HomeRedirect />)
+    expect(mockReplace).toHaveBeenCalledWith('/admin')
+  })
 })

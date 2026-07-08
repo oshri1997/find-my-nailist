@@ -15,6 +15,12 @@ export async function GET(request: NextRequest) {
     const data = snap.data()
     const role = data?.role ?? 'CLIENT'
 
+    // Admin-only accounts have no client/nailist profile to check onboarding
+    // against — they're always "onboarded" and skip that flow entirely.
+    if (role === 'ADMIN') {
+      return NextResponse.json({ role, isAdmin: true, onboardingCompleted: true })
+    }
+
     const profileCollection = role === 'NAILIST' ? COLLECTIONS.NAILIST_PROFILES : COLLECTIONS.CLIENT_PROFILES
     const profileSnap = await db
       .collection(profileCollection)

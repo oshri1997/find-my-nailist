@@ -13,6 +13,8 @@ const baseUsers = [
 
 let lastUsersUrl = ''
 
+let lastRolePatchBody: unknown = null
+
 function mockFetch() {
   global.fetch = jest.fn().mockImplementation((url: string, init?: RequestInit) => {
     if (url.startsWith('/api/admin/users/bulk')) {
@@ -21,6 +23,10 @@ function mockFetch() {
         ok: true,
         json: async () => ({ data: { succeeded: body.userIds, failed: [] } }),
       } as Response)
+    }
+    if (init?.method === 'PATCH' && /\/api\/admin\/users\/[^/]+$/.test(url)) {
+      lastRolePatchBody = JSON.parse((init?.body as string) ?? '{}')
+      return Promise.resolve({ ok: true, json: async () => ({ message: 'ok' }) } as Response)
     }
     if (url.startsWith('/api/admin/users')) {
       lastUsersUrl = url
@@ -100,5 +106,51 @@ describe('AdminUsersPage — bulk actions', () => {
 
     fireEvent.click(screen.getByLabelText('בחר הכל'))
     expect(await screen.findByText('2 נבחרו')).toBeInTheDocument()
+  })
+})
+
+describe('AdminUsersPage — convert to admin-only', () => {
+  beforeEach(() => {
+    lastUsersUrl = ''
+    lastRolePatchBody = null
+    mockFetch()
+  })
+
+  it('promotes a user to ADMIN after confirming the modal', async () => {
+    render(<AdminUsersPage />)
+    await waitFor(() => expect(screen.getByText('alice@test.com')).toBeInTheDocument())
+
+    const aliceRow = screen.getByText('alice@test.com').closest('tr') as HTMLElement
+    fireEvent.click(within(aliceRow).getByTitle('הפוך לאדמין בלבד'))
+
+    expect(await screen.findByText('הפיכה לאדמין בלבד')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'אישור' }))
+
+    await waitFor(() => {
+      expect(lastRolePatchBody).toEqual({ role: 'ADMIN' })
+    })
+  })
+
+  it('renders a pure-ADMIN row with a static badge and no role-toggle buttons', async () => {
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.startsWith('/api/admin/users/bulk')) return Promise.resolve({ ok: true, json: async () => ({ data: { succeeded: [], failed: [] } }) } as Response)
+      if (url.startsWith('/api/admin/users')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            data: [{ id: 'a1', email: 'pureadmin@test.com', displayName: 'Pure Admin', photoUrl: null, role: 'ADMIN', isAdmin: true, suspended: false, createdAt: null, onboardingCompleted: true }],
+          }),
+        } as Response)
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
+    })
+
+    render(<AdminUsersPage />)
+    await waitFor(() => expect(screen.getByText('pureadmin@test.com')).toBeInTheDocument())
+
+    const row = screen.getByText('pureadmin@test.com').closest('tr') as HTMLElement
+    expect(within(row).getByText('אדמין בלבד')).toBeInTheDocument()
+    expect(within(row).queryByText('נייליסטית')).not.toBeInTheDocument()
+    expect(within(row).queryByText('לקוח')).not.toBeInTheDocument()
   })
 })

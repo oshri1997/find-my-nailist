@@ -48,4 +48,14 @@ describe('HeroSection — "אני נייליסטית" button', () => {
     expect(pushMock).not.toHaveBeenCalledWith('/login?tab=register')
     expect(screen.getByText('את כבר רשומה כלקוחה!')).toBeInTheDocument()
   })
+
+  it('navigates straight to /admin for a logged-in admin-only user, without showing the modal', () => {
+    mockUseAuth.mockReturnValue({ user: { uid: 'u1' }, role: 'ADMIN' })
+    render(<HeroSection />)
+
+    fireEvent.click(screen.getByText('אני נייליסטית →'))
+
+    expect(pushMock).toHaveBeenCalledWith('/admin')
+    expect(screen.queryByText(/את כבר רשומה/)).not.toBeInTheDocument()
+  })
 })

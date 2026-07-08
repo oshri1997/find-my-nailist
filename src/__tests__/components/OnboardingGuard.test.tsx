@@ -96,4 +96,11 @@ describe('OnboardingGuard', () => {
     render(<OnboardingGuard />)
     expect(mockReplace).not.toHaveBeenCalled()
   })
+
+  it('never redirects an ADMIN, even with onboardingCompleted: false, since admins skip onboarding entirely', () => {
+    mockUseAuth.mockReturnValue({ role: 'ADMIN', onboardingCompleted: false, loading: false })
+    mockPathname = '/admin/users'
+    render(<OnboardingGuard />)
+    expect(mockReplace).not.toHaveBeenCalled()
+  })
 })

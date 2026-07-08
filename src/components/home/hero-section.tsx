@@ -24,6 +24,8 @@ export function HeroSection() {
   function handleNailistClick() {
     if (user && role === 'NAILIST') {
       router.push('/dashboard/nailist')
+    } else if (user && role === 'ADMIN') {
+      router.push('/admin')
     } else if (user) {
       // Logged in but not as a nailist (e.g. a client account) — the register
       // flow would just bounce them straight back with an "already registered"

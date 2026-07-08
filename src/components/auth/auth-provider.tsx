@@ -5,7 +5,7 @@ import type { User } from 'firebase/auth'
 import * as Sentry from '@sentry/nextjs'
 import { NailLoader } from '@/components/ui/nail-loader'
 
-type UserRole = 'NAILIST' | 'CLIENT' | null
+type UserRole = 'NAILIST' | 'CLIENT' | 'ADMIN' | null
 
 interface AuthContextValue {
   user: User | null

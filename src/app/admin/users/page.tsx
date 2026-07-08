@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Search, Trash2, Loader2, User, Scissors, Ban, CheckCircle2 } from 'lucide-react'
+import { Search, Trash2, Loader2, User, Scissors, Ban, CheckCircle2, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 interface AdminUser {
@@ -19,6 +19,7 @@ interface AdminUser {
 const ROLE_COLORS: Record<string, string> = {
   CLIENT: 'bg-blue-50 text-blue-600 border-blue-200',
   NAILIST: 'bg-pink-50 text-primary border-pink-200',
+  ADMIN: 'bg-purple-50 text-purple-600 border-purple-200',
 }
 
 type BulkAction = 'suspend' | 'unsuspend' | 'delete'
@@ -37,6 +38,7 @@ export default function AdminUsersPage() {
   const [confirmDelete, setConfirmDelete] = useState<AdminUser | null>(null)
   const [changingRole, setChangingRole] = useState<string | null>(null)
   const [togglingSuspend, setTogglingSuspend] = useState<string | null>(null)
+  const [confirmPromote, setConfirmPromote] = useState<AdminUser | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [confirmBulk, setConfirmBulk] = useState<BulkAction | null>(null)
   const [bulkRunning, setBulkRunning] = useState(false)
@@ -72,7 +74,7 @@ export default function AdminUsersPage() {
       .catch(() => {})
   }, [])
 
-  async function handleRoleChange(user: AdminUser, newRole: 'CLIENT' | 'NAILIST') {
+  async function handleRoleChange(user: AdminUser, newRole: 'CLIENT' | 'NAILIST' | 'ADMIN') {
     if (user.role === newRole) return
     setChangingRole(user.id)
     const res = await fetch(`/api/admin/users/${user.id}`, {
@@ -81,12 +83,17 @@ export default function AdminUsersPage() {
       body: JSON.stringify({ role: newRole }),
     })
     if (res.ok) {
-      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u))
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole, isAdmin: newRole === 'ADMIN' ? true : u.isAdmin } : u))
       if (adminUser?.uid === user.id) {
         await refreshRole()
       }
     }
     setChangingRole(null)
+  }
+
+  async function handlePromoteToAdmin(user: AdminUser) {
+    setConfirmPromote(null)
+    await handleRoleChange(user, 'ADMIN')
   }
 
   async function handleDelete(user: AdminUser) {
@@ -183,6 +190,7 @@ export default function AdminUsersPage() {
             <option value="">הכל</option>
             <option value="CLIENT">לקוח</option>
             <option value="NAILIST">נייליסטית</option>
+            <option value="ADMIN">אדמין</option>
           </select>
         </div>
         <div>
@@ -296,7 +304,7 @@ export default function AdminUsersPage() {
                           <img src={u.photoUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                            {u.role === 'NAILIST' ? <Scissors className="w-3.5 h-3.5 text-muted-foreground" /> : <User className="w-3.5 h-3.5 text-muted-foreground" />}
+                            {u.role === 'NAILIST' ? <Scissors className="w-3.5 h-3.5 text-muted-foreground" /> : u.role === 'ADMIN' ? <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground" /> : <User className="w-3.5 h-3.5 text-muted-foreground" />}
                           </div>
                         )}
                         <span className="font-medium text-foreground">{u.displayName || '—'}</span>
@@ -305,13 +313,17 @@ export default function AdminUsersPage() {
                     <td className="px-5 py-3 text-muted-foreground">{u.email}</td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        {u.isAdmin && (
+                        {u.isAdmin && u.role !== 'ADMIN' && (
                           <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-purple-50 text-purple-600 border-purple-200">
                             אדמין
                           </span>
                         )}
                         {changingRole === u.id ? (
                           <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                        ) : u.role === 'ADMIN' ? (
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${ROLE_COLORS.ADMIN}`}>
+                            אדמין בלבד
+                          </span>
                         ) : (
                           <>
                             <button
@@ -333,6 +345,14 @@ export default function AdminUsersPage() {
                               }`}
                             >
                               לקוח
+                            </button>
+                            <button
+                              onClick={() => setConfirmPromote(u)}
+                              title="הפוך לאדמין בלבד"
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border bg-muted/40 text-muted-foreground border-border hover:border-purple-300 hover:text-purple-600 transition-all"
+                            >
+                              <ShieldCheck className="w-3 h-3" />
+                              אדמין
                             </button>
                           </>
                         )}
@@ -410,6 +430,34 @@ export default function AdminUsersPage() {
               </button>
               <button
                 onClick={() => setConfirmDelete(null)}
+                className="flex-1 bg-muted text-foreground rounded-xl py-2.5 text-sm font-bold hover:bg-muted/70 transition-colors"
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm promote-to-admin modal */}
+      {confirmPromote && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full space-y-4">
+            <h3 className="font-black text-foreground">הפיכה לאדמין בלבד</h3>
+            <p className="text-sm text-muted-foreground">
+              <strong>{confirmPromote.email}</strong> יקבל/תקבל גישה מלאה לפאנל הניהול, והתפקיד הנוכחי (
+              {confirmPromote.role === 'NAILIST' ? 'נייליסטית' : 'לקוח'}) יוסר — פרופיל הנייליסטית שלה, אם קיים, יוסתר מהחיפוש.
+              לא ניתן לבטל פעולה זו דרך מסך זה.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handlePromoteToAdmin(confirmPromote)}
+                className="flex-1 bg-primary text-white rounded-xl py-2.5 text-sm font-bold hover:bg-primary/90 transition-colors"
+              >
+                אישור
+              </button>
+              <button
+                onClick={() => setConfirmPromote(null)}
                 className="flex-1 bg-muted text-foreground rounded-xl py-2.5 text-sm font-bold hover:bg-muted/70 transition-colors"
               >
                 ביטול

@@ -2,17 +2,19 @@
 
 import Link from 'next/link'
 
-const DASHBOARD_HREF: Record<'NAILIST' | 'CLIENT', string> = {
+const DASHBOARD_HREF: Record<'NAILIST' | 'CLIENT' | 'ADMIN', string> = {
   NAILIST: '/dashboard/nailist',
   CLIENT: '/search',
+  ADMIN: '/admin',
 }
 
-const ROLE_LABEL: Record<'NAILIST' | 'CLIENT', string> = {
+const ROLE_LABEL: Record<'NAILIST' | 'CLIENT' | 'ADMIN', string> = {
   NAILIST: 'נייליסטית',
   CLIENT: 'לקוחה',
+  ADMIN: 'אדמין',
 }
 
-export function AlreadyRegisteredModal({ role, onClose }: { role: 'NAILIST' | 'CLIENT' | null; onClose: () => void }) {
+export function AlreadyRegisteredModal({ role, onClose }: { role: 'NAILIST' | 'CLIENT' | 'ADMIN' | null; onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4" onClick={onClose}>
       <div
@@ -37,7 +39,7 @@ export function AlreadyRegisteredModal({ role, onClose }: { role: 'NAILIST' | 'C
             onClick={onClose}
             className="flex-1 bg-primary text-primary-foreground rounded-xl py-2.5 text-sm font-bold hover:bg-primary/90 transition-colors flex items-center justify-center"
           >
-            {role === 'NAILIST' ? 'לדשבורד שלי' : role === 'CLIENT' ? 'לחיפוש נייליסטיות' : 'לדף הבית'}
+            {role === 'NAILIST' ? 'לדשבורד שלי' : role === 'CLIENT' ? 'לחיפוש נייליסטיות' : role === 'ADMIN' ? 'לפאנל הניהול' : 'לדף הבית'}
           </Link>
         </div>
       </div>
