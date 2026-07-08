@@ -111,21 +111,16 @@ export function Navbar() {
                     </Button>
                   </Link>
                 )}
+                {/* "מועדפות" lives only in the profile dropdown below (for
+                    every role, not just CLIENT) — a second copy here would
+                    just duplicate it. */}
                 {role === 'CLIENT' && (
-                  <>
-                    <Link href="/my-appointments">
-                      <Button size="sm" variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground gap-2 cursor-pointer">
-                        <CalendarDays className="h-4 w-4" />
-                        <span className="hidden sm:inline">התורים שלי</span>
-                      </Button>
-                    </Link>
-                    <Link href="/my-favorites">
-                      <Button size="sm" variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground gap-2 cursor-pointer">
-                        <Heart className="h-4 w-4" />
-                        <span className="hidden sm:inline">מועדפות</span>
-                      </Button>
-                    </Link>
-                  </>
+                  <Link href="/my-appointments">
+                    <Button size="sm" variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground gap-2 cursor-pointer">
+                      <CalendarDays className="h-4 w-4" />
+                      <span className="hidden sm:inline">התורים שלי</span>
+                    </Button>
+                  </Link>
                 )}
 
                 {/* Profile dropdown */}
