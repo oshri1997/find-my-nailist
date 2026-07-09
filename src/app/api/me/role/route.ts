@@ -17,8 +17,11 @@ export async function GET(request: NextRequest) {
 
     // Admin-only accounts have no client/nailist profile to check onboarding
     // against — they're always "onboarded" and skip that flow entirely.
+    // isAdmin still reads from the real Firestore field (not assumed true) —
+    // an ADMIN-role account whose admin access was revoked must lose panel
+    // access immediately, not just have its role relabeled.
     if (role === 'ADMIN') {
-      return NextResponse.json({ role, isAdmin: true, onboardingCompleted: true, displayName: data?.displayName ?? null })
+      return NextResponse.json({ role, isAdmin: data?.isAdmin === true, onboardingCompleted: true, displayName: data?.displayName ?? null })
     }
 
     const profileCollection = role === 'NAILIST' ? COLLECTIONS.NAILIST_PROFILES : COLLECTIONS.CLIENT_PROFILES
@@ -33,16 +36,18 @@ export async function GET(request: NextRequest) {
     const profileData = profileSnap.docs[0]?.data()
     const onboardingCompleted = profileSnap.empty ? true : profileData?.onboardingCompleted !== false
 
-    // Prefer the name the client actually entered in the app (firstName +
-    // lastName from onboarding) over the Firebase Auth SDK's own
-    // displayName — the latter is whatever the sign-in provider (Google)
-    // happened to have on file, which can be a nickname/handle unrelated to
-    // the name she gave us. Fall back to the users doc's displayName (set
-    // at registration) if the profile has no name fields yet.
-    const displayName =
-      (profileData?.firstName && profileData?.lastName ? `${profileData.firstName} ${profileData.lastName}` : undefined)
-      ?? data?.displayName
-      ?? null
+    // Prefer the name actually entered in the app over the Firebase Auth
+    // SDK's own displayName — the latter is whatever the sign-in provider
+    // (Google) happened to have on file, which can be a nickname/handle
+    // unrelated to the name she gave us. CLIENT_PROFILES and
+    // NAILIST_PROFILES store this under different fields (firstName+lastName
+    // vs. businessName — a nailist profile never has firstName/lastName), so
+    // which one to prefer depends on role. Fall back to the users doc's
+    // displayName (set at registration) if the profile has no name yet.
+    const appEnteredName = role === 'NAILIST'
+      ? (profileData?.businessName as string | undefined)
+      : (profileData?.firstName && profileData?.lastName ? `${profileData.firstName} ${profileData.lastName}` : undefined)
+    const displayName = appEnteredName ?? data?.displayName ?? null
 
     return NextResponse.json({ role, isAdmin: data?.isAdmin === true, onboardingCompleted, displayName })
   } catch (error) {

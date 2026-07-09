@@ -28,12 +28,19 @@ export async function PATCH(
   const userData = userDoc.data()
   const currentRole = userData?.role
 
-  // A pure-admin account's role can't be changed away from ADMIN through
-  // this generic endpoint — this route never touches the isAdmin flag, so
-  // demoting the role here would leave a confusing isAdmin:true + role:CLIENT
-  // hybrid instead of cleanly revoking admin access.
   if (currentRole === 'ADMIN' && newRole !== 'ADMIN') {
-    return NextResponse.json({ error: 'לא ניתן להסיר תפקיד אדמין דרך מסך זה' }, { status: 403 })
+    // Self-revoke would lock the acting admin out of the panel mid-session
+    // with no way back in through the UI — must be done by a different admin.
+    if (id === admin.uid) {
+      return NextResponse.json({ error: 'לא ניתן להסיר הרשאות אדמין מהחשבון שלך' }, { status: 403 })
+    }
+    // isAdmin (not role) is the actual panel-access gate (see verifyAdmin) —
+    // counting by isAdmin covers legacy dual-hat accounts too, so this never
+    // drops the system to zero panel-accessible accounts.
+    const adminCountSnap = await db.collection(COLLECTIONS.USERS).where('isAdmin', '==', true).get()
+    if (adminCountSnap.size <= 1) {
+      return NextResponse.json({ error: 'לא ניתן להסיר את האדמין האחרון במערכת' }, { status: 403 })
+    }
   }
 
   // If moving away from NAILIST (demoting to CLIENT, or promoting to ADMIN),
@@ -49,8 +56,11 @@ export async function PATCH(
   const updates: Record<string, unknown> = { role: newRole }
   // Promoting to ADMIN grants actual admin-panel access — role alone
   // (checked by client-side routing/onboarding) doesn't gate /admin, isAdmin
-  // (checked by verifyAdmin()) does.
+  // (checked by verifyAdmin()) does. Demoting away from ADMIN must clear it
+  // the same way, or the account would silently keep panel access despite
+  // its role changing.
   if (newRole === 'ADMIN') updates.isAdmin = true
+  if (currentRole === 'ADMIN' && newRole !== 'ADMIN') updates.isAdmin = false
 
   await db.collection(COLLECTIONS.USERS).doc(id).update(updates)
 

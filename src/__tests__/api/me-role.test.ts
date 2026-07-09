@@ -203,6 +203,19 @@ describe('GET /api/me/role', () => {
     expect(json.onboardingCompleted).toBe(true)
   })
 
+  it('reads isAdmin from the real Firestore field for an ADMIN-role account instead of assuming true', async () => {
+    // Regression: an ADMIN-role account whose admin access was revoked
+    // (isAdmin flipped to false, e.g. via the admin-users revoke path) must
+    // lose panel access immediately — this used to hardcode isAdmin:true for
+    // any role==='ADMIN' account regardless of the actual Firestore field.
+    docStore['users/user-123'] = { role: 'ADMIN', isAdmin: false, email: 'revoked@test.com' }
+    const req = makeRequest()
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.role).toBe('ADMIN')
+    expect(json.isAdmin).toBe(false)
+  })
+
   it('prefers the client profile firstName+lastName over the users doc displayName', async () => {
     docStore['users/user-123'] = { role: 'CLIENT', email: 'client@test.com', displayName: 'DrakAtos YT' }
     profileDocs = [{ data: () => ({ firstName: 'ישראלה', lastName: 'ישראלית' }) }]
@@ -236,5 +249,27 @@ describe('GET /api/me/role', () => {
     const res = await GET(req)
     const json = await res.json()
     expect(json.displayName).toBe('מנהל ראשי')
+  })
+
+  it('prefers the nailist profile businessName over the users doc displayName', async () => {
+    // Regression: nailistProfiles documents never have firstName/lastName
+    // (only businessName) — the CLIENT-shaped firstName+lastName check was
+    // always false for a NAILIST account, making this fallback dead code
+    // and silently showing the Google-account nickname instead.
+    docStore['users/user-123'] = { role: 'NAILIST', email: 'nail@test.com', displayName: 'DrakAtos YT' }
+    profileDocs = [{ data: () => ({ businessName: 'סטודיו יופי של שרה' }) }]
+    const req = makeRequest()
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.displayName).toBe('סטודיו יופי של שרה')
+  })
+
+  it('falls back to the users doc displayName when the nailist profile has no businessName yet', async () => {
+    docStore['users/user-123'] = { role: 'NAILIST', email: 'nail@test.com', displayName: 'DrakAtos YT' }
+    profileDocs = [{ data: () => ({}) }]
+    const req = makeRequest()
+    const res = await GET(req)
+    const json = await res.json()
+    expect(json.displayName).toBe('DrakAtos YT')
   })
 })

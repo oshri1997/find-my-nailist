@@ -27,18 +27,36 @@ function makeDocRef(collection: string, id: string) {
   }
 }
 
+// Chained .where('__name__', 'in', [...]) (used by the shared
+// batchFetchByIds helper) needs to resolve from docStore (keyed by id), not
+// collectionStore (a plain listing) — everything else keeps returning
+// whatever's in collectionStore, same as before.
 function makeCollectionRef(name: string) {
-  return {
+  const chain: { field?: string; op?: string; value?: unknown } = {}
+  const ref = {
     doc: (id: string) => makeDocRef(name, id),
-    where: jest.fn().mockReturnThis(),
+    where: jest.fn().mockImplementation((field: string, op: string, value: unknown) => {
+      chain.field = field
+      chain.op = op
+      chain.value = value
+      return ref
+    }),
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
-    get: jest.fn().mockImplementation(() =>
-      Promise.resolve({
+    get: jest.fn().mockImplementation(() => {
+      if (chain.field === '__name__' && chain.op === 'in') {
+        const ids = chain.value as string[]
+        const docs = ids
+          .filter((id) => docStore[`${name}/${id}`])
+          .map((id) => ({ id, data: () => docStore[`${name}/${id}`] }))
+        return Promise.resolve({ docs })
+      }
+      return Promise.resolve({
         docs: (collectionStore[name] ?? []).map((d) => ({ id: d.__id, data: () => d })),
       })
-    ),
+    }),
   }
+  return ref
 }
 
 const mockDb = { collection: jest.fn((name: string) => makeCollectionRef(name)) }

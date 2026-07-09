@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { verifyAdmin, adminUnauthorized } from '@/lib/admin-auth'
+import { israelWallClockToUtc } from '@/lib/booking-utils'
 
 // Batch-resolves onboardingCompleted for a set of user ids by looking up
 // their nailist/client profile docs (the flag lives there, not on the user
@@ -69,14 +70,18 @@ export async function GET(request: NextRequest) {
   if (role === 'CLIENT' || role === 'NAILIST' || role === 'ADMIN') {
     users = users.filter(u => u.role === role)
   }
+  // The date-filter inputs are Israel wall-clock calendar days (the admin
+  // picking a date has no idea the server runs in UTC) — a plain
+  // `new Date(createdFrom)` parses an ISO date-only string as UTC midnight,
+  // which is 2-3 hours off from Israel midnight and silently mis-buckets
+  // any user created near a day boundary.
   if (createdFrom) {
-    const from = new Date(createdFrom)
+    const from = israelWallClockToUtc(createdFrom, '00:00')
     users = users.filter(u => u.createdAt && u.createdAt >= from)
   }
   if (createdTo) {
-    // Inclusive of the whole "to" day
-    const to = new Date(createdTo)
-    to.setHours(23, 59, 59, 999)
+    // Inclusive of the whole "to" day, in Israel wall-clock time.
+    const to = new Date(israelWallClockToUtc(createdTo, '23:59').getTime() + 59_999)
     users = users.filter(u => u.createdAt && u.createdAt <= to)
   }
 

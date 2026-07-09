@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Search, Trash2, Loader2, User, Scissors, Ban, CheckCircle2, ShieldCheck } from 'lucide-react'
+import { Search, Trash2, Loader2, User, Scissors, Ban, CheckCircle2, ShieldCheck, AlertCircle, X } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 interface AdminUser {
@@ -39,9 +39,12 @@ export default function AdminUsersPage() {
   const [changingRole, setChangingRole] = useState<string | null>(null)
   const [togglingSuspend, setTogglingSuspend] = useState<string | null>(null)
   const [confirmPromote, setConfirmPromote] = useState<AdminUser | null>(null)
+  const [confirmRevoke, setConfirmRevoke] = useState<AdminUser | null>(null)
+  const [revokeError, setRevokeError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [confirmBulk, setConfirmBulk] = useState<BulkAction | null>(null)
   const [bulkRunning, setBulkRunning] = useState(false)
+  const [bulkFailures, setBulkFailures] = useState<{ email: string; error: string }[]>([])
 
   const hasFilters = !!(search || roleFilter || createdFrom || createdTo || onboardingFilter)
 
@@ -74,26 +77,47 @@ export default function AdminUsersPage() {
       .catch(() => {})
   }, [])
 
-  async function handleRoleChange(user: AdminUser, newRole: 'CLIENT' | 'NAILIST' | 'ADMIN') {
-    if (user.role === newRole) return
+  // Returns an error message on failure (e.g. blocked by the last-admin or
+  // self-revoke guard) so callers can surface it, or null on success.
+  async function handleRoleChange(user: AdminUser, newRole: 'CLIENT' | 'NAILIST' | 'ADMIN'): Promise<string | null> {
+    if (user.role === newRole) return null
     setChangingRole(user.id)
     const res = await fetch(`/api/admin/users/${user.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ role: newRole }),
     })
+    let error: string | null = null
     if (res.ok) {
-      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole, isAdmin: newRole === 'ADMIN' ? true : u.isAdmin } : u))
+      setUsers(prev => prev.map(u => u.id === user.id
+        ? { ...u, role: newRole, isAdmin: newRole === 'ADMIN' ? true : (user.role === 'ADMIN' ? false : u.isAdmin) }
+        : u
+      ))
       if (adminUser?.uid === user.id) {
         await refreshRole()
       }
+    } else {
+      const json = await res.json().catch(() => null)
+      error = json?.error ?? 'שגיאה בשינוי התפקיד'
     }
     setChangingRole(null)
+    return error
   }
 
   async function handlePromoteToAdmin(user: AdminUser) {
     setConfirmPromote(null)
     await handleRoleChange(user, 'ADMIN')
+  }
+
+  async function handleRevokeAdmin(user: AdminUser) {
+    // Revokes back to CLIENT — the safest neutral role; an admin can pick a
+    // different one afterwards from the same row.
+    const error = await handleRoleChange(user, 'CLIENT')
+    if (error) {
+      setRevokeError(error)
+    } else {
+      setConfirmRevoke(null)
+    }
   }
 
   async function handleDelete(user: AdminUser) {
@@ -138,19 +162,35 @@ export default function AdminUsersPage() {
   async function runBulkAction(action: BulkAction) {
     setBulkRunning(true)
     setConfirmBulk(null)
+    setBulkFailures([])
+    const targetIds = Array.from(selected)
     const res = await fetch('/api/admin/users/bulk', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, userIds: Array.from(selected) }),
+      body: JSON.stringify({ action, userIds: targetIds }),
     })
     if (res.ok) {
       const { data } = await res.json()
       const succeededIds: string[] = data?.succeeded ?? []
+      const failedItems: { id: string; error: string }[] = data?.failed ?? []
       if (action === 'delete') {
         setUsers(prev => prev.filter(u => !succeededIds.includes(u.id)))
       } else {
         setUsers(prev => prev.map(u => succeededIds.includes(u.id) ? { ...u, suspended: action === 'suspend' } : u))
       }
+      if (failedItems.length > 0) {
+        // Look up emails from the current row data while we still have it —
+        // once out of scope there's no other way to identify who failed.
+        setBulkFailures(failedItems.map(f => ({
+          email: users.find(u => u.id === f.id)?.email ?? f.id,
+          error: f.error,
+        })))
+      }
+    } else {
+      setBulkFailures(targetIds.map(id => ({
+        email: users.find(u => u.id === id)?.email ?? id,
+        error: 'הפעולה נכשלה',
+      })))
     }
     setSelected(new Set())
     setBulkRunning(false)
@@ -257,6 +297,32 @@ export default function AdminUsersPage() {
         </div>
       )}
 
+      {/* Bulk action failures — surfaced individually, since a partial
+          failure otherwise looks identical to full success (the succeeded
+          rows still update normally). */}
+      {bulkFailures.length > 0 && (
+        <div className="flex items-start gap-3 bg-destructive/5 border border-destructive/20 rounded-xl px-4 py-3">
+          <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+          <div className="flex-1 space-y-1">
+            <p className="text-sm font-semibold text-destructive">
+              הפעולה נכשלה עבור {bulkFailures.length} משתמשים:
+            </p>
+            <ul className="text-xs text-destructive/80 space-y-0.5">
+              {bulkFailures.map((f, i) => (
+                <li key={i}>{f.email} — {f.error}</li>
+              ))}
+            </ul>
+          </div>
+          <button
+            onClick={() => setBulkFailures([])}
+            aria-label="סגירה"
+            className="text-destructive/60 hover:text-destructive transition-colors shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
         {loading ? (
@@ -321,9 +387,20 @@ export default function AdminUsersPage() {
                         {changingRole === u.id ? (
                           <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                         ) : u.role === 'ADMIN' ? (
-                          <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${ROLE_COLORS.ADMIN}`}>
-                            אדמין בלבד
-                          </span>
+                          <>
+                            <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${ROLE_COLORS.ADMIN}`}>
+                              אדמין בלבד
+                            </span>
+                            {adminUser?.uid !== u.id && (
+                              <button
+                                onClick={() => { setRevokeError(null); setConfirmRevoke(u) }}
+                                title="הסר הרשאות אדמין"
+                                className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-muted/40 text-muted-foreground border-border hover:border-red-300 hover:text-red-600 transition-all"
+                              >
+                                הסר אדמין
+                              </button>
+                            )}
+                          </>
                         ) : (
                           <>
                             <button
@@ -447,7 +524,7 @@ export default function AdminUsersPage() {
             <p className="text-sm text-muted-foreground">
               <strong>{confirmPromote.email}</strong> יקבל/תקבל גישה מלאה לפאנל הניהול, והתפקיד הנוכחי (
               {confirmPromote.role === 'NAILIST' ? 'נייליסטית' : 'לקוח'}) יוסר — פרופיל הנייליסטית שלה, אם קיים, יוסתר מהחיפוש.
-              לא ניתן לבטל פעולה זו דרך מסך זה.
+              ניתן להסיר הרשאות אדמין בהמשך מהטבלה, על ידי אדמין אחר.
             </p>
             <div className="flex gap-3">
               <button
@@ -458,6 +535,39 @@ export default function AdminUsersPage() {
               </button>
               <button
                 onClick={() => setConfirmPromote(null)}
+                className="flex-1 bg-muted text-foreground rounded-xl py-2.5 text-sm font-bold hover:bg-muted/70 transition-colors"
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm revoke-admin modal */}
+      {confirmRevoke && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full space-y-4">
+            <h3 className="font-black text-foreground">הסרת הרשאות אדמין</h3>
+            <p className="text-sm text-muted-foreground">
+              <strong>{confirmRevoke.email}</strong> יאבד/תאבד גישה לפאנל הניהול והתפקיד יוחלף ל״לקוח״.
+              ניתן לקבוע תפקיד אחר לאחר מכן מהטבלה.
+            </p>
+            {revokeError && (
+              <p className="text-sm text-destructive font-medium">{revokeError}</p>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleRevokeAdmin(confirmRevoke)}
+                disabled={changingRole === confirmRevoke.id}
+                className="flex-1 bg-destructive text-destructive-foreground rounded-xl py-2.5 text-sm font-bold hover:bg-destructive/90 transition-colors disabled:opacity-50"
+              >
+                {changingRole === confirmRevoke.id
+                  ? <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                  : 'הסר הרשאות'}
+              </button>
+              <button
+                onClick={() => { setConfirmRevoke(null); setRevokeError(null) }}
                 className="flex-1 bg-muted text-foreground rounded-xl py-2.5 text-sm font-bold hover:bg-muted/70 transition-colors"
               >
                 ביטול

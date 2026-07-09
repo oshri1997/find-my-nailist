@@ -92,7 +92,14 @@ export async function PATCH(request: NextRequest) {
     // provider-verified, so the send is skipped for them).
     if (!decoded.email_verified && decoded.email) {
       try {
-        await sendRoleAwareVerificationEmail(uid, decoded.email, role)
+        const result = await sendRoleAwareVerificationEmail(uid, decoded.email, role)
+        // A retried/duplicate PATCH within the 10-minute cooldown (e.g. a
+        // double-submit, or the client retrying after a slow response) is a
+        // no-op here rather than a second real send attempt — the cooldown
+        // check lives inside sendRoleAwareVerificationEmail itself now.
+        if (!result.ok) {
+          console.log('[set-role] verification email skipped (cooldown active)')
+        }
       } catch (err) {
         console.error('[set-role] verification email send failed:', err)
       }

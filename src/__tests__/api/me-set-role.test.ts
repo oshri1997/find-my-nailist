@@ -7,7 +7,7 @@ const mockVerifyIdToken = jest.fn().mockResolvedValue({ uid: 'user-123', email: 
 const mockDocUpdate = jest.fn().mockResolvedValue(undefined)
 const mockAdd = jest.fn().mockResolvedValue({ id: 'new-profile-id' })
 const mockProfileUpdate = jest.fn().mockResolvedValue(undefined)
-const mockSendRoleAwareVerificationEmail = jest.fn().mockResolvedValue(undefined)
+const mockSendRoleAwareVerificationEmail = jest.fn().mockResolvedValue({ ok: true })
 
 const docStore: Record<string, Record<string, unknown> | null> = {}
 const collectionStore: Record<string, (Record<string, unknown> & { __id: string })[]> = {}
@@ -229,5 +229,22 @@ describe('PATCH /api/me/set-role', () => {
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(json.data.role).toBe('NAILIST')
+  })
+
+  it('still succeeds and sets the role when the verification email is skipped due to an active cooldown', async () => {
+    // Regression (Fix #2): a retried/duplicate set-role PATCH within the
+    // 10-minute cooldown used to have no protection at all — this route
+    // called sendRoleAwareVerificationEmail unconditionally, with zero
+    // rate-limit awareness, unlike the sibling /api/auth/verify-email
+    // resend endpoint. The cooldown now lives inside
+    // sendRoleAwareVerificationEmail itself, and this route must treat a
+    // {ok:false} result as a normal, non-fatal outcome — not retry, not error.
+    mockSendRoleAwareVerificationEmail.mockResolvedValueOnce({ ok: false, rateLimited: true, retryAfterSeconds: 300 })
+    const req = makeRequest({ role: 'NAILIST' })
+    const res = await PATCH(req)
+    expect(res.status).toBe(200)
+    const json = await res.json()
+    expect(json.data.role).toBe('NAILIST')
+    expect(mockSendRoleAwareVerificationEmail).toHaveBeenCalledTimes(1)
   })
 })

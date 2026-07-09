@@ -12,7 +12,7 @@
  * rather than asserted on directly; the meaningful, testable behavior is
  * the sign-out + early-return.
  */
-import { render, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { AuthProvider } from '@/components/auth/auth-provider'
 
 const mockSignOutUser = jest.fn().mockResolvedValue(undefined)
@@ -62,6 +62,26 @@ describe('AuthProvider — suspended account handling', () => {
     // that normally follows a successful session must never be reached.
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(fetchMock).toHaveBeenCalledWith('/api/auth/session', expect.objectContaining({ method: 'POST' }))
+  })
+
+  it('stays in the loading state instead of briefly re-authenticating the stale user after a 403', async () => {
+    // Regression: the try/finally used to unconditionally run
+    // setUser(firebaseUser)/setLoading(false) even after this branch's
+    // early `return`, so a suspended user's stale Firebase User object
+    // briefly looked "authenticated, not loading" again right before
+    // window.location.assign()'s navigation actually took effect.
+    const fetchMock = jest.fn().mockResolvedValue({ status: 403 } as Response)
+    global.fetch = fetchMock
+
+    render(<AuthProvider><div data-testid="app-content">app</div></AuthProvider>)
+
+    await waitFor(() => expect(idTokenCallback).not.toBeNull())
+    await idTokenCallback!({ uid: 'suspended-uid', getIdToken: async () => 'fake-token' })
+
+    await waitFor(() => expect(mockSignOutUser).toHaveBeenCalled())
+    // Give any (incorrect) finally-block state update a chance to land.
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByTestId('app-content')).not.toBeInTheDocument()
   })
 
   it('does not sign out and does fetch /api/me/role when the session POST succeeds normally', async () => {

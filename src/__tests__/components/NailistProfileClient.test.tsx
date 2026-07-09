@@ -199,4 +199,26 @@ describe('NailistProfileClient — portfolio lightbox', () => {
     fireEvent.click(screen.getByLabelText('סגירה'))
     expect(screen.queryByLabelText('סגירה')).not.toBeInTheDocument()
   })
+
+  it('exposes the lightbox trigger as a real, keyboard-focusable <button> rather than a bare clickable <img>', async () => {
+    // Regression: an <img onClick> has no keyboard affordance at all — a
+    // keyboard/screen-reader visitor on the public profile could never open
+    // the lightbox. A real <button> wrapping the image gets Tab-focus and
+    // Enter/Space activation for free, natively.
+    mockUseAuth.mockReturnValue({ user: null, role: null })
+    const profileWithPhotos = {
+      ...baseProfile,
+      portfolio: [{ id: 'photo-1', url: 'https://example.com/nail-art.jpg', caption: 'עבודה יפה' }],
+    }
+    mockProfileFetch(profileWithPhotos)
+    render(<NailistProfileClient id="nailist-1" />)
+
+    await waitFor(() => {
+      expect(screen.getByAltText('עבודה יפה')).toBeInTheDocument()
+    })
+
+    const trigger = screen.getByRole('button', { name: 'הגדל תמונה' })
+    expect(trigger.tagName).toBe('BUTTON')
+    expect(trigger).toContainElement(screen.getByAltText('עבודה יפה'))
+  })
 })

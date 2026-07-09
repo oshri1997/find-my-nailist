@@ -205,13 +205,19 @@ export default function PortfolioPage() {
                 transition={{ delay: i * 0.04 }}
                 className="relative group aspect-square rounded-2xl overflow-hidden bg-muted shadow-sm"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={photo.url}
-                  alt={photo.caption ?? 'תמונת פורטפוליו'}
+                <button
+                  type="button"
                   onClick={() => setLightboxPhoto(photo)}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 cursor-zoom-in"
-                />
+                  aria-label="הגדל תמונה"
+                  className="block w-full h-full cursor-zoom-in"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photo.url}
+                    alt={photo.caption ?? 'תמונת פורטפוליו'}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                </button>
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
 
                 {/* Cover badge (always visible when set) */}
@@ -225,6 +231,8 @@ export default function PortfolioPage() {
                 {/* Delete */}
                 <button
                   onClick={() => handleDelete(photo)}
+                  title="מחקי תמונה"
+                  aria-label="מחקי תמונה"
                   className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-500 shadow-sm"
                 >
                   <X className="h-4 w-4" />

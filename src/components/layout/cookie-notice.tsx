@@ -27,10 +27,11 @@ export function CookieNotice() {
   }
 
   return (
-    // Below every modal (z-50+) AND below the dashboard's mobile bottom nav
-    // (also fixed bottom-0, z-40) — a passive dismissible banner must never
-    // sit on top of and block clicks on real interactive chrome.
-    <div className="fixed bottom-0 inset-x-0 z-30 bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+    // z-45: strictly between the z-40 mobile sticky chrome (dashboard/admin
+    // bottom nav, also fixed bottom-0) it must render above so it's actually
+    // visible and dismissible there, and the z-50+ real modals it must stay
+    // below so it never sits on top of and blocks clicks on interactive UI.
+    <div className="fixed bottom-0 inset-x-0 z-[45] bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
       <div className="container mx-auto max-w-7xl px-6 py-3 flex flex-wrap items-center justify-center gap-3 text-center text-sm">
         <Cookie className="h-4 w-4 shrink-0 text-muted-foreground" />
         <span className="text-foreground/80">

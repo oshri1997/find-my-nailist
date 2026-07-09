@@ -481,13 +481,19 @@ export default function NailistProfileClient({ id }: { id: string }) {
                     transition={{ delay: i * 0.05 }}
                     className="aspect-square rounded-2xl overflow-hidden bg-muted"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo.url}
-                      alt={photo.caption ?? ''}
+                    <button
+                      type="button"
                       onClick={() => setLightboxPhoto(photo)}
-                      className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-300"
-                    />
+                      aria-label="הגדל תמונה"
+                      className="block w-full h-full cursor-zoom-in"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photo.url}
+                        alt={photo.caption ?? ''}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
+                    </button>
                   </motion.div>
                 ))}
               </div>

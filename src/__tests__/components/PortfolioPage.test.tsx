@@ -78,9 +78,7 @@ describe('PortfolioPage — card image picker', () => {
     await waitFor(() => expect(screen.getByText('כרטיס')).toBeInTheDocument())
 
     // First delete button belongs to the first photo card
-    const firstCard = screen.getAllByRole('img')[0].closest('div')!.parentElement!
-    const deleteBtn = firstCard.querySelectorAll('button')[0]
-    fireEvent.click(deleteBtn)
+    fireEvent.click(screen.getAllByLabelText('מחקי תמונה')[0])
 
     await waitFor(() => expect(screen.queryByText('כרטיס')).not.toBeInTheDocument())
   })
@@ -103,9 +101,7 @@ describe('PortfolioPage — card image picker', () => {
 
     await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(photos.length))
 
-    const firstCard = screen.getAllByRole('img')[0].closest('div')!.parentElement!
-    const deleteBtn = firstCard.querySelectorAll('button')[0]
-    fireEvent.click(deleteBtn)
+    fireEvent.click(screen.getAllByLabelText('מחקי תמונה')[0])
 
     await waitFor(() => {
       expect(screen.getByText('מחיקת התמונה נכשלה — נסי שוב')).toBeInTheDocument()
@@ -166,5 +162,19 @@ describe('PortfolioPage — lightbox', () => {
 
     fireEvent.click(screen.getByLabelText('סגירה'))
     expect(screen.queryByLabelText('סגירה')).not.toBeInTheDocument()
+  })
+
+  it('exposes the lightbox trigger as a real, keyboard-focusable <button> rather than a bare clickable <img>', async () => {
+    // Regression: an <img onClick> has no keyboard affordance at all — a
+    // keyboard/screen-reader user could never open the lightbox. A real
+    // <button> wrapping the image gets Tab-focus and Enter/Space activation
+    // for free, natively, with no hand-rolled tabIndex/onKeyDown needed.
+    mockFetch()
+    render(<PortfolioPage />)
+
+    await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(photos.length))
+    const trigger = screen.getAllByRole('button', { name: 'הגדל תמונה' })[0]
+    expect(trigger.tagName).toBe('BUTTON')
+    expect(trigger).toContainElement(screen.getAllByRole('img')[0])
   })
 })

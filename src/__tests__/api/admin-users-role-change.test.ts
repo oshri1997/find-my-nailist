@@ -17,6 +17,7 @@ function makeQuery(name: string, whereField?: string, whereValue?: unknown) {
     limit: jest.fn().mockReturnThis(),
     get: jest.fn().mockImplementation(async () => ({
       empty: filtered().length === 0,
+      size: filtered().length,
       docs: filtered().map((d) => ({ id: d.__id, data: () => d, ref: { update: mockUpdateFn } })),
     })),
   }
@@ -152,11 +153,62 @@ describe('PATCH /api/admin/users/[id]', () => {
     expect(mockUpdateFn).toHaveBeenCalledWith({ role: 'ADMIN', isAdmin: true })
   })
 
-  it('blocks demoting a pure-ADMIN account away from ADMIN', async () => {
-    collectionStore.users = [{ __id: 'target-uid', email: 'a@test.com', role: 'ADMIN' }]
+  it('blocks demoting the last isAdmin:true account away from ADMIN', async () => {
+    collectionStore.users = [
+      { __id: 'target-uid', email: 'a@test.com', role: 'ADMIN', isAdmin: true },
+    ]
 
     const res = await PATCH(makeRequest({ role: 'CLIENT' }), mockParams)
     expect(res.status).toBe(403)
+    const json = await res.json()
+    expect(json.error).toContain('אחרון')
     expect(mockUpdateFn).not.toHaveBeenCalled()
+  })
+
+  it('blocks an admin from revoking their own admin access', async () => {
+    // Self-revoke would lock the acting admin out of the panel mid-session.
+    mockVerifyAdmin.mockResolvedValue({ uid: 'target-uid', email: 'a@test.com' })
+    collectionStore.users = [
+      { __id: 'target-uid', email: 'a@test.com', role: 'ADMIN', isAdmin: true },
+      { __id: 'other-admin', email: 'b@test.com', role: 'ADMIN', isAdmin: true },
+    ]
+
+    const res = await PATCH(makeRequest({ role: 'CLIENT' }), mockParams)
+    expect(res.status).toBe(403)
+    const json = await res.json()
+    expect(json.error).toContain('החשבון שלך')
+    expect(mockUpdateFn).not.toHaveBeenCalled()
+  })
+
+  it('allows demoting an ADMIN when another isAdmin:true account exists, and clears isAdmin', async () => {
+    collectionStore.users = [
+      { __id: 'target-uid', email: 'a@test.com', role: 'ADMIN', isAdmin: true },
+      { __id: 'other-admin', email: 'b@test.com', role: 'ADMIN', isAdmin: true },
+    ]
+
+    const res = await PATCH(makeRequest({ role: 'CLIENT' }), mockParams)
+    expect(res.status).toBe(200)
+    expect(mockUpdateFn).toHaveBeenCalledWith({ role: 'CLIENT', isAdmin: false })
+
+    expect(addedDocs.auditLogs).toEqual([
+      expect.objectContaining({
+        action: 'USER_ROLE_CHANGE',
+        metadata: { targetEmail: 'a@test.com', oldRole: 'ADMIN', newRole: 'CLIENT' },
+      }),
+    ])
+  })
+
+  it('counts legacy dual-hat isAdmin:true accounts toward the last-admin protection, not just role:ADMIN', async () => {
+    // A pre-ADMIN-only-role account can have isAdmin:true with a non-ADMIN
+    // role (see verifyAdmin, which gates purely on isAdmin) — it still
+    // counts as "another admin" for the purposes of this guard.
+    collectionStore.users = [
+      { __id: 'target-uid', email: 'a@test.com', role: 'ADMIN', isAdmin: true },
+      { __id: 'legacy-admin', email: 'legacy@test.com', role: 'NAILIST', isAdmin: true },
+    ]
+
+    const res = await PATCH(makeRequest({ role: 'CLIENT' }), mockParams)
+    expect(res.status).toBe(200)
+    expect(mockUpdateFn).toHaveBeenCalledWith({ role: 'CLIENT', isAdmin: false })
   })
 })

@@ -4,7 +4,7 @@
 import { NextRequest } from 'next/server'
 
 const mockVerifyIdToken = jest.fn()
-const mockSendRoleAwareVerificationEmail = jest.fn().mockResolvedValue(undefined)
+const mockSendRoleAwareVerificationEmail = jest.fn().mockResolvedValue({ ok: true })
 
 jest.mock('@/lib/firebase/admin', () => ({
   adminAuth: jest.fn(() => ({ verifyIdToken: mockVerifyIdToken })),
@@ -101,24 +101,22 @@ describe('POST /api/auth/verify-email', () => {
     expect(res.status).toBe(500)
   })
 
-  it('returns 429 with minutes remaining when resent within the 10-minute cooldown', async () => {
+  it('returns 429 with minutes remaining when sendRoleAwareVerificationEmail reports the cooldown is active', async () => {
+    // The cooldown check itself now lives inside sendRoleAwareVerificationEmail
+    // (shared with /api/me/set-role) — this route just has to surface its
+    // {ok:false} result as a 429, not compute the cooldown itself.
     mockVerifyIdToken.mockResolvedValueOnce({ uid: 'u1', email: 'user@example.com', email_verified: false })
-    docStore['users/u1'] = {
-      lastVerificationEmailSentAt: { toDate: () => new Date(Date.now() - 60 * 1000) }, // 1 minute ago
-    }
+    mockSendRoleAwareVerificationEmail.mockResolvedValueOnce({ ok: false, rateLimited: true, retryAfterSeconds: 540 })
     const res = await POST(makeRequest('token'))
     expect(res.status).toBe(429)
     const json = await res.json()
     expect(json.error).toContain('דקות')
-    expect(json.retryAfterSeconds).toBeGreaterThan(0)
-    expect(mockSendRoleAwareVerificationEmail).not.toHaveBeenCalled()
+    expect(json.retryAfterSeconds).toBe(540)
   })
 
-  it('allows resending once the 10-minute cooldown has fully elapsed', async () => {
+  it('returns ok when sendRoleAwareVerificationEmail reports success', async () => {
     mockVerifyIdToken.mockResolvedValueOnce({ uid: 'u1', email: 'user@example.com', email_verified: false })
-    docStore['users/u1'] = {
-      lastVerificationEmailSentAt: { toDate: () => new Date(Date.now() - 11 * 60 * 1000) }, // 11 minutes ago
-    }
+    mockSendRoleAwareVerificationEmail.mockResolvedValueOnce({ ok: true })
     const res = await POST(makeRequest('token'))
     expect(res.status).toBe(200)
     expect(mockSendRoleAwareVerificationEmail).toHaveBeenCalled()

@@ -79,6 +79,32 @@ describe('GET /api/admin/users — filters', () => {
     expect(json.data.map((u: { id: string }) => u.id)).toEqual(['u2'])
   })
 
+  it('includes a createdFrom-boundary user by Israel wall-clock day, not UTC day', async () => {
+    // Regression: 2026-01-31T23:00:00Z is 2026-02-01 01:00 in Israel (IST,
+    // UTC+2 in winter) — a naive `new Date('2026-02-01')` UTC-midnight
+    // threshold would wrongly exclude her from a "created from 2026-02-01" filter.
+    collectionStore.users.push({
+      __id: 'u4', email: 'dana@test.com', displayName: 'Dana', role: 'CLIENT',
+      createdAt: { toDate: () => new Date('2026-01-31T23:00:00Z') },
+    })
+    const res = await GET(makeRequest('createdFrom=2026-02-01'))
+    const json = await res.json()
+    expect(json.data.map((u: { id: string }) => u.id)).toContain('u4')
+  })
+
+  it('excludes a createdTo-boundary user by Israel wall-clock day, not UTC day', async () => {
+    // Regression: 2026-02-28T22:30:00Z is already 2026-03-01 00:30 in Israel
+    // — a naive local end-of-day-2026-02-28 threshold would wrongly include
+    // her in a "created until 2026-02-28" filter.
+    collectionStore.users.push({
+      __id: 'u5', email: 'erez@test.com', displayName: 'Erez', role: 'CLIENT',
+      createdAt: { toDate: () => new Date('2026-02-28T22:30:00Z') },
+    })
+    const res = await GET(makeRequest('createdTo=2026-02-28'))
+    const json = await res.json()
+    expect(json.data.map((u: { id: string }) => u.id)).not.toContain('u5')
+  })
+
   it('filters by onboardingStatus=completed, treating a missing field as completed', async () => {
     const res = await GET(makeRequest('onboardingStatus=completed'))
     const json = await res.json()

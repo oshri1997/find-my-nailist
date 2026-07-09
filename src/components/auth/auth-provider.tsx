@@ -83,6 +83,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { onIdTokenChanged } = await import('firebase/auth')
       unsub = onIdTokenChanged(clients.auth, async (firebaseUser) => {
         if (skipCallbackRef.current) return
+        // Suppresses the finally block's state update below — while a
+        // suspended-account sign-out is in flight (see the 403 branch), we
+        // must NOT flip user/loading back to "authenticated" for the stale
+        // firebaseUser reference, even though window.location.assign()'s
+        // navigation hasn't actually unloaded the page yet.
+        let suspending = false
         try {
           if (firebaseUser) {
             Sentry.setUser({ id: firebaseUser.uid })
@@ -98,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // this is the only place that catches it (a brand-new sign-in
               // attempt is already blocked earlier, by Firebase's own
               // auth/user-disabled error on the login page).
+              suspending = true
               const { signOutUser } = await import('@/lib/firebase/auth-helpers')
               await signOutUser()
               window.location.assign('/login?suspended=1')
@@ -127,10 +134,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch {
           // session sync failed — auth state is still valid, don't block the UI
         } finally {
-          // Set user AFTER the session cookie is written so any redirect
-          // triggered by the login page useEffect finds the cookie already set.
-          setUser(firebaseUser)
-          setLoading(false)
+          if (!suspending) {
+            // Set user AFTER the session cookie is written so any redirect
+            // triggered by the login page useEffect finds the cookie already set.
+            setUser(firebaseUser)
+            setLoading(false)
+          }
         }
       })
     }
