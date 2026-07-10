@@ -12,6 +12,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import Link from 'next/link'
 import LegalModal from '@/components/auth/LegalModal'
 import { sanitizeRedirect } from '@/lib/sanitize-redirect'
+import { NailLoader } from '@/components/ui/nail-loader'
 
 type Mode = 'login' | 'register'
 
@@ -209,6 +210,21 @@ export default function AuthPage() {
   }
 
   const panel = PANEL_CONTENT[mode]
+
+  // `loading` stays true for the entire post-sign-in window — Firebase's own
+  // auth-state sync, then the /api/users upsert + router.replace in the
+  // effect above — not just the initial popup. Replacing the whole form with
+  // a clear full-screen loader avoids the confusing alternative: a static,
+  // seemingly-idle page with only a disabled Google button as feedback,
+  // while the *other* (submit) button's "מתחברת..." label doesn't match
+  // what was actually clicked.
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <NailLoader text="מתחברת..." />
+      </div>
+    )
+  }
 
   return (
     <>
