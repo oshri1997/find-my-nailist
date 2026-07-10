@@ -254,6 +254,28 @@ describe('BookingModal — Bit deposit', () => {
     expect(screen.getByRole('button', { name: /כבר שילמתי/ })).toBeInTheDocument()
   })
 
+  it('copies the phone and the amount to the clipboard independently — the Bit deep link cannot pre-fill either', async () => {
+    const writeText = jest.fn().mockResolvedValue(undefined)
+    Object.assign(navigator, { clipboard: { writeText } })
+
+    render(<BookingModal {...defaultProps} bitPhone="0501234567" />)
+    await navigateToStep3()
+
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: { id: 'client1' } }) })
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: { id: 'apt1', depositRequired: true, depositAmount: 30, depositCurrency: 'ILS' } }),
+    })
+    fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
+    await waitFor(() => expect(screen.getByText(/התור נקבע/)).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'העתקת מספר טלפון לביט' }))
+    expect(writeText).toHaveBeenLastCalledWith('0501234567')
+
+    fireEvent.click(screen.getByRole('button', { name: 'העתקת סכום המקדמה' }))
+    expect(writeText).toHaveBeenLastCalledWith('30')
+  })
+
   it('marks the deposit as paid and shows a confirmation instead of the button', async () => {
     render(<BookingModal {...defaultProps} bitPhone="0501234567" />)
     await navigateToStep3()

@@ -1,12 +1,15 @@
 /**
- * Converts an Israeli phone number to a Bit payment deep link.
+ * Converts an Israeli phone number to a Bit deep link.
  *
- * ⚠️ UNVERIFIED: Bit has no published deep-link/merchant API for arbitrary
- * personal recipients — the scheme below is a best-effort guess, not a
- * documented or device-tested contract. Never rely on it alone: any UI using
- * this must always also render `formatBitPhoneDisplay`'s plain phone number
- * with a copy action alongside it, since a failed custom-URL-scheme
- * navigation can't be reliably detected from a web page.
+ * Confirmed on a real device: `bit://` is a registered scheme and this does
+ * open the Bit app, but the `phone`/`amount` path+query aren't a documented
+ * contract, so the app does NOT pre-fill the recipient or amount from them —
+ * pre-filling a P2P transfer like this requires a registered "Bit for
+ * business" merchant integration, which is out of scope (see the deposit
+ * feature's design notes). Treat this link purely as a shortcut that saves
+ * hunting for the app; the UI must always also render
+ * `formatBitPhoneDisplay`'s plain phone number AND the amount with copy
+ * actions alongside it, since the client still has to paste both in herself.
  */
 export function toBitUrl(phone: string, amount?: number): string {
   const digits = phone.replace(/\D/g, '')

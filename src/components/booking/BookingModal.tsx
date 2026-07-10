@@ -66,7 +66,8 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   const [depositResult, setDepositResult] = useState<DepositResult | null>(null)
   const [markingPaid, setMarkingPaid] = useState(false)
   const [paidMarked, setPaidMarked] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [copiedPhone, setCopiedPhone] = useState(false)
+  const [copiedAmount, setCopiedAmount] = useState(false)
   const [selectedService, setSelectedService] = useState<Service | null>(
     initialServiceId ? (services.find(s => s.id === initialServiceId) ?? null) : null
   )
@@ -188,8 +189,15 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   async function handleCopyBitPhone() {
     if (!bitPhone) return
     await navigator.clipboard.writeText(bitPhone)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setCopiedPhone(true)
+    setTimeout(() => setCopiedPhone(false), 2000)
+  }
+
+  async function handleCopyAmount() {
+    if (!depositResult) return
+    await navigator.clipboard.writeText(String(depositResult.amount))
+    setCopiedAmount(true)
+    setTimeout(() => setCopiedAmount(false), 2000)
   }
 
   const dateStr = selectedDate ? toDateStr(selectedDate) : ''
@@ -587,7 +595,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                       נדרשת מקדמה של ₪{depositResult.amount} דרך Bit
                     </p>
                     <p className="text-xs text-muted-foreground mb-3">
-                      שלחי את הסכום למספר הבא, ואז לחצי על &quot;כבר שילמתי&quot;
+                      לחצי לפתיחת Bit, והדביקי בתוכה את המספר והסכום שהעתקת כאן. בסיום לחצי על &quot;כבר שילמתי&quot;
                     </p>
                     <div className="flex items-center gap-2 mb-3">
                       <a
@@ -597,14 +605,26 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                         פתחי את Bit
                       </a>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleCopyBitPhone}
-                      className="w-full flex items-center justify-center gap-2 bg-card border border-border rounded-xl h-11 font-bold text-sm text-foreground hover:border-pink-300 transition-colors"
-                    >
-                      {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
-                      {formatBitPhoneDisplay(bitPhone)}
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCopyBitPhone}
+                        aria-label="העתקת מספר טלפון לביט"
+                        className="flex items-center justify-center gap-2 bg-card border border-border rounded-xl h-11 font-bold text-sm text-foreground hover:border-pink-300 transition-colors"
+                      >
+                        {copiedPhone ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
+                        {formatBitPhoneDisplay(bitPhone)}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCopyAmount}
+                        aria-label="העתקת סכום המקדמה"
+                        className="flex items-center justify-center gap-2 bg-card border border-border rounded-xl h-11 font-bold text-sm text-foreground hover:border-pink-300 transition-colors"
+                      >
+                        {copiedAmount ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
+                        ₪{depositResult.amount}
+                      </button>
+                    </div>
 
                     {paidMarked ? (
                       <p className="mt-3 flex items-center justify-center gap-1.5 text-sm font-bold text-green-600">
