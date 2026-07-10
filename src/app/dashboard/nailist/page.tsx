@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft, Eye, EyeOff, Star, Scissors, Users, Wallet, Calendar, Inbox, MessageSquare, FileText } from 'lucide-react'
+import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft, Eye, EyeOff, Star, Scissors, Users, Wallet, Calendar, Inbox, MessageSquare, FileText, CalendarClock } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
+import { findUnfillableGaps, type DayWorkingHours } from '@/lib/gap-detection'
 
 function CountUp({ to, prefix = '', decimals = 0, duration = 1500 }: {
   to: number
@@ -102,6 +103,14 @@ interface NailistProfile {
   reviewCount?: number
 }
 
+function formatGapDate(dateStr: string) {
+  // Build from explicit y/m/d components (not `new Date(dateStr)`, which
+  // parses a bare YYYY-MM-DD as UTC midnight and can render as the previous
+  // day once the browser's own timezone shifts it back).
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short' })
+}
+
 function formatReviewerName(displayName?: string) {
   if (!displayName) return 'לקוחה'
   const parts = displayName.trim().split(/\s+/)
@@ -120,6 +129,8 @@ export default function NailistDashboard() {
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([])
   const [recentReviews, setRecentReviews] = useState<Review[]>([])
   const [activating, setActivating] = useState(false)
+  const [workingHoursFull, setWorkingHoursFull] = useState<DayWorkingHours[]>([])
+  const [minServiceDuration, setMinServiceDuration] = useState<number | null>(null)
 
   useEffect(() => {
     fetch('/api/me/nailist-profile')
@@ -143,12 +154,15 @@ export default function NailistDashboard() {
         }
         if (servicesRes.ok) {
           const { data } = await servicesRes.json()
-          setHasServices((data ?? []).length > 0)
+          const services: Array<{ durationMinutes: number }> = data ?? []
+          setHasServices(services.length > 0)
+          setMinServiceDuration(services.length > 0 ? Math.min(...services.map((s) => s.durationMinutes)) : null)
         }
         if (hoursRes.ok) {
           const { data } = await hoursRes.json()
-          const active = (data ?? []).filter((h: { isActive: boolean }) => h.isActive)
-          setHasHours(active.length > 0)
+          const hours: DayWorkingHours[] = data ?? []
+          setHasHours(hours.some((h) => h.isActive))
+          setWorkingHoursFull(hours)
         }
         if (appointmentsRes.ok) {
           const { data } = await appointmentsRes.json()
@@ -217,6 +231,17 @@ export default function NailistDashboard() {
     .filter(a => a.status === 'COMPLETED')
     .reduce((sum, a) => sum + (a.price ?? 0), 0)
 
+  // Gaps between bookings too short to fit any of her active services — dead
+  // time she can never sell. Purely informational: she decides whether to add
+  // a quick-fill service, block the time, or leave it.
+  const unfillableGaps = useMemo(() => findUnfillableGaps({
+    workingHours: workingHoursFull,
+    appointments: allAppointments
+      .filter(a => a.status === 'PENDING' || a.status === 'CONFIRMED')
+      .map(a => ({ startTime: a.startTime, endTime: a.endTime })),
+    minServiceDurationMinutes: minServiceDuration,
+  }), [workingHoursFull, allAppointments, minServiceDuration])
+
   const computedStats = [
     {
       label: 'תורים',
@@ -283,6 +308,36 @@ export default function NailistDashboard() {
             <Eye className="h-4 w-4" />
             {activating ? 'מפרסמת...' : 'פרסמי עכשיו'}
           </button>
+        </motion.div>
+      )}
+
+      {/* Unfillable gap banner — passive, informational, never blocks anything */}
+      {unfillableGaps.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-900/50 rounded-2xl p-4 flex items-start gap-4"
+        >
+          <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
+            <CalendarClock className="h-5 w-5 text-blue-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-black text-blue-800 dark:text-blue-300 text-sm">
+              {unfillableGaps.length === 1
+                ? 'יש לך פער בלוח הזמנים שלא מתאים לאף שירות'
+                : `יש לך ${unfillableGaps.length} פערים בלוח הזמנים שלא מתאימים לאף שירות`}
+            </p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mt-0.5">
+              {unfillableGaps.slice(0, 3).map((g) => `${formatGapDate(g.date)} ${g.startTime}-${g.endTime}`).join(' · ')}
+              {unfillableGaps.length > 3 && ` ועוד ${unfillableGaps.length - 3}`}
+            </p>
+          </div>
+          <Link
+            href="/dashboard/nailist/services"
+            className="shrink-0 flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-black rounded-xl px-4 py-2 transition-colors"
+          >
+            הוסיפי שירות קצר
+          </Link>
         </motion.div>
       )}
 
