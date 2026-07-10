@@ -36,6 +36,9 @@ const patchSchema = z.object({
   onboardingCompleted: z.boolean().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  depositEnabled: z.boolean().optional(),
+  depositPercentage: z.number().min(1).max(100).optional(),
+  bitPhone: phoneOrEmpty('מספר טלפון לביט').optional(),
 }).strict()
 
 export async function GET(

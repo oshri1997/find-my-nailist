@@ -220,3 +220,60 @@ describe('BookingModal', () => {
     expect(screen.getByText(/בחרי תאריך ושעה/)).toBeInTheDocument()
   })
 })
+
+describe('BookingModal — Bit deposit', () => {
+  it('does not show deposit instructions on the done step when the nailist has no deposit props (the non-opted-in majority)', async () => {
+    render(<BookingModal {...defaultProps} />)
+    await navigateToStep3()
+
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: { id: 'client1' } }) })
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: { id: 'apt1', depositRequired: false } }) })
+
+    fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
+
+    await waitFor(() => expect(screen.getByText(/התור נקבע/)).toBeInTheDocument())
+    expect(screen.queryByText(/נדרשת מקדמה/)).not.toBeInTheDocument()
+  })
+
+  it('shows the Bit button, phone, copy button, and "כבר שילמתי" when the appointment requires a deposit', async () => {
+    render(<BookingModal {...defaultProps} bitPhone="0501234567" />)
+    await navigateToStep3()
+
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: { id: 'client1' } }) })
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: { id: 'apt1', depositRequired: true, depositAmount: 30, depositCurrency: 'ILS' } }),
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
+
+    await waitFor(() => expect(screen.getByText(/התור נקבע/)).toBeInTheDocument())
+    expect(screen.getByText(/נדרשת מקדמה של ₪30 דרך Bit/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'פתחי את Bit' })).toHaveAttribute('href', 'bit://pay/972501234567?amount=30')
+    expect(screen.getByText('050-123-4567')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /כבר שילמתי/ })).toBeInTheDocument()
+  })
+
+  it('marks the deposit as paid and shows a confirmation instead of the button', async () => {
+    render(<BookingModal {...defaultProps} bitPhone="0501234567" />)
+    await navigateToStep3()
+
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: { id: 'client1' } }) })
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: { id: 'apt1', depositRequired: true, depositAmount: 30, depositCurrency: 'ILS' } }),
+    })
+    fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
+    await waitFor(() => expect(screen.getByText(/התור נקבע/)).toBeInTheDocument())
+
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ message: 'ok' }) })
+    fireEvent.click(screen.getByRole('button', { name: /כבר שילמתי/ }))
+
+    await waitFor(() => expect(screen.getByText('סימנת ששילמת')).toBeInTheDocument())
+    expect(mockFetch).toHaveBeenLastCalledWith(
+      '/api/appointments/apt1/deposit',
+      expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ action: 'MARK_PAID' }) })
+    )
+    expect(screen.queryByRole('button', { name: /כבר שילמתי/ })).not.toBeInTheDocument()
+  })
+})

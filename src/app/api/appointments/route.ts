@@ -92,6 +92,20 @@ export async function POST(request: NextRequest) {
       ? `${clientProfile.firstName} ${clientProfile.lastName}`
       : (clientProfile?.displayName ?? clientUserSnap.data()?.displayName ?? '')
 
+    // Deposit snapshot, computed server-side from the nailist's CURRENT
+    // settings (never trust a client-supplied amount) and frozen onto the
+    // appointment — if she changes her percentage or turns deposits off
+    // later, already-booked appointments must keep showing what the client
+    // was actually told, same reasoning as price/currency/serviceName below.
+    const depositRequired = nailist?.depositEnabled === true
+    const depositFields = depositRequired
+      ? {
+          depositAmount: Math.round(service.price * ((nailist?.depositPercentage ?? 0) / 100)),
+          depositCurrency: service.currency,
+          depositStatus: 'AWAITING_PAYMENT' as const,
+        }
+      : {}
+
     const now = FieldValue.serverTimestamp()
     const appointmentData = {
       ...data,
@@ -107,6 +121,8 @@ export async function POST(request: NextRequest) {
       confirmTokenExpiresAt: tokenExpiresAt,
       declineToken,
       declineTokenExpiresAt: tokenExpiresAt,
+      depositRequired,
+      ...depositFields,
       createdAt: now,
       updatedAt: now,
     }
@@ -172,7 +188,9 @@ export async function POST(request: NextRequest) {
       console.warn('[booking] ⚠️ skipping email — nailistEmail:', nailistEmail, 'clientEmail:', clientEmail)
     }
 
-    return NextResponse.json({ data: { id: newDocRef.id } }, { status: 201 })
+    return NextResponse.json({
+      data: { id: newDocRef.id, depositRequired, ...depositFields },
+    }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues }, { status: 400 })

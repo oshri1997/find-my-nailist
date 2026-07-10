@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Loader2, CheckCircle2, XCircle, Star, Inbox } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle, Star, Inbox, Wallet } from 'lucide-react'
+
+type DepositStatus = 'AWAITING_PAYMENT' | 'CLIENT_MARKED_PAID' | 'NAILIST_CONFIRMED'
 
 interface Appointment {
   id: string
@@ -15,6 +17,10 @@ interface Appointment {
   price: number
   currency: string
   notes?: string
+  depositRequired?: boolean
+  depositAmount?: number
+  depositCurrency?: string
+  depositStatus?: DepositStatus
 }
 
 const STATUS_LABELS: Record<Appointment['status'], string> = {
@@ -33,10 +39,26 @@ const STATUS_COLORS: Record<Appointment['status'], string> = {
   NO_SHOW: 'bg-gray-50 text-muted-foreground border-gray-200',
 }
 
+// Deliberately its own state machine, separate from STATUS_LABELS/COLORS —
+// deposit tracking is informational-only and must never gate the real
+// appointment confirm/cancel buttons.
+const DEPOSIT_STATUS_LABELS: Record<DepositStatus, string> = {
+  AWAITING_PAYMENT: 'ממתינה למקדמה',
+  CLIENT_MARKED_PAID: 'הלקוחה סימנה ששילמה',
+  NAILIST_CONFIRMED: 'מקדמה התקבלה',
+}
+
+const DEPOSIT_STATUS_COLORS: Record<DepositStatus, string> = {
+  AWAITING_PAYMENT: 'bg-amber-50 text-amber-600 border-amber-200',
+  CLIENT_MARKED_PAID: 'bg-blue-50 text-blue-600 border-blue-200',
+  NAILIST_CONFIRMED: 'bg-green-50 text-green-600 border-green-200',
+}
+
 export default function NailistAppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [updatingDeposit, setUpdatingDeposit] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -78,6 +100,24 @@ export default function NailistAppointmentsPage() {
     }
   }
 
+  // Informational only — never blocks the real status buttons, so failures
+  // here don't need the same "revert on error" care as updateStatus.
+  async function confirmDeposit(id: string) {
+    setUpdatingDeposit(id)
+    try {
+      const res = await fetch(`/api/appointments/${id}/deposit`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'CONFIRM_RECEIVED' }),
+      })
+      if (res.ok) {
+        setAppointments((prev) => prev.map((a) => a.id === id ? { ...a, depositStatus: 'NAILIST_CONFIRMED' } : a))
+      }
+    } finally {
+      setUpdatingDeposit(null)
+    }
+  }
+
   const upcoming = appointments.filter((a) => ['PENDING', 'CONFIRMED'].includes(a.status))
   const past = appointments.filter((a) => !['PENDING', 'CONFIRMED'].includes(a.status))
 
@@ -105,7 +145,10 @@ export default function NailistAppointmentsPage() {
               <h2 className="font-black text-foreground/80 mb-4">קרובים</h2>
               <div className="space-y-4">
                 {upcoming.map((apt, i) => (
-                  <AppointmentCard key={apt.id} apt={apt} i={i} updating={updating} onUpdate={updateStatus} />
+                  <AppointmentCard
+                    key={apt.id} apt={apt} i={i} updating={updating} onUpdate={updateStatus}
+                    updatingDeposit={updatingDeposit} onConfirmDeposit={confirmDeposit}
+                  />
                 ))}
               </div>
             </section>
@@ -116,7 +159,10 @@ export default function NailistAppointmentsPage() {
               <h2 className="font-black text-foreground/80 mb-4">היסטוריה</h2>
               <div className="space-y-4">
                 {past.map((apt, i) => (
-                  <AppointmentCard key={apt.id} apt={apt} i={i} updating={updating} onUpdate={updateStatus} />
+                  <AppointmentCard
+                    key={apt.id} apt={apt} i={i} updating={updating} onUpdate={updateStatus}
+                    updatingDeposit={updatingDeposit} onConfirmDeposit={confirmDeposit}
+                  />
                 ))}
               </div>
             </section>
@@ -137,18 +183,21 @@ export default function NailistAppointmentsPage() {
 }
 
 function AppointmentCard({
-  apt, i, updating, onUpdate,
+  apt, i, updating, onUpdate, updatingDeposit, onConfirmDeposit,
 }: {
   apt: Appointment
   i: number
   updating: string | null
   onUpdate: (id: string, status: Appointment['status']) => void
+  updatingDeposit: string | null
+  onConfirmDeposit: (id: string) => void
 }) {
   const symbol = apt.currency === 'ILS' ? '₪' : '$'
   const start = new Date(apt.startTime)
   const dateStr = start.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short' })
   const timeStr = start.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
   const isUpdating = updating === apt.id
+  const isUpdatingDeposit = updatingDeposit === apt.id
 
   return (
     <motion.div
@@ -164,6 +213,11 @@ function AppointmentCard({
             <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${STATUS_COLORS[apt.status]}`}>
               {STATUS_LABELS[apt.status]}
             </span>
+            {apt.depositRequired && apt.depositStatus && (
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${DEPOSIT_STATUS_COLORS[apt.depositStatus]}`}>
+                {DEPOSIT_STATUS_LABELS[apt.depositStatus]}
+              </span>
+            )}
           </div>
           <p className="text-sm text-muted-foreground font-medium">{apt.clientDisplayName ?? 'לקוחה'}</p>
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
@@ -210,6 +264,24 @@ function AppointmentCard({
           </div>
         )}
       </div>
+
+      {/* Deposit confirmation — deliberately its own row, separate from the
+          real status actions above, so it can never look like a precondition
+          for confirming/cancelling the appointment itself. */}
+      {apt.depositRequired && apt.depositStatus && apt.depositStatus !== 'NAILIST_CONFIRMED' && (
+        <div className="mt-3 pt-3 border-t border-border">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onConfirmDeposit(apt.id)}
+            disabled={isUpdatingDeposit}
+            className="border-border text-muted-foreground hover:border-green-300 hover:text-green-600 rounded-xl font-bold gap-1.5 text-xs"
+          >
+            {isUpdatingDeposit ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wallet className="h-3 w-3" />}
+            אשרי קבלת מקדמה
+          </Button>
+        </div>
+      )}
     </motion.div>
   )
 }

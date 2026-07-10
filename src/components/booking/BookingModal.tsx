@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare, CalendarOff } from 'lucide-react'
+import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare, CalendarOff, Copy, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { generateSlots, isSlotUnavailable, buildMonthCalendarFor, toDateStr, type BookedSlot } from '@/lib/booking-utils'
+import { toBitUrl, formatBitPhoneDisplay } from '@/lib/bit'
 
 interface Service {
   id: string
@@ -21,6 +22,17 @@ interface Props {
   services: Service[]
   onClose: () => void
   initialServiceId?: string
+  // Only the phone number is needed here — the deposit *amount* comes back
+  // from POST /api/appointments (server-computed at booking time), and
+  // whether to show the public "נדרשת מקדמה" disclosure is decided entirely
+  // in NailistProfileClient, before this modal ever opens.
+  bitPhone?: string
+}
+
+interface DepositResult {
+  appointmentId: string
+  amount: number
+  currency: string
 }
 
 interface Availability {
@@ -49,8 +61,12 @@ export function translateBookingError(error: unknown): string {
   return KNOWN_ERROR_TRANSLATIONS[error] ?? error
 }
 
-export default function BookingModal({ nailistProfileId, businessName, services, onClose, initialServiceId }: Props) {
+export default function BookingModal({ nailistProfileId, businessName, services, onClose, initialServiceId, bitPhone }: Props) {
   const [step, setStep] = useState<Step>('service')
+  const [depositResult, setDepositResult] = useState<DepositResult | null>(null)
+  const [markingPaid, setMarkingPaid] = useState(false)
+  const [paidMarked, setPaidMarked] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [selectedService, setSelectedService] = useState<Service | null>(
     initialServiceId ? (services.find(s => s.id === initialServiceId) ?? null) : null
   )
@@ -142,12 +158,38 @@ export default function BookingModal({ nailistProfileId, businessName, services,
         setError(translateBookingError(body?.error))
         return
       }
+      const { data } = await res.json()
+      if (data?.depositRequired) {
+        setDepositResult({ appointmentId: data.id, amount: data.depositAmount, currency: data.depositCurrency })
+      }
       setStep('done')
     } catch {
       setError('שגיאה בהזמנה, נסי שוב')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleMarkPaid() {
+    if (!depositResult) return
+    setMarkingPaid(true)
+    try {
+      const res = await fetch(`/api/appointments/${depositResult.appointmentId}/deposit`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'MARK_PAID' }),
+      })
+      if (res.ok) setPaidMarked(true)
+    } finally {
+      setMarkingPaid(false)
+    }
+  }
+
+  async function handleCopyBitPhone() {
+    if (!bitPhone) return
+    await navigator.clipboard.writeText(bitPhone)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const dateStr = selectedDate ? toDateStr(selectedDate) : ''
@@ -538,6 +580,49 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                 </p>
                 <p className="text-sm text-pink-500 font-black mb-6">{selectedTime} · {selectedService?.name}</p>
                 <p className="text-xs text-muted-foreground mb-6">אישור ישלח למייל שלך בקרוב</p>
+
+                {depositResult && bitPhone && (
+                  <div className="bg-primary/10 border border-pink-100 rounded-2xl p-5 mb-6 text-right">
+                    <p className="font-black text-foreground text-sm mb-1">
+                      נדרשת מקדמה של ₪{depositResult.amount} דרך Bit
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      שלחי את הסכום למספר הבא, ואז לחצי על &quot;כבר שילמתי&quot;
+                    </p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <a
+                        href={toBitUrl(bitPhone, depositResult.amount)}
+                        className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl h-11 font-bold text-sm"
+                      >
+                        פתחי את Bit
+                      </a>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyBitPhone}
+                      className="w-full flex items-center justify-center gap-2 bg-card border border-border rounded-xl h-11 font-bold text-sm text-foreground hover:border-pink-300 transition-colors"
+                    >
+                      {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
+                      {formatBitPhoneDisplay(bitPhone)}
+                    </button>
+
+                    {paidMarked ? (
+                      <p className="mt-3 flex items-center justify-center gap-1.5 text-sm font-bold text-green-600">
+                        <CheckCircle2 className="h-4 w-4" />
+                        סימנת ששילמת
+                      </p>
+                    ) : (
+                      <Button
+                        onClick={handleMarkPaid}
+                        disabled={markingPaid}
+                        className="w-full mt-3 bg-card border border-pink-200 text-pink-600 hover:bg-pink-50 rounded-xl h-11 font-bold text-sm"
+                      >
+                        {markingPaid ? <Loader2 className="h-4 w-4 animate-spin" /> : 'כבר שילמתי'}
+                      </Button>
+                    )}
+                  </div>
+                )}
+
                 <Button onClick={onClose} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 border-0 rounded-2xl h-12 font-black">
                   סגור
                 </Button>

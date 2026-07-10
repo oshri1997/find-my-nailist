@@ -20,6 +20,9 @@ const EMPTY_FORM = {
   isActive: false,
   latitude: undefined as number | undefined,
   longitude: undefined as number | undefined,
+  depositEnabled: false,
+  depositPercentage: 20 as number,
+  bitPhone: '',
 }
 
 function initials(name: string) {
@@ -69,6 +72,9 @@ export default function NailistSettingsPage() {
           isActive: data.isActive ?? false,
           latitude: data.latitude,
           longitude: data.longitude,
+          depositEnabled: data.depositEnabled ?? false,
+          depositPercentage: data.depositPercentage ?? 20,
+          bitPhone: data.bitPhone ?? '',
         })
       })
       .catch(() => setError('שגיאה בטעינת הפרופיל'))
@@ -361,6 +367,58 @@ export default function NailistSettingsPage() {
             <Input name="whatsappPhone" value={form.whatsappPhone} onChange={handleChange} placeholder="0501234567" type="tel" className="rounded-xl border-[#25D366]/40 focus:border-[#25D366] h-11" />
             <p className="text-xs text-muted-foreground mt-1 font-medium">לקוחות יוכלו לשלוח לך הודעה ישירה</p>
           </div>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }}
+          className="bg-card rounded-3xl border border-border p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="font-black text-foreground text-base">מקדמה בביט</h2>
+              <p className="text-sm text-muted-foreground mt-0.5 font-medium">
+                {form.depositEnabled
+                  ? 'לקוחות יתבקשו לשלוח מקדמה דרך Bit לפני התור'
+                  : 'לא נדרשת מקדמה מלקוחות'}
+              </p>
+            </div>
+            <button
+              type="button"
+              dir="ltr"
+              aria-label="הפעלת מקדמה בביט"
+              onClick={() => setForm((prev) => ({ ...prev, depositEnabled: !prev.depositEnabled }))}
+              className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none shrink-0 ${
+                form.depositEnabled ? 'bg-gradient-to-r from-pink-500 to-purple-600' : 'bg-muted'
+              }`}
+            >
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${form.depositEnabled ? 'translate-x-8' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
+          {form.depositEnabled && (
+            <div className="space-y-4 pt-2 border-t border-border">
+              <div>
+                <label className="text-sm font-bold text-muted-foreground block mb-1.5">אחוז מקדמה</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={form.depositPercentage}
+                    onChange={(e) => setForm((prev) => ({ ...prev, depositPercentage: Number(e.target.value) || 0 }))}
+                    className="w-24 rounded-xl border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:border-pink-300 font-medium text-foreground"
+                  />
+                  <span className="text-sm text-muted-foreground font-medium">%</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                  לדוגמה: שירות ב-₪150 ידרוש מקדמה של ₪{Math.round((form.depositPercentage || 0) / 100 * 150)}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-bold text-muted-foreground block mb-1.5">מספר טלפון לביט</label>
+                <Input name="bitPhone" value={form.bitPhone} onChange={handleChange} placeholder="0501234567" type="tel" className="rounded-xl border-border focus:border-pink-300 h-11" />
+                <p className="text-xs text-muted-foreground mt-1 font-medium">לקוחות ישלחו את המקדמה למספר הזה דרך אפליקציית Bit</p>
+              </div>
+            </div>
+          )}
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}

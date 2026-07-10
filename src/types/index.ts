@@ -2,6 +2,11 @@ import { Timestamp } from 'firebase/firestore'
 
 export type UserRole = 'CLIENT' | 'NAILIST' | 'ADMIN'
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'
+// Tracks a Bit deposit's manual, trust-based confirmation — deliberately its
+// own state machine, never referenced by AppointmentStatus's VALID_TRANSITIONS
+// or the lazy auto-complete/auto-cancel logic in GET /api/appointments, so a
+// deposit can never gate or interfere with the real appointment lifecycle.
+export type DepositStatus = 'AWAITING_PAYMENT' | 'CLIENT_MARKED_PAID' | 'NAILIST_CONFIRMED'
 
 // Firestore document types (timestamps as Firestore Timestamp)
 export interface UserDoc {
@@ -34,6 +39,9 @@ export interface NailistProfileDoc {
   instagramUrl?: string
   tiktokUrl?: string
   whatsappPhone?: string   // Israeli format: 0501234567 or +972501234567
+  depositEnabled?: boolean       // opt-in — nailist requires a Bit deposit before an appointment
+  depositPercentage?: number     // 1-100, % of the service price
+  bitPhone?: string               // Israeli format, same shape as whatsappPhone — kept distinct since her Bit-linked number may differ from her WhatsApp line
   isVerified: boolean
   isActive: boolean
   onboardingCompleted?: boolean   // false right after signup; true once the onboarding wizard's last step (working hours) is saved
@@ -100,6 +108,13 @@ export interface AppointmentDoc {
   clientDisplayName?: string
   reviewRequested?: boolean
   hasReview?: boolean
+  // Deposit snapshot, captured at booking time (same rationale as price/
+  // currency/serviceName above — frozen to what the client was actually
+  // told, not a live read of the nailist's current settings).
+  depositRequired: boolean
+  depositAmount?: number       // present only when depositRequired
+  depositCurrency?: string     // present only when depositRequired
+  depositStatus?: DepositStatus // present only when depositRequired
   createdAt: Timestamp
   updatedAt: Timestamp
 }

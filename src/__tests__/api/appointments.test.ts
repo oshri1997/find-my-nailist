@@ -358,6 +358,64 @@ describe('POST /api/appointments', () => {
     )
   })
 
+  it('saves depositRequired: false and no deposit fields when the nailist has not enabled deposits', async () => {
+    const req = makeRequest('POST', validBody, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(201)
+    const addArg = mockAppointmentAdd.mock.calls[0][0]
+    expect(addArg.depositRequired).toBe(false)
+    expect(addArg.depositAmount).toBeUndefined()
+    expect(addArg.depositCurrency).toBeUndefined()
+    expect(addArg.depositStatus).toBeUndefined()
+    const json = await res.json()
+    expect(json.data).toEqual({ id: 'new-appointment-id', depositRequired: false })
+  })
+
+  it('computes and saves the deposit snapshot when the nailist requires a deposit', async () => {
+    docStore['nailistProfiles/nailist-profile-1'] = {
+      businessName: 'סטודיו נייל',
+      userId: 'nailist-user-1',
+      depositEnabled: true,
+      depositPercentage: 20,
+    }
+    // service price is 120, currency ILS (seeded in beforeEach)
+    const req = makeRequest('POST', validBody, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(201)
+    expect(mockAppointmentAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        depositRequired: true,
+        depositAmount: 24, // round(120 * 20/100)
+        depositCurrency: 'ILS',
+        depositStatus: 'AWAITING_PAYMENT',
+      })
+    )
+    const json = await res.json()
+    expect(json.data).toEqual({
+      id: 'new-appointment-id',
+      depositRequired: true,
+      depositAmount: 24,
+      depositCurrency: 'ILS',
+      depositStatus: 'AWAITING_PAYMENT',
+    })
+  })
+
+  it('rounds the deposit amount to the nearest whole currency unit', async () => {
+    docStore['nailistProfiles/nailist-profile-1'] = {
+      businessName: 'סטודיו נייל',
+      userId: 'nailist-user-1',
+      depositEnabled: true,
+      depositPercentage: 15,
+    }
+    // 120 * 0.15 = 18 exactly, so use a price that produces a fractional result instead
+    docStore['services/service-1'] = { ...docStore['services/service-1'], price: 121 }
+    const req = makeRequest('POST', validBody, 'valid-token')
+    await POST(req)
+    expect(mockAppointmentAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ depositAmount: Math.round(121 * 0.15) })
+    )
+  })
+
   it('ignores CANCELLED conflicts when checking availability', async () => {
     const startTime = new Date('2026-07-01T10:00:00.000Z')
     const endTime = new Date('2026-07-01T11:00:00.000Z')

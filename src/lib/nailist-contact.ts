@@ -3,7 +3,7 @@ import { adminAuth } from '@/lib/firebase/admin'
 
 // Fields only returned to authenticated callers — keeps the profile itself
 // public for SEO while forcing anonymous visitors through login to see them.
-const CONTACT_FIELDS = ['whatsappPhone', 'instagramUrl', 'tiktokUrl', 'phoneNumber', 'email', 'address', 'userId'] as const
+const CONTACT_FIELDS = ['whatsappPhone', 'instagramUrl', 'tiktokUrl', 'phoneNumber', 'email', 'address', 'userId', 'bitPhone'] as const
 
 export async function isAuthenticatedRequest(request: NextRequest): Promise<boolean> {
   const token = request.cookies.get('auth-token')?.value

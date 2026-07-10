@@ -45,6 +45,9 @@ interface NailistProfile {
   instagramUrl?: string
   tiktokUrl?: string
   hasContactInfo?: boolean
+  depositEnabled?: boolean
+  depositPercentage?: number
+  bitPhone?: string
   avgRating: number
   reviewCount: number
   latitude?: number
@@ -332,13 +335,18 @@ export default function NailistProfileClient({ id }: { id: string }) {
           </div>
 
           {isOwner === false && profile.services.length > 0 && (
-            <div className="flex justify-center mt-6">
+            <div className="flex flex-col items-center mt-6">
               <Button
                 onClick={() => openBooking()}
                 className="bg-white text-pink-600 hover:bg-pink-50 border-0 rounded-2xl font-black shadow-lg px-8 h-11"
               >
                 קביעת תור
               </Button>
+              {profile.depositEnabled && (
+                <p className="mt-2 text-xs text-white/70 text-center">
+                  נדרשת מקדמה של {profile.depositPercentage}% בביט
+                </p>
+              )}
             </div>
           )}
 
@@ -594,6 +602,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
           services={profile.services}
           initialServiceId={bookingServiceId}
           onClose={() => setShowBooking(false)}
+          bitPhone={user ? profile.bitPhone : undefined}
         />
       )}
 
