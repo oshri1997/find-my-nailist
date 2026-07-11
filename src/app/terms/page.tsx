@@ -4,6 +4,7 @@ import { Footer } from '@/components/layout/footer'
 export const metadata = {
   title: 'תנאי שימוש | נייליסטיות',
   description: 'תנאי השימוש של אתר נייליסטיות — הכללים וההגבלות לשימוש בפלטפורמה',
+  alternates: { canonical: '/terms' },
 }
 
 export default function TermsPage() {

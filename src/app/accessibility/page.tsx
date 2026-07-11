@@ -4,6 +4,7 @@ import { Footer } from '@/components/layout/footer'
 export const metadata = {
   title: 'הצהרת נגישות | נייליסטיות',
   description: 'הצהרת הנגישות של אתר נייליסטיות — מחויבות לנגישות דיגיטלית לכלל המשתמשים',
+  alternates: { canonical: '/accessibility' },
 }
 
 export default function AccessibilityPage() {

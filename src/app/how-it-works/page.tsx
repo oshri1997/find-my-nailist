@@ -8,6 +8,7 @@ import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
 import { MapPin, Star, Calendar, Camera, ChevronDown, Scissors, Smartphone, Lock, Zap, MessageCircle, Gift } from 'lucide-react'
 import { useState } from 'react'
+import { HOW_IT_WORKS_FAQS } from '@/lib/how-it-works-faqs'
 
 /* ── DATA ── */
 
@@ -89,28 +90,7 @@ const features = [
   { icon: Star, title: 'ביקורות אמיתיות', desc: 'רק לקוחות שהשלימו תור יכולות להגיב' },
 ]
 
-const faqs = [
-  {
-    q: 'כמה עולה להצטרף כנייליסטית?',
-    a: 'ההצטרפות חינמית לחלוטין. אין דמי מנוי ואין עמלות על תורים.',
-  },
-  {
-    q: 'האם צריך להיות מאושרת כדי להופיע בחיפוש?',
-    a: 'לא. ברגע שאת פותחת פרופיל ומפעילה אותו, את מופיעה מיד בתוצאות החיפוש.',
-  },
-  {
-    q: 'איך לקוחות יודעות שהתור אושר?',
-    a: 'לאחר קביעת תור נשלח אישור במייל ללקוחה ולנייליסטית עם כל פרטי ההזמנה.',
-  },
-  {
-    q: 'האם ניתן לקבוע תור ללא חשבון?',
-    a: 'כדי לקבוע תור יש להתחבר — זה מבטיח שהנייליסטית יודעת מי מגיעה. ההרשמה חינמית ומהירה.',
-  },
-  {
-    q: 'אפשר ליצור קשר ישיר עם הנייליסטית?',
-    a: 'כן! אם הנייליסטית הוסיפה מספר WhatsApp, ניתן לשלוח לה הודעה ישירה מהפרופיל.',
-  },
-]
+const faqs = HOW_IT_WORKS_FAQS
 
 /* ── FAQ ITEM ── */
 

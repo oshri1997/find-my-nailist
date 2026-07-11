@@ -4,6 +4,7 @@ import { Footer } from '@/components/layout/footer'
 export const metadata = {
   title: 'מדיניות פרטיות | נייליסטיות',
   description: 'מדיניות הפרטיות של אתר נייליסטיות — כיצד אנו אוספים, משתמשים ומגנים על המידע שלך',
+  alternates: { canonical: '/privacy' },
 }
 
 export default function PrivacyPage() {
