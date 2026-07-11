@@ -69,6 +69,19 @@ function mockFetchResponses({
 
 beforeEach(() => {
   jest.clearAllMocks()
+  // Pin "now" to well before any working day starts (06:00 Israel time) so
+  // "today" never spuriously registers its own leftover-shift-time gap —
+  // without this, findUnfillableGaps' default `now = new Date()` picks up
+  // the real wall-clock time the suite happens to run at, and whenever
+  // that's late in the working day (e.g. less than 60 minutes before shift
+  // end), it flags an unintended extra gap for "today" alongside the one
+  // the fixtures actually set up for "tomorrow".
+  jest.useFakeTimers()
+  jest.setSystemTime(israelWallClockToUtc('2025-06-01', '06:00'))
+})
+
+afterEach(() => {
+  jest.useRealTimers()
 })
 
 describe('NailistDashboard — unfillable gap banner', () => {

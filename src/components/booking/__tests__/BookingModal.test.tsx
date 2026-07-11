@@ -1,5 +1,6 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import BookingModal from '../BookingModal'
+import { israelWallClockToUtc } from '@/lib/booking-utils'
 
 const mockServices = [
   { id: 'svc1', name: "מניקור ג'ל", durationMinutes: 60, price: 150, currency: 'ILS' },
@@ -218,6 +219,43 @@ describe('BookingModal', () => {
     await navigateToStep2()
     // Step 2 visible
     expect(screen.getByText(/בחרי תאריך ושעה/)).toBeInTheDocument()
+  })
+
+  it('separates a schedule-consolidating slot into "שעות מומלצות", leaving unrelated open slots under "אפשרויות נוספות"', async () => {
+    render(<BookingModal {...defaultProps} />)
+    await navigateToStep2("מניקור ג'ל") // 60-minute service
+
+    const dateButtons = screen.getAllByTestId('date-btn').filter((btn) => !btn.hasAttribute('disabled'))
+    const dateStr = dateButtons[0].getAttribute('data-date')!
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        data: {
+          workingDay: true,
+          startTime: '08:00',
+          endTime: '18:00',
+          // 60-minute booking at 09:00 ends exactly where this appointment
+          // starts — consolidates the schedule instead of fragmenting it.
+          bookedSlots: [{
+            startTime: israelWallClockToUtc(dateStr, '10:00').toISOString(),
+            endTime: israelWallClockToUtc(dateStr, '11:00').toISOString(),
+          }],
+        },
+      }),
+    })
+    fireEvent.click(dateButtons[0])
+
+    await waitFor(() => expect(screen.getByText('שעות מומלצות')).toBeInTheDocument())
+
+    const recommendedSection = screen.getByText('שעות מומלצות').closest('div')!
+    expect(within(recommendedSection).getByText('09:00')).toBeInTheDocument()
+
+    const otherSection = screen.getByText('אפשרויות נוספות').parentElement!
+    // 15:00 floats in open space, touching neither the booked appointment
+    // nor a shift boundary — not a consolidating pick.
+    expect(within(otherSection).getByText('15:00')).toBeInTheDocument()
+    expect(within(recommendedSection).queryByText('15:00')).not.toBeInTheDocument()
   })
 })
 

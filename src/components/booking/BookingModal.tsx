@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare, CalendarOff, Copy, Check } from 'lucide-react'
+import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare, CalendarOff, Copy, Check, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { generateSlots, isSlotUnavailable, buildMonthCalendarFor, toDateStr, type BookedSlot } from '@/lib/booking-utils'
 import { toBitUrl, formatBitPhoneDisplay } from '@/lib/bit'
+import { getRecommendedSlots } from '@/lib/slot-recommendation'
 
 interface Service {
   id: string
@@ -211,6 +212,56 @@ export default function BookingModal({ nailistProfileId, businessName, services,
           return h > cur.getHours() || (h === cur.getHours() && m > cur.getMinutes())
         })
       : []
+
+  // Which of today's bookable slots to nudge the client toward — the ones
+  // that consolidate the nailist's schedule instead of fragmenting it. See
+  // slot-recommendation.ts for why; computed only over slots that are
+  // actually still bookable (unavailable ones are never "recommended").
+  const minServiceDurationMinutes = services.length > 0 ? Math.min(...services.map((s) => s.durationMinutes)) : 0
+  const recommendedSlots =
+    availability?.workingDay && availability.startTime && availability.endTime && selectedService
+      ? getRecommendedSlots({
+          date: dateStr,
+          shiftStartTime: availability.startTime,
+          shiftEndTime: availability.endTime,
+          bookedSlots: availability.bookedSlots,
+          candidateSlots: slots.filter(
+            (t) => !isSlotUnavailable(t, dateStr, selectedService.durationMinutes, availability.endTime!, availability.bookedSlots)
+          ),
+          serviceDurationMinutes: selectedService.durationMinutes,
+          minServiceDurationMinutes,
+        })
+      : new Set<string>()
+
+  function renderSlotButton(t: string) {
+    const unavailable = isSlotUnavailable(
+      t,
+      dateStr,
+      selectedService?.durationMinutes ?? 60,
+      availability!.endTime!,
+      availability!.bookedSlots
+    )
+    const isSelected = selectedTime === t
+    const isRecommended = recommendedSlots.has(t)
+    return (
+      <button
+        key={t}
+        disabled={unavailable}
+        onClick={() => !unavailable && setSelectedTime(t)}
+        className={`py-2.5 rounded-xl text-sm font-bold transition-all ${
+          isSelected
+            ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-sm shadow-primary/40'
+            : unavailable
+            ? 'bg-muted text-muted-foreground cursor-not-allowed line-through text-xs'
+            : isRecommended
+            ? 'bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-950/40 dark:to-purple-950/40 text-pink-700 dark:text-pink-300 border-2 border-pink-300 dark:border-pink-800 hover:border-pink-400'
+            : 'bg-muted text-muted-foreground hover:bg-pink-50 dark:hover:bg-pink-950/30 hover:text-pink-600 border border-border hover:border-pink-200'
+        }`}
+      >
+        {t}
+      </button>
+    )
+  }
 
   const stepIndex = ['service', 'datetime', 'confirm'].indexOf(step)
 
@@ -440,34 +491,24 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                         אין שעות פנויות ביום זה
                       </div>
                     ) : (
-                      <div className="grid grid-cols-4 gap-2">
-                        {slots.map((t) => {
-                          const unavailable = isSlotUnavailable(
-                            t,
-                            dateStr,
-                            selectedService?.durationMinutes ?? 60,
-                            availability.endTime!,
-                            availability.bookedSlots
-                          )
-                          const isSelected = selectedTime === t
-                          return (
-                            <button
-                              key={t}
-                              disabled={unavailable}
-                              onClick={() => !unavailable && setSelectedTime(t)}
-                              className={`py-2.5 rounded-xl text-sm font-bold transition-all ${
-                                isSelected
-                                  ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-sm shadow-primary/40'
-                                  : unavailable
-                                  ? 'bg-muted text-muted-foreground cursor-not-allowed line-through text-xs'
-                                  : 'bg-muted text-muted-foreground hover:bg-pink-50 dark:hover:bg-pink-950/30 hover:text-pink-600 border border-border hover:border-pink-200'
-                              }`}
-                            >
-                              {t}
-                            </button>
-                          )
-                        })}
-                      </div>
+                      <>
+                        {recommendedSlots.size > 0 && (
+                          <div className="mb-3">
+                            <p className="text-xs font-black text-pink-600 flex items-center gap-1.5 mb-2">
+                              <Zap className="h-3.5 w-3.5 fill-pink-500 text-pink-500" /> שעות מומלצות
+                            </p>
+                            <div className="grid grid-cols-4 gap-2">
+                              {slots.filter((t) => recommendedSlots.has(t)).map(renderSlotButton)}
+                            </div>
+                          </div>
+                        )}
+                        {recommendedSlots.size > 0 && (
+                          <p className="text-xs font-bold text-muted-foreground mb-2">אפשרויות נוספות</p>
+                        )}
+                        <div className="grid grid-cols-4 gap-2">
+                          {slots.filter((t) => !recommendedSlots.has(t)).map(renderSlotButton)}
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
