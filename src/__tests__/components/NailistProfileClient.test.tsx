@@ -221,4 +221,19 @@ describe('NailistProfileClient — portfolio lightbox', () => {
     expect(trigger.tagName).toBe('BUTTON')
     expect(trigger).toContainElement(screen.getByAltText('עבודה יפה'))
   })
+
+  it('lays out the portfolio grid at 2 columns (not 3) so thumbnails render larger', async () => {
+    mockUseAuth.mockReturnValue({ user: null, role: null })
+    const profileWithPhotos = {
+      ...baseProfile,
+      portfolio: [{ id: 'photo-1', url: 'https://example.com/nail-art.jpg', caption: 'עבודה יפה' }],
+    }
+    mockProfileFetch(profileWithPhotos)
+    render(<NailistProfileClient id="nailist-1" />)
+
+    const img = await screen.findByAltText('עבודה יפה')
+    const grid = img.closest('.grid')!
+    expect(grid).toHaveClass('grid-cols-2')
+    expect(grid).not.toHaveClass('md:grid-cols-3')
+  })
 })
