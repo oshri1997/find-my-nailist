@@ -204,7 +204,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
       <div className="min-h-screen flex flex-col bg-muted/30">
         <div className="animate-pulse">
           <div className="h-64 bg-gradient-to-br from-pink-400 via-purple-500 to-violet-500 opacity-60" />
-          <div className="container mx-auto max-w-4xl px-6 py-6 space-y-4">
+          <div className="container mx-auto max-w-6xl px-6 py-6 space-y-4">
             <div className="h-5 bg-muted rounded w-1/3" />
             <div className="h-5 bg-muted rounded w-1/2" />
             <div className="grid grid-cols-2 md:grid-cols-3 gap-5 mt-8">
@@ -449,7 +449,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
 
       {/* Tabs */}
       <div className="bg-card border-b border-border sticky top-20 z-20">
-        <div className="container mx-auto max-w-4xl px-6">
+        <div className="container mx-auto max-w-6xl px-6">
           <div className="flex gap-1">
             {([['portfolio', 'פורטפוליו'], ['services', 'שירותים'], ['reviews', 'ביקורות']] as const).map(([key, label]) => (
               <button
@@ -469,7 +469,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto max-w-4xl px-6 py-8">
+      <div className="container mx-auto max-w-6xl px-6 py-8">
         {activeTab === 'portfolio' && (
           <div>
             {profile.portfolio.length === 0 ? (

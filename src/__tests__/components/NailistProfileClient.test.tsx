@@ -235,5 +235,11 @@ describe('NailistProfileClient — portfolio lightbox', () => {
     const grid = img.closest('.grid')!
     expect(grid).toHaveClass('grid-cols-2')
     expect(grid).toHaveClass('md:grid-cols-3')
+
+    // A wider content container (not just the 3-column grid on its own) is
+    // what actually makes each tile bigger than the previous 3-column pass —
+    // 3 columns in the same old max-w-4xl would have shrunk tiles further.
+    const contentContainer = grid.closest('.container')!
+    expect(contentContainer).toHaveClass('max-w-6xl')
   })
 })
