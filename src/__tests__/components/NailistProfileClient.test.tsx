@@ -222,7 +222,7 @@ describe('NailistProfileClient — portfolio lightbox', () => {
     expect(trigger).toContainElement(screen.getByAltText('עבודה יפה'))
   })
 
-  it('lays out the portfolio grid at 2 columns (not 3) so thumbnails render larger', async () => {
+  it('lays out the portfolio grid at 2 columns on mobile, 3 on desktop', async () => {
     mockUseAuth.mockReturnValue({ user: null, role: null })
     const profileWithPhotos = {
       ...baseProfile,
@@ -234,6 +234,6 @@ describe('NailistProfileClient — portfolio lightbox', () => {
     const img = await screen.findByAltText('עבודה יפה')
     const grid = img.closest('.grid')!
     expect(grid).toHaveClass('grid-cols-2')
-    expect(grid).not.toHaveClass('md:grid-cols-3')
+    expect(grid).toHaveClass('md:grid-cols-3')
   })
 })

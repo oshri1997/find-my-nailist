@@ -207,7 +207,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
           <div className="container mx-auto max-w-4xl px-6 py-6 space-y-4">
             <div className="h-5 bg-muted rounded w-1/3" />
             <div className="h-5 bg-muted rounded w-1/2" />
-            <div className="grid grid-cols-2 gap-5 mt-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-5 mt-8">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="aspect-square rounded-2xl bg-muted" />
               ))}
@@ -480,7 +480,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                 <p className="font-bold">אין תמונות בפורטפוליו עדיין</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                 {profile.portfolio.map((photo, i) => (
                   <motion.div
                     key={photo.id}
