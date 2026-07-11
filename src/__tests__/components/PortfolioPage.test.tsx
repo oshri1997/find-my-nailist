@@ -178,3 +178,57 @@ describe('PortfolioPage — lightbox', () => {
     expect(trigger).toContainElement(screen.getAllByRole('img')[0])
   })
 })
+
+describe('PortfolioPage — 20-photo limit', () => {
+  const twentyPhotos = Array.from({ length: 20 }, (_, i) => ({ id: `p${i}`, url: `https://example.com/p${i}.jpg` }))
+
+  function mockFetchWithPhotos(list: typeof photos) {
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.includes('/api/me/nailist-profile')) {
+        return Promise.resolve({ ok: true, json: async () => ({ data: { id: 'nailist-1' } }) } as Response)
+      }
+      if (url.includes('/api/portfolio')) {
+        return Promise.resolve({ ok: true, json: async () => ({ data: list }) } as Response)
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ data: null }) } as Response)
+    })
+  }
+
+  it('disables the upload button and hides the add-tile once at the limit', async () => {
+    mockFetchWithPhotos(twentyPhotos)
+    render(<PortfolioPage />)
+
+    await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(20))
+    expect(screen.getByRole('button', { name: 'הגעת למגבלה' })).toBeDisabled()
+    expect(screen.queryByText('הוסיפי')).not.toBeInTheDocument()
+    expect(screen.getByText('20/20 תמונות')).toBeInTheDocument()
+  })
+
+  it('keeps the upload button enabled and shows the add-tile below the limit', async () => {
+    mockFetchWithPhotos(twentyPhotos.slice(0, 19))
+    render(<PortfolioPage />)
+
+    await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(19))
+    expect(screen.getByRole('button', { name: 'העלי תמונה' })).not.toBeDisabled()
+    expect(screen.getByText('הוסיפי')).toBeInTheDocument()
+  })
+
+  it('shows a clear error and never attempts the upload when a file is selected past the limit', async () => {
+    // Regression: the hidden <input type="file"> has no disabled state of
+    // its own tied to the photo count, so handleFileChange must guard too —
+    // not just the button/tile that normally gate access to it.
+    mockFetchWithPhotos(twentyPhotos)
+    const { container } = render(<PortfolioPage />)
+    await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(20))
+
+    const fetchCallsBefore = (global.fetch as jest.Mock).mock.calls.length
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+    const file = new File(['bytes'], 'one-too-many.jpg', { type: 'image/jpeg' })
+    fireEvent.change(fileInput, { target: { files: [file] } })
+
+    await waitFor(() => {
+      expect(screen.getByText('הגעת למגבלת 20 התמונות בפורטפוליו — מחקי תמונה כדי להוסיף חדשה')).toBeInTheDocument()
+    })
+    expect((global.fetch as jest.Mock).mock.calls.length).toBe(fetchCallsBefore)
+  })
+})

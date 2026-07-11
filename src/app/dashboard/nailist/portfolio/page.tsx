@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { ImageLightbox } from '@/components/ui/image-lightbox'
 import { ImagePlus, X, Loader2, AlertCircle, Star } from 'lucide-react'
+import { MAX_PORTFOLIO_PHOTOS } from '@/lib/portfolio'
 
 interface Photo {
   id: string
@@ -55,6 +56,14 @@ export default function PortfolioPage() {
     const file = e.target.files?.[0]
     if (!file || !profileId) return
 
+    // Courtesy check — the upload button/tile is already hidden at the
+    // limit, but the hidden <input> itself has no disabled state tied to
+    // this, so guard here too rather than rely on the UI alone.
+    if (photos.length >= MAX_PORTFOLIO_PHOTOS) {
+      setError(`הגעת למגבלת ${MAX_PORTFOLIO_PHOTOS} התמונות בפורטפוליו — מחקי תמונה כדי להוסיף חדשה`)
+      return
+    }
+
     if (file.size > 5 * 1024 * 1024) {
       setError('הקובץ גדול מדי — מקסימום 5MB')
       return
@@ -77,6 +86,8 @@ export default function PortfolioPage() {
       if (res.ok) {
         const { data } = await res.json()
         setPhotos((prev) => [...prev, data])
+      } else if (res.status === 409) {
+        setError(`הגעת למגבלת ${MAX_PORTFOLIO_PHOTOS} התמונות בפורטפוליו — מחקי תמונה כדי להוסיף חדשה`)
       } else {
         setError('שגיאה בשמירת התמונה — נסי שוב')
       }
@@ -134,6 +145,9 @@ export default function PortfolioPage() {
           <div>
             <h1 className="text-3xl font-black text-foreground mb-1">פורטפוליו</h1>
             <p className="text-muted-foreground font-medium">העלי תמונות של עבודות שלך</p>
+            <p className="text-xs text-muted-foreground/70 font-semibold mt-0.5">
+              {photos.length}/{MAX_PORTFOLIO_PHOTOS} תמונות
+            </p>
             <p className="text-xs text-amber-500 font-medium mt-0.5 flex items-center gap-1">
               <Star className="h-3 w-3 fill-amber-400" />
               לחצי על הכוכב שבתמונה כדי להגדיר אותה כתמונת הכרטיס שלך בתוצאות החיפוש
@@ -141,11 +155,11 @@ export default function PortfolioPage() {
           </div>
           <Button
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading || !profileId}
+            disabled={uploading || !profileId || photos.length >= MAX_PORTFOLIO_PHOTOS}
             className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-11 px-5 font-bold shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-            {uploading ? `${progress}%` : 'העלי תמונה'}
+            {uploading ? `${progress}%` : photos.length >= MAX_PORTFOLIO_PHOTOS ? 'הגעת למגבלה' : 'העלי תמונה'}
           </Button>
         </div>
 
@@ -253,15 +267,17 @@ export default function PortfolioPage() {
               </motion.div>
             ))}
 
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              onClick={() => fileInputRef.current?.click()}
-              className="aspect-square rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-pink-300 hover:bg-pink-50/30 transition-all text-muted-foreground/50 hover:text-pink-400"
-            >
-              <ImagePlus className="h-6 w-6" />
-              <span className="text-xs font-bold">הוסיפי</span>
-            </motion.button>
+            {photos.length < MAX_PORTFOLIO_PHOTOS && (
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                onClick={() => fileInputRef.current?.click()}
+                className="aspect-square rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-pink-300 hover:bg-pink-50/30 transition-all text-muted-foreground/50 hover:text-pink-400"
+              >
+                <ImagePlus className="h-6 w-6" />
+                <span className="text-xs font-bold">הוסיפי</span>
+              </motion.button>
+            )}
           </AnimatePresence>
         </div>
       )}

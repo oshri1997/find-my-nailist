@@ -118,6 +118,32 @@ describe('POST /api/portfolio', () => {
       expect.objectContaining({ nailistProfileId: 'nailist-profile-1', url: 'https://ex.com/img.jpg' })
     )
   })
+
+  it('returns 409 and does not create a photo once the nailist already has MAX_PORTFOLIO_PHOTOS (20)', async () => {
+    collectionStore['portfolioPhotos'] = Array.from({ length: 20 }, (_, i) => ({
+      __id: `photo-${i}`, nailistProfileId: 'nailist-profile-1', url: `https://ex.com/${i}.jpg`,
+    }))
+    const res = await POST(makePostRequest({ nailistProfileId: 'nailist-profile-1', url: 'https://ex.com/one-too-many.jpg' }, 'token'))
+    expect(res.status).toBe(409)
+    expect(mockPhotoAdd).not.toHaveBeenCalled()
+  })
+
+  it('still allows the 20th photo when the nailist has 19 already', async () => {
+    collectionStore['portfolioPhotos'] = Array.from({ length: 19 }, (_, i) => ({
+      __id: `photo-${i}`, nailistProfileId: 'nailist-profile-1', url: `https://ex.com/${i}.jpg`,
+    }))
+    const res = await POST(makePostRequest({ nailistProfileId: 'nailist-profile-1', url: 'https://ex.com/20th.jpg' }, 'token'))
+    expect(res.status).toBe(201)
+    expect(mockPhotoAdd).toHaveBeenCalled()
+  })
+
+  it('does not count another nailist\'s photos toward this nailist\'s limit', async () => {
+    collectionStore['portfolioPhotos'] = Array.from({ length: 20 }, (_, i) => ({
+      __id: `other-photo-${i}`, nailistProfileId: 'some-other-profile', url: `https://ex.com/${i}.jpg`,
+    }))
+    const res = await POST(makePostRequest({ nailistProfileId: 'nailist-profile-1', url: 'https://ex.com/img.jpg' }, 'token'))
+    expect(res.status).toBe(201)
+  })
 })
 
 describe('DELETE /api/portfolio/[id]', () => {

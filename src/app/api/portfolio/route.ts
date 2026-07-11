@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { FieldValue } from 'firebase-admin/firestore'
+import { MAX_PORTFOLIO_PHOTOS } from '@/lib/portfolio'
 
 export async function GET(request: NextRequest) {
   try {
@@ -52,6 +53,16 @@ export async function POST(request: NextRequest) {
     const ownedProfileId = nailistSnap.empty ? null : nailistSnap.docs[0].id
     if (!ownedProfileId || ownedProfileId !== nailistProfileId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Authoritative check — the upload UI already stops at the limit, but
+    // that's only a courtesy; a direct API call must not be able to bypass it.
+    const existingSnap = await db
+      .collection(COLLECTIONS.PORTFOLIO_PHOTOS)
+      .where('nailistProfileId', '==', nailistProfileId)
+      .get()
+    if (existingSnap.docs.length >= MAX_PORTFOLIO_PHOTOS) {
+      return NextResponse.json({ error: 'Portfolio photo limit reached' }, { status: 409 })
     }
 
     const ref = await db.collection(COLLECTIONS.PORTFOLIO_PHOTOS).add({
