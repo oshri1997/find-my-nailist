@@ -39,7 +39,7 @@ export function NailistCtaSection() {
               <Image src="/logo.png" alt="נייליסטיות" width={64} height={64} className="w-full h-full object-cover" />
             </div>
 
-            <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 leading-tight">
+            <h2 className="text-4xl md:text-5xl font-black mb-4 leading-tight">
               את נייליסטית מוכשרת?
             </h2>
             <p className="text-lg text-white/80 max-w-xl mx-auto mb-10 leading-relaxed">
