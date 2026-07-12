@@ -30,7 +30,7 @@ export function FeaturesSection() {
           <div className="inline-flex items-center gap-2 bg-pink-50 text-primary border border-pink-100 rounded-full px-4 py-2 text-sm font-semibold mb-5">
             הכי טוב בשוק
           </div>
-          <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 text-foreground">
+          <h2 className="text-4xl md:text-5xl font-black mb-4 text-foreground">
             כל מה שצריך{' '}
             <span className="gradient-text">במקום אחד</span>
           </h2>

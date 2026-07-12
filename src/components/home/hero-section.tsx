@@ -77,7 +77,7 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.08 }}
-              className="font-display text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight mb-6 text-foreground"
+              className="text-5xl md:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight mb-6 text-foreground"
             >
               מצאי את{' '}
               <span className="gradient-text">הנייליסטית</span>
@@ -161,7 +161,7 @@ export function HeroSection() {
                       <div className="w-10 h-10 rounded-xl mx-auto mb-2 overflow-hidden shadow-[0_4px_12px_rgba(236,72,153,0.3)]">
                         <Image src="/logo.png" alt="נייליסטיות" width={40} height={40} className="w-full h-full object-cover" />
                       </div>
-                      <h3 className="font-display font-bold text-base text-foreground">נייליסטיות</h3>
+                      <h3 className="font-black text-base text-foreground">נייליסטיות</h3>
                       <p className="text-xs text-muted-foreground">גלי את המושלמת עבורך</p>
                     </div>
 

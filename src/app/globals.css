@@ -84,12 +84,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Elegant Hebrew-native display serif — headings only, never body copy.
-   Falls back gracefully if the variable isn't set (e.g. isolated component tests). */
-.font-display {
-  font-family: var(--font-display), 'Frank Ruhl Libre', serif;
-}
-
 /* Gradient text */
 .gradient-text {
   background: linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%);

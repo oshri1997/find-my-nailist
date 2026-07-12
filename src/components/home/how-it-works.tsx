@@ -54,7 +54,7 @@ export function HowItWorksSection() {
           <div className="inline-flex items-center gap-2 bg-violet-50 text-violet-600 border border-violet-100 rounded-full px-4 py-2 text-sm font-semibold mb-5">
             פשוט כמו 1, 2, 3
           </div>
-          <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 text-foreground">
+          <h2 className="text-4xl md:text-5xl font-black mb-4 text-foreground">
             איך זה <span className="gradient-text">עובד?</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-lg mx-auto">
