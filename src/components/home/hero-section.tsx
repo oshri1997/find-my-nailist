@@ -166,7 +166,7 @@ export function HeroSection() {
                     </div>
 
                     {/* Search bar */}
-                    <div className="bg-white rounded-xl p-3 shadow-[0_2px_10px_rgba(0,0,0,0.06)] mb-4 flex items-center gap-2 border border-border">
+                    <div className="bg-card rounded-xl p-3 shadow-[0_2px_10px_rgba(0,0,0,0.06)] mb-4 flex items-center gap-2 border border-border">
                       <Search className="w-4 h-4 text-muted-foreground/50" />
                       <span className="text-xs text-muted-foreground/60">חפשי לפי מיקום...</span>
                     </div>
@@ -178,7 +178,7 @@ export function HeroSection() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.5 + i * 0.15 }}
-                        className="bg-white rounded-xl p-3 mb-2 flex items-center gap-3 border border-border shadow-[0_1px_6px_rgba(0,0,0,0.04)]"
+                        className="bg-card rounded-xl p-3 mb-2 flex items-center gap-3 border border-border shadow-[0_1px_6px_rgba(0,0,0,0.04)]"
                       >
                         <div className="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center shrink-0">
                           <Sparkles className="w-4 h-4 text-primary" />
