@@ -3,6 +3,7 @@
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { Search, Star, Smartphone, Shield, MessageCircle, Image } from 'lucide-react'
+import { TiltCard } from '@/components/ui/tilt-card'
 
 const features = [
   { Icon: Search, title: 'חיפוש חכם', desc: 'סינון לפי מיקום, סוג שירות, מחיר וזמינות בזמן אמת.' },
@@ -29,7 +30,7 @@ export function FeaturesSection() {
           <div className="inline-flex items-center gap-2 bg-pink-50 text-primary border border-pink-100 rounded-full px-4 py-2 text-sm font-semibold mb-5">
             הכי טוב בשוק
           </div>
-          <h2 className="text-4xl md:text-5xl font-black mb-4 text-foreground">
+          <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 text-foreground">
             כל מה שצריך{' '}
             <span className="gradient-text">במקום אחד</span>
           </h2>
@@ -46,13 +47,17 @@ export function FeaturesSection() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4, delay: i * 0.06 }}
               whileHover={{ y: -3, transition: { duration: 0.2 } }}
-              className="bg-card rounded-2xl p-7 cursor-default border border-border hover:border-pink-200 hover:shadow-[0_8px_30px_rgba(236,72,153,0.10)] transition-all duration-300 group"
             >
-              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary group-hover:shadow-[0_4px_12px_rgba(236,72,153,0.3)] transition-all duration-300">
-                <f.Icon className="w-5 h-5 text-primary group-hover:text-white transition-colors duration-300" />
-              </div>
-              <h3 className="text-base font-black text-foreground mb-2">{f.title}</h3>
-              <p className="text-muted-foreground leading-relaxed text-sm">{f.desc}</p>
+              <TiltCard
+                maxTiltDeg={5}
+                className="bg-card rounded-2xl p-7 cursor-default border border-border hover:border-pink-200 hover:shadow-[0_8px_30px_rgba(236,72,153,0.10)] transition-all duration-300 group"
+              >
+                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary group-hover:shadow-[0_4px_12px_rgba(236,72,153,0.3)] transition-all duration-300">
+                  <f.Icon className="w-5 h-5 text-primary group-hover:text-white transition-colors duration-300" />
+                </div>
+                <h3 className="text-base font-black text-foreground mb-2">{f.title}</h3>
+                <p className="text-muted-foreground leading-relaxed text-sm">{f.desc}</p>
+              </TiltCard>
             </motion.div>
           ))}
         </div>

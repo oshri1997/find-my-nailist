@@ -21,5 +21,11 @@ jest.mock('framer-motion', () => {
     useAnimation: () => ({ start: jest.fn() }),
     useInView: () => true,
     useMotionValue: (v: unknown) => ({ get: () => v, set: jest.fn() }),
+    // Scroll-linked/spring/tilt hooks — no real scrolling or pointer physics
+    // happens in jsdom, so these resolve to inert motion-value-shaped stubs.
+    useScroll: () => ({ scrollYProgress: { get: () => 0, set: jest.fn(), on: jest.fn() } }),
+    useTransform: () => ({ get: () => 0, set: jest.fn() }),
+    useSpring: (v: unknown) => v,
+    useReducedMotion: () => false,
   }
 })

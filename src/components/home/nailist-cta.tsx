@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { motion, useInView } from 'framer-motion'
+import { motion, useInView, useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Users, Zap, Sparkles } from 'lucide-react'
@@ -17,6 +17,11 @@ export function NailistCtaSection() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-80px' })
 
+  // Background dot-grid drifts slower than the foreground content on scroll —
+  // decorative-layer-only parallax, per the "never parallax text/controls" rule.
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
+  const dotsY = useTransform(scrollYProgress, [0, 1], [-30, 30])
+
   return (
     <section ref={ref} className="py-24 bg-background">
       <div className="container mx-auto max-w-5xl px-6">
@@ -26,15 +31,15 @@ export function NailistCtaSection() {
           transition={{ duration: 0.5 }}
           className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-primary via-pink-500 to-accent p-12 md:p-16 text-center text-white"
         >
-          {/* Dot grid overlay */}
-          <div className="absolute inset-0 dot-pattern pointer-events-none" />
+          {/* Dot grid overlay — parallax */}
+          <motion.div style={{ y: dotsY }} className="absolute inset-0 dot-pattern pointer-events-none" />
 
           <div className="relative z-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl overflow-hidden mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl overflow-hidden mb-8 shadow-[0_16px_40px_rgba(0,0,0,0.25)]">
               <Image src="/logo.png" alt="נייליסטיות" width={64} height={64} className="w-full h-full object-cover" />
             </div>
 
-            <h2 className="text-4xl md:text-5xl font-black mb-4 leading-tight">
+            <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 leading-tight">
               את נייליסטית מוכשרת?
             </h2>
             <p className="text-lg text-white/80 max-w-xl mx-auto mb-10 leading-relaxed">
@@ -49,7 +54,7 @@ export function NailistCtaSection() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={isInView ? { opacity: 1, scale: 1 } : {}}
                   transition={{ delay: 0.2 + i * 0.08 }}
-                  className="flex items-center gap-2 bg-white/15 rounded-full px-5 py-2.5 text-sm font-semibold"
+                  className="glass-dark flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
                 >
                   <perk.Icon className="w-4 h-4" />
                   {perk.text}

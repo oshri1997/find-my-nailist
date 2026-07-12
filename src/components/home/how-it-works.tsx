@@ -3,6 +3,7 @@
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { MapPin, Star, Calendar } from 'lucide-react'
+import { TiltCard } from '@/components/ui/tilt-card'
 
 const steps = [
   {
@@ -53,7 +54,7 @@ export function HowItWorksSection() {
           <div className="inline-flex items-center gap-2 bg-violet-50 text-violet-600 border border-violet-100 rounded-full px-4 py-2 text-sm font-semibold mb-5">
             פשוט כמו 1, 2, 3
           </div>
-          <h2 className="text-4xl md:text-5xl font-black mb-4 text-foreground">
+          <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 text-foreground">
             איך זה <span className="gradient-text">עובד?</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-lg mx-auto">
@@ -72,14 +73,18 @@ export function HowItWorksSection() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4, delay: i * 0.1 }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className={`relative rounded-2xl border ${step.border} ${step.cardBg} p-8 cursor-default`}
             >
-              <div className={`w-12 h-12 rounded-xl ${step.iconBg} flex items-center justify-center mb-6 shadow-[0_4px_12px_rgba(0,0,0,0.14)]`}>
-                <step.Icon className="w-6 h-6 text-white" />
-              </div>
-              <div className={`text-xs font-black ${step.stepColor} mb-2 tracking-widest`}>{step.step}</div>
-              <h3 className="text-lg font-black text-foreground mb-3">{step.title}</h3>
-              <p className="text-muted-foreground leading-relaxed text-sm">{step.desc}</p>
+              <TiltCard
+                maxTiltDeg={5}
+                className={`relative rounded-2xl border ${step.border} ${step.cardBg} p-8 cursor-default`}
+              >
+                <div className={`w-12 h-12 rounded-xl ${step.iconBg} flex items-center justify-center mb-6 shadow-[0_4px_12px_rgba(0,0,0,0.14)]`}>
+                  <step.Icon className="w-6 h-6 text-white" />
+                </div>
+                <div className={`text-xs font-black ${step.stepColor} mb-2 tracking-widest`}>{step.step}</div>
+                <h3 className="text-lg font-black text-foreground mb-3">{step.title}</h3>
+                <p className="text-muted-foreground leading-relaxed text-sm">{step.desc}</p>
+              </TiltCard>
             </motion.div>
           ))}
         </div>
