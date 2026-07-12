@@ -1,11 +1,19 @@
 import type { Metadata } from 'next'
-import { Heebo } from 'next/font/google'
+import { Heebo, Frank_Ruhl_Libre } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 import { ConditionalNavbar } from '@/components/layout/conditional-navbar'
 import { CookieNotice } from '@/components/layout/cookie-notice'
 
 const heebo = Heebo({ subsets: ['hebrew', 'latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
+// Elegant Hebrew-native display serif for hero/section headings — reserved
+// for large display text via the `.font-display` utility (see globals.css),
+// not applied body-wide; Heebo stays the UI/body workhorse everywhere else.
+const frankRuhlLibre = Frank_Ruhl_Libre({
+  subsets: ['hebrew', 'latin'],
+  weight: ['500', '700', '900'],
+  variable: '--font-display',
+})
 
 const APP_URL = 'https://nailistiot.fun'
 
@@ -80,7 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Apply saved theme before first paint to avoid flash */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(t===null&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()` }} />
       </head>
-      <body className={heebo.className}>
+      <body className={`${heebo.className} ${frankRuhlLibre.variable}`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}

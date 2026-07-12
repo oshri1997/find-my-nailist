@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored Claude Code skill templates (installed via ui-ux-pro-max-cli)
+    // — third-party reference/script files, not this project's source code.
+    ".claude/skills/**",
   ]),
 ]);
 
