@@ -47,10 +47,11 @@ export function FeaturesSection() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4, delay: i * 0.06 }}
               whileHover={{ y: -3, transition: { duration: 0.2 } }}
+              className="h-full"
             >
               <TiltCard
                 maxTiltDeg={5}
-                className="bg-card rounded-2xl p-7 cursor-default border border-border hover:border-pink-200 hover:shadow-[0_8px_30px_rgba(236,72,153,0.10)] transition-all duration-300 group"
+                className="bg-card rounded-2xl p-7 cursor-default border border-border hover:border-pink-200 hover:shadow-[0_8px_30px_rgba(236,72,153,0.10)] transition-all duration-300 group h-full"
               >
                 <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary group-hover:shadow-[0_4px_12px_rgba(236,72,153,0.3)] transition-all duration-300">
                   <f.Icon className="w-5 h-5 text-primary group-hover:text-white transition-colors duration-300" />

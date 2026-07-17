@@ -70,10 +70,11 @@ export function HowItWorksSection() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4, delay: i * 0.1 }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="h-full"
             >
               <TiltCard
                 maxTiltDeg={5}
-                className={`relative rounded-2xl border ${step.border} ${step.cardBg} p-8 cursor-default`}
+                className={`relative rounded-2xl border ${step.border} ${step.cardBg} p-8 cursor-default h-full`}
               >
                 <div className={`w-12 h-12 rounded-xl ${step.iconBg} flex items-center justify-center mb-6 shadow-[0_4px_12px_rgba(0,0,0,0.14)]`}>
                   <step.Icon className="w-6 h-6 text-white" />
