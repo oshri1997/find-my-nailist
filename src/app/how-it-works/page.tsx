@@ -203,7 +203,6 @@ export default function HowItWorksPage() {
           </Section>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-            <div className="hidden md:block absolute top-16 right-[calc(33%+2rem)] left-[calc(33%+2rem)] h-0.5 bg-gradient-to-l from-violet-200 via-purple-200 to-pink-200" />
             {clientSteps.map((step, i) => (
               <motion.div
                 key={step.step}
