@@ -176,7 +176,7 @@ export default function WorkingHoursPage() {
                 key={preset.label}
                 type="button"
                 onClick={() => applyPreset(preset)}
-                className="px-4 py-1.5 rounded-xl bg-card border border-pink-200 text-sm font-bold text-pink-600 hover:bg-pink-500 hover:text-white hover:border-pink-500 transition-all shadow-sm"
+                className="px-4 py-1.5 rounded-xl bg-card border border-orange-200 text-sm font-bold text-orange-600 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all shadow-sm"
               >
                 {preset.label}
               </button>
@@ -184,7 +184,7 @@ export default function WorkingHoursPage() {
           </div>
         </div>
 
-        <div className="pt-4 border-t border-pink-200/60 dark:border-pink-900/40">
+        <div className="pt-4 border-t border-orange-200/60 dark:border-orange-900/40">
           <p className="text-xs font-black text-muted-foreground mb-3 flex items-center gap-1.5">
             <CopyCheck className="h-3.5 w-3.5" />
             שעה אחידה לכל הימים
@@ -197,7 +197,7 @@ export default function WorkingHoursPage() {
               type="button"
               onClick={applyBulkTimes}
               size="sm"
-              className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl font-bold shadow-sm gap-1.5 cursor-pointer"
+              className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-xl font-bold shadow-sm gap-1.5 cursor-pointer"
             >
               <CopyCheck className="h-3.5 w-3.5" />
               החל על כל הימים
@@ -218,7 +218,7 @@ export default function WorkingHoursPage() {
               return (
                 <div
                   key={day}
-                  className={`w-2 h-2 rounded-full transition-colors ${h.isActive ? 'bg-gradient-to-br from-pink-500 to-purple-600' : 'bg-muted'}`}
+                  className={`w-2 h-2 rounded-full transition-colors ${h.isActive ? 'bg-gradient-to-br from-orange-500 to-amber-600' : 'bg-muted'}`}
                 />
               )
             })}
@@ -238,7 +238,7 @@ export default function WorkingHoursPage() {
                   h.isActive
                     ? weekend
                       ? 'bg-amber-50/60 border-amber-200'
-                      : 'bg-card border-pink-100 shadow-sm'
+                      : 'bg-card border-orange-100 shadow-sm'
                     : 'bg-muted/50 border-border'
                 }`}
               >
@@ -250,7 +250,7 @@ export default function WorkingHoursPage() {
                     onClick={() => toggle(day)}
                     className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
                       h.isActive
-                        ? weekend ? 'bg-amber-400' : 'bg-pink-500'
+                        ? weekend ? 'bg-amber-400' : 'bg-orange-500'
                         : 'bg-muted'
                     }`}
                   >
@@ -302,7 +302,7 @@ export default function WorkingHoursPage() {
           <Button
             type="submit"
             disabled={saving}
-            className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 px-8 font-black shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
+            className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-xl h-12 px-8 font-black shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
           >
             {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> שומרת...</> : 'שמרי שעות עבודה'}
           </Button>

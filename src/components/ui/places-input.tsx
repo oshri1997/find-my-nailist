@@ -99,7 +99,7 @@ export function PlacesInput({ value, onChange, onPlaceSelect, placeholder }: Pro
         onChange={handleChange}
         onFocus={() => predictions.length > 0 && setOpen(true)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:border-pink-300 h-11 font-medium text-foreground placeholder:text-muted-foreground/40"
+        className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:border-orange-300 h-11 font-medium text-foreground placeholder:text-muted-foreground/40"
         autoComplete="off"
         dir="rtl"
       />
@@ -109,7 +109,7 @@ export function PlacesInput({ value, onChange, onPlaceSelect, placeholder }: Pro
             <li
               key={p.place_id}
               onMouseDown={() => selectPlace(p)}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-pink-50 dark:hover:bg-pink-950/30 cursor-pointer transition-colors border-b border-border/50 last:border-0"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-orange-50 dark:hover:bg-orange-950/30 cursor-pointer transition-colors border-b border-border/50 last:border-0"
               dir="rtl"
             >
               <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />

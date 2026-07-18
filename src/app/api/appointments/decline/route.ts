@@ -129,7 +129,7 @@ function successPage(clientName: string, serviceName: string, businessName: stri
     p{color:#6b7280;line-height:1.6;margin:4px 0}
     .details{background:#f9fafb;border-radius:12px;padding:16px;margin:24px 0;text-align:right}
     .details p{margin:4px 0;font-size:14px}
-    a{display:inline-block;margin-top:24px;background:linear-gradient(135deg,#ec4899,#a855f7);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-weight:bold;font-size:16px}
+    a{display:inline-block;margin-top:24px;background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-weight:bold;font-size:16px}
   </style>
 </head>
 <body>
@@ -161,7 +161,7 @@ function errorPage(title: string, message: string) {
     .icon{font-size:56px;margin-bottom:16px}
     h1{color:#374151;font-size:24px;margin:0 0 8px}
     p{color:#6b7280;line-height:1.6}
-    a{display:inline-block;margin-top:24px;background:linear-gradient(135deg,#ec4899,#a855f7);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-weight:bold;font-size:16px}
+    a{display:inline-block;margin-top:24px;background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-weight:bold;font-size:16px}
   </style>
 </head>
 <body>

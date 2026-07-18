@@ -364,7 +364,7 @@ export default function OnboardingPage() {
   if (authLoading || !profileId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-pink-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-orange-400" />
       </div>
     )
   }
@@ -385,15 +385,15 @@ export default function OnboardingPage() {
             <div key={i} className="flex items-center gap-3">
               <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-black transition-all ${
                 i < step
-                  ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-md shadow-primary/40'
+                  ? 'bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-md shadow-primary/40'
                   : i === step
-                  ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-md shadow-primary/40 ring-4 ring-primary/30'
+                  ? 'bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-md shadow-primary/40 ring-4 ring-primary/30'
                   : 'bg-muted text-muted-foreground'
               }`}>
                 {i < step ? <Check className="h-4 w-4" /> : i + 1}
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`h-0.5 w-10 rounded-full transition-all ${i < step ? 'bg-gradient-to-r from-pink-500 to-purple-600' : 'bg-border'}`} />
+                <div className={`h-0.5 w-10 rounded-full transition-all ${i < step ? 'bg-gradient-to-r from-orange-500 to-amber-600' : 'bg-border'}`} />
               )}
             </div>
           ))}
@@ -435,7 +435,7 @@ export default function OnboardingPage() {
                 <Button
                   onClick={saveAddress}
                   disabled={!lat || saving}
-                  className="w-full mt-6 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black text-base shadow-lg shadow-primary/40 gap-2 group disabled:opacity-50"
+                  className="w-full mt-6 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-xl h-12 font-black text-base shadow-lg shadow-primary/40 gap-2 group disabled:opacity-50"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>המשיכי <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /></>}
                 </Button>
@@ -457,15 +457,15 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={() => photoInputRef.current?.click()}
                     disabled={photoUploading}
-                    className="relative w-28 h-28 rounded-full bg-muted border-2 border-dashed border-border hover:border-pink-300 hover:bg-pink-50/30 transition-all flex items-center justify-center overflow-hidden disabled:opacity-60 group"
+                    className="relative w-28 h-28 rounded-full bg-muted border-2 border-dashed border-border hover:border-orange-300 hover:bg-orange-50/30 transition-all flex items-center justify-center overflow-hidden disabled:opacity-60 group"
                   >
                     {photoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={photoUrl} alt="" className="w-full h-full object-cover" />
                     ) : photoUploading ? (
-                      <Loader2 className="h-6 w-6 animate-spin text-pink-400" />
+                      <Loader2 className="h-6 w-6 animate-spin text-orange-400" />
                     ) : (
-                      <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-pink-400 transition-colors">
+                      <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-orange-400 transition-colors">
                         <Camera className="h-6 w-6" />
                         <span className="text-xs font-bold">העלי תמונה</span>
                       </div>
@@ -480,7 +480,7 @@ export default function OnboardingPage() {
                   <Button
                     onClick={() => setStep(2)}
                     disabled={photoUploading}
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
                     {photoUrl ? 'המשיכי' : 'דלגי לעת עתה'} <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
                   </Button>
@@ -493,7 +493,7 @@ export default function OnboardingPage() {
                 <h2 className="text-xl font-black text-foreground mb-1">תמונות של העבודות שלך</h2>
                 <p className="text-muted-foreground text-sm mb-5">
                   העלי לפחות 3 תמונות כדי להמשיך
-                  <span className={`mr-2 font-bold ${photos.length >= 3 ? 'text-emerald-500' : 'text-pink-500'}`}>
+                  <span className={`mr-2 font-bold ${photos.length >= 3 ? 'text-emerald-500' : 'text-orange-500'}`}>
                     ({photos.length}/3)
                   </span>
                 </p>
@@ -509,7 +509,7 @@ export default function OnboardingPage() {
                     <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                       <motion.div
                         animate={{ width: `${uploadProgress}%` }}
-                        className="h-full bg-gradient-to-r from-pink-500 to-purple-600 rounded-full"
+                        className="h-full bg-gradient-to-r from-orange-500 to-amber-600 rounded-full"
                       />
                     </div>
                   </div>
@@ -526,7 +526,7 @@ export default function OnboardingPage() {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 hover:border-pink-300 hover:bg-pink-50/30 transition-all text-muted-foreground hover:text-pink-400 disabled:opacity-50"
+                    className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 hover:border-orange-300 hover:bg-orange-50/30 transition-all text-muted-foreground hover:text-orange-400 disabled:opacity-50"
                   >
                     <ImagePlus className="h-5 w-5" />
                     <span className="text-xs font-bold">הוסיפי</span>
@@ -540,7 +540,7 @@ export default function OnboardingPage() {
                   <Button
                     onClick={() => setStep(3)}
                     disabled={photos.length < 3}
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
                     המשיכי <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
                   </Button>
@@ -557,8 +557,8 @@ export default function OnboardingPage() {
                 {services.length > 0 && (
                   <div className="space-y-2 mb-5">
                     {services.map((s) => (
-                      <div key={s.id} className="flex items-center gap-3 bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-950/30 dark:to-purple-950/30 rounded-xl px-4 py-3">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shrink-0">
+                      <div key={s.id} className="flex items-center gap-3 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 rounded-xl px-4 py-3">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shrink-0">
                           <Check className="h-3 w-3 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -569,7 +569,7 @@ export default function OnboardingPage() {
                           <button
                             type="button"
                             onClick={() => startEditService(s)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/60 dark:hover:bg-white/10 text-muted-foreground/60 hover:text-pink-600 transition-colors"
+                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/60 dark:hover:bg-white/10 text-muted-foreground/60 hover:text-orange-600 transition-colors"
                             title="עריכה"
                           >
                             <Pencil className="h-3.5 w-3.5" />
@@ -603,7 +603,7 @@ export default function OnboardingPage() {
                     placeholder="שם השירות (למשל: ג׳ל צרפתי)"
                     value={svcName}
                     onChange={e => setSvcName(e.target.value)}
-                    className="rounded-xl border-border focus:border-pink-300 h-11 bg-card"
+                    className="rounded-xl border-border focus:border-orange-300 h-11 bg-card"
                   />
                   <div className="flex gap-2">
                     <div className="flex-1">
@@ -619,7 +619,7 @@ export default function OnboardingPage() {
                             setSvcDuration(Number(e.target.value))
                           }
                         }}
-                        className="w-full h-11 rounded-xl border border-border bg-card px-3 text-sm font-semibold focus:outline-none focus:border-pink-300"
+                        className="w-full h-11 rounded-xl border border-border bg-card px-3 text-sm font-semibold focus:outline-none focus:border-orange-300"
                       >
                         {[30, 45, 60, 75, 90, 120].map(d => (
                           <option key={d} value={String(d)}>{d} דק׳</option>
@@ -634,7 +634,7 @@ export default function OnboardingPage() {
                           max={480}
                           value={svcDuration > 0 ? String(svcDuration) : ''}
                           onChange={e => setSvcDuration(Number(e.target.value) || 0)}
-                          className="mt-2 rounded-xl border-border focus:border-pink-300 h-11 bg-card"
+                          className="mt-2 rounded-xl border-border focus:border-orange-300 h-11 bg-card"
                         />
                       )}
                     </div>
@@ -645,7 +645,7 @@ export default function OnboardingPage() {
                         placeholder="150"
                         value={svcPrice}
                         onChange={e => setSvcPrice(e.target.value)}
-                        className="rounded-xl border-border focus:border-pink-300 h-11 bg-card"
+                        className="rounded-xl border-border focus:border-orange-300 h-11 bg-card"
                         min={0}
                       />
                     </div>
@@ -655,7 +655,7 @@ export default function OnboardingPage() {
                     onClick={saveService}
                     disabled={!svcName.trim() || !svcPrice || saving || (isCustomDuration && svcDuration < 5)}
                     variant="outline"
-                    className="w-full rounded-xl h-10 font-bold border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 gap-2 disabled:opacity-50"
+                    className="w-full rounded-xl h-10 font-bold border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700 gap-2 disabled:opacity-50"
                   >
                     {saving ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -674,7 +674,7 @@ export default function OnboardingPage() {
                   <Button
                     onClick={() => { setError(''); setStep(4) }}
                     disabled={services.length === 0}
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
                     המשיכי <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
                   </Button>
@@ -705,7 +705,7 @@ export default function OnboardingPage() {
                       placeholder="https://instagram.com/youraccount"
                       type="url"
                       dir="ltr"
-                      className="rounded-xl border-border focus:border-pink-300 h-11 text-left placeholder:text-right"
+                      className="rounded-xl border-border focus:border-orange-300 h-11 text-left placeholder:text-right"
                     />
                   </div>
 
@@ -723,7 +723,7 @@ export default function OnboardingPage() {
                       placeholder="https://tiktok.com/@youraccount"
                       type="url"
                       dir="ltr"
-                      className="rounded-xl border-border focus:border-pink-300 h-11 text-left placeholder:text-right"
+                      className="rounded-xl border-border focus:border-orange-300 h-11 text-left placeholder:text-right"
                     />
                   </div>
                 </div>
@@ -735,7 +735,7 @@ export default function OnboardingPage() {
                   <Button
                     onClick={saveSocialLinks}
                     disabled={saving}
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>המשיכי <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /></>}
                   </Button>
@@ -752,13 +752,13 @@ export default function OnboardingPage() {
                   {workingHours.map((day, i) => (
                     <div
                       key={i}
-                      className={`rounded-xl border px-4 py-3 transition-all ${day.isActive ? 'border-pink-200 bg-pink-50/40' : 'border-border bg-muted/30'}`}
+                      className={`rounded-xl border px-4 py-3 transition-all ${day.isActive ? 'border-orange-200 bg-orange-50/40' : 'border-border bg-muted/30'}`}
                     >
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
                           onClick={() => toggleDay(i)}
-                          className={`w-9 h-5 rounded-full transition-all shrink-0 relative ${day.isActive ? 'bg-gradient-to-r from-pink-500 to-purple-600' : 'bg-muted'}`}
+                          className={`w-9 h-5 rounded-full transition-all shrink-0 relative ${day.isActive ? 'bg-gradient-to-r from-orange-500 to-amber-600' : 'bg-muted'}`}
                         >
                           <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${day.isActive ? 'right-0.5' : 'left-0.5'}`} />
                         </button>
@@ -770,7 +770,7 @@ export default function OnboardingPage() {
                             <select
                               value={day.startTime}
                               onChange={e => updateTime(i, 'startTime', e.target.value)}
-                              className="flex-1 h-8 rounded-lg border border-border bg-card px-1 text-xs font-semibold focus:outline-none focus:border-pink-300 cursor-pointer"
+                              className="flex-1 h-8 rounded-lg border border-border bg-card px-1 text-xs font-semibold focus:outline-none focus:border-orange-300 cursor-pointer"
                             >
                               {TIME_OPTIONS.slice(0, -1).map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
@@ -778,7 +778,7 @@ export default function OnboardingPage() {
                             <select
                               value={day.endTime}
                               onChange={e => updateTime(i, 'endTime', e.target.value)}
-                              className="flex-1 h-8 rounded-lg border border-border bg-card px-1 text-xs font-semibold focus:outline-none focus:border-pink-300 cursor-pointer"
+                              className="flex-1 h-8 rounded-lg border border-border bg-card px-1 text-xs font-semibold focus:outline-none focus:border-orange-300 cursor-pointer"
                             >
                               {TIME_OPTIONS.filter(t => t > day.startTime).map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
@@ -799,7 +799,7 @@ export default function OnboardingPage() {
                   <Button
                     onClick={saveWorkingHours}
                     disabled={saving}
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>סיימתי! <Check className="h-4 w-4" /></>}
                   </Button>

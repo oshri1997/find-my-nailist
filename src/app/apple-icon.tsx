@@ -18,7 +18,7 @@ export default async function AppleIcon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #ec4899, #a855f7)',
+          background: 'linear-gradient(135deg, #c2542d, #d9a441)',
         }}
       >
         <img src={logoSrc} width={150} height={150} style={{ objectFit: 'contain' }} alt="" />

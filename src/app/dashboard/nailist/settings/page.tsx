@@ -227,7 +227,7 @@ export default function NailistSettingsPage() {
             type="button"
             onClick={() => photoInputRef.current?.click()}
             disabled={photoUploading || !profileId}
-            className="absolute -bottom-1 -left-1 w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white flex items-center justify-center shadow-lg border-2 border-card disabled:opacity-60"
+            className="absolute -bottom-1 -left-1 w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-amber-600 text-white flex items-center justify-center shadow-lg border-2 border-card disabled:opacity-60"
           >
             {photoUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
           </button>
@@ -290,7 +290,7 @@ export default function NailistSettingsPage() {
                 type="button"
                 onClick={() => coverInputRef.current?.click()}
                 disabled={coverUploading || !profileId}
-                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-9 px-4 text-sm font-bold gap-2 disabled:opacity-60"
+                className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-xl h-9 px-4 text-sm font-bold gap-2 disabled:opacity-60"
               >
                 {coverUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
                 {coverUploading ? `${coverProgress}%` : coverPhotoUrl ? 'החליפי תמונה' : 'העלי תמונה'}
@@ -348,7 +348,7 @@ export default function NailistSettingsPage() {
               onChange={handleChange}
               placeholder="ספרי על עצמך ועל השירותים שאת מציעה..."
               rows={3}
-              className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:border-pink-300 resize-none font-medium text-foreground placeholder:text-muted-foreground/40"
+              className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:border-orange-300 resize-none font-medium text-foreground placeholder:text-muted-foreground/40"
             />
           </div>
         </motion.div>
@@ -386,7 +386,7 @@ export default function NailistSettingsPage() {
               aria-label="הפעלת מקדמה בביט"
               onClick={() => setForm((prev) => ({ ...prev, depositEnabled: !prev.depositEnabled }))}
               className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none shrink-0 ${
-                form.depositEnabled ? 'bg-gradient-to-r from-pink-500 to-purple-600' : 'bg-muted'
+                form.depositEnabled ? 'bg-gradient-to-r from-orange-500 to-amber-600' : 'bg-muted'
               }`}
             >
               <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${form.depositEnabled ? 'translate-x-8' : 'translate-x-1'}`} />
@@ -404,7 +404,7 @@ export default function NailistSettingsPage() {
                     max={100}
                     value={form.depositPercentage}
                     onChange={(e) => setForm((prev) => ({ ...prev, depositPercentage: Number(e.target.value) || 0 }))}
-                    className="w-24 rounded-xl border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:border-pink-300 font-medium text-foreground"
+                    className="w-24 rounded-xl border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:border-orange-300 font-medium text-foreground"
                   />
                   <span className="text-sm text-muted-foreground font-medium">%</span>
                 </div>
@@ -414,7 +414,7 @@ export default function NailistSettingsPage() {
               </div>
               <div>
                 <label className="text-sm font-bold text-muted-foreground block mb-1.5">מספר טלפון לביט</label>
-                <Input name="bitPhone" value={form.bitPhone} onChange={handleChange} placeholder="0501234567" type="tel" className="rounded-xl border-border focus:border-pink-300 h-11" />
+                <Input name="bitPhone" value={form.bitPhone} onChange={handleChange} placeholder="0501234567" type="tel" className="rounded-xl border-border focus:border-orange-300 h-11" />
                 <p className="text-xs text-muted-foreground mt-1 font-medium">לקוחות ישלחו את המקדמה למספר הזה דרך אפליקציית Bit</p>
               </div>
             </div>
@@ -439,7 +439,7 @@ export default function NailistSettingsPage() {
           <Button
             type="submit"
             disabled={saving || !profileId}
-            className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl h-12 px-8 font-black shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
+            className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-xl h-12 px-8 font-black shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {saving ? 'שומרת...' : 'שמרי שינויים'}
@@ -464,7 +464,7 @@ function Field({ label, name, value, onChange, placeholder, type = 'text' }: {
   return (
     <div>
       <label className="text-sm font-bold text-muted-foreground block mb-1.5">{label}</label>
-      <Input name={name} value={value} onChange={onChange} placeholder={placeholder} type={type} className="rounded-xl border-border focus:border-pink-300 h-11" />
+      <Input name={name} value={value} onChange={onChange} placeholder={placeholder} type={type} className="rounded-xl border-border focus:border-orange-300 h-11" />
     </div>
   )
 }

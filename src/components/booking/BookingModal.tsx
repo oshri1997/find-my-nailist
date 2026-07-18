@@ -443,7 +443,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                           }}
                           className={`flex flex-col items-center py-2 rounded-xl border-2 transition-all ${
                             isSelected
-                              ? 'border-pink-500 bg-gradient-to-b from-pink-500 to-purple-600 text-white shadow-md shadow-primary/40'
+                              ? 'border-pink-500 bg-gradient-to-b from-orange-500 to-teal-600 text-white shadow-md shadow-primary/40'
                               : isDisabled
                               ? 'border-border bg-muted cursor-not-allowed opacity-35'
                               : isWeekend

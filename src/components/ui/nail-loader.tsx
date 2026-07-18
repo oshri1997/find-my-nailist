@@ -34,14 +34,14 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
         {/* אפקט זוהר אחורי רך */}
         <div
           className="absolute inset-0 blur-2xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(251,207,232,0.2) 0%, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, rgba(254,215,170,0.2) 0%, transparent 70%)' }}
         />
 
         {/* נצנצים עדינים מסביב */}
         {SPARKLES.map((s, i) => (
           <motion.div
             key={i}
-            className="absolute pointer-events-none drop-shadow-[0_0_4px_rgba(236,72,153,0.5)]"
+            className="absolute pointer-events-none drop-shadow-[0_0_4px_rgba(194,84,45,0.5)]"
             style={{ left: `calc(50% + ${s.x}px)`, top: `${80 + s.y}px` }}
             animate={{
               opacity: [0, 0.8, 0],
@@ -54,9 +54,9 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
               <path d="M12 0L14.3 9.7L24 12L14.3 14.3L12 24L9.7 14.3L0 12L9.7 9.7Z" fill={`url(#sparkle-grad-${i})`} />
               <defs>
                 <linearGradient id={`sparkle-grad-${i}`} x1="0" y1="0" x2="24" y2="24">
-                  <stop offset="0%" stopColor="#fbcfe8" />
-                  <stop offset="50%" stopColor="#ec4899" />
-                  <stop offset="100%" stopColor="#db2777" />
+                  <stop offset="0%" stopColor="#fed7aa" />
+                  <stop offset="50%" stopColor="#C2542D" />
+                  <stop offset="100%" stopColor="#ea580c" />
                 </linearGradient>
               </defs>
             </svg>
@@ -141,7 +141,7 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(180deg, #d946ef 0%, #a855f7 35%, #db2777 75%, #be185d 100%)',
+              background: 'linear-gradient(180deg, #ef4444 0%, #f59e0b 35%, #ea580c 75%, #c2410c 100%)',
               transformOrigin: 'center bottom',
             }}
           >
@@ -188,10 +188,10 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
               </linearGradient>
 
               <radialGradient id="drop-gel" cx="45%" cy="35%" r="60%">
-                <stop offset="0%" stopColor="#f472b6" />
-                <stop offset="40%" stopColor="#db2777" />
-                <stop offset="85%" stopColor="#9d174d" />
-                <stop offset="100%" stopColor="#4c0519" />
+                <stop offset="0%" stopColor="#fb923c" />
+                <stop offset="40%" stopColor="#ea580c" />
+                <stop offset="85%" stopColor="#9a3412" />
+                <stop offset="100%" stopColor="#451a03" />
               </radialGradient>
             </defs>
 
@@ -204,7 +204,7 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
 
             {/* הצינורית השקופה */}
             <rect x="17" y="45" width="12" height="32" fill="url(#glass-grad)" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5" />
-            <rect x="19" y="45" width="8" height="32" fill="#db2777" opacity="0.85" />
+            <rect x="19" y="45" width="8" height="32" fill="#ea580c" opacity="0.85" />
 
             {/* קצה הפיפטה */}
             <path d="M17,77 L21,83 L25,83 L29,77 Z" fill="url(#glass-grad)" />
@@ -227,7 +227,7 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
         <motion.p
           animate={{ opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="text-sm font-medium text-pink-700/80 tracking-widest uppercase"
+          className="text-sm font-medium text-orange-700/80 tracking-widest uppercase"
         >
           {text}
         </motion.p>

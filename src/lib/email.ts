@@ -95,7 +95,7 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
         </div>
         <div style="text-align:center;margin:32px 0;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
           <a href="${p.confirmUrl}"
-            style="background:linear-gradient(135deg,#ec4899,#a855f7);color:white;text-decoration:none;padding:18px 48px;border-radius:50px;font-size:20px;font-weight:bold;display:inline-block">
+            style="background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;padding:18px 48px;border-radius:50px;font-size:20px;font-weight:bold;display:inline-block">
             אישור התור
           </a>
           ${p.declineUrl ? `<a href="${p.declineUrl}"
@@ -133,7 +133,7 @@ export async function sendCancellationEmail(p: {
     p.clientEmail,
     `התור שלך אצל ${p.nailistBusinessName} בוטל`,
     `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);border-radius:16px 16px 0 0;padding:32px;text-align:center">
+      <div style="background:linear-gradient(135deg,#c2542d,#d9a441);border-radius:16px 16px 0 0;padding:32px;text-align:center">
         <h2 style="color:white;margin:0;font-size:24px">התור בוטל</h2>
       </div>
       <div style="padding:24px;background:#fafafa;border-radius:0 0 16px 16px">
@@ -166,7 +166,7 @@ export async function sendReviewRequestEmail(p: {
     p.clientEmail,
     `איך היה התור אצל ${p.nailistBusinessName}?`,
     `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);border-radius:16px 16px 0 0;padding:32px;text-align:center">
+      <div style="background:linear-gradient(135deg,#c2542d,#d9a441);border-radius:16px 16px 0 0;padding:32px;text-align:center">
         <h2 style="color:white;margin:0;font-size:24px">איך היה התור?</h2>
       </div>
       <div style="padding:24px;background:#fafafa;border-radius:0 0 16px 16px">
@@ -178,7 +178,7 @@ export async function sendReviewRequestEmail(p: {
         </div>
         <div style="text-align:center;margin:32px 0">
           <a href="${url}"
-            style="background:linear-gradient(135deg,#ec4899,#a855f7);color:white;text-decoration:none;padding:16px 40px;border-radius:50px;font-size:18px;font-weight:bold;display:inline-block">
+            style="background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;padding:16px 40px;border-radius:50px;font-size:18px;font-weight:bold;display:inline-block">
             כתבי ביקורת
           </a>
         </div>
@@ -208,7 +208,7 @@ export async function sendNailistReviewEmail(p: {
     p.nailistEmail,
     `ביקורת חדשה מ-${p.clientName} — ${p.rating}/5 כוכבים`,
     `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);border-radius:16px 16px 0 0;padding:32px;text-align:center">
+      <div style="background:linear-gradient(135deg,#c2542d,#d9a441);border-radius:16px 16px 0 0;padding:32px;text-align:center">
         <h2 style="color:white;margin:0;font-size:24px">ביקורת חדשה — ${stars}</h2>
       </div>
       <div style="padding:24px;background:#fafafa;border-radius:0 0 16px 16px">
@@ -218,7 +218,7 @@ export async function sendNailistReviewEmail(p: {
         ${commentHtml}
         <div style="text-align:center;margin:32px 0">
           <a href="${url}"
-            style="background:linear-gradient(135deg,#ec4899,#a855f7);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-size:16px;font-weight:bold;display:inline-block">
+            style="background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-size:16px;font-weight:bold;display:inline-block">
             צפי בביקורת
           </a>
         </div>
@@ -267,7 +267,7 @@ export async function sendPasswordResetEmail(p: {
     p.email,
     'איפוס סיסמה — נייליסטיות',
     `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center">
+      <div style="background:linear-gradient(135deg,#c2542d,#d9a441);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center">
         <h1 style="color:white;margin:0;font-size:22px;font-weight:900">נייליסטיות</h1>
       </div>
       <div style="background:#fff;border:1px solid #f3e8ff;border-top:none;border-radius:0 0 16px 16px;padding:32px">
@@ -275,12 +275,12 @@ export async function sendPasswordResetEmail(p: {
         <p style="color:#666;margin:0 0 24px">קיבלנו בקשה לאיפוס הסיסמה לחשבון שלך.</p>
         <p style="color:#666;margin:0 0 24px">לחצי על הכפתור כדי לאפס את הסיסמה — הקישור בתוקף ל-24 שעות.</p>
         <div style="text-align:center;margin:28px 0">
-          <a href="${p.resetLink}" style="background:linear-gradient(135deg,#ec4899,#a855f7);color:white;text-decoration:none;border-radius:12px;padding:14px 32px;font-weight:900;font-size:16px;display:inline-block">
+          <a href="${p.resetLink}" style="background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;border-radius:12px;padding:14px 32px;font-weight:900;font-size:16px;display:inline-block">
             איפוס סיסמה
           </a>
         </div>
         <p style="color:#999;font-size:12px;margin:24px 0 0">אם לא ביקשת לאפס סיסמה, אפשר להתעלם ממייל זה.</p>
-        <p style="color:#ccc;font-size:11px;margin:8px 0 0">הקישור: <a href="${p.resetLink}" style="color:#a855f7;word-break:break-all">${p.resetLink}</a></p>
+        <p style="color:#ccc;font-size:11px;margin:8px 0 0">הקישור: <a href="${p.resetLink}" style="color:#d9a441;word-break:break-all">${p.resetLink}</a></p>
       </div>
     </div>`,
     `איפוס סיסמה — נייליסטיות\n\nלחצי על הקישור הבא לאיפוס הסיסמה (בתוקף ל-24 שעות):\n${p.resetLink}\n\nאם לא ביקשת לאפס סיסמה, אפשר להתעלם ממייל זה.\n\nצוות נייליסטיות`
@@ -306,19 +306,19 @@ export async function sendVerificationEmail(p: {
     p.email,
     'אימות כתובת מייל — נייליסטיות',
     `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center">
+      <div style="background:linear-gradient(135deg,#c2542d,#d9a441);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center">
         <h1 style="color:white;margin:0;font-size:22px;font-weight:900">נייליסטיות</h1>
       </div>
       <div style="background:#fff;border:1px solid #f3e8ff;border-top:none;border-radius:0 0 16px 16px;padding:32px">
         <h2 style="font-size:20px;font-weight:900;margin:0 0 8px">אימות כתובת מייל</h2>
         <p style="color:#666;margin:0 0 24px">${copy.intro}</p>
         <div style="text-align:center;margin:28px 0">
-          <a href="${p.verifyLink}" style="background:linear-gradient(135deg,#ec4899,#a855f7);color:white;text-decoration:none;border-radius:12px;padding:14px 32px;font-weight:900;font-size:16px;display:inline-block">
+          <a href="${p.verifyLink}" style="background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;border-radius:12px;padding:14px 32px;font-weight:900;font-size:16px;display:inline-block">
             ${copy.cta}
           </a>
         </div>
         <p style="color:#999;font-size:12px;margin:24px 0 0">אם לא נרשמת לאתר, אפשר להתעלם ממייל זה.</p>
-        <p style="color:#ccc;font-size:11px;margin:8px 0 0">הקישור: <a href="${p.verifyLink}" style="color:#a855f7;word-break:break-all">${p.verifyLink}</a></p>
+        <p style="color:#ccc;font-size:11px;margin:8px 0 0">הקישור: <a href="${p.verifyLink}" style="color:#d9a441;word-break:break-all">${p.verifyLink}</a></p>
       </div>
     </div>`,
     `אימות כתובת מייל — נייליסטיות\n\n${copy.intro}\n\nלחצי על הקישור הבא:\n${p.verifyLink}\n\nאם לא נרשמת לאתר, אפשר להתעלם ממייל זה.\n\nצוות נייליסטיות`

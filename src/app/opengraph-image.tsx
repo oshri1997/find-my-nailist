@@ -19,7 +19,7 @@ export default async function Image() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #ec4899, #a855f7)',
+          background: 'linear-gradient(135deg, #c2542d, #d9a441)',
         }}
       >
         <img src={logoSrc} width={560} height={506} style={{ objectFit: 'contain' }} alt="נייליסטיות" />

@@ -246,26 +246,29 @@ export default function NailistDashboard() {
     {
       label: 'תורים',
       node: <CountUp to={totalAppointments} />,
-      icon: <Calendar className="h-5 w-5 text-pink-500" />,
+      icon: <Calendar className="h-5 w-5 text-orange-500" />,
       change: `+${thisMonthAppointments} החודש`,
-      bg: 'from-pink-50 to-rose-50 dark:from-pink-950/50 dark:to-rose-950/50',
-      border: 'border-pink-100 dark:border-pink-900/50',
+      bg: 'from-orange-50 to-amber-50 dark:from-orange-950/50 dark:to-amber-950/50',
+      border: 'border-orange-100 dark:border-orange-900/50',
     },
     {
       label: 'לקוחות',
       node: <CountUp to={uniqueClients} />,
-      icon: <Users className="h-5 w-5 text-purple-500" />,
+      // Collision fix: purple would mechanically map to amber, but amber is
+      // already used by the "average rating" tile below — teal (reserve
+      // list) keeps these two stat tiles visually distinct.
+      icon: <Users className="h-5 w-5 text-teal-500" />,
       change: `+${thisMonthClients} החודש`,
-      bg: 'from-purple-50 to-violet-50 dark:from-purple-950/50 dark:to-violet-950/50',
-      border: 'border-purple-100 dark:border-purple-900/50',
+      bg: 'from-teal-50 to-emerald-50 dark:from-teal-950/50 dark:to-emerald-950/50',
+      border: 'border-teal-100 dark:border-teal-900/50',
     },
     {
       label: 'הכנסות',
       node: <CountUp to={totalRevenue} prefix="₪" />,
-      icon: <Wallet className="h-5 w-5 text-violet-500" />,
+      icon: <Wallet className="h-5 w-5 text-emerald-500" />,
       change: `+₪${thisMonthRevenue} החודש`,
-      bg: 'from-violet-50 to-blue-50 dark:from-violet-950/50 dark:to-blue-950/50',
-      border: 'border-violet-100 dark:border-violet-900/50',
+      bg: 'from-emerald-50 to-blue-50 dark:from-emerald-950/50 dark:to-blue-950/50',
+      border: 'border-emerald-100 dark:border-emerald-900/50',
     },
     {
       label: 'דירוג ממוצע',
@@ -366,7 +369,7 @@ export default function NailistDashboard() {
               <h3 className="text-lg font-black text-foreground">תורים קרובים</h3>
               <p className="text-sm text-muted-foreground font-medium">ההזמנות הבאות שלך</p>
             </div>
-            <Calendar className="h-5 w-5 text-pink-400" />
+            <Calendar className="h-5 w-5 text-orange-400" />
           </div>
 
           {upcomingAppointments.length === 0 ? (
@@ -376,7 +379,7 @@ export default function NailistDashboard() {
               </div>
               <p className="text-sm font-bold text-muted-foreground mb-4">אין תורים קרובים</p>
               <Link href="/dashboard/nailist/hours"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-bold text-muted-foreground hover:border-pink-300 hover:text-pink-600 transition-colors">
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-bold text-muted-foreground hover:border-orange-300 hover:text-orange-600 transition-colors">
                 <Clock className="h-4 w-4" />
                 הגדרי זמינות
               </Link>
@@ -392,10 +395,10 @@ export default function NailistDashboard() {
                     initial={{ opacity: 0, x: 16 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 + i * 0.06 }}
-                    className="flex items-center gap-3 p-3 rounded-2xl border border-border hover:border-pink-100 hover:bg-pink-50/20 dark:hover:bg-pink-950/20 transition-all"
+                    className="flex items-center gap-3 p-3 rounded-2xl border border-border hover:border-orange-100 hover:bg-orange-50/20 dark:hover:bg-orange-950/20 transition-all"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center shrink-0">
-                      <Scissors className="h-4 w-4 text-pink-500" />
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center shrink-0">
+                      <Scissors className="h-4 w-4 text-orange-500" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -413,7 +416,7 @@ export default function NailistDashboard() {
               })}
               <Link
                 href="/dashboard/nailist/appointments"
-                className="flex items-center justify-center gap-1 text-sm font-bold text-pink-500 hover:text-pink-700 pt-1 transition-colors"
+                className="flex items-center justify-center gap-1 text-sm font-bold text-orange-500 hover:text-orange-700 pt-1 transition-colors"
               >
                 כל התורים
                 <ChevronLeft className="h-4 w-4" />
@@ -466,7 +469,7 @@ export default function NailistDashboard() {
               ))}
               <Link
                 href="/dashboard/nailist/reviews"
-                className="flex items-center justify-center gap-1 text-sm font-bold text-pink-500 hover:text-pink-700 pt-1 transition-colors"
+                className="flex items-center justify-center gap-1 text-sm font-bold text-orange-500 hover:text-orange-700 pt-1 transition-colors"
               >
                 כל הביקורות
                 <ChevronLeft className="h-4 w-4" />
@@ -488,7 +491,7 @@ export default function NailistDashboard() {
           <div className="mb-4">
             <div className="h-2 bg-muted rounded-full overflow-hidden">
               <motion.div initial={{ width: 0 }} animate={{ width: `${completionPct}%` }} transition={{ duration: 1, delay: 0.6 }}
-                className="h-full bg-gradient-to-r from-pink-500 to-purple-600 rounded-full" />
+                className="h-full bg-gradient-to-r from-orange-500 to-amber-600 rounded-full" />
             </div>
             <p className="text-xs text-muted-foreground font-medium mt-1">{completionPct}% הושלם</p>
           </div>
