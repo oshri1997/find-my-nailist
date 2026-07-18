@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { isAuthenticatedRequest, computeHasContactInfo, stripNailistContactFields } from '@/lib/nailist-contact'
+import { findNextAvailableSlot, type WorkingHours, type BookedSlot } from '@/lib/booking-utils'
 
 import { geohashQueryBounds, distanceBetween } from 'geofire-common'
 import { FieldPath, type Firestore } from 'firebase-admin/firestore'
+
+// No specific service is known yet at search time, so slots are computed
+// against this representative duration — long enough to cover most services,
+// short enough not to under-report availability for quick ones.
+const DEFAULT_SLOT_DURATION_MINUTES = 60
 
 function sanitizeNailists(nailists: Array<Record<string, unknown>>, isAuthenticated: boolean): void {
   nailists.forEach((n) => {
@@ -43,6 +49,60 @@ async function attachServiceNames(
 
   nailists.forEach((n) => {
     n.serviceNames = serviceMap[n.id as string] ?? []
+  })
+}
+
+async function attachNextAvailableSlot(
+  db: Firestore,
+  nailists: Array<Record<string, unknown>>,
+): Promise<void> {
+  const ids = nailists.map((n) => n.id as string).filter(Boolean)
+  if (ids.length === 0) return
+
+  const workingHoursMap: Record<string, Map<number, WorkingHours>> = {}
+  const appointmentsMap: Record<string, BookedSlot[]> = {}
+
+  // Firestore 'in' supports max 30 items per query
+  const chunks: string[][] = []
+  for (let i = 0; i < ids.length; i += 30) chunks.push(ids.slice(i, i + 30))
+
+  await Promise.all(
+    chunks.map(async (chunk) => {
+      const [hoursSnap, appointmentsSnap] = await Promise.all([
+        db.collection(COLLECTIONS.WORKING_HOURS).where('nailistProfileId', 'in', chunk).get(),
+        db.collection(COLLECTIONS.APPOINTMENTS).where('nailistProfileId', 'in', chunk).get(),
+      ])
+
+      hoursSnap.docs.forEach((doc) => {
+        const d = doc.data()
+        const nailistProfileId = d.nailistProfileId as string
+        if (!workingHoursMap[nailistProfileId]) workingHoursMap[nailistProfileId] = new Map()
+        workingHoursMap[nailistProfileId].set(d.dayOfWeek as number, {
+          startTime: d.startTime as string,
+          endTime: d.endTime as string,
+          isActive: d.isActive as boolean,
+        })
+      })
+
+      appointmentsSnap.docs.forEach((doc) => {
+        const d = doc.data()
+        if (!['PENDING', 'CONFIRMED'].includes(d.status as string)) return
+        const nailistProfileId = d.nailistProfileId as string
+        if (!appointmentsMap[nailistProfileId]) appointmentsMap[nailistProfileId] = []
+        const start: Date = d.startTime?.toDate?.() ?? new Date(d.startTime)
+        const end: Date = d.endTime?.toDate?.() ?? new Date(d.endTime)
+        appointmentsMap[nailistProfileId].push({ startTime: start.toISOString(), endTime: end.toISOString() })
+      })
+    }),
+  )
+
+  nailists.forEach((n) => {
+    const id = n.id as string
+    n.nextAvailableSlot = findNextAvailableSlot(
+      workingHoursMap[id] ?? new Map(),
+      appointmentsMap[id] ?? [],
+      DEFAULT_SLOT_DURATION_MINUTES,
+    )
   })
 }
 
@@ -91,7 +151,7 @@ export async function GET(request: NextRequest) {
 
       nailists.sort((a, b) => (a.distanceKm as number) - (b.distanceKm as number))
       const page = nailists.slice(offset, offset + pageSize)
-      await attachServiceNames(db, page)
+      await Promise.all([attachServiceNames(db, page), attachNextAvailableSlot(db, page)])
       sanitizeNailists(page, isAuthenticated)
 
       return NextResponse.json({
@@ -119,7 +179,7 @@ export async function GET(request: NextRequest) {
     const nailists = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
     const hasMore = nailists.length > offset + pageSize
     const page = nailists.slice(offset, offset + pageSize)
-    await attachServiceNames(db, page)
+    await Promise.all([attachServiceNames(db, page), attachNextAvailableSlot(db, page)])
     sanitizeNailists(page, isAuthenticated)
 
     return NextResponse.json({

@@ -1,42 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
-import { computeDateAvailability } from '@/lib/booking-utils'
-
-function getDayOfWeek(dateStr: string): number {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return new Date(y, m - 1, d, 12).getDay()
-}
-
-function addDays(dateStr: string, count: number): string {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const date = new Date(y, m - 1, d)
-  date.setDate(date.getDate() + count)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-}
-
-// The `from`/`dates` range is Israel-local calendar dates (the client's own
-// "today"), but this route runs on a server with no TZ set (UTC). Deriving
-// "today" from the server's own new Date() can land on the wrong calendar
-// date entirely during the UTC-offset window around Israel's midnight, which
-// silently skips the already-elapsed-time filter for the real "today" (no
-// date in the requested range matches the server's todayStr). Read both off
-// Asia/Jerusalem explicitly instead of the runtime's local clock.
-function israelNow(): { dateStr: string; minutesSinceMidnight: number } {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Jerusalem',
-    hourCycle: 'h23',
-    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
-  }).formatToParts(new Date()).reduce((acc, p) => {
-    if (p.type !== 'literal') acc[p.type] = p.value
-    return acc
-  }, {} as Record<string, string>)
-  return {
-    dateStr: `${parts.year}-${parts.month}-${parts.day}`,
-    minutesSinceMidnight: Number(parts.hour) * 60 + Number(parts.minute),
-  }
-}
+import { computeDateAvailability, getDayOfWeek, addDays, israelNow } from '@/lib/booking-utils'
 
 export async function GET(
   request: NextRequest,

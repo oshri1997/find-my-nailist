@@ -140,3 +140,96 @@ describe('GET /api/nailists — pagination (no location)', () => {
     expect(profileRefs.some((ref) => ref.orderBy.mock.calls.length > 0)).toBe(true)
   })
 })
+
+describe('GET /api/nailists — nextAvailableSlot', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    jest.useFakeTimers()
+    // 2026-06-10 is a Wednesday (dayOfWeek 3), 08:00 Israel time (before opening)
+    jest.setSystemTime(new Date('2026-06-10T05:00:00.000Z'))
+    verifyIdTokenMock.mockResolvedValue({ uid: 'some-user' })
+  })
+
+  afterEach(() => jest.useRealTimers())
+
+  it('attaches the first open slot for a nailist working today with nothing booked', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'n1', businessName: 'סטודיו א', isActive: true }]
+    collectionStore['services'] = []
+    collectionStore['workingHours'] = [
+      { __id: 'wh1', nailistProfileId: 'n1', dayOfWeek: 3, startTime: '09:00', endTime: '18:00', isActive: true },
+    ]
+    collectionStore['appointments'] = []
+
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    expect(json.data[0].nextAvailableSlot).toEqual({ date: '2026-06-10', time: '09:00' })
+  })
+
+  it('skips a booked slot and returns the next open one', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'n1', businessName: 'סטודיו א', isActive: true }]
+    collectionStore['services'] = []
+    collectionStore['workingHours'] = [
+      { __id: 'wh1', nailistProfileId: 'n1', dayOfWeek: 3, startTime: '09:00', endTime: '11:00', isActive: true },
+    ]
+    collectionStore['appointments'] = [{
+      __id: 'a1',
+      nailistProfileId: 'n1',
+      status: 'CONFIRMED',
+      startTime: '2026-06-10T06:00:00.000Z', // 09:00 Israel
+      endTime: '2026-06-10T07:00:00.000Z',   // 10:00 Israel
+    }]
+
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    expect(json.data[0].nextAvailableSlot).toEqual({ date: '2026-06-10', time: '10:00' })
+  })
+
+  it('ignores CANCELLED appointments when computing the next slot', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'n1', businessName: 'סטודיו א', isActive: true }]
+    collectionStore['services'] = []
+    collectionStore['workingHours'] = [
+      { __id: 'wh1', nailistProfileId: 'n1', dayOfWeek: 3, startTime: '09:00', endTime: '18:00', isActive: true },
+    ]
+    collectionStore['appointments'] = [{
+      __id: 'a1',
+      nailistProfileId: 'n1',
+      status: 'CANCELLED',
+      startTime: '2026-06-10T06:00:00.000Z',
+      endTime: '2026-06-10T07:00:00.000Z',
+    }]
+
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    expect(json.data[0].nextAvailableSlot).toEqual({ date: '2026-06-10', time: '09:00' })
+  })
+
+  it('returns null when the nailist has no working hours set up', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'n1', businessName: 'סטודיו א', isActive: true }]
+    collectionStore['services'] = []
+    collectionStore['workingHours'] = []
+    collectionStore['appointments'] = []
+
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    expect(json.data[0].nextAvailableSlot).toBeNull()
+  })
+
+  it('computes independent slots per nailist', async () => {
+    collectionStore['nailistProfiles'] = [
+      { __id: 'n1', businessName: 'סטודיו א', isActive: true },
+      { __id: 'n2', businessName: 'סטודיו ב', isActive: true },
+    ]
+    collectionStore['services'] = []
+    collectionStore['workingHours'] = [
+      { __id: 'wh1', nailistProfileId: 'n1', dayOfWeek: 3, startTime: '09:00', endTime: '18:00', isActive: true },
+      { __id: 'wh2', nailistProfileId: 'n2', dayOfWeek: 3, startTime: '12:00', endTime: '18:00', isActive: true },
+    ]
+    collectionStore['appointments'] = []
+
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    const byId = Object.fromEntries(json.data.map((n: { id: string; nextAvailableSlot: unknown }) => [n.id, n.nextAvailableSlot]))
+    expect(byId['n1']).toEqual({ date: '2026-06-10', time: '09:00' })
+    expect(byId['n2']).toEqual({ date: '2026-06-10', time: '12:00' })
+  })
+})

@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { MapPin, Search, Star, Heart, Loader2, LocateFixed, Map as MapIcon, LayoutGrid, Sparkles, BadgeCheck } from 'lucide-react'
+import { MapPin, Search, Star, Heart, Loader2, LocateFixed, Map as MapIcon, LayoutGrid, Sparkles, BadgeCheck, Clock } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
-import { formatDistance } from '@/lib/format-utils'
+import { formatDistance, formatNextSlotLabel } from '@/lib/format-utils'
 import dynamic from 'next/dynamic'
 
 const NailistMap = dynamic(() => import('@/components/search/NailistMap'), { ssr: false })
@@ -42,6 +42,7 @@ interface Nailist {
   photoUrl?: string
   serviceNames?: string[]
   isVerified?: boolean
+  nextAvailableSlot?: { date: string; time: string } | null
 }
 
 type SortKey = 'distance' | 'rating'
@@ -505,6 +506,15 @@ export default function SearchPage() {
 
                   {nailist.bio && (
                     <p className="text-xs text-muted-foreground line-clamp-2">{nailist.bio}</p>
+                  )}
+
+                  {nailist.nextAvailableSlot && (
+                    <div className="inline-flex items-center gap-1.5 mt-2 bg-primary/10 text-primary text-xs font-bold rounded-full px-2.5 py-1">
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        התור הקרוב: {formatNextSlotLabel(nailist.nextAvailableSlot.date, nailist.nextAvailableSlot.time)}
+                      </span>
+                    </div>
                   )}
 
                   {nailist.whatsappPhone && (

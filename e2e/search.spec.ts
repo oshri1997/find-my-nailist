@@ -109,6 +109,42 @@ test.describe('Search page', () => {
   })
 })
 
+test.describe('Search page — next-available-slot badge', () => {
+  test('shows the next available slot badge on a card', async ({ page }) => {
+    await page.route('/api/nailists**', route =>
+      route.fulfill({
+        json: {
+          data: [{
+            ...MOCK_NAILISTS[0],
+            nextAvailableSlot: { date: '2099-01-01', time: '10:00' },
+          }],
+          total: 1,
+          hasMore: false,
+        },
+      })
+    )
+    await page.goto('/search')
+    await expect(page.getByText('סטודיו שרה')).toBeVisible()
+    await expect(page.getByText(/התור הקרוב/)).toBeVisible()
+    await expect(page.getByText(/10:00/)).toBeVisible()
+  })
+
+  test('does not show a badge when nextAvailableSlot is null', async ({ page }) => {
+    await page.route('/api/nailists**', route =>
+      route.fulfill({
+        json: {
+          data: [{ ...MOCK_NAILISTS[0], nextAvailableSlot: null }],
+          total: 1,
+          hasMore: false,
+        },
+      })
+    )
+    await page.goto('/search')
+    await expect(page.getByText('סטודיו שרה')).toBeVisible()
+    await expect(page.getByText(/התור הקרוב/)).not.toBeVisible()
+  })
+})
+
 test.describe('Search page pagination', () => {
   test('load more button appends the next page and hides once exhausted', async ({ page }) => {
     const page2 = [{

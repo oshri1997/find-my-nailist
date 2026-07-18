@@ -1,4 +1,4 @@
-import { generateSlots, isSlotUnavailable, buildDateStrip, buildMonthCalendar, toDateStr, computeDateAvailability, filterExpiredConfirmed, israelWallClockToUtc, todayInIsrael } from '@/lib/booking-utils'
+import { generateSlots, isSlotUnavailable, buildDateStrip, buildMonthCalendar, toDateStr, computeDateAvailability, filterExpiredConfirmed, israelWallClockToUtc, todayInIsrael, findFirstAvailableSlot, findNextAvailableSlot, israelNow, getDayOfWeek, addDays } from '@/lib/booking-utils'
 
 // bookedSlots in production are real UTC instants derived from Israel
 // wall-clock booking times — construct test fixtures the same way instead of
@@ -328,5 +328,131 @@ describe('todayInIsrael', () => {
     jest.useFakeTimers()
     jest.setSystemTime(new Date('2026-06-10T09:00:00.000Z'))
     expect(todayInIsrael()).toBe('2026-06-10')
+  })
+})
+
+describe('findFirstAvailableSlot', () => {
+  const date = '2024-06-15'
+
+  it('returns null when no working hours provided', () => {
+    expect(findFirstAvailableSlot(date, undefined, 60, [])).toBeNull()
+  })
+
+  it('returns null when isActive is false', () => {
+    const hours = { startTime: '09:00', endTime: '18:00', isActive: false }
+    expect(findFirstAvailableSlot(date, hours, 60, [])).toBeNull()
+  })
+
+  it('returns the first slot of the day when nothing is booked', () => {
+    const hours = { startTime: '09:00', endTime: '18:00', isActive: true }
+    expect(findFirstAvailableSlot(date, hours, 60, [])).toBe('09:00')
+  })
+
+  it('skips booked slots and returns the first free one', () => {
+    const hours = { startTime: '09:00', endTime: '12:00', isActive: true }
+    const booked = [{ startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '10:00') }]
+    expect(findFirstAvailableSlot(date, hours, 60, booked)).toBe('10:00')
+  })
+
+  it('returns null when every slot is booked', () => {
+    const hours = { startTime: '09:00', endTime: '10:00', isActive: true }
+    const booked = [{ startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '10:00') }]
+    expect(findFirstAvailableSlot(date, hours, 60, booked)).toBeNull()
+  })
+
+  it('skips already-elapsed slots when nowMinutes is given', () => {
+    const hours = { startTime: '09:00', endTime: '12:00', isActive: true }
+    // 09:00 and 09:30 have already passed (nowMinutes = 09:45)
+    expect(findFirstAvailableSlot(date, hours, 30, [], 9 * 60 + 45)).toBe('10:00')
+  })
+})
+
+describe('getDayOfWeek', () => {
+  it('returns 0 for a Sunday', () => {
+    expect(getDayOfWeek('2026-01-18')).toBe(0) // confirmed Sunday
+  })
+
+  it('returns 6 for a Saturday', () => {
+    expect(getDayOfWeek('2026-01-17')).toBe(6)
+  })
+})
+
+describe('addDays', () => {
+  it('adds days within the same month', () => {
+    expect(addDays('2026-01-15', 3)).toBe('2026-01-18')
+  })
+
+  it('rolls over into the next month', () => {
+    expect(addDays('2026-01-30', 3)).toBe('2026-02-02')
+  })
+
+  it('rolls over into the next year', () => {
+    expect(addDays('2025-12-30', 3)).toBe('2026-01-02')
+  })
+
+  it('supports adding 0 days (identity)', () => {
+    expect(addDays('2026-03-10', 0)).toBe('2026-03-10')
+  })
+})
+
+describe('israelNow', () => {
+  afterEach(() => jest.useRealTimers())
+
+  it('reports the Israel calendar date and minutes-since-midnight', () => {
+    jest.useFakeTimers()
+    // 11:30 UTC in June (Israel is UTC+3 in summer) = 14:30 Israel time
+    jest.setSystemTime(new Date('2026-06-10T11:30:00.000Z'))
+    const { dateStr, minutesSinceMidnight } = israelNow()
+    expect(dateStr).toBe('2026-06-10')
+    expect(minutesSinceMidnight).toBe(14 * 60 + 30)
+  })
+})
+
+describe('findNextAvailableSlot', () => {
+  afterEach(() => jest.useRealTimers())
+
+  it('returns null when the nailist has no working hours at all', () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-06-10T08:00:00.000Z')) // Wed morning, Israel
+    expect(findNextAvailableSlot(new Map(), [], 60)).toBeNull()
+  })
+
+  it("returns today's first slot when today is a working day with room left", () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-06-10T05:00:00.000Z')) // ~08:00 Israel time, Wednesday (dayOfWeek 3) — before the day opens
+    const hours = new Map([[3, { startTime: '09:00', endTime: '18:00', isActive: true }]])
+    const result = findNextAvailableSlot(hours, [], 60)
+    expect(result).toEqual({ date: '2026-06-10', time: '09:00' })
+  })
+
+  it('skips to the next working day when today is fully booked', () => {
+    // Only Thursday (dayOfWeek 4) is a working day, and it's entirely booked
+    const hours = new Map([[4, { startTime: '09:00', endTime: '10:00', isActive: true }]])
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-06-11T06:00:00.000Z')) // Thursday morning Israel time
+    const booked = [{ startTime: israelSlot('2026-06-11', '09:00'), endTime: israelSlot('2026-06-11', '10:00') }]
+    const result = findNextAvailableSlot(hours, booked, 60, 21)
+    expect(result).not.toBeNull()
+    expect(result!.date).toBe('2026-06-18') // next Thursday
+    expect(result!.time).toBe('09:00')
+  })
+
+  it('returns null when nothing is available within daysToSearch', () => {
+    const hours = new Map([[4, { startTime: '09:00', endTime: '10:00', isActive: true }]])
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-06-11T06:00:00.000Z'))
+    const booked = [{ startTime: israelSlot('2026-06-11', '09:00'), endTime: israelSlot('2026-06-11', '10:00') }]
+    // Only searching 5 days ahead — the next free Thursday is 7 days out
+    expect(findNextAvailableSlot(hours, booked, 60, 5)).toBeNull()
+  })
+
+  it('excludes already-elapsed slots for today but still finds a later one today', () => {
+    const hours = new Map([[3, { startTime: '09:00', endTime: '18:00', isActive: true }]]) // Wednesday
+    jest.useFakeTimers()
+    // 2026-06-10 is a Wednesday, set to 13:45 Israel time (10:45 UTC in summer) —
+    // the 14:00 slot hasn't started yet, so it should still be offered.
+    jest.setSystemTime(new Date('2026-06-10T10:45:00.000Z'))
+    const result = findNextAvailableSlot(hours, [], 30)
+    expect(result).toEqual({ date: '2026-06-10', time: '14:00' })
   })
 })

@@ -113,6 +113,28 @@ export interface WorkingHours {
   isActive: boolean
 }
 
+// The first bookable slot on `date`, or null if the day is off/fully booked.
+// Shared by computeDateAvailability (just needs to know booked-or-not) and
+// findNextAvailableSlot (needs the actual time), so the slot-filtering logic
+// lives in exactly one place.
+export function findFirstAvailableSlot(
+  date: string,
+  workingHours: WorkingHours | undefined,
+  durationMinutes: number,
+  appointments: BookedSlot[],
+  nowMinutes?: number
+): string | null {
+  if (!workingHours || !workingHours.isActive) return null
+  const slots = generateSlots(workingHours.startTime, workingHours.endTime)
+  return slots.find((slot) => {
+    if (nowMinutes !== undefined) {
+      const [h, m] = slot.split(':').map(Number)
+      if (h * 60 + m <= nowMinutes) return false
+    }
+    return !isSlotUnavailable(slot, date, durationMinutes, workingHours.endTime, appointments)
+  }) ?? null
+}
+
 export function computeDateAvailability(
   date: string,
   workingHours: WorkingHours | undefined,
@@ -123,15 +145,74 @@ export function computeDateAvailability(
   if (!workingHours || !workingHours.isActive) {
     return { workingDay: false, fullyBooked: false }
   }
-  const slots = generateSlots(workingHours.startTime, workingHours.endTime)
-  const available = slots.filter((slot) => {
-    if (nowMinutes !== undefined) {
-      const [h, m] = slot.split(':').map(Number)
-      if (h * 60 + m <= nowMinutes) return false
-    }
-    return !isSlotUnavailable(slot, date, durationMinutes, workingHours.endTime, appointments)
-  })
-  return { workingDay: true, fullyBooked: available.length === 0 }
+  const firstSlot = findFirstAvailableSlot(date, workingHours, durationMinutes, appointments, nowMinutes)
+  return { workingDay: true, fullyBooked: firstSlot === null }
+}
+
+// "Now", read off Asia/Jerusalem explicitly rather than the runtime's local
+// clock — this route can run on a UTC server, where new Date()'s own
+// getDate()/getHours() would land on the wrong Israel calendar day/time
+// during the UTC-offset window around Israel's midnight.
+export function israelNow(): { dateStr: string; minutesSinceMidnight: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jerusalem',
+    hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).formatToParts(new Date()).reduce((acc, p) => {
+    if (p.type !== 'literal') acc[p.type] = p.value
+    return acc
+  }, {} as Record<string, string>)
+  return {
+    dateStr: `${parts.year}-${parts.month}-${parts.day}`,
+    minutesSinceMidnight: Number(parts.hour) * 60 + Number(parts.minute),
+  }
+}
+
+// Pure calendar-date arithmetic (no wall-clock/instant conversion involved),
+// so unlike israelWallClockToUtc this is safe regardless of the runtime's
+// own timezone.
+export function getDayOfWeek(dateStr: string): number {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d, 12).getDay()
+}
+
+export function addDays(dateStr: string, count: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  date.setDate(date.getDate() + count)
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+export interface NextAvailableSlot {
+  date: string
+  time: string
+}
+
+// Scans forward from today (Israel calendar) across `daysToSearch` days and
+// returns the very first bookable slot found — used to show "next available
+// appointment" on a nailist's search-results card, where we don't yet know
+// which service/duration the visitor wants, so callers pass a representative
+// default duration (see the API route).
+export function findNextAvailableSlot(
+  workingHoursByDay: Map<number, WorkingHours>,
+  appointments: BookedSlot[],
+  durationMinutes: number,
+  daysToSearch = 14
+): NextAvailableSlot | null {
+  const { dateStr: todayStr, minutesSinceMidnight: todayNowMinutes } = israelNow()
+  let dateStr = todayStr
+  for (let i = 0; i < daysToSearch; i++) {
+    const slot = findFirstAvailableSlot(
+      dateStr,
+      workingHoursByDay.get(getDayOfWeek(dateStr)),
+      durationMinutes,
+      appointments,
+      i === 0 ? todayNowMinutes : undefined
+    )
+    if (slot) return { date: dateStr, time: slot }
+    dateStr = addDays(dateStr, 1)
+  }
+  return null
 }
 
 export function filterExpiredConfirmed(

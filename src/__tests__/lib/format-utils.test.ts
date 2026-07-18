@@ -1,4 +1,4 @@
-import { formatDistance } from '@/lib/format-utils'
+import { formatDistance, formatNextSlotLabel } from '@/lib/format-utils'
 
 describe('formatDistance', () => {
   it('shows meters for distances under 1 km', () => {
@@ -24,5 +24,31 @@ describe('formatDistance', () => {
   it('shows one decimal place for km (no trailing zeros beyond one place)', () => {
     expect(formatDistance(2.0)).toBe('2.0 ק"מ')
     expect(formatDistance(10.0)).toBe('10.0 ק"מ')
+  })
+})
+
+describe('formatNextSlotLabel', () => {
+  // 2026-06-10 is a Wednesday (Israel calendar date).
+  beforeEach(() => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-06-10T08:00:00.000Z')) // mid-day Israel time
+  })
+  afterEach(() => jest.useRealTimers())
+
+  it('labels a slot on today as "היום"', () => {
+    expect(formatNextSlotLabel('2026-06-10', '14:00')).toBe('היום, 14:00')
+  })
+
+  it('labels a slot tomorrow as "מחר"', () => {
+    expect(formatNextSlotLabel('2026-06-11', '09:30')).toBe('מחר, 09:30')
+  })
+
+  it('labels a slot further out with weekday + date', () => {
+    expect(formatNextSlotLabel('2026-06-17', '11:00')).toBe('יום רביעי, 17.06 · 11:00')
+  })
+
+  it('rolls over correctly when tomorrow crosses into the next month', () => {
+    jest.setSystemTime(new Date('2026-06-29T08:00:00.000Z')) // June 29 Israel time
+    expect(formatNextSlotLabel('2026-06-30', '10:00')).toBe('מחר, 10:00')
   })
 })
