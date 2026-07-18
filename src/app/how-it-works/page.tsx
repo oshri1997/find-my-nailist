@@ -271,7 +271,7 @@ export default function HowItWorksPage() {
 
           <Section className="mt-10 text-center">
             <JoinLink href="/login?tab=register">
-              <Button className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 border-0 rounded-2xl h-11 px-8 font-bold shadow-md shadow-purple-200">
+              <Button className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 border-0 rounded-2xl h-11 px-8 font-bold shadow-lg shadow-primary/30">
                 הצטרפי כנייליסטית חינם →
               </Button>
             </JoinLink>
