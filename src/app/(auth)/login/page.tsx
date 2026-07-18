@@ -385,7 +385,7 @@ export default function AuthPage() {
 
                 <Button
                   type="submit" disabled={loading || authLoading || (mode === 'register' && !agreedToTerms)}
-                  className="w-full bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black text-base shadow-[0_4px_16px_rgba(236,72,153,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
+                  className="w-full bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black text-base shadow-[0_4px_16px_rgba(194,84,45,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
                 >
                   {loading
                     ? (mode === 'login' ? 'מתחברת...' : 'יוצרת חשבון...')
@@ -433,7 +433,7 @@ export default function AuthPage() {
       </div>
 
       {/* ── Decorative panel (second in DOM = left side in RTL) ── */}
-      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-pink-500 via-fuchsia-500 to-purple-600 items-center justify-center relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-orange-500 via-red-500 to-amber-600 items-center justify-center relative overflow-hidden">
         <div className="absolute top-[-15%] left-[-15%] w-80 h-80 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute bottom-[-15%] right-[-15%] w-96 h-96 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute inset-0 dot-pattern pointer-events-none opacity-10" />

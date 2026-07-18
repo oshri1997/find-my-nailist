@@ -49,7 +49,7 @@ export function Navbar() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="sticky top-0 z-50 w-full bg-card/95 backdrop-blur-sm border-b border-border shadow-[0_1px_12px_rgba(236,72,153,0.06)]"
+      className="sticky top-0 z-50 w-full bg-card/95 backdrop-blur-sm border-b border-border shadow-[0_1px_12px_rgba(194,84,45,0.06)]"
     >
       <div className="container mx-auto max-w-7xl px-6">
         <div className="flex h-16 items-center justify-between">
@@ -158,7 +158,7 @@ export function Navbar() {
                         onClick={() => setShowMenu(false)}
                         className="flex items-center gap-2 w-full px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted/60 rounded-lg transition-colors"
                       >
-                        <Heart className="h-4 w-4 text-pink-500" />
+                        <Heart className="h-4 w-4 text-primary" />
                         המועדפות שלי
                       </Link>
                       {isAdmin && (
@@ -192,7 +192,7 @@ export function Navbar() {
                 <Link href="/login?tab=register">
                   <Button
                     size="sm"
-                    className="bg-primary hover:bg-primary/90 text-white border-0 shadow-[0_2px_12px_rgba(236,72,153,0.30)] font-bold rounded-xl px-5 cursor-pointer"
+                    className="bg-primary hover:bg-primary/90 text-white border-0 shadow-[0_2px_12px_rgba(194,84,45,0.30)] font-bold rounded-xl px-5 cursor-pointer"
                   >
                     הצטרפי עכשיו
                   </Button>

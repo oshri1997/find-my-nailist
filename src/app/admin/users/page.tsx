@@ -18,8 +18,8 @@ interface AdminUser {
 
 const ROLE_COLORS: Record<string, string> = {
   CLIENT: 'bg-blue-50 text-blue-600 border-blue-200',
-  NAILIST: 'bg-pink-50 text-primary border-pink-200',
-  ADMIN: 'bg-purple-50 text-purple-600 border-purple-200',
+  NAILIST: 'bg-orange-50 text-primary border-orange-200',
+  ADMIN: 'bg-amber-50 text-amber-600 border-amber-200',
 }
 
 type BulkAction = 'suspend' | 'unsuspend' | 'delete'
@@ -380,7 +380,7 @@ export default function AdminUsersPage() {
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {u.isAdmin && u.role !== 'ADMIN' && (
-                          <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-purple-50 text-purple-600 border-purple-200">
+                          <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-amber-50 text-amber-600 border-amber-200">
                             אדמין
                           </span>
                         )}
@@ -408,7 +408,7 @@ export default function AdminUsersPage() {
                               className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
                                 u.role === 'NAILIST'
                                   ? ROLE_COLORS.NAILIST
-                                  : 'bg-muted/40 text-muted-foreground border-border hover:border-pink-300 hover:text-primary'
+                                  : 'bg-muted/40 text-muted-foreground border-border hover:border-orange-300 hover:text-primary'
                               }`}
                             >
                               נייליסטית
@@ -426,7 +426,7 @@ export default function AdminUsersPage() {
                             <button
                               onClick={() => setConfirmPromote(u)}
                               title="הפוך לאדמין בלבד"
-                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border bg-muted/40 text-muted-foreground border-border hover:border-purple-300 hover:text-purple-600 transition-all"
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border bg-muted/40 text-muted-foreground border-border hover:border-amber-300 hover:text-amber-600 transition-all"
                             >
                               <ShieldCheck className="w-3 h-3" />
                               אדמין

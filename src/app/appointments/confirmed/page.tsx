@@ -74,7 +74,7 @@ function Content() {
 
   return (
     <div className="text-center">
-      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/30">
+      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/30">
         <CalendarCheck className="h-10 w-10 text-white" />
       </div>
       <h1 className="text-3xl font-black text-foreground mb-3">התור אושר!</h1>
@@ -100,7 +100,7 @@ export default function ConfirmedPage() {
         <div className="mt-8 text-center">
           <Link
             href="/dashboard/nailist/appointments"
-            className="inline-block bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black rounded-xl px-6 py-3 text-sm hover:opacity-90 transition"
+            className="inline-block bg-gradient-to-r from-orange-500 to-amber-600 text-white font-black rounded-xl px-6 py-3 text-sm hover:opacity-90 transition"
           >
             לוח התורים שלי
           </Link>

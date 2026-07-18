@@ -27,7 +27,7 @@ export function FeaturesSection() {
           transition={{ duration: 0.4 }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-2 bg-pink-50 text-primary border border-pink-100 rounded-full px-4 py-2 text-sm font-semibold mb-5">
+          <div className="inline-flex items-center gap-2 bg-orange-50 text-primary border border-orange-100 rounded-full px-4 py-2 text-sm font-semibold mb-5">
             הכי טוב בשוק
           </div>
           <h2 className="text-4xl md:text-5xl font-black mb-4 text-foreground">
@@ -51,9 +51,9 @@ export function FeaturesSection() {
             >
               <TiltCard
                 maxTiltDeg={5}
-                className="bg-card rounded-2xl p-7 cursor-default border border-border hover:border-pink-200 hover:shadow-[0_8px_30px_rgba(236,72,153,0.10)] transition-all duration-300 group h-full"
+                className="bg-card rounded-2xl p-7 cursor-default border border-border hover:border-orange-200 hover:shadow-[0_8px_30px_rgba(194,84,45,0.10)] transition-all duration-300 group h-full"
               >
-                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary group-hover:shadow-[0_4px_12px_rgba(236,72,153,0.3)] transition-all duration-300">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary group-hover:shadow-[0_4px_12px_rgba(194,84,45,0.3)] transition-all duration-300">
                   <f.Icon className="w-5 h-5 text-primary group-hover:text-white transition-colors duration-300" />
                 </div>
                 <h3 className="text-base font-black text-foreground mb-2">{f.title}</h3>

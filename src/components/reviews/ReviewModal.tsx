@@ -98,7 +98,7 @@ export default function ReviewModal({
         dir="rtl"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-pink-500 to-purple-500 px-6 py-5">
+        <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm">{businessName}</p>

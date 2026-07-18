@@ -28,49 +28,52 @@
 }
 
 /* ── Light theme ─────────────────────────────────── */
+/* Warm terracotta + sage — a human, editorial palette (deliberately not the
+   pink/violet "AI gradient" look). Terracotta reads as hands-on craft;
+   sage as the natural complementary accent. */
 :root {
-  --background: #FDF2F8;
-  --foreground: #1A0A12;
+  --background: #FBF5EE;
+  --foreground: #2B1D14;
   --card: #FFFFFF;
-  --card-foreground: #1A0A12;
+  --card-foreground: #2B1D14;
   --popover: #FFFFFF;
-  --popover-foreground: #1A0A12;
-  --primary: #EC4899;
+  --popover-foreground: #2B1D14;
+  --primary: #C2542D;
   --primary-foreground: #FFFFFF;
-  --secondary: #F5EEF8;
-  --secondary-foreground: #831843;
-  --muted: #F5EEF8;
-  --muted-foreground: #9C6B82;
-  --accent: #8B5CF6;
+  --secondary: #F3E7DA;
+  --secondary-foreground: #7A4526;
+  --muted: #F3E7DA;
+  --muted-foreground: #8A7562;
+  --accent: #4A7C59;
   --accent-foreground: #FFFFFF;
   --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
-  --border: #F3D5E8;
-  --input: #F5EEF8;
-  --ring: #EC4899;
+  --border: #E8D9C8;
+  --input: #F3E7DA;
+  --ring: #C2542D;
 }
 
 /* ── Dark theme ──────────────────────────────────── */
 .dark {
-  --background: #100910;
-  --foreground: #F0E6EE;
-  --card: #1C0D18;
-  --card-foreground: #F0E6EE;
-  --popover: #1C0D18;
-  --popover-foreground: #F0E6EE;
-  --primary: #EC4899;
-  --primary-foreground: #FFFFFF;
-  --secondary: #2A1022;
-  --secondary-foreground: #F0B0D0;
-  --muted: #2A1022;
-  --muted-foreground: #A08090;
-  --accent: #8B5CF6;
-  --accent-foreground: #FFFFFF;
+  --background: #1A140F;
+  --foreground: #F2E8DD;
+  --card: #251C15;
+  --card-foreground: #F2E8DD;
+  --popover: #251C15;
+  --popover-foreground: #F2E8DD;
+  --primary: #E2895C;
+  --primary-foreground: #1A140F;
+  --secondary: #332619;
+  --secondary-foreground: #F0C9A0;
+  --muted: #332619;
+  --muted-foreground: #B5A08A;
+  --accent: #6FA37F;
+  --accent-foreground: #1A140F;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #3D1528;
-  --input: #2A1022;
-  --ring: #EC4899;
+  --border: #3D2E1F;
+  --input: #332619;
+  --ring: #E2895C;
 }
 
 * {
@@ -86,7 +89,7 @@ body {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%);
+  background: linear-gradient(135deg, #C2542D 0%, #D9A441 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -96,7 +99,7 @@ body {
 .card-soft {
   background: var(--card);
   border: 1px solid var(--border);
-  box-shadow: 0 4px 20px rgba(236, 72, 153, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(194, 84, 45, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 /* Subtle page background variant */
@@ -127,8 +130,8 @@ body {
 .bg-mesh {
   background-color: var(--background);
   background-image:
-    radial-gradient(at 10% 10%, rgba(236, 72, 153, 0.07) 0px, transparent 50%),
-    radial-gradient(at 90% 80%, rgba(139, 92, 246, 0.05) 0px, transparent 50%);
+    radial-gradient(at 10% 10%, rgba(194, 84, 45, 0.07) 0px, transparent 50%),
+    radial-gradient(at 90% 80%, rgba(74, 124, 89, 0.05) 0px, transparent 50%);
 }
 
 /* Shimmer */
@@ -155,8 +158,8 @@ body {
 
 /* Soft pulse glow */
 @keyframes soft-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
-  50% { box-shadow: 0 0 20px 4px rgba(236, 72, 153, 0.15); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(194, 84, 45, 0); }
+  50% { box-shadow: 0 0 20px 4px rgba(194, 84, 45, 0.15); }
 }
 
 .pulse-glow {

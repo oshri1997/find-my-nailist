@@ -49,7 +49,7 @@ export default function NailistReviewsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-pink-400" />
+          <Loader2 className="h-6 w-6 animate-spin text-orange-400" />
         </div>
       ) : (
         <>

@@ -50,7 +50,7 @@ function TimeSelect({ value, onChange, min, max, label }: { value: string; onCha
       value={value}
       onChange={e => onChange(e.target.value)}
       aria-label={label}
-      className="h-9 rounded-xl border border-border bg-card px-2 text-sm font-semibold text-foreground focus:outline-none focus:border-pink-300 cursor-pointer"
+      className="h-9 rounded-xl border border-border bg-card px-2 text-sm font-semibold text-foreground focus:outline-none focus:border-orange-300 cursor-pointer"
     >
       {options.map(t => <option key={t} value={t}>{t}</option>)}
     </select>
@@ -164,7 +164,7 @@ export default function WorkingHoursPage() {
 
       {/* Quick presets */}
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-        className="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-950/30 dark:to-purple-950/30 rounded-2xl p-4 mb-5 border border-pink-100 dark:border-pink-900/50 space-y-4">
+        className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 rounded-2xl p-4 mb-5 border border-orange-100 dark:border-orange-900/50 space-y-4">
         <div>
           <p className="text-xs font-black text-muted-foreground mb-3 flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5" />

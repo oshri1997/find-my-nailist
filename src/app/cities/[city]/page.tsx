@@ -181,9 +181,9 @@ export default async function CityPage({ params }: Props) {
               <Link
                 key={nailist.id}
                 href={`/nailists/${nailist.id}`}
-                className="bg-card rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_32px_rgba(236,72,153,0.12)] transition-all duration-300 border border-border hover:border-pink-200 block group"
+                className="bg-card rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_32px_rgba(194,84,45,0.12)] transition-all duration-300 border border-border hover:border-orange-200 block group"
               >
-                <div className="h-44 relative flex items-center justify-center overflow-hidden bg-pink-50">
+                <div className="h-44 relative flex items-center justify-center overflow-hidden bg-orange-50">
                   {(nailist.coverPhotoUrl ?? nailist.photoUrl) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img

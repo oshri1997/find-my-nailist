@@ -11,30 +11,30 @@ const steps = [
     step: '01',
     title: 'גלי נייליסטיות בקרבתך',
     desc: 'השתמשי במיקום שלך כדי לגלות מאות מומחיות ציפורניים באזורך.',
-    iconBg: 'bg-pink-500',
-    cardBg: 'bg-pink-50 dark:bg-pink-950/40',
-    border: 'border-pink-100 dark:border-pink-900/50',
-    stepColor: 'text-pink-400',
+    iconBg: 'bg-orange-500',
+    cardBg: 'bg-orange-50 dark:bg-orange-950/40',
+    border: 'border-orange-100 dark:border-orange-900/50',
+    stepColor: 'text-orange-400',
   },
   {
     Icon: Star,
     step: '02',
     title: 'עיצוב ופורטפוליו',
     desc: 'עיצובים before & after, ביקורות אמיתיות ומחירים שקופים.',
-    iconBg: 'bg-violet-500',
-    cardBg: 'bg-violet-50 dark:bg-violet-950/40',
-    border: 'border-violet-100 dark:border-violet-900/50',
-    stepColor: 'text-violet-400',
+    iconBg: 'bg-emerald-500',
+    cardBg: 'bg-emerald-50 dark:bg-emerald-950/40',
+    border: 'border-emerald-100 dark:border-emerald-900/50',
+    stepColor: 'text-emerald-400',
   },
   {
     Icon: Calendar,
     step: '03',
     title: 'הזמיני תור בקליק',
     desc: 'בחרי שירות, תאריך ושעה — בלי שיחות, בלי המתנה.',
-    iconBg: 'bg-purple-500',
-    cardBg: 'bg-purple-50 dark:bg-purple-950/40',
-    border: 'border-purple-100 dark:border-purple-900/50',
-    stepColor: 'text-purple-400',
+    iconBg: 'bg-amber-500',
+    cardBg: 'bg-amber-50 dark:bg-amber-950/40',
+    border: 'border-amber-100 dark:border-amber-900/50',
+    stepColor: 'text-amber-400',
   },
 ]
 
@@ -51,7 +51,7 @@ export function HowItWorksSection() {
           transition={{ duration: 0.4 }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-2 bg-violet-50 text-violet-600 border border-violet-100 rounded-full px-4 py-2 text-sm font-semibold mb-5">
+          <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full px-4 py-2 text-sm font-semibold mb-5">
             פשוט כמו 1, 2, 3
           </div>
           <h2 className="text-4xl md:text-5xl font-black mb-4 text-foreground">
