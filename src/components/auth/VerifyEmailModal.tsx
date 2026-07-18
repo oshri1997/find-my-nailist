@@ -44,8 +44,8 @@ export function VerifyEmailModal({ user, onClose }: { user: User; onClose: () =>
         dir="rtl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-12 h-12 rounded-full bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center mx-auto">
-          <Mail className="h-6 w-6 text-orange-500" />
+        <div className="w-12 h-12 rounded-full bg-primary/10 dark:bg-primary/30 flex items-center justify-center mx-auto">
+          <Mail className="h-6 w-6 text-primary" />
         </div>
         <h3 className="font-black text-foreground text-lg">יש לאמת את כתובת המייל</h3>
         <p className="text-sm text-muted-foreground">

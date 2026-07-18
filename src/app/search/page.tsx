@@ -311,7 +311,7 @@ export default function SearchPage() {
               variant="outline"
               onClick={handleLocate}
               disabled={locating}
-              className="rounded-xl h-11 border-border gap-2 shrink-0 hover:border-primary/40 hover:bg-orange-50/50 hover:text-foreground cursor-pointer"
+              className="rounded-xl h-11 border-border gap-2 shrink-0 hover:border-primary/40 hover:bg-primary/50 hover:text-foreground cursor-pointer"
               title="השתמשי במיקום שלי"
             >
               {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4 text-primary" />}
@@ -377,7 +377,7 @@ export default function SearchPage() {
               }}
               className={`rounded-xl px-3 py-1.5 text-sm font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
                 viewMode === 'map'
-                  ? 'border-primary/40 text-primary bg-orange-50 dark:bg-orange-950/30'
+                  ? 'border-primary/40 text-primary bg-primary/10 dark:bg-primary/30'
                   : 'border-border text-muted-foreground hover:border-primary/30 hover:text-primary'
               }`}
             >
@@ -391,7 +391,7 @@ export default function SearchPage() {
                 disabled={key === 'distance' && !coords}
                 className={`rounded-xl px-3 py-1.5 text-sm font-semibold border transition-all disabled:opacity-40 cursor-pointer ${
                   sortBy === key
-                    ? 'border-primary/40 text-primary bg-orange-50 dark:bg-orange-950/30'
+                    ? 'border-primary/40 text-primary bg-primary/10 dark:bg-primary/30'
                     : 'border-border text-muted-foreground hover:border-primary/30 hover:text-primary'
                 }`}
               >
@@ -445,10 +445,10 @@ export default function SearchPage() {
                 key={nailist.id}
                 whileHover={{ y: -3, transition: { duration: 0.2 } }}
                 onClick={() => router.push(`/nailists/${nailist.id}`)}
-                className="bg-card rounded-2xl overflow-hidden shadow-[0_1px_8px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_24px_rgba(245,23,92,0.10)] transition-all duration-300 cursor-pointer group border border-border hover:border-orange-200"
+                className="bg-card rounded-2xl overflow-hidden shadow-[0_1px_8px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_24px_rgba(245,23,92,0.10)] transition-all duration-300 cursor-pointer group border border-border hover:border-primary/30"
               >
                 {/* Cover */}
-                <div className="h-40 relative flex items-center justify-center overflow-hidden bg-orange-50">
+                <div className="h-40 relative flex items-center justify-center overflow-hidden bg-primary/10">
                   {(nailist.coverPhotoUrl ?? nailist.photoUrl) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -468,7 +468,7 @@ export default function SearchPage() {
                     disabled={togglingFav === nailist.id}
                     className="absolute top-2.5 left-2.5 w-8 h-8 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-card transition-colors cursor-pointer disabled:opacity-60"
                   >
-                    <Heart className={`h-4 w-4 transition-all ${favorites.has(nailist.id) ? 'fill-orange-500 text-orange-500 scale-110' : 'text-muted-foreground/60'}`} />
+                    <Heart className={`h-4 w-4 transition-all ${favorites.has(nailist.id) ? 'fill-primary text-primary scale-110' : 'text-muted-foreground/60'}`} />
                   </button>
                   {nailist.distanceKm != null && (
                     <div className="absolute top-2.5 right-2.5 bg-card/80 backdrop-blur-sm rounded-full px-2.5 py-1 text-foreground text-xs font-semibold flex items-center gap-1">
@@ -535,7 +535,7 @@ export default function SearchPage() {
               onClick={loadMore}
               disabled={loadingMore}
               variant="outline"
-              className="rounded-xl h-11 px-8 font-bold border-border hover:border-primary/40 hover:bg-orange-50/50 gap-2 cursor-pointer disabled:opacity-60"
+              className="rounded-xl h-11 px-8 font-bold border-border hover:border-primary/40 hover:bg-primary/50 gap-2 cursor-pointer disabled:opacity-60"
             >
               {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : 'טעני עוד נייליסטיות'}
             </Button>

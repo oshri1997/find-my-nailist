@@ -250,12 +250,12 @@ export default function BookingModal({ nailistProfileId, businessName, services,
         onClick={() => !unavailable && setSelectedTime(t)}
         className={`py-2.5 rounded-xl text-sm font-bold transition-all ${
           isSelected
-            ? 'bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-sm shadow-primary/40'
+            ? 'bg-gradient-to-br from-primary to-amber-600 text-white shadow-sm shadow-primary/40'
             : unavailable
             ? 'bg-muted text-muted-foreground cursor-not-allowed line-through text-xs'
             : isRecommended
-            ? 'bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/40 text-orange-700 dark:text-orange-300 border-2 border-orange-300 dark:border-orange-800 hover:border-orange-400'
-            : 'bg-muted text-muted-foreground hover:bg-orange-50 dark:hover:bg-orange-950/30 hover:text-orange-600 border border-border hover:border-orange-200'
+            ? 'bg-gradient-to-br from-primary/10 to-amber-50 dark:from-primary/40 dark:to-amber-950/40 text-primary dark:text-primary border-2 border-primary/40 dark:border-primary hover:border-primary'
+            : 'bg-muted text-muted-foreground hover:bg-primary/10 dark:hover:bg-primary/30 hover:text-primary border border-border hover:border-primary/30'
         }`}
       >
         {t}
@@ -312,7 +312,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
               <div
                 key={i}
                 className={`flex-1 h-1 rounded-full transition-all duration-300 ${
-                  stepIndex >= i ? 'bg-gradient-to-r from-orange-500 to-amber-600' : 'bg-muted'
+                  stepIndex >= i ? 'bg-gradient-to-r from-primary to-amber-600' : 'bg-muted'
                 }`}
               />
             ))}
@@ -335,12 +335,12 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                         onClick={() => { setSelectedService(s); setDateSummary(null); setServiceError(false) }}
                         className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-right transition-all ${
                           selected
-                            ? 'border-orange-400 bg-primary/10 shadow-sm'
-                            : 'border-border hover:border-orange-200 bg-card'
+                            ? 'border-primary bg-primary/10 shadow-sm'
+                            : 'border-border hover:border-primary/30 bg-card'
                         }`}
                       >
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all ${
-                          selected ? 'bg-gradient-to-br from-orange-500 to-amber-600' : 'bg-muted'
+                          selected ? 'bg-gradient-to-br from-primary to-amber-600' : 'bg-muted'
                         }`}>
                           <Scissors className={`h-5 w-5 ${selected ? 'text-white' : 'text-muted-foreground'}`} />
                         </div>
@@ -351,7 +351,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                             <Clock className="h-3 w-3" /> {s.durationMinutes} דק׳
                           </p>
                         </div>
-                        <div className={`font-black text-lg shrink-0 ${selected ? 'text-orange-600' : 'text-muted-foreground'}`}>
+                        <div className={`font-black text-lg shrink-0 ${selected ? 'text-primary' : 'text-muted-foreground'}`}>
                           {symbol}{s.price}
                         </div>
                       </button>
@@ -367,7 +367,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                     setServiceError(false)
                     setStep('datetime')
                   }}
-                  className="w-full mt-4 bg-gradient-to-r from-orange-500 to-amber-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40"
+                  className="w-full mt-4 bg-gradient-to-r from-primary to-amber-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40"
                 >
                   המשך לבחירת תאריך
                 </Button>
@@ -379,10 +379,10 @@ export default function BookingModal({ nailistProfileId, businessName, services,
               <motion.div key="datetime" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} className="pb-6">
                 {/* Service summary pill */}
                 {selectedService && (
-                  <div className="mx-6 mb-4 mt-2 flex items-center gap-2 bg-primary/10 border border-orange-100 rounded-xl px-3 py-2">
-                    <Scissors className="h-3.5 w-3.5 text-orange-500 shrink-0" />
-                    <span className="text-xs font-bold text-orange-700 flex-1">{selectedService.name}</span>
-                    <span className="text-xs font-black text-orange-600">₪{selectedService.price}</span>
+                  <div className="mx-6 mb-4 mt-2 flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-xl px-3 py-2">
+                    <Scissors className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="text-xs font-bold text-primary flex-1">{selectedService.name}</span>
+                    <span className="text-xs font-black text-primary">₪{selectedService.price}</span>
                   </div>
                 )}
 
@@ -443,12 +443,12 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                           }}
                           className={`flex flex-col items-center py-2 rounded-xl border-2 transition-all ${
                             isSelected
-                              ? 'border-orange-500 bg-gradient-to-b from-orange-500 to-teal-600 text-white shadow-md shadow-primary/40'
+                              ? 'border-primary bg-gradient-to-b from-primary to-teal-600 text-white shadow-md shadow-primary/40'
                               : isDisabled
                               ? 'border-border bg-muted cursor-not-allowed opacity-35'
                               : isWeekend
                               ? 'border-amber-100 bg-amber-50 dark:bg-amber-950/30 text-amber-800 hover:border-amber-300'
-                              : 'border-border bg-card text-foreground hover:border-orange-200'
+                              : 'border-border bg-card text-foreground hover:border-primary/30'
                           }`}
                         >
                           <span className={`text-sm font-black leading-none ${isSelected ? 'text-white' : isDisabled ? 'text-muted-foreground' : ''}`}>
@@ -461,7 +461,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                             <div className="w-1 h-1 rounded-full bg-red-400 mt-0.5" />
                           )}
                           {isToday && !isNonWorking && !isFullyBooked && (
-                            <div className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white/60' : 'bg-orange-400'}`} />
+                            <div className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white/60' : 'bg-primary'}`} />
                           )}
                         </button>
                       )
@@ -494,8 +494,8 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                       <>
                         {recommendedSlots.size > 0 && (
                           <div className="mb-3">
-                            <p className="text-xs font-black text-orange-600 flex items-center gap-1.5 mb-2">
-                              <Zap className="h-3.5 w-3.5 fill-orange-500 text-orange-500" /> שעות מומלצות
+                            <p className="text-xs font-black text-primary flex items-center gap-1.5 mb-2">
+                              <Zap className="h-3.5 w-3.5 fill-primary text-primary" /> שעות מומלצות
                             </p>
                             <div className="grid grid-cols-4 gap-2">
                               {slots.filter((t) => recommendedSlots.has(t)).map(renderSlotButton)}
@@ -523,7 +523,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                     onChange={e => setNotes(e.target.value)}
                     placeholder="צבע נלו, עיצוב מסוים, מידע רלוונטי..."
                     rows={2}
-                    className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-orange-300 focus:bg-background transition-colors resize-none"
+                    className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:bg-background transition-colors resize-none"
                   />
                 </div>
 
@@ -531,7 +531,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   <Button
                     onClick={() => selectedDate && selectedTime && setStep('confirm')}
                     disabled={!selectedDate || !selectedTime}
-                    className="w-full bg-gradient-to-r from-orange-500 to-amber-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40 disabled:opacity-50"
+                    className="w-full bg-gradient-to-r from-primary to-amber-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40 disabled:opacity-50"
                   >
                     המשך לאישור
                   </Button>
@@ -542,23 +542,23 @@ export default function BookingModal({ nailistProfileId, businessName, services,
             {/* ── STEP 3: CONFIRM ── */}
             {step === 'confirm' && selectedService && selectedDate && (
               <motion.div key="confirm" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} className="px-6 pb-6 pt-2">
-                <div className="bg-primary/10 rounded-2xl p-5 space-y-3.5 mb-4 border border-orange-100">
+                <div className="bg-primary/10 rounded-2xl p-5 space-y-3.5 mb-4 border border-primary/20">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-card border border-orange-100 flex items-center justify-center shrink-0">
-                      <Scissors className="h-4 w-4 text-orange-500" />
+                    <div className="w-8 h-8 rounded-xl bg-card border border-primary/20 flex items-center justify-center shrink-0">
+                      <Scissors className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground font-medium">שירות</p>
                       <p className="font-black text-foreground text-sm">{selectedService.name}</p>
                     </div>
-                    <p className="font-black text-orange-600">{selectedService.currency === 'ILS' ? '₪' : '$'}{selectedService.price}</p>
+                    <p className="font-black text-primary">{selectedService.currency === 'ILS' ? '₪' : '$'}{selectedService.price}</p>
                   </div>
 
-                  <div className="h-px bg-orange-100" />
+                  <div className="h-px bg-primary/15" />
 
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-card border border-orange-100 flex items-center justify-center shrink-0">
-                      <Calendar className="h-4 w-4 text-orange-500" />
+                    <div className="w-8 h-8 rounded-xl bg-card border border-primary/20 flex items-center justify-center shrink-0">
+                      <Calendar className="h-4 w-4 text-primary" />
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground font-medium">תאריך</p>
@@ -569,8 +569,8 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-card border border-orange-100 flex items-center justify-center shrink-0">
-                      <Clock className="h-4 w-4 text-orange-500" />
+                    <div className="w-8 h-8 rounded-xl bg-card border border-primary/20 flex items-center justify-center shrink-0">
+                      <Clock className="h-4 w-4 text-primary" />
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground font-medium">שעה ומשך</p>
@@ -582,10 +582,10 @@ export default function BookingModal({ nailistProfileId, businessName, services,
 
                   {notes && (
                     <>
-                      <div className="h-px bg-orange-100" />
+                      <div className="h-px bg-primary/15" />
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-card border border-orange-100 flex items-center justify-center shrink-0 mt-0.5">
-                          <MessageSquare className="h-4 w-4 text-orange-500" />
+                        <div className="w-8 h-8 rounded-xl bg-card border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+                          <MessageSquare className="h-4 w-4 text-primary" />
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground font-medium">הערות</p>
@@ -605,7 +605,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                 <Button
                   onClick={handleConfirm}
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-orange-500 to-amber-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40"
+                  className="w-full bg-gradient-to-r from-primary to-amber-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40"
                 >
                   {loading ? <><Loader2 className="h-4 w-4 animate-spin ml-2" /> מזמינה...</> : 'אישור וקביעת תור'}
                 </Button>
@@ -619,7 +619,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.1 }}
-                  className="w-20 h-20 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-5 shadow-xl shadow-primary/40"
+                  className="w-20 h-20 bg-gradient-to-br from-primary to-amber-600 rounded-full flex items-center justify-center mx-auto mb-5 shadow-xl shadow-primary/40"
                 >
                   <CheckCircle2 className="h-10 w-10 text-white" />
                 </motion.div>
@@ -627,11 +627,11 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                 <p className="text-sm text-muted-foreground font-medium mb-1">
                   {selectedDate?.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </p>
-                <p className="text-sm text-orange-500 font-black mb-6">{selectedTime} · {selectedService?.name}</p>
+                <p className="text-sm text-primary font-black mb-6">{selectedTime} · {selectedService?.name}</p>
                 <p className="text-xs text-muted-foreground mb-6">אישור ישלח למייל שלך בקרוב</p>
 
                 {depositResult && bitPhone && (
-                  <div className="bg-primary/10 border border-orange-100 rounded-2xl p-5 mb-6 text-right">
+                  <div className="bg-primary/10 border border-primary/20 rounded-2xl p-5 mb-6 text-right">
                     <p className="font-black text-foreground text-sm mb-1">
                       נדרשת מקדמה של ₪{depositResult.amount} דרך Bit
                     </p>
@@ -641,7 +641,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                     <div className="flex items-center gap-2 mb-3">
                       <a
                         href={toBitUrl(bitPhone, depositResult.amount)}
-                        className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-xl h-11 font-bold text-sm"
+                        className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-amber-600 text-white rounded-xl h-11 font-bold text-sm"
                       >
                         פתחי את Bit
                       </a>
@@ -651,7 +651,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                         type="button"
                         onClick={handleCopyBitPhone}
                         aria-label="העתקת מספר טלפון לביט"
-                        className="flex items-center justify-center gap-2 bg-card border border-border rounded-xl h-11 font-bold text-sm text-foreground hover:border-orange-300 transition-colors"
+                        className="flex items-center justify-center gap-2 bg-card border border-border rounded-xl h-11 font-bold text-sm text-foreground hover:border-primary/40 transition-colors"
                       >
                         {copiedPhone ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
                         {formatBitPhoneDisplay(bitPhone)}
@@ -660,7 +660,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                         type="button"
                         onClick={handleCopyAmount}
                         aria-label="העתקת סכום המקדמה"
-                        className="flex items-center justify-center gap-2 bg-card border border-border rounded-xl h-11 font-bold text-sm text-foreground hover:border-orange-300 transition-colors"
+                        className="flex items-center justify-center gap-2 bg-card border border-border rounded-xl h-11 font-bold text-sm text-foreground hover:border-primary/40 transition-colors"
                       >
                         {copiedAmount ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
                         ₪{depositResult.amount}
@@ -676,7 +676,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                       <Button
                         onClick={handleMarkPaid}
                         disabled={markingPaid}
-                        className="w-full mt-3 bg-card border border-orange-200 text-orange-600 hover:bg-orange-50 rounded-xl h-11 font-bold text-sm"
+                        className="w-full mt-3 bg-card border border-primary/30 text-primary hover:bg-primary/10 rounded-xl h-11 font-bold text-sm"
                       >
                         {markingPaid ? <Loader2 className="h-4 w-4 animate-spin" /> : 'כבר שילמתי'}
                       </Button>
@@ -684,7 +684,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   </div>
                 )}
 
-                <Button onClick={onClose} className="w-full bg-gradient-to-r from-orange-500 to-amber-600 border-0 rounded-2xl h-12 font-black">
+                <Button onClick={onClose} className="w-full bg-gradient-to-r from-primary to-amber-600 border-0 rounded-2xl h-12 font-black">
                   סגור
                 </Button>
               </motion.div>
