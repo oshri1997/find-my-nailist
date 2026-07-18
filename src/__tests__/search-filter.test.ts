@@ -1,4 +1,4 @@
-import { matchesFilter, matchesQuery, FILTER_KEYWORDS, filterTags } from '@/app/search/page'
+import { matchesFilter, matchesQuery, FILTER_KEYWORDS, filterTags, nextSlotSortKey } from '@/app/search/page'
 
 describe('matchesFilter', () => {
   it('returns true for "הכל" regardless of services', () => {
@@ -142,5 +142,31 @@ describe('filterTags', () => {
   it('every filter tag except "הכל" has a FILTER_KEYWORDS entry', () => {
     const missing = filterTags.filter((t) => t !== 'הכל' && !FILTER_KEYWORDS[t])
     expect(missing).toHaveLength(0)
+  })
+})
+
+describe('nextSlotSortKey', () => {
+  it('returns a sortable date+time string when a slot exists', () => {
+    expect(nextSlotSortKey({ nextAvailableSlot: { date: '2026-06-10', time: '14:00' } })).toBe('2026-06-10T14:00')
+  })
+
+  it('returns a sentinel that sorts after any real date when there is no slot', () => {
+    const withSlot = nextSlotSortKey({ nextAvailableSlot: { date: '2099-12-31', time: '23:30' } })
+    const withoutSlot = nextSlotSortKey({ nextAvailableSlot: null })
+    expect(withoutSlot > withSlot).toBe(true)
+  })
+
+  it('treats a missing field the same as null', () => {
+    expect(nextSlotSortKey({})).toBe(nextSlotSortKey({ nextAvailableSlot: null }))
+  })
+
+  it('sorts an array of nailists into soonest-first order with no-slot nailists last', () => {
+    const nailists = [
+      { id: 'no-slot', nextAvailableSlot: null },
+      { id: 'later', nextAvailableSlot: { date: '2026-06-12', time: '09:00' } },
+      { id: 'soonest', nextAvailableSlot: { date: '2026-06-10', time: '14:00' } },
+    ]
+    const sorted = [...nailists].sort((a, b) => nextSlotSortKey(a).localeCompare(nextSlotSortKey(b)))
+    expect(sorted.map((n) => n.id)).toEqual(['soonest', 'later', 'no-slot'])
   })
 })

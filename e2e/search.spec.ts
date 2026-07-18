@@ -145,6 +145,30 @@ test.describe('Search page — next-available-slot badge', () => {
   })
 })
 
+test.describe('Search page — sort by soonest available', () => {
+  test('reorders cards to soonest-first when "תור קרוב" is clicked', async ({ page }) => {
+    await page.route('/api/nailists**', route =>
+      route.fulfill({
+        json: {
+          data: [
+            { id: 'n-later', businessName: 'סטודיו מאוחר', avgRating: 5.0, reviewCount: 10, nextAvailableSlot: { date: '2026-06-12', time: '09:00' } },
+            { id: 'n-soonest', businessName: 'סטודיו מיידי', avgRating: 3.0, reviewCount: 1, nextAvailableSlot: { date: '2026-06-10', time: '14:00' } },
+          ],
+          total: 2,
+          hasMore: false,
+        },
+      })
+    )
+    await page.goto('/search')
+    await expect(page.getByText('סטודיו מיידי')).toBeVisible()
+
+    await page.getByRole('button', { name: 'תור קרוב' }).click()
+
+    const names = page.locator('h3', { hasText: 'סטודיו' })
+    await expect(names.first()).toHaveText('סטודיו מיידי')
+  })
+})
+
 test.describe('Search page pagination', () => {
   test('load more button appends the next page and hides once exhausted', async ({ page }) => {
     const page2 = [{

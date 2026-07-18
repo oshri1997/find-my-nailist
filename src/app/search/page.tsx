@@ -45,7 +45,17 @@ interface Nailist {
   nextAvailableSlot?: { date: string; time: string } | null
 }
 
-type SortKey = 'distance' | 'rating'
+type SortKey = 'distance' | 'rating' | 'soonest'
+
+// Sortable key for "soonest available" — nailists with no known slot sort
+// last (a sentinel date far beyond any real one), everyone else by date+time
+// ascending. Plain string comparison works here since both parts are
+// zero-padded ISO-ish (YYYY-MM-DD / HH:MM), so lexicographic order already
+// matches chronological order.
+export function nextSlotSortKey(n: { nextAvailableSlot?: { date: string; time: string } | null }): string {
+  if (!n.nextAvailableSlot) return '9999-99-99T99:99'
+  return `${n.nextAvailableSlot.date}T${n.nextAvailableSlot.time}`
+}
 
 export const filterTags = [
   'הכל',
@@ -264,6 +274,9 @@ export default function SearchPage() {
       if (sortBy === 'distance' && a.distanceKm != null && b.distanceKm != null) {
         return a.distanceKm - b.distanceKm
       }
+      if (sortBy === 'soonest') {
+        return nextSlotSortKey(a).localeCompare(nextSlotSortKey(b))
+      }
       return b.avgRating - a.avgRating
     })
 
@@ -385,7 +398,7 @@ export default function SearchPage() {
               {viewMode === 'grid' ? <MapIcon className="h-3.5 w-3.5" /> : <LayoutGrid className="h-3.5 w-3.5" />}
               {viewMode === 'grid' ? 'מפה' : 'רשת'}
             </button>
-            {([['distance', 'מרחק'], ['rating', 'דירוג']] as [SortKey, string][]).map(([key, label]) => (
+            {([['distance', 'מרחק'], ['rating', 'דירוג'], ['soonest', 'תור קרוב']] as [SortKey, string][]).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setSortBy(key)}
