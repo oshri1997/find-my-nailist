@@ -34,7 +34,7 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
         {/* אפקט זוהר אחורי רך */}
         <div
           className="absolute inset-0 blur-2xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(254,215,170,0.2) 0%, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, rgba(245,23,92,0.15) 0%, transparent 70%)' }}
         />
 
         {/* נצנצים עדינים מסביב */}
@@ -54,9 +54,9 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
               <path d="M12 0L14.3 9.7L24 12L14.3 14.3L12 24L9.7 14.3L0 12L9.7 9.7Z" fill={`url(#sparkle-grad-${i})`} />
               <defs>
                 <linearGradient id={`sparkle-grad-${i}`} x1="0" y1="0" x2="24" y2="24">
-                  <stop offset="0%" stopColor="#fed7aa" />
-                  <stop offset="50%" stopColor="#C2542D" />
-                  <stop offset="100%" stopColor="#ea580c" />
+                  <stop offset="0%" stopColor="#FFD1E0" />
+                  <stop offset="50%" stopColor="#FF4571" />
+                  <stop offset="100%" stopColor="#F5175C" />
                 </linearGradient>
               </defs>
             </svg>
@@ -141,7 +141,7 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(180deg, #ef4444 0%, #f59e0b 35%, #ea580c 75%, #c2410c 100%)',
+              background: 'linear-gradient(180deg, #FF6B9A 0%, #FF4571 35%, #F5175C 75%, #B0104A 100%)',
               transformOrigin: 'center bottom',
             }}
           >
@@ -188,10 +188,10 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
               </linearGradient>
 
               <radialGradient id="drop-gel" cx="45%" cy="35%" r="60%">
-                <stop offset="0%" stopColor="#fb923c" />
-                <stop offset="40%" stopColor="#ea580c" />
-                <stop offset="85%" stopColor="#9a3412" />
-                <stop offset="100%" stopColor="#451a03" />
+                <stop offset="0%" stopColor="#FF8FB3" />
+                <stop offset="40%" stopColor="#F5175C" />
+                <stop offset="85%" stopColor="#99083A" />
+                <stop offset="100%" stopColor="#3D0419" />
               </radialGradient>
             </defs>
 
@@ -204,7 +204,7 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
 
             {/* הצינורית השקופה */}
             <rect x="17" y="45" width="12" height="32" fill="url(#glass-grad)" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5" />
-            <rect x="19" y="45" width="8" height="32" fill="#ea580c" opacity="0.85" />
+            <rect x="19" y="45" width="8" height="32" fill="#F5175C" opacity="0.85" />
 
             {/* קצה הפיפטה */}
             <path d="M17,77 L21,83 L25,83 L29,77 Z" fill="url(#glass-grad)" />
@@ -227,7 +227,7 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
         <motion.p
           animate={{ opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="text-sm font-medium text-orange-700/80 tracking-widest uppercase"
+          className="text-sm font-medium text-primary/80 tracking-widest uppercase"
         >
           {text}
         </motion.p>

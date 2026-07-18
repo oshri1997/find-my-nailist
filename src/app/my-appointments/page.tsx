@@ -220,7 +220,7 @@ function MyAppointmentsInner() {
                     {apt.status === 'COMPLETED' && !apt.hasReview && (
                       <button
                         onClick={() => openReview(apt)}
-                        className="text-xs font-bold px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap"
+                        className="text-xs font-bold px-3 py-1.5 rounded-full bg-gradient-to-r from-primary to-amber-500 text-white cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap"
                       >
                         כתבי ביקורת
                       </button>

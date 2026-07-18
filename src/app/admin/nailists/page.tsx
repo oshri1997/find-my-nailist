@@ -115,7 +115,7 @@ export default function AdminNailistsPage() {
                         {n.isVerified && (
                           <span
                             title="נייליסטית מאומתת"
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold border bg-orange-50 text-primary border-orange-200"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold border bg-primary/10 text-primary border-primary/20"
                           >
                             <BadgeCheck className="w-3 h-3" />
                             מאומתת

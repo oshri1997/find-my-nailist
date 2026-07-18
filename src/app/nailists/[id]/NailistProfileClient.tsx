@@ -203,7 +203,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
     return (
       <div className="min-h-screen flex flex-col bg-muted/30">
         <div className="animate-pulse">
-          <div className="h-64 bg-gradient-to-br from-orange-400 via-amber-500 to-emerald-500 opacity-60" />
+          <div className="h-64 bg-gradient-to-br from-primary via-amber-500 to-emerald-500 opacity-60" />
           <div className="container mx-auto max-w-6xl px-6 py-6 space-y-4">
             <div className="h-5 bg-muted rounded w-1/3" />
             <div className="h-5 bg-muted rounded w-1/2" />
@@ -238,7 +238,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
     <div className="min-h-screen flex flex-col bg-muted/50" dir="rtl">
       {/* Hero — a consistent gradient, never a nailist-uploaded photo, so the header
           always looks clean regardless of what image someone sets as their cover */}
-      <div className="relative text-white overflow-hidden bg-gradient-to-br from-orange-500 via-amber-600 to-emerald-600">
+      <div className="relative text-white overflow-hidden bg-gradient-to-br from-primary via-amber-600 to-emerald-600">
         {/* Mobile-only back-to-search — the navbar's own "חיפוש" link is desktop-only
             (hidden md:flex), so mobile visitors would otherwise have no way back.
             Absolutely positioned at top-3 to sit on the same baseline as the owner
@@ -289,7 +289,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                     type="button"
                     onClick={() => photoInputRef.current?.click()}
                     disabled={photoUploading}
-                    className="absolute -bottom-1 -left-1 w-9 h-9 rounded-full bg-gradient-to-r from-orange-500 to-amber-600 text-white flex items-center justify-center shadow-lg border-2 border-white/80 disabled:opacity-60"
+                    className="absolute -bottom-1 -left-1 w-9 h-9 rounded-full bg-gradient-to-r from-primary to-amber-600 text-white flex items-center justify-center shadow-lg border-2 border-white/80 disabled:opacity-60"
                   >
                     {photoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                   </button>
@@ -338,7 +338,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
             <div className="flex flex-col items-center mt-6">
               <Button
                 onClick={() => openBooking()}
-                className="bg-white text-orange-600 hover:bg-orange-50 border-0 rounded-2xl font-black shadow-lg px-8 h-11"
+                className="bg-white text-primary hover:bg-primary/10 border-0 rounded-2xl font-black shadow-lg px-8 h-11"
               >
                 קביעת תור
               </Button>
@@ -457,7 +457,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                 onClick={() => setActiveTab(key)}
                 className={`py-4 px-4 text-sm font-bold border-b-2 transition-colors ${
                   activeTab === key
-                    ? 'border-orange-500 text-orange-600'
+                    ? 'border-primary text-primary'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -525,7 +525,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.07 }}
-                  className="bg-card rounded-2xl border border-border p-5 flex items-center justify-between hover:border-orange-200 transition-colors"
+                  className="bg-card rounded-2xl border border-border p-5 flex items-center justify-between hover:border-primary/30 transition-colors"
                 >
                   <div>
                     <h3 className="font-black text-foreground">{service.name}</h3>
@@ -536,14 +536,14 @@ export default function NailistProfileClient({ id }: { id: string }) {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0 mr-4">
-                    <span className="font-black text-orange-600 text-xl">
+                    <span className="font-black text-primary text-xl">
                       {service.currency === 'ILS' ? '₪' : '$'}{service.price}
                     </span>
                     {isOwner === false && (
                       <Button
                         size="sm"
                         onClick={() => openBooking(service.id)}
-                        className="bg-gradient-to-r from-orange-500 to-amber-600 border-0 rounded-xl font-bold shadow-sm shadow-primary/40"
+                        className="bg-gradient-to-r from-primary to-amber-600 border-0 rounded-xl font-bold shadow-sm shadow-primary/40"
                       >
                         הזמני
                       </Button>

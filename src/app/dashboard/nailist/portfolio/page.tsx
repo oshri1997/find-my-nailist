@@ -156,7 +156,7 @@ export default function PortfolioPage() {
           <Button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading || !profileId || photos.length >= MAX_PORTFOLIO_PHOTOS}
-            className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-xl h-11 px-5 font-bold shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
+            className="bg-gradient-to-r from-primary to-amber-600 hover:from-primary hover:to-amber-700 border-0 rounded-xl h-11 px-5 font-bold shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
             {uploading ? `${progress}%` : photos.length >= MAX_PORTFOLIO_PHOTOS ? 'הגעת למגבלה' : 'העלי תמונה'}
@@ -168,7 +168,7 @@ export default function PortfolioPage() {
             <motion.div
               animate={{ width: `${progress}%` }}
               transition={{ ease: 'linear' }}
-              className="h-full bg-gradient-to-r from-orange-500 to-amber-600 rounded-full"
+              className="h-full bg-gradient-to-r from-primary to-amber-600 rounded-full"
             />
           </div>
         )}
@@ -199,10 +199,10 @@ export default function PortfolioPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-border rounded-3xl p-16 flex flex-col items-center justify-center text-center cursor-pointer hover:border-orange-300 hover:bg-orange-50/30 transition-all group"
+          className="border-2 border-dashed border-border rounded-3xl p-16 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary/40 hover:bg-primary/10 transition-all group"
         >
-          <div className="w-16 h-16 rounded-2xl bg-muted group-hover:bg-orange-100 dark:group-hover:bg-orange-950/40 flex items-center justify-center mb-4 transition-colors">
-            <ImagePlus className="h-7 w-7 text-muted-foreground group-hover:text-orange-500 transition-colors" />
+          <div className="w-16 h-16 rounded-2xl bg-muted group-hover:bg-primary/15 dark:group-hover:bg-primary/40 flex items-center justify-center mb-4 transition-colors">
+            <ImagePlus className="h-7 w-7 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
           <p className="font-black text-muted-foreground mb-1">אין תמונות עדיין</p>
           <p className="text-sm text-muted-foreground/50 font-medium">לחצי להעלאת תמונה ראשונה</p>
@@ -272,7 +272,7 @@ export default function PortfolioPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 onClick={() => fileInputRef.current?.click()}
-                className="aspect-square rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-orange-300 hover:bg-orange-50/30 transition-all text-muted-foreground/50 hover:text-orange-400"
+                className="aspect-square rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-primary/40 hover:bg-primary/10 transition-all text-muted-foreground/50 hover:text-primary"
               >
                 <ImagePlus className="h-6 w-6" />
                 <span className="text-xs font-bold">הוסיפי</span>

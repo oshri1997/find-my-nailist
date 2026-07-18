@@ -49,12 +49,12 @@ export default function NailistReviewsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-orange-400" />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       ) : (
         <>
           {reviews.length > 0 && (
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 rounded-3xl border border-amber-100 dark:border-amber-900/50 p-6 mb-6 flex items-center gap-4">
+            <div className="bg-gradient-to-br from-amber-50 to-primary/10 dark:from-amber-950/40 dark:to-primary/40 rounded-3xl border border-amber-100 dark:border-amber-900/50 p-6 mb-6 flex items-center gap-4">
               <div className="text-5xl font-black text-amber-600">{avgRating.toFixed(1)}</div>
               <div>
                 <div className="flex gap-0.5 mb-1">

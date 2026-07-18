@@ -283,7 +283,7 @@ export default function ClientOnboardingPage() {
                 <div className="flex justify-center mb-6">
                   <label
                     htmlFor="clientPhotoInput"
-                    className="relative w-28 h-28 rounded-full bg-muted border-2 border-dashed border-border hover:border-primary/50 hover:bg-orange-50/30 transition-all flex items-center justify-center overflow-hidden cursor-pointer group"
+                    className="relative w-28 h-28 rounded-full bg-muted border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/30 transition-all flex items-center justify-center overflow-hidden cursor-pointer group"
                   >
                     {photoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element

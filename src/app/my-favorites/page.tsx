@@ -61,8 +61,8 @@ export default function MyFavoritesPage() {
     <div className="min-h-screen flex flex-col bg-muted/40" dir="rtl">
       <div className="container mx-auto max-w-5xl px-4 py-10 flex-1">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-2xl bg-orange-100 dark:bg-orange-950 flex items-center justify-center">
-            <Heart className="h-5 w-5 fill-orange-500 text-orange-500" />
+          <div className="w-10 h-10 rounded-2xl bg-primary/15 dark:bg-primary/20 flex items-center justify-center">
+            <Heart className="h-5 w-5 fill-primary text-primary" />
           </div>
           <div>
             <h1 className="text-2xl font-black text-foreground">המועדפות שלי</h1>
@@ -76,8 +76,8 @@ export default function MyFavoritesPage() {
           </div>
         ) : nailists.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-            <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-950 flex items-center justify-center">
-              <Heart className="h-8 w-8 text-orange-400" />
+            <div className="w-16 h-16 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center">
+              <Heart className="h-8 w-8 text-primary" />
             </div>
             <p className="text-xl font-black text-foreground">עוד אין מועדפות</p>
             <p className="text-muted-foreground text-sm max-w-xs">
@@ -101,7 +101,7 @@ export default function MyFavoritesPage() {
               >
                 <Link href={`/nailists/${n.id}`} className="group block rounded-2xl overflow-hidden bg-card border border-border shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_24px_rgba(245,23,92,0.12)] transition-shadow">
                   {/* Cover */}
-                  <div className={`relative h-44 overflow-hidden ${!n.coverPhotoUrl ? 'bg-gradient-to-br from-orange-400 via-amber-500 to-emerald-500' : ''}`}>
+                  <div className={`relative h-44 overflow-hidden ${!n.coverPhotoUrl ? 'bg-gradient-to-br from-primary via-amber-500 to-emerald-500' : ''}`}>
                     {n.coverPhotoUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -121,7 +121,7 @@ export default function MyFavoritesPage() {
                     </div>
                     {/* Saved badge */}
                     <div className="absolute top-3 left-3 bg-white/90 dark:bg-card/90 backdrop-blur rounded-full p-1.5 shadow-sm">
-                      <Heart className="h-3.5 w-3.5 fill-orange-500 text-orange-500" />
+                      <Heart className="h-3.5 w-3.5 fill-primary text-primary" />
                     </div>
                   </div>
 

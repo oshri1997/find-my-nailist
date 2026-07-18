@@ -50,7 +50,7 @@ function TimeSelect({ value, onChange, min, max, label }: { value: string; onCha
       value={value}
       onChange={e => onChange(e.target.value)}
       aria-label={label}
-      className="h-9 rounded-xl border border-border bg-card px-2 text-sm font-semibold text-foreground focus:outline-none focus:border-orange-300 cursor-pointer"
+      className="h-9 rounded-xl border border-border bg-card px-2 text-sm font-semibold text-foreground focus:outline-none focus:border-primary cursor-pointer"
     >
       {options.map(t => <option key={t} value={t}>{t}</option>)}
     </select>
@@ -164,7 +164,7 @@ export default function WorkingHoursPage() {
 
       {/* Quick presets */}
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-        className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 rounded-2xl p-4 mb-5 border border-orange-100 dark:border-orange-900/50 space-y-4">
+        className="bg-gradient-to-r from-primary/10 to-amber-50 dark:from-primary/30 dark:to-amber-950/30 rounded-2xl p-4 mb-5 border border-primary/20 dark:border-primary/50 space-y-4">
         <div>
           <p className="text-xs font-black text-muted-foreground mb-3 flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5" />
@@ -176,7 +176,7 @@ export default function WorkingHoursPage() {
                 key={preset.label}
                 type="button"
                 onClick={() => applyPreset(preset)}
-                className="px-4 py-1.5 rounded-xl bg-card border border-orange-200 text-sm font-bold text-orange-600 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all shadow-sm"
+                className="px-4 py-1.5 rounded-xl bg-card border border-primary/30 text-sm font-bold text-primary hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm"
               >
                 {preset.label}
               </button>
@@ -184,7 +184,7 @@ export default function WorkingHoursPage() {
           </div>
         </div>
 
-        <div className="pt-4 border-t border-orange-200/60 dark:border-orange-900/40">
+        <div className="pt-4 border-t border-primary/60 dark:border-primary/40">
           <p className="text-xs font-black text-muted-foreground mb-3 flex items-center gap-1.5">
             <CopyCheck className="h-3.5 w-3.5" />
             שעה אחידה לכל הימים
@@ -197,7 +197,7 @@ export default function WorkingHoursPage() {
               type="button"
               onClick={applyBulkTimes}
               size="sm"
-              className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-xl font-bold shadow-sm gap-1.5 cursor-pointer"
+              className="bg-gradient-to-r from-primary to-amber-600 hover:from-primary hover:to-amber-700 border-0 rounded-xl font-bold shadow-sm gap-1.5 cursor-pointer"
             >
               <CopyCheck className="h-3.5 w-3.5" />
               החל על כל הימים
@@ -218,7 +218,7 @@ export default function WorkingHoursPage() {
               return (
                 <div
                   key={day}
-                  className={`w-2 h-2 rounded-full transition-colors ${h.isActive ? 'bg-gradient-to-br from-orange-500 to-amber-600' : 'bg-muted'}`}
+                  className={`w-2 h-2 rounded-full transition-colors ${h.isActive ? 'bg-gradient-to-br from-primary to-amber-600' : 'bg-muted'}`}
                 />
               )
             })}
@@ -238,7 +238,7 @@ export default function WorkingHoursPage() {
                   h.isActive
                     ? weekend
                       ? 'bg-amber-50/60 border-amber-200'
-                      : 'bg-card border-orange-100 shadow-sm'
+                      : 'bg-card border-primary/20 shadow-sm'
                     : 'bg-muted/50 border-border'
                 }`}
               >
@@ -250,7 +250,7 @@ export default function WorkingHoursPage() {
                     onClick={() => toggle(day)}
                     className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
                       h.isActive
-                        ? weekend ? 'bg-amber-400' : 'bg-orange-500'
+                        ? weekend ? 'bg-amber-400' : 'bg-primary'
                         : 'bg-muted'
                     }`}
                   >
@@ -302,7 +302,7 @@ export default function WorkingHoursPage() {
           <Button
             type="submit"
             disabled={saving}
-            className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-xl h-12 px-8 font-black shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
+            className="bg-gradient-to-r from-primary to-amber-600 hover:from-primary hover:to-amber-700 border-0 rounded-xl h-12 px-8 font-black shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
           >
             {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> שומרת...</> : 'שמרי שעות עבודה'}
           </Button>

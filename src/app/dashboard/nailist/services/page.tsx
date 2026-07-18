@@ -172,7 +172,7 @@ export default function NailistServicesPage() {
         </div>
         <Button
           onClick={openCreateForm}
-          className="bg-gradient-to-r from-orange-500 to-amber-600 border-0 rounded-2xl font-bold shadow-md shadow-primary/40 gap-2"
+          className="bg-gradient-to-r from-primary to-amber-600 border-0 rounded-2xl font-bold shadow-md shadow-primary/40 gap-2"
         >
           <Plus className="h-4 w-4" />
           שירות חדש
@@ -210,7 +210,7 @@ export default function NailistServicesPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-orange-400" />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       ) : (
         <>
@@ -220,7 +220,7 @@ export default function NailistServicesPage() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 rounded-3xl border border-orange-100 dark:border-orange-900/50 p-6 mb-6"
+                className="bg-gradient-to-br from-primary/10 to-amber-50 dark:from-primary/30 dark:to-amber-950/30 rounded-3xl border border-primary/20 dark:border-primary/50 p-6 mb-6"
               >
                 <div className="flex items-center justify-between mb-5">
                   <h2 className="font-black text-foreground">{editingId ? 'עריכת שירות' : 'שירות חדש'}</h2>
@@ -277,7 +277,7 @@ export default function NailistServicesPage() {
                   <Button
                     onClick={editingId ? handleUpdate : handleCreate}
                     disabled={saving || form.price < 0}
-                    className="w-full bg-gradient-to-r from-orange-500 to-amber-600 border-0 rounded-2xl font-bold shadow-md shadow-primary/40"
+                    className="w-full bg-gradient-to-r from-primary to-amber-600 border-0 rounded-2xl font-bold shadow-md shadow-primary/40"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? 'עדכן שירות' : 'שמור שירות'}
                   </Button>
@@ -302,14 +302,14 @@ export default function NailistServicesPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="bg-card rounded-2xl border border-border p-5 flex items-center justify-between hover:border-orange-200 transition-colors"
+                  className="bg-card rounded-2xl border border-border p-5 flex items-center justify-between hover:border-primary/30 transition-colors"
                 >
                   <div className="flex-1 min-w-0">
                     <h3 className="font-black text-foreground">{service.name}</h3>
                     {service.description && <p className="text-sm text-muted-foreground mt-0.5">{service.description}</p>}
                     <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {service.durationMinutes} {"דק'"}</span>
-                      <span className="font-black text-orange-600 text-sm">{service.currency === 'ILS' ? '₪' : '$'}{service.price}</span>
+                      <span className="font-black text-primary text-sm">{service.currency === 'ILS' ? '₪' : '$'}{service.price}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 mr-4">

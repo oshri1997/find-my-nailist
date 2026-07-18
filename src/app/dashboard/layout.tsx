@@ -84,7 +84,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (authorized === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
@@ -142,7 +142,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Profile */}
           <div className="px-4 py-4 border-b border-border">
-            <div className="flex items-center gap-3 bg-orange-50 dark:bg-orange-950/40 rounded-xl p-3">
+            <div className="flex items-center gap-3 bg-primary/10 dark:bg-primary/40 rounded-xl p-3">
               {user?.photoURL ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.photoURL} alt={displayName} className="w-9 h-9 rounded-lg object-cover" />

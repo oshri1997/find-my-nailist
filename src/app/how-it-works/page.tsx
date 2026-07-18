@@ -17,9 +17,9 @@ const clientSteps = [
     step: '01',
     title: 'גלי נייליסטיות קרובות',
     desc: 'הפעילי מיקום וגלי מאות מומחיות ציפורניים באזורך — ממוינות לפי מרחק ודירוג.',
-    color: 'from-orange-500 to-amber-500',
-    bg: 'from-orange-500/10 to-amber-500/10 dark:from-orange-500/15 dark:to-amber-500/15',
-    border: 'border-orange-100 dark:border-orange-900/50',
+    color: 'from-primary to-amber-500',
+    bg: 'from-primary/10 to-amber-500/10 dark:from-primary/15 dark:to-amber-500/15',
+    border: 'border-primary/20 dark:border-primary/50',
     icon: MapPin,
   },
   {
@@ -47,8 +47,8 @@ const nailistSteps = [
     step: '01',
     title: 'פתחי פרופיל חינמי',
     desc: 'הרשמה תוך דקות — שם העסק, כתובת, שעות עבודה ותיאור קצר.',
-    color: 'from-amber-500 to-orange-500',
-    bg: 'from-amber-500/10 to-orange-500/10 dark:from-amber-500/15 dark:to-orange-500/15',
+    color: 'from-amber-500 to-primary',
+    bg: 'from-amber-500/10 to-primary/10 dark:from-amber-500/15 dark:to-primary/15',
     border: 'border-amber-100 dark:border-amber-900/50',
     icon: Gift,
   },
@@ -160,7 +160,7 @@ export default function HowItWorksPage() {
 
         <div className="container mx-auto max-w-4xl px-6 text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-600 rounded-full px-5 py-2 text-sm font-bold mb-6 border border-orange-100">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-5 py-2 text-sm font-bold mb-6 border border-primary/20">
               פשוט כמו 1, 2, 3
             </div>
             <h1 className="text-4xl md:text-6xl font-black text-foreground mb-5 leading-tight">
@@ -177,12 +177,12 @@ export default function HowItWorksPage() {
             className="flex flex-wrap items-center justify-center gap-3 mt-8"
           >
             <Link href="/search">
-              <Button className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-2xl h-12 px-7 font-black shadow-lg shadow-primary/40">
+              <Button className="bg-gradient-to-r from-primary to-amber-600 hover:from-primary hover:to-amber-700 border-0 rounded-2xl h-12 px-7 font-black shadow-lg shadow-primary/40">
                 חפשי נייליסטית
               </Button>
             </Link>
             <JoinLink href="/login?tab=register">
-              <Button variant="outline" className="rounded-2xl h-12 px-7 font-bold border-border hover:border-orange-300 hover:text-orange-600">
+              <Button variant="outline" className="rounded-2xl h-12 px-7 font-bold border-border hover:border-primary/40 hover:text-primary">
                 הצטרפי כנייליסטית
               </Button>
             </JoinLink>
@@ -194,7 +194,7 @@ export default function HowItWorksPage() {
       <section className="py-20 bg-background">
         <div className="container mx-auto max-w-6xl px-6">
           <Section className="text-center mb-14">
-            <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-600 rounded-full px-4 py-2 text-sm font-bold mb-4 border border-orange-100">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-2 text-sm font-bold mb-4 border border-primary/20">
               ללקוחות
             </div>
             <h2 className="text-3xl md:text-4xl font-black text-foreground">
@@ -225,7 +225,7 @@ export default function HowItWorksPage() {
 
           <Section className="mt-10 text-center">
             <Link href="/search">
-              <Button className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-0 rounded-2xl h-11 px-8 font-bold shadow-md shadow-primary/40">
+              <Button className="bg-gradient-to-r from-primary to-amber-600 hover:from-primary hover:to-amber-700 border-0 rounded-2xl h-11 px-8 font-bold shadow-md shadow-primary/40">
                 חפשי נייליסטית עכשיו →
               </Button>
             </Link>
@@ -234,7 +234,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Divider */}
-      <div className="h-px bg-gradient-to-r from-transparent via-orange-200 to-transparent mx-auto max-w-4xl" />
+      <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent mx-auto max-w-4xl" />
 
       {/* For nailists */}
       <section className="py-20 bg-background">
@@ -271,7 +271,7 @@ export default function HowItWorksPage() {
 
           <Section className="mt-10 text-center">
             <JoinLink href="/login?tab=register">
-              <Button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 border-0 rounded-2xl h-11 px-8 font-bold shadow-lg shadow-primary/30">
+              <Button className="bg-gradient-to-r from-amber-500 to-primary hover:from-amber-600 hover:to-primary border-0 rounded-2xl h-11 px-8 font-bold shadow-lg shadow-primary/30">
                 הצטרפי כנייליסטית חינם →
               </Button>
             </JoinLink>
@@ -297,7 +297,7 @@ export default function HowItWorksPage() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.4, delay: i * 0.07 }}
-                className="bg-card rounded-2xl border border-border p-5 shadow-sm hover:shadow-md hover:border-orange-100 transition-all"
+                className="bg-card rounded-2xl border border-border p-5 shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
               >
                 <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center mb-2">
                   <f.icon className="h-4 w-4 text-muted-foreground" />
@@ -337,7 +337,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-orange-500 via-amber-600 to-emerald-600 relative overflow-hidden">
+      <section className="py-20 bg-gradient-to-br from-primary via-amber-600 to-emerald-600 relative overflow-hidden">
         <motion.div
           animate={{ scale: [1, 1.2, 1], rotate: [0, 60, 0] }}
           transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
@@ -352,7 +352,7 @@ export default function HowItWorksPage() {
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link href="/search">
-              <Button className="bg-white text-orange-600 hover:bg-orange-50 border-0 rounded-2xl h-12 px-8 font-black shadow-lg">
+              <Button className="bg-white text-primary hover:bg-primary/10 border-0 rounded-2xl h-12 px-8 font-black shadow-lg">
                 חפשי נייליסטית
               </Button>
             </Link>

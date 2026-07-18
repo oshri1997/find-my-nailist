@@ -18,7 +18,7 @@ interface AdminUser {
 
 const ROLE_COLORS: Record<string, string> = {
   CLIENT: 'bg-blue-50 text-blue-600 border-blue-200',
-  NAILIST: 'bg-orange-50 text-primary border-orange-200',
+  NAILIST: 'bg-primary/10 text-primary border-primary/20',
   ADMIN: 'bg-amber-50 text-amber-600 border-amber-200',
 }
 
@@ -408,7 +408,7 @@ export default function AdminUsersPage() {
                               className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
                                 u.role === 'NAILIST'
                                   ? ROLE_COLORS.NAILIST
-                                  : 'bg-muted/40 text-muted-foreground border-border hover:border-orange-300 hover:text-primary'
+                                  : 'bg-muted/40 text-muted-foreground border-border hover:border-primary/40 hover:text-primary'
                               }`}
                             >
                               נייליסטית

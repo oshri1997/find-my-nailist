@@ -136,7 +136,7 @@ export default function NailistAppointmentsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-orange-400" />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       ) : (
         <div className="space-y-8">
@@ -222,7 +222,7 @@ function AppointmentCard({
           <p className="text-sm text-muted-foreground font-medium">{apt.clientDisplayName ?? 'לקוחה'}</p>
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             <span>{dateStr} {timeStr}</span>
-            <span className="font-black text-orange-600">{symbol}{apt.price}</span>
+            <span className="font-black text-primary">{symbol}{apt.price}</span>
           </div>
           {apt.notes && <p className="text-xs text-muted-foreground mt-1 italic">{apt.notes}</p>}
         </div>
