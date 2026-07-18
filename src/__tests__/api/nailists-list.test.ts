@@ -141,6 +141,64 @@ describe('GET /api/nailists — pagination (no location)', () => {
   })
 })
 
+describe('GET /api/nailists — minPrice', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    verifyIdTokenMock.mockResolvedValue({ uid: 'some-user' })
+  })
+
+  it('attaches the lowest active service price for a nailist', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'n1', businessName: 'סטודיו א', isActive: true }]
+    collectionStore['services'] = [
+      { __id: 's1', nailistProfileId: 'n1', name: 'מניקור', isActive: true, price: 150 },
+      { __id: 's2', nailistProfileId: 'n1', name: "ג'ל", isActive: true, price: 90 },
+      { __id: 's3', nailistProfileId: 'n1', name: 'פדיקור', isActive: true, price: 200 },
+    ]
+
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    expect(json.data[0].minPrice).toBe(90)
+  })
+
+  it('ignores inactive services when computing minPrice', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'n1', businessName: 'סטודיו א', isActive: true }]
+    collectionStore['services'] = [
+      { __id: 's1', nailistProfileId: 'n1', name: 'מניקור', isActive: true, price: 150 },
+      { __id: 's2', nailistProfileId: 'n1', name: 'מבצע ישן', isActive: false, price: 10 },
+    ]
+
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    expect(json.data[0].minPrice).toBe(150)
+  })
+
+  it('returns null when the nailist has no active services', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'n1', businessName: 'סטודיו א', isActive: true }]
+    collectionStore['services'] = []
+
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    expect(json.data[0].minPrice).toBeNull()
+  })
+
+  it('computes minPrice independently per nailist', async () => {
+    collectionStore['nailistProfiles'] = [
+      { __id: 'n1', businessName: 'סטודיו א', isActive: true },
+      { __id: 'n2', businessName: 'סטודיו ב', isActive: true },
+    ]
+    collectionStore['services'] = [
+      { __id: 's1', nailistProfileId: 'n1', name: 'מניקור', isActive: true, price: 150 },
+      { __id: 's2', nailistProfileId: 'n2', name: 'מניקור', isActive: true, price: 80 },
+    ]
+
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    const byId = Object.fromEntries(json.data.map((n: { id: string; minPrice: unknown }) => [n.id, n.minPrice]))
+    expect(byId['n1']).toBe(150)
+    expect(byId['n2']).toBe(80)
+  })
+})
+
 describe('GET /api/nailists — nextAvailableSlot', () => {
   beforeEach(() => {
     jest.clearAllMocks()

@@ -1,4 +1,4 @@
-import { matchesFilter, matchesQuery, FILTER_KEYWORDS, filterTags, filterCategories, subFilterTags, matchesTwoTierFilter, nextSlotSortKey } from '@/app/search/page'
+import { matchesFilter, matchesQuery, FILTER_KEYWORDS, filterTags, filterCategories, subFilterTags, matchesTwoTierFilter, nextSlotSortKey, PRICE_BANDS, matchesPriceBand } from '@/app/search/page'
 
 describe('matchesFilter', () => {
   it('returns true for "הכל" regardless of services', () => {
@@ -186,6 +186,52 @@ describe('matchesTwoTierFilter', () => {
   it('matches on sub-filter alone when category is "הכל"', () => {
     expect(matchesTwoTierFilter(['פדיקור רפואי'], 'הכל', 'רפואי')).toBe(true)
     expect(matchesTwoTierFilter(["מניקור ג'ל"], 'הכל', 'רפואי')).toBe(false)
+  })
+})
+
+describe('PRICE_BANDS', () => {
+  it('starts with "הכל" covering the full range', () => {
+    expect(PRICE_BANDS[0]).toEqual({ key: 'all', label: 'הכל', min: 0, max: Infinity })
+  })
+
+  it('has a top-open band for the highest bracket', () => {
+    const top = PRICE_BANDS[PRICE_BANDS.length - 1]
+    expect(top.max).toBe(Infinity)
+  })
+})
+
+describe('matchesPriceBand', () => {
+  it('matches everything for the "all" band regardless of price', () => {
+    expect(matchesPriceBand(500, 'all')).toBe(true)
+    expect(matchesPriceBand(null, 'all')).toBe(true)
+    expect(matchesPriceBand(undefined, 'all')).toBe(true)
+  })
+
+  it('matches prices within the band range (inclusive)', () => {
+    expect(matchesPriceBand(50, 'under100')).toBe(true)
+    expect(matchesPriceBand(100, 'under100')).toBe(true)
+    expect(matchesPriceBand(101, 'under100')).toBe(false)
+  })
+
+  it('matches a mid-range band', () => {
+    expect(matchesPriceBand(150, '100-200')).toBe(true)
+    expect(matchesPriceBand(99, '100-200')).toBe(false)
+    expect(matchesPriceBand(201, '100-200')).toBe(false)
+  })
+
+  it('matches the open-ended top band', () => {
+    expect(matchesPriceBand(350, '350plus')).toBe(true)
+    expect(matchesPriceBand(10000, '350plus')).toBe(true)
+    expect(matchesPriceBand(349, '350plus')).toBe(false)
+  })
+
+  it('excludes nailists with no known price once a specific band is selected', () => {
+    expect(matchesPriceBand(null, 'under100')).toBe(false)
+    expect(matchesPriceBand(undefined, '200-350')).toBe(false)
+  })
+
+  it('falls back to matching everything for an unknown band key', () => {
+    expect(matchesPriceBand(500, 'not-a-real-band')).toBe(true)
   })
 })
 

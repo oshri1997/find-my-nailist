@@ -202,6 +202,32 @@ test.describe('Search page — two-tier category filter', () => {
   })
 })
 
+test.describe('Search page — price range filter', () => {
+  test('narrows results to nailists within the selected price band', async ({ page }) => {
+    await page.route('/api/nailists**', route =>
+      route.fulfill({
+        json: {
+          data: [
+            { ...MOCK_NAILISTS[0], minPrice: 80 },
+            { ...MOCK_NAILISTS[1], minPrice: 400 },
+          ],
+          total: 2,
+          hasMore: false,
+        },
+      })
+    )
+    await page.goto('/search')
+    await expect(page.getByText('סטודיו שרה')).toBeVisible()
+    await expect(page.getByText('נייל ארט רחל')).toBeVisible()
+
+    await page.getByRole('button', { name: 'מחיר' }).click()
+    await page.getByRole('button', { name: 'עד ₪100' }).click()
+
+    await expect(page.getByText('סטודיו שרה')).toBeVisible()
+    await expect(page.getByText('נייל ארט רחל')).not.toBeVisible()
+  })
+})
+
 test.describe('Search page — date-picker availability filter', () => {
   test('filters out nailists unavailable on the selected date', async ({ page }) => {
     await page.route('/api/nailists**', route => {

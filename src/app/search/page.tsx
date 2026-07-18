@@ -48,6 +48,7 @@ interface Nailist {
   isVerified?: boolean
   nextAvailableSlot?: { date: string; time: string } | null
   availableOnDate?: boolean
+  minPrice?: number | null
 }
 
 type SortKey = 'distance' | 'rating' | 'soonest'
@@ -131,6 +132,32 @@ export function matchesTwoTierFilter(serviceNames: string[], category: string, s
   return matchesFilter(serviceNames, category) && matchesFilter(serviceNames, subFilter)
 }
 
+export interface PriceBand {
+  key: string
+  label: string
+  min: number
+  max: number
+}
+
+export const PRICE_BANDS: PriceBand[] = [
+  { key: 'all', label: 'הכל', min: 0, max: Infinity },
+  { key: 'under100', label: 'עד ₪100', min: 0, max: 100 },
+  { key: '100-200', label: '₪100-200', min: 100, max: 200 },
+  { key: '200-350', label: '₪200-350', min: 200, max: 350 },
+  { key: '350plus', label: '₪350+', min: 350, max: Infinity },
+]
+
+// A nailist with no known price is excluded once a specific band is chosen —
+// we can't tell whether they'd fit, so treating "unknown" as "doesn't match"
+// avoids silently showing prices outside the range the visitor asked for.
+export function matchesPriceBand(minPrice: number | null | undefined, bandKey: string): boolean {
+  if (bandKey === 'all') return true
+  const band = PRICE_BANDS.find((b) => b.key === bandKey)
+  if (!band) return true
+  if (minPrice == null) return false
+  return minPrice >= band.min && minPrice <= band.max
+}
+
 export function matchesQuery(nailist: { businessName: string; city?: string }, query: string): boolean {
   const q = query.trim().toLowerCase()
   if (!q) return true
@@ -161,6 +188,8 @@ export default function SearchPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const [activePriceBand, setActivePriceBand] = useState('all')
+  const [showPriceFilter, setShowPriceFilter] = useState(false)
   const now = new Date()
   now.setHours(0, 0, 0, 0)
   const [viewYear, setViewYear] = useState(now.getFullYear())
@@ -338,6 +367,7 @@ export default function SearchPage() {
     // (that would filter out every real result, since none contain that string).
     .filter((n) => (coords ? true : matchesQuery(n, locationLabel)))
     .filter((n) => !selectedDate || n.availableOnDate === true)
+    .filter((n) => matchesPriceBand(n.minPrice, activePriceBand))
     .sort((a, b) => {
       if (sortBy === 'distance' && a.distanceKm != null && b.distanceKm != null) {
         return a.distanceKm - b.distanceKm
@@ -488,6 +518,40 @@ export default function SearchPage() {
                       נקי בחירה
                     </button>
                   )}
+                </div>
+              )}
+            </div>
+            <div className="relative shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowPriceFilter((v) => !v)}
+                className={`rounded-xl h-11 gap-2 border-border cursor-pointer ${
+                  activePriceBand !== 'all' ? 'border-primary/40 text-primary bg-primary/10' : 'hover:border-primary/40'
+                }`}
+              >
+                <span className="text-sm font-semibold">
+                  {activePriceBand === 'all' ? 'מחיר' : PRICE_BANDS.find((b) => b.key === activePriceBand)?.label}
+                </span>
+              </Button>
+              {showPriceFilter && (
+                <div className="absolute z-40 mt-2 top-full left-0 bg-card border border-border rounded-2xl shadow-lg p-3 w-48">
+                  {PRICE_BANDS.map((band) => (
+                    <button
+                      key={band.key}
+                      onClick={() => {
+                        setActivePriceBand(band.key)
+                        setShowPriceFilter(false)
+                      }}
+                      className={`block w-full text-right rounded-xl px-3 py-2 text-sm font-semibold transition-all cursor-pointer ${
+                        activePriceBand === band.key
+                          ? 'bg-primary/15 text-primary'
+                          : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {band.label}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>

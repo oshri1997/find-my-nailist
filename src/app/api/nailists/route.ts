@@ -27,6 +27,7 @@ async function attachServiceNames(
   if (ids.length === 0) return
 
   const serviceMap: Record<string, string[]> = {}
+  const minPriceMap: Record<string, number> = {}
 
   // Firestore 'in' supports max 30 items per query
   const chunks: string[][] = []
@@ -41,14 +42,21 @@ async function attachServiceNames(
       snap.docs.forEach((doc) => {
         const d = doc.data()
         if (!d.isActive) return
-        if (!serviceMap[d.nailistProfileId]) serviceMap[d.nailistProfileId] = []
-        serviceMap[d.nailistProfileId].push(d.name as string)
+        const nailistProfileId = d.nailistProfileId as string
+        if (!serviceMap[nailistProfileId]) serviceMap[nailistProfileId] = []
+        serviceMap[nailistProfileId].push(d.name as string)
+        const price = d.price as number
+        if (typeof price === 'number' && (minPriceMap[nailistProfileId] === undefined || price < minPriceMap[nailistProfileId])) {
+          minPriceMap[nailistProfileId] = price
+        }
       })
     }),
   )
 
   nailists.forEach((n) => {
-    n.serviceNames = serviceMap[n.id as string] ?? []
+    const id = n.id as string
+    n.serviceNames = serviceMap[id] ?? []
+    n.minPrice = minPriceMap[id] ?? null
   })
 }
 
