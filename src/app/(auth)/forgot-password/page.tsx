@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
           </Link>
         </div>
 
-        <div className="bg-card rounded-2xl p-8 border border-border shadow-[0_4px_24px_rgba(194,84,45,0.08)]">
+        <div className="bg-card rounded-2xl p-8 border border-border shadow-[0_4px_24px_rgba(245,23,92,0.08)]">
           {sent ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
                 <br />בדקי גם את תיקיית הספאם.
               </p>
               <Link href="/login">
-                <Button className="bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-11 font-bold shadow-[0_4px_16px_rgba(194,84,45,0.25)] gap-2 cursor-pointer">
+                <Button className="bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-11 font-bold shadow-[0_4px_16px_rgba(245,23,92,0.25)] gap-2 cursor-pointer">
                   <ArrowRight className="h-4 w-4" />
                   חזרי להתחברות
                 </Button>
@@ -109,7 +109,7 @@ export default function ForgotPasswordPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black text-base shadow-[0_4px_16px_rgba(194,84,45,0.25)] cursor-pointer disabled:opacity-60"
+                  className="w-full bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black text-base shadow-[0_4px_16px_rgba(245,23,92,0.25)] cursor-pointer disabled:opacity-60"
                 >
                   {loading ? 'שולחת...' : 'שלחי לי קישור לאיפוס'}
                 </Button>

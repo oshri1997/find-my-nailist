@@ -104,7 +104,7 @@ export function HeroSection() {
               <Link href="/search">
                 <Button
                   size="lg"
-                  className="bg-primary hover:bg-primary/90 text-white border-0 shadow-[0_4px_20px_rgba(194,84,45,0.35)] font-bold text-base rounded-xl px-8 h-12 gap-3 group cursor-pointer"
+                  className="bg-primary hover:bg-primary/90 text-white border-0 shadow-[0_4px_20px_rgba(245,23,92,0.35)] font-bold text-base rounded-xl px-8 h-12 gap-3 group cursor-pointer"
                 >
                   <Search className="h-5 w-5" />
                   חפשי קרוב אלייך
@@ -144,7 +144,7 @@ export function HeroSection() {
                   animate={{ y: [0, -8, 0] }}
                   transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
                   style={{ transformStyle: 'preserve-3d' }}
-                  className="w-72 h-[560px] rounded-[40px] overflow-hidden border border-border bg-background shadow-[0_32px_90px_rgba(194,84,45,0.22),0_8px_24px_rgba(0,0,0,0.10)]"
+                  className="w-72 h-[560px] rounded-[40px] overflow-hidden border border-border bg-background shadow-[0_32px_90px_rgba(245,23,92,0.22),0_8px_24px_rgba(0,0,0,0.10)]"
                 >
                   {/* Status bar */}
                   <div className="h-10 bg-background flex items-center px-6 justify-between">
@@ -158,7 +158,7 @@ export function HeroSection() {
                   {/* App content */}
                   <div className="p-5 pt-2">
                     <div className="text-center mb-5">
-                      <div className="w-10 h-10 rounded-xl mx-auto mb-2 overflow-hidden shadow-[0_4px_12px_rgba(194,84,45,0.3)]">
+                      <div className="w-10 h-10 rounded-xl mx-auto mb-2 overflow-hidden shadow-[0_4px_12px_rgba(245,23,92,0.3)]">
                         <Image src="/logo.png" alt="נייליסטיות" width={40} height={40} className="w-full h-full object-cover" />
                       </div>
                       <h3 className="font-black text-base text-foreground">נייליסטיות</h3>

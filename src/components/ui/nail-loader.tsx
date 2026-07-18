@@ -41,7 +41,7 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
         {SPARKLES.map((s, i) => (
           <motion.div
             key={i}
-            className="absolute pointer-events-none drop-shadow-[0_0_4px_rgba(194,84,45,0.5)]"
+            className="absolute pointer-events-none drop-shadow-[0_0_4px_rgba(245,23,92,0.5)]"
             style={{ left: `calc(50% + ${s.x}px)`, top: `${80 + s.y}px` }}
             animate={{
               opacity: [0, 0.8, 0],

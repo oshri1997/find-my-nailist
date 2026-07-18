@@ -179,7 +179,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       pending
                         ? 'text-muted-foreground/40 cursor-not-allowed'
                         : isActive
-                        ? 'bg-primary text-white shadow-[0_4px_12px_rgba(194,84,45,0.30)]'
+                        ? 'bg-primary text-white shadow-[0_4px_12px_rgba(245,23,92,0.30)]'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >

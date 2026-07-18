@@ -38,7 +38,7 @@
   --card-foreground: #2B1D14;
   --popover: #FFFFFF;
   --popover-foreground: #2B1D14;
-  --primary: #C2542D;
+  --primary: #F5175C;
   --primary-foreground: #FFFFFF;
   --secondary: #F3E7DA;
   --secondary-foreground: #7A4526;
@@ -50,7 +50,7 @@
   --destructive-foreground: #FFFFFF;
   --border: #E8D9C8;
   --input: #F3E7DA;
-  --ring: #C2542D;
+  --ring: #F5175C;
 }
 
 /* ── Dark theme ──────────────────────────────────── */
@@ -61,8 +61,8 @@
   --card-foreground: #F2E8DD;
   --popover: #251C15;
   --popover-foreground: #F2E8DD;
-  --primary: #E2895C;
-  --primary-foreground: #1A140F;
+  --primary: #FF4571;
+  --primary-foreground: #FFFFFF;
   --secondary: #332619;
   --secondary-foreground: #F0C9A0;
   --muted: #332619;
@@ -73,7 +73,7 @@
   --destructive-foreground: #FFFFFF;
   --border: #3D2E1F;
   --input: #332619;
-  --ring: #E2895C;
+  --ring: #FF4571;
 }
 
 * {
@@ -89,7 +89,7 @@ body {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #C2542D 0%, #D9A441 100%);
+  background: linear-gradient(135deg, #F5175C 0%, #D9A441 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -99,7 +99,7 @@ body {
 .card-soft {
   background: var(--card);
   border: 1px solid var(--border);
-  box-shadow: 0 4px 20px rgba(194, 84, 45, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(245, 23, 92, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 /* Subtle page background variant */
@@ -130,7 +130,7 @@ body {
 .bg-mesh {
   background-color: var(--background);
   background-image:
-    radial-gradient(at 10% 10%, rgba(194, 84, 45, 0.07) 0px, transparent 50%),
+    radial-gradient(at 10% 10%, rgba(245, 23, 92, 0.07) 0px, transparent 50%),
     radial-gradient(at 90% 80%, rgba(74, 124, 89, 0.05) 0px, transparent 50%);
 }
 
@@ -158,8 +158,8 @@ body {
 
 /* Soft pulse glow */
 @keyframes soft-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(194, 84, 45, 0); }
-  50% { box-shadow: 0 0 20px 4px rgba(194, 84, 45, 0.15); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 23, 92, 0); }
+  50% { box-shadow: 0 0 20px 4px rgba(245, 23, 92, 0.15); }
 }
 
 .pulse-glow {

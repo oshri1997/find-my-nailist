@@ -385,7 +385,7 @@ export default function AuthPage() {
 
                 <Button
                   type="submit" disabled={loading || authLoading || (mode === 'register' && !agreedToTerms)}
-                  className="w-full bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black text-base shadow-[0_4px_16px_rgba(194,84,45,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
+                  className="w-full bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black text-base shadow-[0_4px_16px_rgba(245,23,92,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
                 >
                   {loading
                     ? (mode === 'login' ? 'מתחברת...' : 'יוצרת חשבון...')

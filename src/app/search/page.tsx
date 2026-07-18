@@ -319,7 +319,7 @@ export default function SearchPage() {
             </Button>
             <Button
               onClick={() => fetchNailists(coords?.lat, coords?.lng)}
-              className="bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-11 px-6 font-bold gap-2 shadow-[0_2px_12px_rgba(194,84,45,0.25)] cursor-pointer"
+              className="bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-11 px-6 font-bold gap-2 shadow-[0_2px_12px_rgba(245,23,92,0.25)] cursor-pointer"
             >
               <Search className="h-4 w-4" />
               <span className="hidden md:inline">חפשי</span>
@@ -334,7 +334,7 @@ export default function SearchPage() {
                 onClick={() => setActiveFilter(tag)}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition-all cursor-pointer ${
                   activeFilter === tag
-                    ? 'bg-primary text-white shadow-[0_2px_8px_rgba(194,84,45,0.25)]'
+                    ? 'bg-primary text-white shadow-[0_2px_8px_rgba(245,23,92,0.25)]'
                     : 'bg-card border border-border text-muted-foreground hover:border-primary/40 hover:text-primary'
                 }`}
               >
@@ -445,7 +445,7 @@ export default function SearchPage() {
                 key={nailist.id}
                 whileHover={{ y: -3, transition: { duration: 0.2 } }}
                 onClick={() => router.push(`/nailists/${nailist.id}`)}
-                className="bg-card rounded-2xl overflow-hidden shadow-[0_1px_8px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_24px_rgba(194,84,45,0.10)] transition-all duration-300 cursor-pointer group border border-border hover:border-orange-200"
+                className="bg-card rounded-2xl overflow-hidden shadow-[0_1px_8px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_24px_rgba(245,23,92,0.10)] transition-all duration-300 cursor-pointer group border border-border hover:border-orange-200"
               >
                 {/* Cover */}
                 <div className="h-40 relative flex items-center justify-center overflow-hidden bg-orange-50">

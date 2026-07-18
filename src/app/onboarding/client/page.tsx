@@ -127,7 +127,7 @@ export default function ClientOnboardingPage() {
             <div key={i} className="flex items-center gap-2">
               <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-black transition-all ${
                 i < step ? 'bg-primary text-white' :
-                i === step ? 'bg-primary text-white shadow-[0_0_12px_rgba(194,84,45,0.4)]' :
+                i === step ? 'bg-primary text-white shadow-[0_0_12px_rgba(245,23,92,0.4)]' :
                 'bg-muted text-muted-foreground'
               }`}>
                 {i < step ? <Check className="h-4 w-4" /> : i + 1}
@@ -208,7 +208,7 @@ export default function ClientOnboardingPage() {
                   type="button"
                   disabled={!firstName.trim() || !lastName.trim()}
                   onClick={() => setStep(1)}
-                  className="w-full bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black text-base shadow-[0_4px_16px_rgba(194,84,45,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
+                  className="w-full bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black text-base shadow-[0_4px_16px_rgba(245,23,92,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
                 >
                   המשיכי
                   <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
@@ -259,7 +259,7 @@ export default function ClientOnboardingPage() {
                     type="button"
                     disabled={!phone.trim()}
                     onClick={() => setStep(2)}
-                    className="flex-1 bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black shadow-[0_4px_16px_rgba(194,84,45,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
+                    className="flex-1 bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black shadow-[0_4px_16px_rgba(245,23,92,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
                   >
                     המשיכי
                     <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
@@ -314,7 +314,7 @@ export default function ClientOnboardingPage() {
                     type="button"
                     disabled={photoUploading}
                     onClick={() => setStep(3)}
-                    className="flex-1 bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black shadow-[0_4px_16px_rgba(194,84,45,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
+                    className="flex-1 bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black shadow-[0_4px_16px_rgba(245,23,92,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
                   >
                     {photoUrl ? 'המשיכי' : 'דלגי לעת עתה'}
                     <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
@@ -373,7 +373,7 @@ export default function ClientOnboardingPage() {
                     type="button"
                     disabled={saving}
                     onClick={handleFinish}
-                    className="flex-1 bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black shadow-[0_4px_16px_rgba(194,84,45,0.30)] gap-2 cursor-pointer disabled:opacity-60"
+                    className="flex-1 bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black shadow-[0_4px_16px_rgba(245,23,92,0.30)] gap-2 cursor-pointer disabled:opacity-60"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'שמרי'}
                   </Button>
