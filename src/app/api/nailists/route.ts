@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { isAuthenticatedRequest, computeHasContactInfo, stripNailistContactFields } from '@/lib/nailist-contact'
-import { findNextAvailableSlot, type WorkingHours, type BookedSlot } from '@/lib/booking-utils'
+import { findNextAvailableSlot, computeDateAvailability, getDayOfWeek, israelNow, type WorkingHours, type BookedSlot } from '@/lib/booking-utils'
 
 import { geohashQueryBounds, distanceBetween } from 'geofire-common'
 import { FieldPath, type Firestore } from 'firebase-admin/firestore'
@@ -52,9 +52,10 @@ async function attachServiceNames(
   })
 }
 
-async function attachNextAvailableSlot(
+async function attachAvailability(
   db: Firestore,
   nailists: Array<Record<string, unknown>>,
+  date?: string,
 ): Promise<void> {
   const ids = nailists.map((n) => n.id as string).filter(Boolean)
   if (ids.length === 0) return
@@ -96,13 +97,24 @@ async function attachNextAvailableSlot(
     }),
   )
 
+  const today = date ? israelNow() : null
+
   nailists.forEach((n) => {
     const id = n.id as string
-    n.nextAvailableSlot = findNextAvailableSlot(
-      workingHoursMap[id] ?? new Map(),
-      appointmentsMap[id] ?? [],
-      DEFAULT_SLOT_DURATION_MINUTES,
-    )
+    const workingHours = workingHoursMap[id] ?? new Map()
+    const appointments = appointmentsMap[id] ?? []
+    n.nextAvailableSlot = findNextAvailableSlot(workingHours, appointments, DEFAULT_SLOT_DURATION_MINUTES)
+    if (date) {
+      const nowMinutes = today && date === today.dateStr ? today.minutesSinceMidnight : undefined
+      const { workingDay, fullyBooked } = computeDateAvailability(
+        date,
+        workingHours.get(getDayOfWeek(date)),
+        DEFAULT_SLOT_DURATION_MINUTES,
+        appointments,
+        nowMinutes,
+      )
+      n.availableOnDate = workingDay && !fullyBooked
+    }
   })
 }
 
@@ -114,6 +126,7 @@ export async function GET(request: NextRequest) {
     const radius = Number(searchParams.get('radius') ?? '20')
     const pageSize = Number(searchParams.get('pageSize') ?? '12')
     const offset = Math.max(0, Number(searchParams.get('offset') ?? '0'))
+    const date = searchParams.get('date') ?? undefined
 
     const db = adminDb()
     const isAuthenticated = await isAuthenticatedRequest(request)
@@ -151,7 +164,7 @@ export async function GET(request: NextRequest) {
 
       nailists.sort((a, b) => (a.distanceKm as number) - (b.distanceKm as number))
       const page = nailists.slice(offset, offset + pageSize)
-      await Promise.all([attachServiceNames(db, page), attachNextAvailableSlot(db, page)])
+      await Promise.all([attachServiceNames(db, page), attachAvailability(db, page, date)])
       sanitizeNailists(page, isAuthenticated)
 
       return NextResponse.json({
@@ -179,7 +192,7 @@ export async function GET(request: NextRequest) {
     const nailists = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
     const hasMore = nailists.length > offset + pageSize
     const page = nailists.slice(offset, offset + pageSize)
-    await Promise.all([attachServiceNames(db, page), attachNextAvailableSlot(db, page)])
+    await Promise.all([attachServiceNames(db, page), attachAvailability(db, page, date)])
     sanitizeNailists(page, isAuthenticated)
 
     return NextResponse.json({

@@ -169,6 +169,57 @@ test.describe('Search page — sort by soonest available', () => {
   })
 })
 
+test.describe('Search page — date-picker availability filter', () => {
+  test('filters out nailists unavailable on the selected date', async ({ page }) => {
+    await page.route('/api/nailists**', route => {
+      const url = new URL(route.request().url())
+      const hasDate = url.searchParams.has('date')
+      const data = hasDate
+        ? [{ ...MOCK_NAILISTS[0], availableOnDate: true }]
+        : [
+            { ...MOCK_NAILISTS[0], availableOnDate: true },
+            { ...MOCK_NAILISTS[1], availableOnDate: false },
+          ]
+      route.fulfill({ json: { data, total: data.length, hasMore: false } })
+    })
+
+    await page.goto('/search')
+    await expect(page.getByText('סטודיו שרה')).toBeVisible()
+    await expect(page.getByText('נייל ארט רחל')).toBeVisible()
+
+    await page.getByRole('button', { name: /תאריך/ }).click()
+    // Click the first enabled (not-yet-past) day in the visible month grid.
+    await page.locator('[data-testid="search-date-btn"]:not([disabled])').first().click()
+
+    await expect(page.getByText('סטודיו שרה')).toBeVisible()
+    await expect(page.getByText('נייל ארט רחל')).not.toBeVisible()
+  })
+
+  test('clearing the date filter restores all results', async ({ page }) => {
+    await page.route('/api/nailists**', route => {
+      const url = new URL(route.request().url())
+      const hasDate = url.searchParams.has('date')
+      const data = hasDate
+        ? [{ ...MOCK_NAILISTS[0], availableOnDate: true }]
+        : [
+            { ...MOCK_NAILISTS[0], availableOnDate: true },
+            { ...MOCK_NAILISTS[1], availableOnDate: false },
+          ]
+      route.fulfill({ json: { data, total: data.length, hasMore: false } })
+    })
+
+    await page.goto('/search')
+    await expect(page.getByText('סטודיו שרה')).toBeVisible()
+
+    await page.getByRole('button', { name: /תאריך/ }).click()
+    await page.locator('[data-testid="search-date-btn"]:not([disabled])').first().click()
+    await expect(page.getByText('נייל ארט רחל')).not.toBeVisible()
+
+    await page.getByLabel('נקי תאריך').click()
+    await expect(page.getByText('נייל ארט רחל')).toBeVisible()
+  })
+})
+
 test.describe('Search page pagination', () => {
   test('load more button appends the next page and hides once exhausted', async ({ page }) => {
     const page2 = [{

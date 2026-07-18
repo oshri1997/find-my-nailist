@@ -233,3 +233,92 @@ describe('GET /api/nailists — nextAvailableSlot', () => {
     expect(byId['n2']).toEqual({ date: '2026-06-10', time: '12:00' })
   })
 })
+
+describe('GET /api/nailists — availableOnDate (date filter param)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    jest.useFakeTimers()
+    // 2026-06-10 is a Wednesday (dayOfWeek 3), 08:00 Israel time (before opening)
+    jest.setSystemTime(new Date('2026-06-10T05:00:00.000Z'))
+    verifyIdTokenMock.mockResolvedValue({ uid: 'some-user' })
+  })
+
+  afterEach(() => jest.useRealTimers())
+
+  it('does not attach availableOnDate when no date param is passed', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'n1', businessName: 'סטודיו א', isActive: true }]
+    collectionStore['services'] = []
+    collectionStore['workingHours'] = [
+      { __id: 'wh1', nailistProfileId: 'n1', dayOfWeek: 3, startTime: '09:00', endTime: '18:00', isActive: true },
+    ]
+    collectionStore['appointments'] = []
+
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    expect(json.data[0].availableOnDate).toBeUndefined()
+  })
+
+  it('marks a nailist available on a date with open working hours and no bookings', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'n1', businessName: 'סטודיו א', isActive: true }]
+    collectionStore['services'] = []
+    collectionStore['workingHours'] = [
+      { __id: 'wh1', nailistProfileId: 'n1', dayOfWeek: 3, startTime: '09:00', endTime: '18:00', isActive: true },
+    ]
+    collectionStore['appointments'] = []
+
+    const res = await GET(makeRequest(undefined, 'date=2026-06-10'))
+    const json = await res.json()
+    expect(json.data[0].availableOnDate).toBe(true)
+  })
+
+  it('marks a nailist unavailable on a date the nailist does not work', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'n1', businessName: 'סטודיו א', isActive: true }]
+    collectionStore['services'] = []
+    // Only works Wednesdays (dayOfWeek 3) — 2026-06-11 is a Thursday (dayOfWeek 4)
+    collectionStore['workingHours'] = [
+      { __id: 'wh1', nailistProfileId: 'n1', dayOfWeek: 3, startTime: '09:00', endTime: '18:00', isActive: true },
+    ]
+    collectionStore['appointments'] = []
+
+    const res = await GET(makeRequest(undefined, 'date=2026-06-11'))
+    const json = await res.json()
+    expect(json.data[0].availableOnDate).toBe(false)
+  })
+
+  it('marks a nailist unavailable when the whole day is fully booked', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'n1', businessName: 'סטודיו א', isActive: true }]
+    collectionStore['services'] = []
+    collectionStore['workingHours'] = [
+      { __id: 'wh1', nailistProfileId: 'n1', dayOfWeek: 3, startTime: '09:00', endTime: '10:00', isActive: true },
+    ]
+    collectionStore['appointments'] = [{
+      __id: 'a1',
+      nailistProfileId: 'n1',
+      status: 'CONFIRMED',
+      startTime: '2026-06-10T06:00:00.000Z', // 09:00 Israel
+      endTime: '2026-06-10T07:00:00.000Z',   // 10:00 Israel
+    }]
+
+    const res = await GET(makeRequest(undefined, 'date=2026-06-10'))
+    const json = await res.json()
+    expect(json.data[0].availableOnDate).toBe(false)
+  })
+
+  it('computes availableOnDate independently per nailist', async () => {
+    collectionStore['nailistProfiles'] = [
+      { __id: 'n1', businessName: 'סטודיו א', isActive: true },
+      { __id: 'n2', businessName: 'סטודיו ב', isActive: true },
+    ]
+    collectionStore['services'] = []
+    collectionStore['workingHours'] = [
+      { __id: 'wh1', nailistProfileId: 'n1', dayOfWeek: 3, startTime: '09:00', endTime: '18:00', isActive: true },
+    ]
+    collectionStore['appointments'] = []
+
+    const res = await GET(makeRequest(undefined, 'date=2026-06-10'))
+    const json = await res.json()
+    const byId = Object.fromEntries(json.data.map((n: { id: string; availableOnDate: unknown }) => [n.id, n.availableOnDate]))
+    expect(byId['n1']).toBe(true)
+    expect(byId['n2']).toBe(false)
+  })
+})

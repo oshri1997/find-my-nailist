@@ -6,12 +6,16 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { MapPin, Search, Star, Heart, Loader2, LocateFixed, Map as MapIcon, LayoutGrid, Sparkles, BadgeCheck, Clock } from 'lucide-react'
+import { MapPin, Search, Star, Heart, Loader2, LocateFixed, Map as MapIcon, LayoutGrid, Sparkles, BadgeCheck, Clock, Calendar as CalendarIcon, ChevronRight, ChevronLeft, X } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
 import { formatDistance, formatNextSlotLabel } from '@/lib/format-utils'
+import { buildMonthCalendarFor, toDateStr } from '@/lib/booking-utils'
 import dynamic from 'next/dynamic'
 
 const NailistMap = dynamic(() => import('@/components/search/NailistMap'), { ssr: false })
+
+const HE_DAYS_SHORT = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
+const HE_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר']
 
 function NailistCardSkeleton() {
   return (
@@ -43,6 +47,7 @@ interface Nailist {
   serviceNames?: string[]
   isVerified?: boolean
   nextAvailableSlot?: { date: string; time: string } | null
+  availableOnDate?: boolean
 }
 
 type SortKey = 'distance' | 'rating' | 'soonest'
@@ -126,20 +131,31 @@ export default function SearchPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
   const [hasMore, setHasMore] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  const [viewYear, setViewYear] = useState(now.getFullYear())
+  const [viewMonth, setViewMonth] = useState(now.getMonth())
+  const monthDays = buildMonthCalendarFor(viewYear, viewMonth)
 
   const fetchIdRef = useRef(0)
   const PAGE_SIZE = 24
+  // Date used for the current result set — "load more" reuses this rather
+  // than whatever's selected right now, for the same reason as activeCoordsRef.
+  const activeDateRef = useRef<string | undefined>(undefined)
   // Coords used for the current result set — "load more" reuses these rather
   // than whatever's in the location input right now, so it can't silently
   // switch search context mid-scroll.
   const activeCoordsRef = useRef<{ lat?: number; lng?: number }>({})
 
-  const fetchNailists = useCallback(async (lat?: number, lng?: number, offset = 0) => {
+  const fetchNailists = useCallback(async (lat?: number, lng?: number, offset = 0, date?: string) => {
     const myId = offset === 0 ? ++fetchIdRef.current : fetchIdRef.current
     if (offset === 0) {
       setLoading(true)
       setImagesReady(false)
       activeCoordsRef.current = { lat, lng }
+      activeDateRef.current = date
     } else {
       setLoadingMore(true)
     }
@@ -149,6 +165,10 @@ export default function SearchPage() {
         params.set('lat', String(lat))
         params.set('lng', String(lng))
         params.set('radius', '30')
+      }
+      const activeDate = offset === 0 ? date : activeDateRef.current
+      if (activeDate) {
+        params.set('date', activeDate)
       }
       const res = await fetch(`/api/nailists?${params}`)
       if (!res.ok) return
@@ -171,7 +191,26 @@ export default function SearchPage() {
 
   function loadMore() {
     if (loadingMore || !hasMore) return
-    fetchNailists(activeCoordsRef.current.lat, activeCoordsRef.current.lng, nailists.length)
+    fetchNailists(activeCoordsRef.current.lat, activeCoordsRef.current.lng, nailists.length, activeDateRef.current)
+  }
+
+  function selectDate(d: Date | null) {
+    setSelectedDate(d)
+    setShowDatePicker(false)
+    fetchNailists(coords?.lat, coords?.lng, 0, d ? toDateStr(d) : undefined)
+  }
+
+  const isAtMinMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth()
+
+  function prevMonth() {
+    if (isAtMinMonth) return
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
+    else setViewMonth(m => m - 1)
+  }
+
+  function nextMonth() {
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0) }
+    else setViewMonth(m => m + 1)
   }
 
   // Pre-load all cover images; only show real cards once they're all ready
@@ -270,6 +309,7 @@ export default function SearchPage() {
     // filtered by geo-radius, so don't also substring-match against it here
     // (that would filter out every real result, since none contain that string).
     .filter((n) => (coords ? true : matchesQuery(n, locationLabel)))
+    .filter((n) => !selectedDate || n.availableOnDate === true)
     .sort((a, b) => {
       if (sortBy === 'distance' && a.distanceKm != null && b.distanceKm != null) {
         return a.distanceKm - b.distanceKm
@@ -338,6 +378,90 @@ export default function SearchPage() {
               <Search className="h-4 w-4" />
               <span className="hidden md:inline">חפשי</span>
             </Button>
+            <div className="relative shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowDatePicker((v) => !v)}
+                className={`rounded-xl h-11 gap-2 border-border cursor-pointer ${
+                  selectedDate ? 'border-primary/40 text-primary bg-primary/10' : 'hover:border-primary/40'
+                }`}
+              >
+                <CalendarIcon className="h-4 w-4" />
+                <span className="hidden md:inline text-sm font-semibold">
+                  {selectedDate ? `${selectedDate.getDate()}.${selectedDate.getMonth() + 1}` : 'תאריך'}
+                </span>
+              </Button>
+              {selectedDate && (
+                <button
+                  onClick={() => selectDate(null)}
+                  aria-label="נקי תאריך"
+                  className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-muted-foreground/70 hover:bg-muted-foreground rounded-full flex items-center justify-center text-white cursor-pointer"
+                >
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              )}
+              {showDatePicker && (
+                <div className="absolute z-40 mt-2 top-full left-0 bg-card border border-border rounded-2xl shadow-lg p-4 w-72">
+                  <div className="flex items-center justify-between mb-2">
+                    <button
+                      onClick={prevMonth}
+                      disabled={isAtMinMonth}
+                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    <p className="text-sm font-black text-foreground">{HE_MONTHS[viewMonth]} {viewYear}</p>
+                    <button
+                      onClick={nextMonth}
+                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-7 gap-1 mb-1">
+                    {HE_DAYS_SHORT.map((d) => (
+                      <div key={d} className="text-center text-[10px] font-bold text-muted-foreground py-0.5">{d}</div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-1">
+                    {monthDays.map((d, i) => {
+                      if (!d) return <div key={`e-${i}`} />
+                      const isPast = d < now
+                      const isSelected = selectedDate !== null && toDateStr(selectedDate) === toDateStr(d)
+                      const isToday = toDateStr(d) === toDateStr(now)
+                      return (
+                        <button
+                          key={toDateStr(d)}
+                          data-testid="search-date-btn"
+                          disabled={isPast}
+                          onClick={() => selectDate(d)}
+                          className={`flex items-center justify-center h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-primary text-white'
+                              : isPast
+                              ? 'text-muted-foreground/30 cursor-not-allowed'
+                              : isToday
+                              ? 'border border-primary/40 text-primary hover:bg-primary/10'
+                              : 'text-foreground hover:bg-muted'
+                          }`}
+                        >
+                          {d.getDate()}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {selectedDate && (
+                    <button
+                      onClick={() => selectDate(null)}
+                      className="w-full mt-3 text-xs font-bold text-muted-foreground hover:text-primary text-center cursor-pointer"
+                    >
+                      נקי בחירה
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Filter tags */}
