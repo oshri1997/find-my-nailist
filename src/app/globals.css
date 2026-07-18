@@ -87,12 +87,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Gradient text */
+/* Emphasis text — solid vivid pink, no gradient (gradients read poorly on
+   text/wordmarks, so this stays one flat color despite the class name). */
 .gradient-text {
-  background: linear-gradient(135deg, #F5175C 0%, #18181B 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--primary);
 }
 
 /* Soft card */
