@@ -17,8 +17,8 @@ const clientSteps = [
     step: '01',
     title: 'גלי נייליסטיות קרובות',
     desc: 'הפעילי מיקום וגלי מאות מומחיות ציפורניים באזורך — ממוינות לפי מרחק ודירוג.',
-    color: 'from-primary to-amber-500',
-    bg: 'from-primary/10 to-amber-500/10 dark:from-primary/15 dark:to-amber-500/15',
+    color: 'from-primary to-primary/70',
+    bg: 'from-primary/10 to-primary/5 dark:from-primary/15 dark:to-primary/10',
     border: 'border-primary/20 dark:border-primary/50',
     icon: MapPin,
   },
@@ -26,18 +26,18 @@ const clientSteps = [
     step: '02',
     title: 'עיצובים וביקורות אמיתיות',
     desc: 'עיינו בפורטפוליו, קראו ביקורות של לקוחות אמיתיות והשוו מחירים — הכל במקום אחד.',
-    color: 'from-teal-500 to-cyan-500',
-    bg: 'from-teal-500/10 to-cyan-500/10 dark:from-teal-500/15 dark:to-cyan-500/15',
-    border: 'border-teal-100 dark:border-teal-900/50',
+    color: 'from-rose-700 to-rose-900',
+    bg: 'from-rose-700/10 to-rose-900/10 dark:from-rose-700/15 dark:to-rose-900/15',
+    border: 'border-rose-100 dark:border-rose-900/50',
     icon: Star,
   },
   {
     step: '03',
     title: 'הזמיני תור בקליק',
     desc: 'בחרי שירות, תאריך ושעה — בלי שיחות טלפון ובלי המתנה. אישור מיידי למייל.',
-    color: 'from-emerald-500 to-blue-500',
-    bg: 'from-emerald-500/10 to-blue-500/10 dark:from-emerald-500/15 dark:to-blue-500/15',
-    border: 'border-emerald-100 dark:border-emerald-900/50',
+    color: 'from-zinc-800 to-zinc-950',
+    bg: 'from-foreground/5 to-foreground/10 dark:from-foreground/10 dark:to-foreground/5',
+    border: 'border-foreground/10 dark:border-foreground/20',
     icon: Calendar,
   },
 ]
@@ -47,36 +47,36 @@ const nailistSteps = [
     step: '01',
     title: 'פתחי פרופיל חינמי',
     desc: 'הרשמה תוך דקות — שם העסק, כתובת, שעות עבודה ותיאור קצר.',
-    color: 'from-amber-500 to-primary',
-    bg: 'from-amber-500/10 to-primary/10 dark:from-amber-500/15 dark:to-primary/15',
-    border: 'border-amber-100 dark:border-amber-900/50',
+    color: 'from-primary to-primary/80',
+    bg: 'from-primary/10 to-primary/5 dark:from-primary/15 dark:to-primary/10',
+    border: 'border-primary/20 dark:border-primary/50',
     icon: Gift,
   },
   {
     step: '02',
     title: 'העלי תמונות לפורטפוליו',
     desc: 'הציגי את העבודות שלך ובחרי תמונת רקע שמושכת לקוחות חדשות.',
-    color: 'from-teal-500 to-cyan-500',
-    bg: 'from-teal-500/10 to-cyan-500/10 dark:from-teal-500/15 dark:to-cyan-500/15',
-    border: 'border-teal-100 dark:border-teal-900/50',
+    color: 'from-primary/70 to-primary/40',
+    bg: 'from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/15',
+    border: 'border-primary/15 dark:border-primary/40',
     icon: Camera,
   },
   {
     step: '03',
     title: 'הגדירי שירותים ומחירים',
     desc: 'הוסיפי את השירותים שאת מציעה, זמן ביצוע ומחיר — שקיפות מלאה ללקוחות.',
-    color: 'from-lime-500 to-yellow-500',
-    bg: 'from-lime-500/10 to-yellow-500/10 dark:from-lime-500/15 dark:to-yellow-500/15',
-    border: 'border-lime-100 dark:border-lime-900/50',
+    color: 'from-rose-700 to-rose-900',
+    bg: 'from-rose-700/10 to-rose-900/10 dark:from-rose-700/15 dark:to-rose-900/15',
+    border: 'border-rose-100 dark:border-rose-900/50',
     icon: Scissors,
   },
   {
     step: '04',
     title: 'פרסמי ותתחילי לקבל תורים',
     desc: 'הפעילי את הפרופיל והתחילי להופיע בחיפוש. לקוחות מהאזור יוכלו למצוא אותך.',
-    color: 'from-green-500 to-emerald-500',
-    bg: 'from-green-500/10 to-emerald-500/10 dark:from-green-500/15 dark:to-emerald-500/15',
-    border: 'border-green-100 dark:border-green-900/50',
+    color: 'from-zinc-800 to-zinc-950',
+    bg: 'from-foreground/5 to-foreground/10 dark:from-foreground/10 dark:to-foreground/5',
+    border: 'border-foreground/10 dark:border-foreground/20',
     icon: Zap,
   },
 ]
@@ -149,13 +149,13 @@ export default function HowItWorksPage() {
           animate={{ scale: [1, 1.15, 1], rotate: [0, 30, 0] }}
           transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
           className="absolute top-[-15%] right-[-10%] w-[500px] h-[500px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, hsl(20,85%,72%) 0%, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, hsl(341,92%,53%) 0%, transparent 70%)' }}
         />
         <motion.div
           animate={{ scale: [1.1, 1, 1.1], rotate: [20, 0, 20] }}
           transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
           className="absolute bottom-[-15%] left-[-10%] w-[400px] h-[400px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, hsl(145,35%,68%) 0%, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, hsl(240,6%,10%) 0%, transparent 70%)' }}
         />
 
         <div className="container mx-auto max-w-4xl px-6 text-center relative z-10">
@@ -177,7 +177,7 @@ export default function HowItWorksPage() {
             className="flex flex-wrap items-center justify-center gap-3 mt-8"
           >
             <Link href="/search">
-              <Button className="bg-gradient-to-r from-primary to-amber-600 hover:from-primary hover:to-amber-700 border-0 rounded-2xl h-12 px-7 font-black shadow-lg shadow-primary/40">
+              <Button className="bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-2xl h-12 px-7 font-black shadow-lg shadow-primary/40">
                 חפשי נייליסטית
               </Button>
             </Link>
@@ -225,7 +225,7 @@ export default function HowItWorksPage() {
 
           <Section className="mt-10 text-center">
             <Link href="/search">
-              <Button className="bg-gradient-to-r from-primary to-amber-600 hover:from-primary hover:to-amber-700 border-0 rounded-2xl h-11 px-8 font-bold shadow-md shadow-primary/40">
+              <Button className="bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-2xl h-11 px-8 font-bold shadow-md shadow-primary/40">
                 חפשי נייליסטית עכשיו →
               </Button>
             </Link>
@@ -240,7 +240,7 @@ export default function HowItWorksPage() {
       <section className="py-20 bg-background">
         <div className="container mx-auto max-w-6xl px-6">
           <Section className="text-center mb-14">
-            <div className="inline-flex items-center gap-2 bg-amber-50 text-amber-600 rounded-full px-4 py-2 text-sm font-bold mb-4 border border-amber-100">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-2 text-sm font-bold mb-4 border border-primary/20">
               לנייליסטיות
             </div>
             <h2 className="text-3xl md:text-4xl font-black text-foreground">
@@ -271,7 +271,7 @@ export default function HowItWorksPage() {
 
           <Section className="mt-10 text-center">
             <JoinLink href="/login?tab=register">
-              <Button className="bg-gradient-to-r from-amber-500 to-primary hover:from-amber-600 hover:to-primary border-0 rounded-2xl h-11 px-8 font-bold shadow-lg shadow-primary/30">
+              <Button className="bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-2xl h-11 px-8 font-bold shadow-lg shadow-primary/30">
                 הצטרפי כנייליסטית חינם →
               </Button>
             </JoinLink>
@@ -337,7 +337,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-primary via-amber-600 to-emerald-600 relative overflow-hidden">
+      <section className="py-20 bg-gradient-to-br from-primary via-primary/70 to-accent relative overflow-hidden">
         <motion.div
           animate={{ scale: [1, 1.2, 1], rotate: [0, 60, 0] }}
           transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}

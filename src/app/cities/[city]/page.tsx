@@ -203,10 +203,10 @@ export default async function CityPage({ params }: Props) {
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-2">
                     <h2 className="font-black text-foreground text-base leading-tight">{nailist.businessName}</h2>
-                    <div className="flex items-center gap-1 shrink-0 bg-amber-50 rounded-lg px-2 py-0.5 ml-2 border border-amber-100">
+                    <div className="flex items-center gap-1 shrink-0 bg-primary/10 rounded-lg px-2 py-0.5 ml-2 border border-primary/20">
                       <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                      <span className="font-black text-amber-600 text-xs">{nailist.avgRating > 0 ? nailist.avgRating.toFixed(1) : '—'}</span>
-                      {nailist.reviewCount > 0 && <span className="text-amber-400/60 text-xs">({nailist.reviewCount})</span>}
+                      <span className="font-black text-foreground text-xs">{nailist.avgRating > 0 ? nailist.avgRating.toFixed(1) : '—'}</span>
+                      {nailist.reviewCount > 0 && <span className="text-muted-foreground text-xs">({nailist.reviewCount})</span>}
                     </div>
                   </div>
                   {nailist.city && (

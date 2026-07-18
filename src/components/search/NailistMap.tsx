@@ -33,7 +33,7 @@ function NailistPin({ nailist }: { nailist: Nailist }) {
 
   return (
     <div className="flex flex-col items-center cursor-pointer group">
-      <div className="w-11 h-11 rounded-full overflow-hidden border-[3px] border-white shadow-lg bg-gradient-to-br from-primary to-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+      <div className="w-11 h-11 rounded-full overflow-hidden border-[3px] border-white shadow-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center group-hover:scale-110 transition-transform">
         {nailist.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={nailist.photoUrl} alt={nailist.businessName} className="w-full h-full object-cover" />

@@ -54,8 +54,8 @@ export default function NailistReviewsPage() {
       ) : (
         <>
           {reviews.length > 0 && (
-            <div className="bg-gradient-to-br from-amber-50 to-primary/10 dark:from-amber-950/40 dark:to-primary/40 rounded-3xl border border-amber-100 dark:border-amber-900/50 p-6 mb-6 flex items-center gap-4">
-              <div className="text-5xl font-black text-amber-600">{avgRating.toFixed(1)}</div>
+            <div className="bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/30 dark:to-primary/10 rounded-3xl border border-primary/20 dark:border-primary/40 p-6 mb-6 flex items-center gap-4">
+              <div className="text-5xl font-black text-foreground">{avgRating.toFixed(1)}</div>
               <div>
                 <div className="flex gap-0.5 mb-1">
                   {Array.from({ length: 5 }).map((_, i) => (

@@ -98,7 +98,7 @@ export default function AdminAnalyticsPage() {
 
         <div className="bg-card border border-border rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-4">
-            <div className="p-2 rounded-xl bg-amber-100 text-amber-700">
+            <div className="p-2 rounded-xl bg-foreground/10 text-foreground">
               <AlertTriangle className="w-4 h-4" />
             </div>
             <h2 className="font-black text-foreground">חיפושים ללא תוצאות</h2>

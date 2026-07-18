@@ -172,7 +172,7 @@ export default function NailistServicesPage() {
         </div>
         <Button
           onClick={openCreateForm}
-          className="bg-gradient-to-r from-primary to-amber-600 border-0 rounded-2xl font-bold shadow-md shadow-primary/40 gap-2"
+          className="bg-gradient-to-r from-primary to-accent border-0 rounded-2xl font-bold shadow-md shadow-primary/40 gap-2"
         >
           <Plus className="h-4 w-4" />
           שירות חדש
@@ -220,7 +220,7 @@ export default function NailistServicesPage() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="bg-gradient-to-br from-primary/10 to-amber-50 dark:from-primary/30 dark:to-amber-950/30 rounded-3xl border border-primary/20 dark:border-primary/50 p-6 mb-6"
+                className="bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/30 dark:to-primary/10 rounded-3xl border border-primary/20 dark:border-primary/50 p-6 mb-6"
               >
                 <div className="flex items-center justify-between mb-5">
                   <h2 className="font-black text-foreground">{editingId ? 'עריכת שירות' : 'שירות חדש'}</h2>
@@ -277,7 +277,7 @@ export default function NailistServicesPage() {
                   <Button
                     onClick={editingId ? handleUpdate : handleCreate}
                     disabled={saving || form.price < 0}
-                    className="w-full bg-gradient-to-r from-primary to-amber-600 border-0 rounded-2xl font-bold shadow-md shadow-primary/40"
+                    className="w-full bg-gradient-to-r from-primary to-accent border-0 rounded-2xl font-bold shadow-md shadow-primary/40"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? 'עדכן שירות' : 'שמור שירות'}
                   </Button>
@@ -315,7 +315,7 @@ export default function NailistServicesPage() {
                   <div className="flex items-center gap-1 mr-4">
                     <button
                       onClick={() => openEditForm(service)}
-                      className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-blue-50 dark:hover:bg-blue-950/30 text-muted-foreground/50 hover:text-blue-500 transition-colors"
+                      className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground/50 hover:text-foreground transition-colors"
                       title="עריכה"
                     >
                       <Pencil className="h-4 w-4" />

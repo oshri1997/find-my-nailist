@@ -148,15 +148,15 @@ export default function PortfolioPage() {
             <p className="text-xs text-muted-foreground/70 font-semibold mt-0.5">
               {photos.length}/{MAX_PORTFOLIO_PHOTOS} תמונות
             </p>
-            <p className="text-xs text-amber-500 font-medium mt-0.5 flex items-center gap-1">
-              <Star className="h-3 w-3 fill-amber-400" />
+            <p className="text-xs text-primary font-medium mt-0.5 flex items-center gap-1">
+              <Star className="h-3 w-3 fill-primary" />
               לחצי על הכוכב שבתמונה כדי להגדיר אותה כתמונת הכרטיס שלך בתוצאות החיפוש
             </p>
           </div>
           <Button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading || !profileId || photos.length >= MAX_PORTFOLIO_PHOTOS}
-            className="bg-gradient-to-r from-primary to-amber-600 hover:from-primary hover:to-amber-700 border-0 rounded-xl h-11 px-5 font-bold shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
+            className="bg-gradient-to-r from-primary to-accent hover:opacity-90 border-0 rounded-xl h-11 px-5 font-bold shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
             {uploading ? `${progress}%` : photos.length >= MAX_PORTFOLIO_PHOTOS ? 'הגעת למגבלה' : 'העלי תמונה'}
@@ -168,7 +168,7 @@ export default function PortfolioPage() {
             <motion.div
               animate={{ width: `${progress}%` }}
               transition={{ ease: 'linear' }}
-              className="h-full bg-gradient-to-r from-primary to-amber-600 rounded-full"
+              className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
             />
           </div>
         )}
@@ -236,7 +236,7 @@ export default function PortfolioPage() {
 
                 {/* Cover badge (always visible when set) */}
                 {coverPhotoUrl === photo.url && (
-                  <div className="absolute top-2 left-2 bg-amber-400 text-white rounded-full px-2 py-0.5 text-xs font-black flex items-center gap-1 shadow">
+                  <div className="absolute top-2 left-2 bg-primary text-white rounded-full px-2 py-0.5 text-xs font-black flex items-center gap-1 shadow">
                     <Star className="h-3 w-3 fill-white" />
                     כרטיס
                   </div>
@@ -258,8 +258,8 @@ export default function PortfolioPage() {
                   title={coverPhotoUrl === photo.url ? 'הסירי תמונת כרטיס' : 'הגדרי כתמונת הכרטיס'}
                   className={`absolute bottom-2 left-2 w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm ${
                     coverPhotoUrl === photo.url
-                      ? 'bg-amber-400 text-white'
-                      : 'bg-white/90 hover:bg-amber-50 hover:text-amber-500'
+                      ? 'bg-primary text-white'
+                      : 'bg-white/90 hover:bg-primary/10 hover:text-primary'
                   }`}
                 >
                   <Star className={`h-4 w-4 ${coverPhotoUrl === photo.url ? 'fill-white' : ''}`} />

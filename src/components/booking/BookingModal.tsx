@@ -250,11 +250,11 @@ export default function BookingModal({ nailistProfileId, businessName, services,
         onClick={() => !unavailable && setSelectedTime(t)}
         className={`py-2.5 rounded-xl text-sm font-bold transition-all ${
           isSelected
-            ? 'bg-gradient-to-br from-primary to-amber-600 text-white shadow-sm shadow-primary/40'
+            ? 'bg-gradient-to-br from-primary to-primary/70 text-white shadow-sm shadow-primary/40'
             : unavailable
             ? 'bg-muted text-muted-foreground cursor-not-allowed line-through text-xs'
             : isRecommended
-            ? 'bg-gradient-to-br from-primary/10 to-amber-50 dark:from-primary/40 dark:to-amber-950/40 text-primary dark:text-primary border-2 border-primary/40 dark:border-primary hover:border-primary'
+            ? 'bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/40 dark:to-primary/20 text-primary dark:text-primary border-2 border-primary/40 dark:border-primary hover:border-primary'
             : 'bg-muted text-muted-foreground hover:bg-primary/10 dark:hover:bg-primary/30 hover:text-primary border border-border hover:border-primary/30'
         }`}
       >
@@ -312,7 +312,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
               <div
                 key={i}
                 className={`flex-1 h-1 rounded-full transition-all duration-300 ${
-                  stepIndex >= i ? 'bg-gradient-to-r from-primary to-amber-600' : 'bg-muted'
+                  stepIndex >= i ? 'bg-gradient-to-r from-primary to-primary/70' : 'bg-muted'
                 }`}
               />
             ))}
@@ -340,7 +340,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                         }`}
                       >
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all ${
-                          selected ? 'bg-gradient-to-br from-primary to-amber-600' : 'bg-muted'
+                          selected ? 'bg-gradient-to-br from-primary to-primary/70' : 'bg-muted'
                         }`}>
                           <Scissors className={`h-5 w-5 ${selected ? 'text-white' : 'text-muted-foreground'}`} />
                         </div>
@@ -367,7 +367,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                     setServiceError(false)
                     setStep('datetime')
                   }}
-                  className="w-full mt-4 bg-gradient-to-r from-primary to-amber-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40"
+                  className="w-full mt-4 bg-gradient-to-r from-primary to-primary/70 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40"
                 >
                   המשך לבחירת תאריך
                 </Button>
@@ -443,11 +443,11 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                           }}
                           className={`flex flex-col items-center py-2 rounded-xl border-2 transition-all ${
                             isSelected
-                              ? 'border-primary bg-gradient-to-b from-primary to-teal-600 text-white shadow-md shadow-primary/40'
+                              ? 'border-primary bg-gradient-to-b from-primary to-primary/70 text-white shadow-md shadow-primary/40'
                               : isDisabled
                               ? 'border-border bg-muted cursor-not-allowed opacity-35'
                               : isWeekend
-                              ? 'border-amber-100 bg-amber-50 dark:bg-amber-950/30 text-amber-800 hover:border-amber-300'
+                              ? 'border-primary/15 bg-primary/5 dark:bg-primary/10 text-foreground hover:border-primary/30'
                               : 'border-border bg-card text-foreground hover:border-primary/30'
                           }`}
                         >
@@ -531,7 +531,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   <Button
                     onClick={() => selectedDate && selectedTime && setStep('confirm')}
                     disabled={!selectedDate || !selectedTime}
-                    className="w-full bg-gradient-to-r from-primary to-amber-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40 disabled:opacity-50"
+                    className="w-full bg-gradient-to-r from-primary to-primary/70 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40 disabled:opacity-50"
                   >
                     המשך לאישור
                   </Button>
@@ -605,7 +605,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                 <Button
                   onClick={handleConfirm}
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-primary to-amber-600 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40"
+                  className="w-full bg-gradient-to-r from-primary to-primary/70 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40"
                 >
                   {loading ? <><Loader2 className="h-4 w-4 animate-spin ml-2" /> מזמינה...</> : 'אישור וקביעת תור'}
                 </Button>
@@ -619,7 +619,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.1 }}
-                  className="w-20 h-20 bg-gradient-to-br from-primary to-amber-600 rounded-full flex items-center justify-center mx-auto mb-5 shadow-xl shadow-primary/40"
+                  className="w-20 h-20 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center mx-auto mb-5 shadow-xl shadow-primary/40"
                 >
                   <CheckCircle2 className="h-10 w-10 text-white" />
                 </motion.div>
@@ -641,7 +641,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                     <div className="flex items-center gap-2 mb-3">
                       <a
                         href={toBitUrl(bitPhone, depositResult.amount)}
-                        className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-amber-600 text-white rounded-xl h-11 font-bold text-sm"
+                        className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary/70 text-white rounded-xl h-11 font-bold text-sm"
                       >
                         פתחי את Bit
                       </a>
@@ -684,7 +684,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   </div>
                 )}
 
-                <Button onClick={onClose} className="w-full bg-gradient-to-r from-primary to-amber-600 border-0 rounded-2xl h-12 font-black">
+                <Button onClick={onClose} className="w-full bg-gradient-to-r from-primary to-primary/70 border-0 rounded-2xl h-12 font-black">
                   סגור
                 </Button>
               </motion.div>

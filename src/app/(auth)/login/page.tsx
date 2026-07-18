@@ -433,7 +433,7 @@ export default function AuthPage() {
       </div>
 
       {/* ── Decorative panel (second in DOM = left side in RTL) ── */}
-      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-primary via-red-500 to-amber-600 items-center justify-center relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-primary via-primary/80 to-accent items-center justify-center relative overflow-hidden">
         <div className="absolute top-[-15%] left-[-15%] w-80 h-80 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute bottom-[-15%] right-[-15%] w-96 h-96 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute inset-0 dot-pattern pointer-events-none opacity-10" />

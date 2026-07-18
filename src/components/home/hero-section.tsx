@@ -208,8 +208,8 @@ export function HeroSection() {
                 className="glass absolute -bottom-6 -right-10 rounded-2xl px-4 py-3 shadow-[0_16px_40px_rgba(0,0,0,0.14)]"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                  <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center">
+                    <div className="w-3 h-3 rounded-full bg-accent" />
                   </div>
                   <div>
                     <p className="font-bold text-xs text-foreground">תור אושר!</p>
@@ -225,8 +225,8 @@ export function HeroSection() {
                 className="glass absolute -top-6 -left-10 rounded-2xl px-4 py-3 shadow-[0_16px_40px_rgba(0,0,0,0.14)]"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center">
-                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Star className="w-4 h-4 fill-primary text-primary" />
                   </div>
                   <div>
                     <p className="font-bold text-xs text-foreground">חוות דעת חדשה</p>

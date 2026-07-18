@@ -29,7 +29,7 @@ export function NailistCtaSection() {
           initial={{ opacity: 0, y: 24 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
-          className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-primary via-amber-500 to-accent p-12 md:p-16 text-center text-white"
+          className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-primary to-accent p-12 md:p-16 text-center text-white"
         >
           {/* Dot grid overlay — parallax */}
           <motion.div style={{ y: dotsY }} className="absolute inset-0 dot-pattern pointer-events-none" />

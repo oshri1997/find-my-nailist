@@ -203,7 +203,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
     return (
       <div className="min-h-screen flex flex-col bg-muted/30">
         <div className="animate-pulse">
-          <div className="h-64 bg-gradient-to-br from-primary via-amber-500 to-emerald-500 opacity-60" />
+          <div className="h-64 bg-gradient-to-br from-primary via-primary/60 to-accent opacity-60" />
           <div className="container mx-auto max-w-6xl px-6 py-6 space-y-4">
             <div className="h-5 bg-muted rounded w-1/3" />
             <div className="h-5 bg-muted rounded w-1/2" />
@@ -238,7 +238,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
     <div className="min-h-screen flex flex-col bg-muted/50" dir="rtl">
       {/* Hero — a consistent gradient, never a nailist-uploaded photo, so the header
           always looks clean regardless of what image someone sets as their cover */}
-      <div className="relative text-white overflow-hidden bg-gradient-to-br from-primary via-amber-600 to-emerald-600">
+      <div className="relative text-white overflow-hidden bg-gradient-to-br from-primary via-primary/60 to-accent">
         {/* Mobile-only back-to-search — the navbar's own "חיפוש" link is desktop-only
             (hidden md:flex), so mobile visitors would otherwise have no way back.
             Absolutely positioned at top-3 to sit on the same baseline as the owner
@@ -289,7 +289,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                     type="button"
                     onClick={() => photoInputRef.current?.click()}
                     disabled={photoUploading}
-                    className="absolute -bottom-1 -left-1 w-9 h-9 rounded-full bg-gradient-to-r from-primary to-amber-600 text-white flex items-center justify-center shadow-lg border-2 border-white/80 disabled:opacity-60"
+                    className="absolute -bottom-1 -left-1 w-9 h-9 rounded-full bg-gradient-to-r from-primary to-accent text-white flex items-center justify-center shadow-lg border-2 border-white/80 disabled:opacity-60"
                   >
                     {photoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                   </button>
@@ -543,7 +543,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                       <Button
                         size="sm"
                         onClick={() => openBooking(service.id)}
-                        className="bg-gradient-to-r from-primary to-amber-600 border-0 rounded-xl font-bold shadow-sm shadow-primary/40"
+                        className="bg-gradient-to-r from-primary to-accent border-0 rounded-xl font-bold shadow-sm shadow-primary/40"
                       >
                         הזמני
                       </Button>

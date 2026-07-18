@@ -101,7 +101,7 @@ export default function MyFavoritesPage() {
               >
                 <Link href={`/nailists/${n.id}`} className="group block rounded-2xl overflow-hidden bg-card border border-border shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_24px_rgba(245,23,92,0.12)] transition-shadow">
                   {/* Cover */}
-                  <div className={`relative h-44 overflow-hidden ${!n.coverPhotoUrl ? 'bg-gradient-to-br from-primary via-amber-500 to-emerald-500' : ''}`}>
+                  <div className={`relative h-44 overflow-hidden ${!n.coverPhotoUrl ? 'bg-gradient-to-br from-primary via-primary/70 to-primary/50' : ''}`}>
                     {n.coverPhotoUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img

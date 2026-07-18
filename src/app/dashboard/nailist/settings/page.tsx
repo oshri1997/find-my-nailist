@@ -227,7 +227,7 @@ export default function NailistSettingsPage() {
             type="button"
             onClick={() => photoInputRef.current?.click()}
             disabled={photoUploading || !profileId}
-            className="absolute -bottom-1 -left-1 w-8 h-8 rounded-full bg-gradient-to-r from-primary to-amber-600 text-white flex items-center justify-center shadow-lg border-2 border-card disabled:opacity-60"
+            className="absolute -bottom-1 -left-1 w-8 h-8 rounded-full bg-gradient-to-r from-primary to-primary/70 text-white flex items-center justify-center shadow-lg border-2 border-card disabled:opacity-60"
           >
             {photoUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
           </button>
@@ -290,7 +290,7 @@ export default function NailistSettingsPage() {
                 type="button"
                 onClick={() => coverInputRef.current?.click()}
                 disabled={coverUploading || !profileId}
-                className="bg-gradient-to-r from-primary to-amber-600 hover:from-primary hover:to-amber-700 border-0 rounded-xl h-9 px-4 text-sm font-bold gap-2 disabled:opacity-60"
+                className="bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-xl h-9 px-4 text-sm font-bold gap-2 disabled:opacity-60"
               >
                 {coverUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
                 {coverUploading ? `${coverProgress}%` : coverPhotoUrl ? 'החליפי תמונה' : 'העלי תמונה'}
@@ -386,7 +386,7 @@ export default function NailistSettingsPage() {
               aria-label="הפעלת מקדמה בביט"
               onClick={() => setForm((prev) => ({ ...prev, depositEnabled: !prev.depositEnabled }))}
               className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none shrink-0 ${
-                form.depositEnabled ? 'bg-gradient-to-r from-primary to-amber-600' : 'bg-muted'
+                form.depositEnabled ? 'bg-gradient-to-r from-primary to-primary/70' : 'bg-muted'
               }`}
             >
               <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${form.depositEnabled ? 'translate-x-8' : 'translate-x-1'}`} />
@@ -439,7 +439,7 @@ export default function NailistSettingsPage() {
           <Button
             type="submit"
             disabled={saving || !profileId}
-            className="bg-gradient-to-r from-primary to-amber-600 hover:from-primary hover:to-amber-700 border-0 rounded-xl h-12 px-8 font-black shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
+            className="bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-xl h-12 px-8 font-black shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {saving ? 'שומרת...' : 'שמרי שינויים'}

@@ -248,37 +248,38 @@ export default function NailistDashboard() {
       node: <CountUp to={totalAppointments} />,
       icon: <Calendar className="h-5 w-5 text-primary" />,
       change: `+${thisMonthAppointments} החודש`,
-      bg: 'from-primary/10 to-amber-50 dark:from-primary/50 dark:to-amber-950/50',
+      bg: 'from-primary/10 to-primary/5 dark:from-primary/40 dark:to-primary/15',
       border: 'border-primary/20 dark:border-primary/50',
     },
     {
       label: 'לקוחות',
       node: <CountUp to={uniqueClients} />,
-      // Collision fix: purple would mechanically map to amber, but amber is
-      // already used by the "average rating" tile below — teal (reserve
-      // list) keeps these two stat tiles visually distinct.
-      icon: <Users className="h-5 w-5 text-teal-500" />,
+      // Kept to a strict pink + black/gray palette — this tile uses the
+      // neutral (black) side for visual distinction from the pink tiles.
+      icon: <Users className="h-5 w-5 text-foreground" />,
       change: `+${thisMonthClients} החודש`,
-      bg: 'from-teal-50 to-emerald-50 dark:from-teal-950/50 dark:to-emerald-950/50',
-      border: 'border-teal-100 dark:border-teal-900/50',
+      bg: 'from-muted to-transparent dark:from-secondary dark:to-transparent',
+      border: 'border-border',
     },
     {
       label: 'הכנסות',
       node: <CountUp to={totalRevenue} prefix="₪" />,
-      icon: <Wallet className="h-5 w-5 text-emerald-500" />,
+      icon: <Wallet className="h-5 w-5 text-primary" />,
       change: `+₪${thisMonthRevenue} החודש`,
-      bg: 'from-emerald-50 to-blue-50 dark:from-emerald-950/50 dark:to-blue-950/50',
-      border: 'border-emerald-100 dark:border-emerald-900/50',
+      bg: 'from-primary/15 to-primary/5 dark:from-primary/50 dark:to-primary/15',
+      border: 'border-primary/25 dark:border-primary/50',
     },
     {
       label: 'דירוג ממוצע',
       node: profile?.avgRating
         ? <CountUp to={profile.avgRating} decimals={1} />
         : <span>—</span>,
+      // Star rating kept amber — a near-universal rating convention, not a
+      // brand accent, so it stays outside the pink/black-only palette.
       icon: <Star className="h-5 w-5 text-amber-400" />,
       change: profile?.reviewCount ? `${profile.reviewCount} ביקורות` : 'אין ביקורות עדיין',
-      bg: 'from-amber-50 to-primary/10 dark:from-amber-950/50 dark:to-primary/50',
-      border: 'border-amber-100 dark:border-amber-900/50',
+      bg: 'from-muted to-transparent dark:from-secondary dark:to-transparent',
+      border: 'border-border',
     },
   ]
 
@@ -397,7 +398,7 @@ export default function NailistDashboard() {
                     transition={{ delay: 0.4 + i * 0.06 }}
                     className="flex items-center gap-3 p-3 rounded-2xl border border-border hover:border-primary/20 hover:bg-primary/10 dark:hover:bg-primary/20 transition-all"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/15 to-amber-100 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0">
                       <Scissors className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -491,7 +492,7 @@ export default function NailistDashboard() {
           <div className="mb-4">
             <div className="h-2 bg-muted rounded-full overflow-hidden">
               <motion.div initial={{ width: 0 }} animate={{ width: `${completionPct}%` }} transition={{ duration: 1, delay: 0.6 }}
-                className="h-full bg-gradient-to-r from-primary to-amber-600 rounded-full" />
+                className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full" />
             </div>
             <p className="text-xs text-muted-foreground font-medium mt-1">{completionPct}% הושלם</p>
           </div>

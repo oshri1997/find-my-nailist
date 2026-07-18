@@ -21,20 +21,20 @@ const steps = [
     step: '02',
     title: 'עיצוב ופורטפוליו',
     desc: 'עיצובים before & after, ביקורות אמיתיות ומחירים שקופים.',
-    iconBg: 'bg-emerald-500',
-    cardBg: 'bg-emerald-50 dark:bg-emerald-950/40',
-    border: 'border-emerald-100 dark:border-emerald-900/50',
-    stepColor: 'text-emerald-400',
+    iconBg: 'bg-rose-700',
+    cardBg: 'bg-rose-50 dark:bg-rose-950/40',
+    border: 'border-rose-100 dark:border-rose-900/50',
+    stepColor: 'text-rose-600',
   },
   {
     Icon: Calendar,
     step: '03',
     title: 'הזמיני תור בקליק',
     desc: 'בחרי שירות, תאריך ושעה — בלי שיחות, בלי המתנה.',
-    iconBg: 'bg-amber-500',
-    cardBg: 'bg-amber-50 dark:bg-amber-950/40',
-    border: 'border-amber-100 dark:border-amber-900/50',
-    stepColor: 'text-amber-400',
+    iconBg: 'bg-zinc-900 dark:bg-zinc-700',
+    cardBg: 'bg-muted dark:bg-zinc-900/40',
+    border: 'border-border dark:border-zinc-800/50',
+    stepColor: 'text-foreground',
   },
 ]
 
@@ -51,7 +51,7 @@ export function HowItWorksSection() {
           transition={{ duration: 0.4 }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full px-4 py-2 text-sm font-semibold mb-5">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 rounded-full px-4 py-2 text-sm font-semibold mb-5">
             פשוט כמו 1, 2, 3
           </div>
           <h2 className="text-4xl md:text-5xl font-black mb-4 text-foreground">

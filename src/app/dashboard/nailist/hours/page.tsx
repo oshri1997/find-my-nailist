@@ -164,7 +164,7 @@ export default function WorkingHoursPage() {
 
       {/* Quick presets */}
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-        className="bg-gradient-to-r from-primary/10 to-amber-50 dark:from-primary/30 dark:to-amber-950/30 rounded-2xl p-4 mb-5 border border-primary/20 dark:border-primary/50 space-y-4">
+        className="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/30 dark:to-primary/15 rounded-2xl p-4 mb-5 border border-primary/20 dark:border-primary/50 space-y-4">
         <div>
           <p className="text-xs font-black text-muted-foreground mb-3 flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5" />
@@ -197,7 +197,7 @@ export default function WorkingHoursPage() {
               type="button"
               onClick={applyBulkTimes}
               size="sm"
-              className="bg-gradient-to-r from-primary to-amber-600 hover:from-primary hover:to-amber-700 border-0 rounded-xl font-bold shadow-sm gap-1.5 cursor-pointer"
+              className="bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-xl font-bold shadow-sm gap-1.5 cursor-pointer"
             >
               <CopyCheck className="h-3.5 w-3.5" />
               החל על כל הימים
@@ -218,7 +218,7 @@ export default function WorkingHoursPage() {
               return (
                 <div
                   key={day}
-                  className={`w-2 h-2 rounded-full transition-colors ${h.isActive ? 'bg-gradient-to-br from-primary to-amber-600' : 'bg-muted'}`}
+                  className={`w-2 h-2 rounded-full transition-colors ${h.isActive ? 'bg-gradient-to-br from-primary to-primary/70' : 'bg-muted'}`}
                 />
               )
             })}
@@ -237,7 +237,7 @@ export default function WorkingHoursPage() {
                 className={`rounded-2xl border-2 transition-all ${
                   h.isActive
                     ? weekend
-                      ? 'bg-amber-50/60 border-amber-200'
+                      ? 'bg-primary/10 dark:bg-primary/20 border-primary/30'
                       : 'bg-card border-primary/20 shadow-sm'
                     : 'bg-muted/50 border-border'
                 }`}
@@ -250,7 +250,7 @@ export default function WorkingHoursPage() {
                     onClick={() => toggle(day)}
                     className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
                       h.isActive
-                        ? weekend ? 'bg-amber-400' : 'bg-primary'
+                        ? weekend ? 'bg-primary/70' : 'bg-primary'
                         : 'bg-muted'
                     }`}
                   >
@@ -260,7 +260,7 @@ export default function WorkingHoursPage() {
                   {/* Day name */}
                   <span className={`w-14 text-sm font-black shrink-0 ${
                     h.isActive
-                      ? weekend ? 'text-amber-700' : 'text-foreground'
+                      ? weekend ? 'text-primary' : 'text-foreground'
                       : 'text-muted-foreground'
                   }`}>
                     {label}
@@ -302,7 +302,7 @@ export default function WorkingHoursPage() {
           <Button
             type="submit"
             disabled={saving}
-            className="bg-gradient-to-r from-primary to-amber-600 hover:from-primary hover:to-amber-700 border-0 rounded-xl h-12 px-8 font-black shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
+            className="bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-xl h-12 px-8 font-black shadow-lg shadow-primary/40 gap-2 disabled:opacity-60"
           >
             {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> שומרת...</> : 'שמרי שעות עבודה'}
           </Button>

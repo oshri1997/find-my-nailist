@@ -28,51 +28,51 @@
 }
 
 /* ── Light theme ─────────────────────────────────── */
-/* Warm terracotta + sage — a human, editorial palette (deliberately not the
-   pink/violet "AI gradient" look). Terracotta reads as hands-on craft;
-   sage as the natural complementary accent. */
+/* Minimal, clean palette: one vivid pink-red plus true black/white/gray
+   neutrals — deliberately just two colors (not a multi-hue rainbow),
+   for a sharp, editorial look. */
 :root {
-  --background: #FBF5EE;
-  --foreground: #2B1D14;
+  --background: #FFFFFF;
+  --foreground: #18181B;
   --card: #FFFFFF;
-  --card-foreground: #2B1D14;
+  --card-foreground: #18181B;
   --popover: #FFFFFF;
-  --popover-foreground: #2B1D14;
+  --popover-foreground: #18181B;
   --primary: #F5175C;
   --primary-foreground: #FFFFFF;
-  --secondary: #F3E7DA;
-  --secondary-foreground: #7A4526;
-  --muted: #F3E7DA;
-  --muted-foreground: #8A7562;
-  --accent: #4A7C59;
+  --secondary: #F4F4F5;
+  --secondary-foreground: #18181B;
+  --muted: #F4F4F5;
+  --muted-foreground: #71717A;
+  --accent: #18181B;
   --accent-foreground: #FFFFFF;
   --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
-  --border: #E8D9C8;
-  --input: #F3E7DA;
+  --border: #E4E4E7;
+  --input: #F4F4F5;
   --ring: #F5175C;
 }
 
 /* ── Dark theme ──────────────────────────────────── */
 .dark {
-  --background: #1A140F;
-  --foreground: #F2E8DD;
-  --card: #251C15;
-  --card-foreground: #F2E8DD;
-  --popover: #251C15;
-  --popover-foreground: #F2E8DD;
+  --background: #09090B;
+  --foreground: #FAFAFA;
+  --card: #18181B;
+  --card-foreground: #FAFAFA;
+  --popover: #18181B;
+  --popover-foreground: #FAFAFA;
   --primary: #FF4571;
   --primary-foreground: #FFFFFF;
-  --secondary: #332619;
-  --secondary-foreground: #F0C9A0;
-  --muted: #332619;
-  --muted-foreground: #B5A08A;
-  --accent: #6FA37F;
-  --accent-foreground: #1A140F;
+  --secondary: #27272A;
+  --secondary-foreground: #FAFAFA;
+  --muted: #27272A;
+  --muted-foreground: #A1A1AA;
+  --accent: #FAFAFA;
+  --accent-foreground: #18181B;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #3D2E1F;
-  --input: #332619;
+  --border: #3F3F46;
+  --input: #27272A;
   --ring: #FF4571;
 }
 
@@ -89,7 +89,7 @@ body {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #F5175C 0%, #D9A441 100%);
+  background: linear-gradient(135deg, #F5175C 0%, #18181B 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -116,7 +116,7 @@ body {
 }
 
 .dark .glass {
-  background: rgba(28, 13, 24, 0.92);
+  background: rgba(24, 24, 27, 0.92);
 }
 
 .glass-dark {
@@ -131,7 +131,7 @@ body {
   background-color: var(--background);
   background-image:
     radial-gradient(at 10% 10%, rgba(245, 23, 92, 0.07) 0px, transparent 50%),
-    radial-gradient(at 90% 80%, rgba(74, 124, 89, 0.05) 0px, transparent 50%);
+    radial-gradient(at 90% 80%, rgba(24, 24, 27, 0.05) 0px, transparent 50%);
 }
 
 /* Shimmer */
