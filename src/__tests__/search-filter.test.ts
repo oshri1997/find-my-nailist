@@ -1,4 +1,4 @@
-import { matchesFilter, matchesQuery, FILTER_KEYWORDS, filterTags, filterCategories, subFilterTags, matchesTwoTierFilter, nextSlotSortKey, PRICE_BANDS, matchesPriceBand } from '@/app/search/page'
+import { matchesFilter, matchesQuery, FILTER_KEYWORDS, filterTags, nextSlotSortKey, PRICE_BANDS, matchesPriceBand } from '@/app/search/page'
 
 describe('matchesFilter', () => {
   it('returns true for "הכל" regardless of services', () => {
@@ -142,50 +142,6 @@ describe('filterTags', () => {
   it('every filter tag except "הכל" has a FILTER_KEYWORDS entry', () => {
     const missing = filterTags.filter((t) => t !== 'הכל' && !FILTER_KEYWORDS[t])
     expect(missing).toHaveLength(0)
-  })
-})
-
-describe('filterCategories', () => {
-  it('starts with "הכל" and offers מניקור/פדיקור', () => {
-    expect(filterCategories[0]).toBe('הכל')
-    expect(filterCategories).toContain('מניקור')
-    expect(filterCategories).toContain('פדיקור')
-  })
-})
-
-describe('subFilterTags', () => {
-  it('starts with "הכל" and every non-"הכל" entry has a FILTER_KEYWORDS entry', () => {
-    expect(subFilterTags[0]).toBe('הכל')
-    const missing = subFilterTags.filter((t) => t !== 'הכל' && !FILTER_KEYWORDS[t])
-    expect(missing).toHaveLength(0)
-  })
-
-  it('does not include the tier-1 categories', () => {
-    expect(subFilterTags).not.toContain('מניקור')
-    expect(subFilterTags).not.toContain('פדיקור')
-  })
-})
-
-describe('matchesTwoTierFilter', () => {
-  it('matches on category alone when sub-filter is "הכל"', () => {
-    expect(matchesTwoTierFilter(["מניקור ג'ל"], 'מניקור', 'הכל')).toBe(true)
-    expect(matchesTwoTierFilter(['פדיקור רגיל'], 'מניקור', 'הכל')).toBe(false)
-  })
-
-  it('requires both tiers to match when a sub-filter is selected', () => {
-    expect(matchesTwoTierFilter(["מניקור ג'ל"], 'מניקור', "ג'ל")).toBe(true)
-    expect(matchesTwoTierFilter(['מניקור אקריל'], 'מניקור', "ג'ל")).toBe(false)
-    expect(matchesTwoTierFilter(["פדיקור ג'ל"], 'מניקור', "ג'ל")).toBe(false)
-  })
-
-  it('passes everything when both tiers are "הכל"', () => {
-    expect(matchesTwoTierFilter([], 'הכל', 'הכל')).toBe(true)
-    expect(matchesTwoTierFilter(['anything'], 'הכל', 'הכל')).toBe(true)
-  })
-
-  it('matches on sub-filter alone when category is "הכל"', () => {
-    expect(matchesTwoTierFilter(['פדיקור רפואי'], 'הכל', 'רפואי')).toBe(true)
-    expect(matchesTwoTierFilter(["מניקור ג'ל"], 'הכל', 'רפואי')).toBe(false)
   })
 })
 

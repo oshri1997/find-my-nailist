@@ -80,26 +80,6 @@ export const filterTags = [
   'רפואי',
 ]
 
-// Two-tier filter: tier 1 is the treatment type, tier 2 (shown once a
-// non-"הכל" type is picked) narrows down to a technique/sub-category —
-// mirrors the competitor site's "מניקור/פדיקור → לק ג'ל/אקריל/רפואי/..." pattern.
-export const filterCategories = ['הכל', 'מניקור', 'פדיקור']
-
-export const subFilterTags = [
-  'הכל',
-  "ג'ל",
-  "ג'ל בנייה",
-  "ביוג'ל",
-  "ג'ל רוסי",
-  'נייל ארט',
-  'אקריל',
-  'אקריגל',
-  'אקסטנשן',
-  'ספא ידיים',
-  'פרפין',
-  'רפואי',
-]
-
 // Keywords to match each filter tag against service names (case-insensitive)
 export const FILTER_KEYWORDS: Record<string, string[]> = {
   'מניקור':       ['מניקור', 'manicure'],
@@ -123,13 +103,6 @@ export function matchesFilter(serviceNames: string[], filter: string): boolean {
   return serviceNames.some((s) =>
     keywords.some((kw) => s.toLowerCase().includes(kw.toLowerCase()))
   )
-}
-
-// A nailist matches when their services satisfy BOTH the selected treatment
-// type and the selected technique sub-filter ("הכל" on either tier always
-// passes, same as matchesFilter's own no-op case).
-export function matchesTwoTierFilter(serviceNames: string[], category: string, subFilter: string): boolean {
-  return matchesFilter(serviceNames, category) && matchesFilter(serviceNames, subFilter)
 }
 
 export interface PriceBand {
@@ -181,8 +154,7 @@ export default function SearchPage() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [locationLabel, setLocationLabel] = useState('')
   const [sortBy, setSortBy] = useState<SortKey>('rating')
-  const [activeCategory, setActiveCategory] = useState('הכל')
-  const [activeSubFilter, setActiveSubFilter] = useState('הכל')
+  const [activeFilter, setActiveFilter] = useState('הכל')
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
   const [hasMore, setHasMore] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -360,7 +332,7 @@ export default function SearchPage() {
   }
 
   const sorted = [...nailists]
-    .filter((n) => matchesTwoTierFilter(n.serviceNames ?? [], activeCategory, activeSubFilter))
+    .filter((n) => matchesFilter(n.serviceNames ?? [], activeFilter))
     // When coords are active, locationLabel is just the read-only "המיקום שלי"
     // display placeholder, not a real search term — the server already
     // filtered by geo-radius, so don't also substring-match against it here
@@ -383,19 +355,18 @@ export default function SearchPage() {
   // the visitor has expressed actual intent (typed something or picked a filter).
   useEffect(() => {
     if (loading) return
-    if (!locationLabel.trim() && activeCategory === 'הכל' && activeSubFilter === 'הכל') return
+    if (!locationLabel.trim() && activeFilter === 'הכל') return
     const resultsCount = sorted.length
-    const filter = activeSubFilter === 'הכל' ? activeCategory : `${activeCategory} / ${activeSubFilter}`
     const timeout = setTimeout(() => {
       fetch('/api/analytics/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: locationLabel.trim() || undefined, filter, resultsCount }),
+        body: JSON.stringify({ query: locationLabel.trim() || undefined, filter: activeFilter, resultsCount }),
       }).catch(() => {})
     }, 900)
     return () => clearTimeout(timeout)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationLabel, activeCategory, activeSubFilter, loading])
+  }, [locationLabel, activeFilter, loading])
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -557,17 +528,14 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {/* Tier 1: treatment type */}
+          {/* Filter tags */}
           <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
-            {filterCategories.map((tag) => (
+            {filterTags.map((tag) => (
               <button
                 key={tag}
-                onClick={() => {
-                  setActiveCategory(tag)
-                  setActiveSubFilter('הכל')
-                }}
+                onClick={() => setActiveFilter(tag)}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition-all cursor-pointer ${
-                  activeCategory === tag
+                  activeFilter === tag
                     ? 'bg-primary text-white shadow-[0_2px_8px_rgba(245,23,92,0.25)]'
                     : 'bg-card border border-border text-muted-foreground hover:border-primary/40 hover:text-primary'
                 }`}
@@ -576,25 +544,6 @@ export default function SearchPage() {
               </button>
             ))}
           </div>
-
-          {/* Tier 2: technique sub-category, once a treatment type is picked */}
-          {activeCategory !== 'הכל' && (
-            <div className="flex gap-2 mt-2 overflow-x-auto pb-1 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
-              {subFilterTags.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => setActiveSubFilter(tag)}
-                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
-                    activeSubFilter === tag
-                      ? 'bg-primary/15 text-primary border border-primary/40'
-                      : 'bg-transparent border border-border text-muted-foreground hover:border-primary/30 hover:text-primary'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
@@ -666,14 +615,12 @@ export default function SearchPage() {
             <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-5">
               <Search className="w-7 h-7 text-muted-foreground/60" />
             </div>
-            {activeCategory !== 'הכל' || activeSubFilter !== 'הכל' ? (
+            {activeFilter !== 'הכל' ? (
               <>
-                <p className="font-black text-foreground/60 text-lg mb-2">
-                  לא נמצאו נייליסטיות עם שירות &quot;{activeSubFilter !== 'הכל' ? activeSubFilter : activeCategory}&quot;
-                </p>
+                <p className="font-black text-foreground/60 text-lg mb-2">לא נמצאו נייליסטיות עם שירות &quot;{activeFilter}&quot;</p>
                 <p className="text-sm text-muted-foreground mb-4">נסי פילטר אחר או הסירי את הסינון</p>
                 <button
-                  onClick={() => { setActiveCategory('הכל'); setActiveSubFilter('הכל') }}
+                  onClick={() => setActiveFilter('הכל')}
                   className="text-sm font-bold text-primary hover:underline cursor-pointer"
                 >
                   הצגי הכל
