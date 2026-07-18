@@ -75,12 +75,12 @@ test.describe('Search page', () => {
     await expect(page.getByText('סטודיו שרה')).toBeVisible()
   })
 
-  test('filter tags are clickable', async ({ page }) => {
+  test('category filter tags are clickable', async ({ page }) => {
     await page.goto('/search')
-    const jelTag = page.getByRole('button', { name: "ג'ל", exact: true })
-    await expect(jelTag).toBeVisible()
-    await jelTag.click()
-    await expect(jelTag).toHaveClass(/bg-primary/)
+    const manicureTag = page.getByRole('button', { name: 'מניקור', exact: true })
+    await expect(manicureTag).toBeVisible()
+    await manicureTag.click()
+    await expect(manicureTag).toHaveClass(/bg-primary/)
   })
 
   test('clicking a card navigates to the nailist page', async ({ page }) => {
@@ -166,6 +166,39 @@ test.describe('Search page — sort by soonest available', () => {
 
     const names = page.locator('h3', { hasText: 'סטודיו' })
     await expect(names.first()).toHaveText('סטודיו מיידי')
+  })
+})
+
+test.describe('Search page — two-tier category filter', () => {
+  test('narrows results by treatment type, then further by technique sub-filter', async ({ page }) => {
+    await page.route('/api/nailists**', route =>
+      route.fulfill({
+        json: {
+          data: [
+            { id: 'n-mani-gel', businessName: 'סטודיו מניקור ג׳ל', avgRating: 4.8, reviewCount: 10, serviceNames: ["מניקור ג'ל"] },
+            { id: 'n-mani-acrylic', businessName: 'סטודיו מניקור אקריל', avgRating: 4.6, reviewCount: 8, serviceNames: ['מניקור אקריל'] },
+            { id: 'n-pedi', businessName: 'סטודיו פדיקור', avgRating: 4.9, reviewCount: 20, serviceNames: ['פדיקור רגיל'] },
+          ],
+          total: 3,
+          hasMore: false,
+        },
+      })
+    )
+    await page.goto('/search')
+    await expect(page.getByText('סטודיו מניקור ג׳ל')).toBeVisible()
+    await expect(page.getByText('סטודיו מניקור אקריל')).toBeVisible()
+    await expect(page.getByText('סטודיו פדיקור')).toBeVisible()
+
+    // Tier 1: narrow to מניקור — פדיקור results drop out, sub-filter row appears
+    await page.getByRole('button', { name: 'מניקור', exact: true }).click()
+    await expect(page.getByText('סטודיו פדיקור')).not.toBeVisible()
+    await expect(page.getByText('סטודיו מניקור ג׳ל')).toBeVisible()
+    await expect(page.getByText('סטודיו מניקור אקריל')).toBeVisible()
+
+    // Tier 2: narrow further to ג'ל technique
+    await page.getByRole('button', { name: "ג'ל", exact: true }).click()
+    await expect(page.getByText('סטודיו מניקור ג׳ל')).toBeVisible()
+    await expect(page.getByText('סטודיו מניקור אקריל')).not.toBeVisible()
   })
 })
 

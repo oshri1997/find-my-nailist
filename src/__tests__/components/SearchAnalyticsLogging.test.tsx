@@ -70,17 +70,34 @@ describe('Search page — analytics logging', () => {
     expect(body.query).toBe('רחובות')
   })
 
-  it('logs when a filter tag is picked, even with no typed text', async () => {
+  it('logs when a category is picked, even with no typed text', async () => {
     render(<SearchPage />)
     await act(async () => { await Promise.resolve() })
 
-    fireEvent.click(screen.getByText("ג'ל"))
+    fireEvent.click(screen.getByText('מניקור'))
     act(() => { jest.advanceTimersByTime(900) })
 
     await waitFor(() => expect(analyticsCalls()).toHaveLength(1))
     const [, init] = analyticsCalls()[0]
     const body = JSON.parse(init.body)
-    expect(body.filter).toBe("ג'ל")
+    expect(body.filter).toBe('מניקור')
     expect(body.query).toBeUndefined()
+  })
+
+  it('logs the combined category/sub-filter once a sub-filter is also picked', async () => {
+    render(<SearchPage />)
+    await act(async () => { await Promise.resolve() })
+
+    fireEvent.click(screen.getByText('מניקור'))
+    act(() => { jest.advanceTimersByTime(900) })
+    await waitFor(() => expect(analyticsCalls()).toHaveLength(1))
+
+    fireEvent.click(screen.getByText("ג'ל"))
+    act(() => { jest.advanceTimersByTime(900) })
+
+    await waitFor(() => expect(analyticsCalls()).toHaveLength(2))
+    const [, init] = analyticsCalls()[1]
+    const body = JSON.parse(init.body)
+    expect(body.filter).toBe("מניקור / ג'ל")
   })
 })
