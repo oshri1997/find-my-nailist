@@ -15,6 +15,16 @@ function initials(name: string) {
   return (name || '?').slice(0, 1).toUpperCase()
 }
 
+// Guards against a stale browser-cached image on page load — a photoUrl
+// saved before the avatar-upload cache fix (or any CDN-level caching) can
+// keep serving an old cached response for the same URL indefinitely. A
+// per-mount cache-bust param forces a fresh network fetch every time this
+// page loads, without touching the URL that's actually persisted to the profile.
+function withCacheBust(url: string, bust: number): string {
+  const sep = url.includes('?') ? '&' : '?'
+  return `${url}${sep}cb=${bust}`
+}
+
 function friendlyReauthError(err: unknown): string {
   const code = (err as { code?: string })?.code ?? ''
   const map: Record<string, string> = {
@@ -38,8 +48,10 @@ export default function SettingsPage() {
   // Profile photo
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoUploading, setPhotoUploading] = useState(false)
+  const [photoSaved, setPhotoSaved] = useState(false)
   const [photoError, setPhotoError] = useState('')
   const photoInputRef = useRef<HTMLInputElement>(null)
+  const [cacheBust] = useState(() => Date.now())
 
   // Personal info (clients only — nailists manage business identity in
   // their own dashboard settings)
@@ -135,7 +147,11 @@ export default function SettingsPage() {
             body: JSON.stringify({ photoUrl: url }),
           })
       if (!res.ok) throw new Error()
+      // The new URL is already unique per upload (timestamped) — no cache-bust
+      // needed here, that's only for the possibly-stale value from the initial fetch.
       setPhotoUrl(url)
+      setPhotoSaved(true)
+      setTimeout(() => setPhotoSaved(false), 3000)
     } catch {
       setPhotoError('שגיאה בהעלאת התמונה — נסי שוב')
     } finally {
@@ -255,7 +271,7 @@ export default function SettingsPage() {
           <div className="w-20 h-20 rounded-full bg-muted overflow-hidden flex items-center justify-center border-2 border-border">
             {photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+              <img src={withCacheBust(photoUrl, cacheBust)} alt="" className="w-full h-full object-cover" />
             ) : (
               <span className="text-xl font-black text-muted-foreground">{initials(firstName)}</span>
             )}
@@ -278,6 +294,15 @@ export default function SettingsPage() {
               <AlertCircle className="h-3 w-3" />
               {photoError}
             </p>
+          )}
+          {photoSaved && (
+            <motion.p
+              initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+              className="text-xs text-green-600 font-bold mt-1 flex items-center gap-1"
+            >
+              <CheckCircle2 className="h-3 w-3" />
+              התמונה נשמרה בהצלחה!
+            </motion.p>
           )}
         </div>
       </motion.div>
