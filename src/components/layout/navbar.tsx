@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { LogOut, LayoutDashboard, ChevronDown, CalendarDays, Shield, Heart, Search } from 'lucide-react'
+import { LogOut, LayoutDashboard, ChevronDown, CalendarDays, Shield, Heart, Search, Settings } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -160,6 +160,14 @@ export function Navbar() {
                       >
                         <Heart className="h-4 w-4 text-primary" />
                         המועדפות שלי
+                      </Link>
+                      <Link
+                        href="/settings"
+                        onClick={() => setShowMenu(false)}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted/60 rounded-lg transition-colors"
+                      >
+                        <Settings className="h-4 w-4 text-primary" />
+                        הגדרות חשבון
                       </Link>
                       {isAdmin && (
                         <Link

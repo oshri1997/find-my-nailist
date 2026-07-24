@@ -60,3 +60,37 @@ export async function confirmReset(oobCode: string, newPassword: string) {
   const { confirmPasswordReset } = await import('firebase/auth')
   return confirmPasswordReset(await requireAuth(), oobCode, newPassword)
 }
+
+// Whether this account can authenticate with a password at all — a
+// Google-only sign-in has no password to change or re-confirm with.
+export function hasPasswordProvider(user: User): boolean {
+  return user.providerData.some((p) => p.providerId === 'password')
+}
+
+// Firebase requires a *recent* sign-in before allowing a security-sensitive
+// change (password update, account deletion) — re-authenticating with the
+// current password proves that within this request.
+export async function reauthenticateWithPassword(password: string) {
+  const a = await requireAuth()
+  const user = a.currentUser
+  if (!user?.email) throw new Error('No signed-in user')
+  const { EmailAuthProvider, reauthenticateWithCredential } = await import('firebase/auth')
+  await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password))
+}
+
+// Same "recent sign-in" requirement, for accounts with no password on file —
+// re-running the Google popup stands in for re-entering a password.
+export async function reauthenticateWithGoogle() {
+  const a = await requireAuth()
+  const user = a.currentUser
+  if (!user) throw new Error('No signed-in user')
+  const { reauthenticateWithPopup } = await import('firebase/auth')
+  await reauthenticateWithPopup(user, googleProvider)
+}
+
+export async function changePassword(currentPassword: string, newPassword: string) {
+  await reauthenticateWithPassword(currentPassword)
+  const a = await requireAuth()
+  const { updatePassword } = await import('firebase/auth')
+  await updatePassword(a.currentUser!, newPassword)
+}
