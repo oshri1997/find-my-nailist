@@ -497,6 +497,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
+                        loading="lazy"
                         src={photo.url}
                         alt={photo.caption ?? ''}
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"

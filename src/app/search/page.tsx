@@ -646,7 +646,17 @@ export default function SearchPage() {
                 key={nailist.id}
                 whileHover={{ y: -3, transition: { duration: 0.2 } }}
                 onClick={() => router.push(`/nailists/${nailist.id}`)}
-                className="bg-card rounded-2xl overflow-hidden shadow-[0_1px_8px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_24px_rgba(245,23,92,0.10)] transition-all duration-300 cursor-pointer group border border-border hover:border-primary/30"
+                // Keyboard access: the card is a div (it nests other interactive
+                // elements, so a real <a>/<button> wrapper would be invalid HTML).
+                role="link"
+                tabIndex={0}
+                aria-label={`לפרופיל של ${nailist.businessName}`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.target === e.currentTarget) {
+                    router.push(`/nailists/${nailist.id}`)
+                  }
+                }}
+                className="bg-card rounded-2xl overflow-hidden shadow-[0_1px_8px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_24px_rgba(245,23,92,0.10)] transition-all duration-300 cursor-pointer group border border-border hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
               >
                 {/* Cover */}
                 <div className="h-40 relative flex items-center justify-center overflow-hidden bg-primary/10">

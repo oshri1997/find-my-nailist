@@ -105,6 +105,7 @@ export default function MyFavoritesPage() {
                     {n.coverPhotoUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
+                        loading="lazy"
                         src={n.coverPhotoUrl}
                         alt={n.businessName}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

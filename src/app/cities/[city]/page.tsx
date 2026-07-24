@@ -187,6 +187,7 @@ export default async function CityPage({ params }: Props) {
                   {(nailist.coverPhotoUrl ?? nailist.photoUrl) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
+                      loading="lazy"
                       src={nailist.coverPhotoUrl ?? nailist.photoUrl}
                       alt={nailist.businessName}
                       className="w-full h-full object-cover"

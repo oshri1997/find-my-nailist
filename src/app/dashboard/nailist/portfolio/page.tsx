@@ -227,6 +227,7 @@ export default function PortfolioPage() {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
+                    loading="lazy"
                     src={photo.url}
                     alt={photo.caption ?? 'תמונת פורטפוליו'}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
