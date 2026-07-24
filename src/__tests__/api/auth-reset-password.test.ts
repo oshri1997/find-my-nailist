@@ -100,10 +100,13 @@ describe('POST /api/auth/reset-password', () => {
     expect(res.status).toBe(400)
   })
 
-  it('calls generatePasswordResetLink with the correct email', async () => {
+  it('calls generatePasswordResetLink with the correct email and points the link at our own reset page', async () => {
     mockGeneratePasswordResetLink.mockResolvedValueOnce('https://link')
     const req = makeRequest({ email: 'test@domain.com' })
     await POST(req)
-    expect(mockGeneratePasswordResetLink).toHaveBeenCalledWith('test@domain.com')
+    expect(mockGeneratePasswordResetLink).toHaveBeenCalledWith(
+      'test@domain.com',
+      expect.objectContaining({ url: expect.stringContaining('/reset-password'), handleCodeInApp: true })
+    )
   })
 })

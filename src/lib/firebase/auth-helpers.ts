@@ -46,3 +46,17 @@ export async function resetPassword(email: string) {
   const { sendPasswordResetEmail } = await import('firebase/auth')
   return sendPasswordResetEmail(await requireAuth(), email)
 }
+
+// Verifies an oobCode from a password-reset email link and returns the
+// account email it belongs to — used by our own /reset-password page so we
+// can enforce the same 8-character minimum as signup, instead of Firebase's
+// default hosted reset page (which only enforces 6).
+export async function verifyResetCode(oobCode: string): Promise<string> {
+  const { verifyPasswordResetCode } = await import('firebase/auth')
+  return verifyPasswordResetCode(await requireAuth(), oobCode)
+}
+
+export async function confirmReset(oobCode: string, newPassword: string) {
+  const { confirmPasswordReset } = await import('firebase/auth')
+  return confirmPasswordReset(await requireAuth(), oobCode, newPassword)
+}

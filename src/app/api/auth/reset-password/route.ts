@@ -18,7 +18,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // Always return success to avoid leaking whether an email is registered
   try {
-    const link = await adminAuth().generatePasswordResetLink(email)
+    // Route the link at our own /reset-password page instead of Firebase's
+    // default hosted UI — the default page only enforces a 6-character
+    // minimum, inconsistent with the 8-character minimum enforced at signup.
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://nailistiot.fun'
+    const actionCodeSettings = { url: `${appUrl}/reset-password`, handleCodeInApp: true }
+    const link = await adminAuth().generatePasswordResetLink(email, actionCodeSettings)
     void sendPasswordResetEmail({ email, resetLink: link }).catch(err =>
       console.error('[reset-password] email send failed:', err)
     )

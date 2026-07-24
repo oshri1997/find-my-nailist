@@ -69,3 +69,41 @@ test.describe('Register tab', () => {
     await expect(page.getByText('הסיסמה חייבת להכיל לפחות 8 תווים')).toBeVisible({ timeout: 5_000 })
   })
 })
+
+// /reset-password is our own action-handler page (linked from the reset
+// email instead of Firebase's default hosted UI) so the 8-character minimum
+// stays consistent with signup — Firebase's default page only enforces 6.
+test.describe('Reset password page', () => {
+  test.beforeEach(async ({ page }) => {
+    // The Firebase client SDK's verifyPasswordResetCode/confirmPasswordReset
+    // both hit this same REST endpoint — a request with no newPassword is a
+    // verify call, one with newPassword is the confirm call.
+    await page.route('https://identitytoolkit.googleapis.com/v1/accounts:resetPassword**', route => {
+      const body = route.request().postDataJSON()
+      route.fulfill({ json: { email: 'user@example.com', requestType: 'PASSWORD_RESET', newPassword: body.newPassword } })
+    })
+  })
+
+  test('rejects a password shorter than 8 characters', async ({ page }) => {
+    await page.goto('/reset-password?oobCode=test-code')
+    await expect(page.getByText('איפוס סיסמה')).toBeVisible()
+    await page.fill('input[id="password"]', 'short1')
+    await page.fill('input[id="confirmPassword"]', 'short1')
+    await page.click('button[type="submit"]')
+    await expect(page.getByText('הסיסמה חייבת להכיל לפחות 8 תווים')).toBeVisible()
+  })
+
+  test('resets the password and shows a success confirmation', async ({ page }) => {
+    await page.goto('/reset-password?oobCode=test-code')
+    await expect(page.getByText('איפוס סיסמה')).toBeVisible()
+    await page.fill('input[id="password"]', 'newpassword123')
+    await page.fill('input[id="confirmPassword"]', 'newpassword123')
+    await page.click('button[type="submit"]')
+    await expect(page.getByText('הסיסמה עודכנה!')).toBeVisible({ timeout: 10_000 })
+  })
+
+  test('shows an invalid-link message when there is no oobCode', async ({ page }) => {
+    await page.goto('/reset-password')
+    await expect(page.getByText('הקישור לא תקין')).toBeVisible()
+  })
+})
