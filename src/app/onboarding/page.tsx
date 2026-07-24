@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { flushSync } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ArrowRight, ImagePlus, Plus, X, Loader2, MapPin, Check, Camera, Pencil, Trash2 } from 'lucide-react'
@@ -69,6 +70,15 @@ export default function OnboardingPage() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoUploading, setPhotoUploading] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
+  // A newly-selected file is held here for repositioning before it's
+  // actually uploaded — lets the nailist drag the preview to recenter a
+  // face that would otherwise get cut off by the circular crop.
+  const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null)
+  const [pendingPhotoUrl, setPendingPhotoUrl] = useState<string | null>(null)
+  const [photoOffset, setPhotoOffset] = useState({ x: 50, y: 50 })
+  const [draggingPhoto, setDraggingPhoto] = useState(false)
+  const photoFrameRef = useRef<HTMLDivElement>(null)
+  const lastDragPosRef = useRef({ x: 0, y: 0 })
 
   // Step 3 — photos
   const [photos, setPhotos] = useState<Photo[]>([])
@@ -139,22 +149,41 @@ export default function OnboardingPage() {
     }
   }
 
-  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file || !profileId || !user) return
+    if (!file) return
 
     if (file.size > 5 * 1024 * 1024) {
       setError('הקובץ גדול מדי — מקסימום 5MB')
+      if (photoInputRef.current) photoInputRef.current.value = ''
       return
     }
 
     setError('')
+    if (pendingPhotoUrl) URL.revokeObjectURL(pendingPhotoUrl)
+    setPendingPhotoFile(file)
+    setPendingPhotoUrl(URL.createObjectURL(file))
+    setPhotoOffset({ x: 50, y: 50 })
+  }
+
+  function cancelPendingPhoto() {
+    if (pendingPhotoUrl) URL.revokeObjectURL(pendingPhotoUrl)
+    setPendingPhotoFile(null)
+    setPendingPhotoUrl(null)
+    if (photoInputRef.current) photoInputRef.current.value = ''
+  }
+
+  async function confirmPendingPhoto() {
+    if (!pendingPhotoFile || !profileId || !user) return
+    setError('')
     setPhotoUploading(true)
     try {
+      const { cropImageToSquare } = await import('@/lib/image-crop')
+      const cropped = await cropImageToSquare(pendingPhotoFile, photoOffset)
       const { uploadProfilePhoto } = await import('@/lib/firebase/storage')
       // Storage rules key avatars/{userId}/ off the Firebase Auth uid, not the
       // nailistProfiles document id — they're different values.
-      const { url } = await uploadProfilePhoto(user.uid, file)
+      const { url } = await uploadProfilePhoto(user.uid, cropped)
       const res = await fetch(`/api/nailists/${profileId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -162,13 +191,47 @@ export default function OnboardingPage() {
       })
       if (!res.ok) throw new Error()
       setPhotoUrl(url)
+      cancelPendingPhoto()
     } catch {
       setError('שגיאה בהעלאת התמונה — נסי שוב')
     } finally {
       setPhotoUploading(false)
-      if (photoInputRef.current) photoInputRef.current.value = ''
     }
   }
+
+  function startPhotoDrag(e: React.PointerEvent<HTMLDivElement>) {
+    lastDragPosRef.current = { x: e.clientX, y: e.clientY }
+    setDraggingPhoto(true)
+  }
+
+  useEffect(() => {
+    if (!draggingPhoto) return
+    function onMove(e: PointerEvent) {
+      const frame = photoFrameRef.current
+      if (!frame) return
+      const rect = frame.getBoundingClientRect()
+      const dx = e.clientX - lastDragPosRef.current.x
+      const dy = e.clientY - lastDragPosRef.current.y
+      lastDragPosRef.current = { x: e.clientX, y: e.clientY }
+      // Dragging the image down should reveal more of what's above it (e.g.
+      // a head cropped off the top) — so position moves opposite the drag.
+      // flushSync keeps the preview tracking the pointer immediately instead
+      // of lagging a frame behind under React's default update scheduling.
+      flushSync(() => {
+        setPhotoOffset((prev) => ({
+          x: Math.min(100, Math.max(0, prev.x - (dx / rect.width) * 100)),
+          y: Math.min(100, Math.max(0, prev.y - (dy / rect.height) * 100)),
+        }))
+      })
+    }
+    function onUp() { setDraggingPhoto(false) }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+  }, [draggingPhoto])
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])
@@ -461,28 +524,67 @@ export default function OnboardingPage() {
                 </div>
                 <p className="text-muted-foreground text-sm mb-6">התמונה תוצג בפרופיל הציבורי ובתוצאות החיפוש</p>
 
-                <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
 
-                <div className="flex justify-center mb-6">
-                  <button
-                    type="button"
-                    onClick={() => photoInputRef.current?.click()}
-                    disabled={photoUploading}
-                    className="relative w-28 h-28 rounded-full bg-muted border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/30 transition-all flex items-center justify-center overflow-hidden disabled:opacity-60 group"
-                  >
-                    {photoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={photoUrl} alt="" className="w-full h-full object-cover" />
-                    ) : photoUploading ? (
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    ) : (
-                      <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-primary transition-colors">
-                        <Camera className="h-6 w-6" />
-                        <span className="text-xs font-bold">העלי תמונה</span>
-                      </div>
-                    )}
-                  </button>
-                </div>
+                {pendingPhotoUrl ? (
+                  <div className="flex flex-col items-center mb-6">
+                    <div
+                      ref={photoFrameRef}
+                      onPointerDown={startPhotoDrag}
+                      data-testid="photo-drag-frame"
+                      className="relative w-28 h-28 rounded-full overflow-hidden border-2 border-primary/40 cursor-grab active:cursor-grabbing touch-none select-none"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={pendingPhotoUrl}
+                        alt=""
+                        draggable={false}
+                        className="w-full h-full object-cover pointer-events-none"
+                        style={{ objectPosition: `${photoOffset.x}% ${photoOffset.y}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground font-semibold mt-2">גררי את התמונה כדי למרכז את הפנים</p>
+                    <div className="flex items-center gap-3 mt-3">
+                      <button
+                        type="button"
+                        onClick={cancelPendingPhoto}
+                        disabled={photoUploading}
+                        className="text-xs font-bold text-muted-foreground hover:text-foreground disabled:opacity-50"
+                      >
+                        ביטול
+                      </button>
+                      <Button
+                        type="button"
+                        onClick={confirmPendingPhoto}
+                        disabled={photoUploading}
+                        className="rounded-xl h-9 px-5 font-bold bg-primary hover:bg-primary/90 text-white border-0 gap-2 disabled:opacity-60"
+                      >
+                        {photoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="h-4 w-4" /> אישור מיקום</>}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-center mb-6">
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={photoUploading}
+                      className="relative w-28 h-28 rounded-full bg-muted border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/30 transition-all flex items-center justify-center overflow-hidden disabled:opacity-60 group"
+                    >
+                      {photoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+                      ) : photoUploading ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      ) : (
+                        <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-primary transition-colors">
+                          <Camera className="h-6 w-6" />
+                          <span className="text-xs font-bold">העלי תמונה</span>
+                        </div>
+                      )}
+                    </button>
+                  </div>
+                )}
 
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setStep(0)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
@@ -490,7 +592,7 @@ export default function OnboardingPage() {
                   </Button>
                   <Button
                     onClick={() => setStep(2)}
-                    disabled={photoUploading}
+                    disabled={photoUploading || !!pendingPhotoUrl}
                     className="flex-1 bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
                     {photoUrl ? 'המשיכי' : 'דלגי לעת עתה'} <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
