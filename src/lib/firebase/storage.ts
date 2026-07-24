@@ -41,8 +41,10 @@ export async function uploadProfilePhoto(
 ): Promise<{ url: string; storageKey: string }> {
   const storage = await getStorage()
   const ext = file.name.split('.').pop() ?? 'jpg'
-  // Fixed filename (not timestamped like portfolio photos) — re-uploading overwrites in place.
-  const storageKey = `avatars/${userId}/profile.${ext}`
+  // Timestamped like portfolio/cover photos — a fixed filename would keep the
+  // same Firebase Storage download URL across re-uploads (same path, same
+  // token), so browsers serve the old cached image instead of the new one.
+  const storageKey = `avatars/${userId}/profile-${Date.now()}.${ext}`
   const storageRef = ref(storage, storageKey)
 
   return new Promise((resolve, reject) => {
