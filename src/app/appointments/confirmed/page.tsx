@@ -63,7 +63,7 @@ function Content() {
   if (already) {
     return (
       <div className="text-center">
-        <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-2xl bg-green-100 dark:bg-green-950/40 flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 className="h-7 w-7 text-green-600" />
         </div>
         <h1 className="text-2xl font-black text-foreground mb-2">התור כבר אושר</h1>
@@ -79,7 +79,7 @@ function Content() {
       </div>
       <h1 className="text-3xl font-black text-foreground mb-3">התור אושר!</h1>
       {emailError ? (
-        <p className="text-amber-600 font-semibold text-sm bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-2">
+        <p className="text-amber-600 dark:text-amber-400 font-semibold text-sm bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl px-4 py-3 mb-2">
           התור אושר אך שליחת מייל ללקוחה נכשלה — בדקי את לוגי Railway
         </p>
       ) : (

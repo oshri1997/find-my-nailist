@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, CalendarDays, Search, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ReviewModal from '@/components/reviews/ReviewModal'
+import { APPOINTMENT_STATUS_COLORS } from '@/lib/status-styles'
 
 interface Appointment {
   id: string
@@ -31,13 +32,7 @@ const STATUS_LABELS: Record<Appointment['status'], string> = {
   NO_SHOW: 'לא הגעתי',
 }
 
-const STATUS_COLORS: Record<Appointment['status'], string> = {
-  PENDING: 'bg-amber-50 text-amber-600 border-amber-200',
-  CONFIRMED: 'bg-green-50 text-green-600 border-green-200',
-  CANCELLED: 'bg-red-50 text-red-500 border-red-200',
-  COMPLETED: 'bg-blue-50 text-blue-600 border-blue-200',
-  NO_SHOW: 'bg-gray-50 text-gray-400 border-gray-200',
-}
+const STATUS_COLORS = APPOINTMENT_STATUS_COLORS
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString('he-IL', {

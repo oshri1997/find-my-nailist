@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Users, Scissors, Calendar, Star, TrendingUp, CheckCircle2, UserPlus, Sunrise, XCircle } from 'lucide-react'
+import { APPOINTMENT_STATUS_COLORS } from '@/lib/status-styles'
 
 interface Stats {
   totalUsers: number
@@ -30,13 +31,7 @@ const STATUS_HE: Record<string, string> = {
   NO_SHOW: 'לא הגיע',
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  PENDING: 'bg-amber-100 text-amber-700',
-  CONFIRMED: 'bg-green-100 text-green-700',
-  COMPLETED: 'bg-blue-100 text-blue-700',
-  CANCELLED: 'bg-red-100 text-red-600',
-  NO_SHOW: 'bg-gray-100 text-gray-600',
-}
+const STATUS_COLOR = APPOINTMENT_STATUS_COLORS
 
 function StatCard({ label, value, icon: Icon, sub, color = 'text-primary' }: {
   label: string

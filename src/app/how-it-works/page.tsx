@@ -352,7 +352,7 @@ export default function HowItWorksPage() {
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link href="/search">
-              <Button className="bg-white text-primary hover:bg-primary/10 border-0 rounded-2xl h-12 px-8 font-black shadow-lg">
+              <Button className="bg-white text-primary hover:bg-primary hover:text-white border-0 rounded-2xl h-12 px-8 font-black shadow-lg transition-colors">
                 חפשי נייליסטית
               </Button>
             </Link>

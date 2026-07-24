@@ -150,7 +150,7 @@ export default function ClientOnboardingPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center py-4"
               >
-                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-950/40 flex items-center justify-center mx-auto mb-4">
                   <Check className="h-8 w-8 text-green-600" />
                 </div>
                 <h2 className="text-xl font-black text-foreground mb-2">הפרופיל שלך מוכן!</h2>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Loader2, CheckCircle2, XCircle, Star, Inbox, Wallet } from 'lucide-react'
+import { APPOINTMENT_STATUS_COLORS, DEPOSIT_STATUS_COLORS as SHARED_DEPOSIT_STATUS_COLORS } from '@/lib/status-styles'
 
 type DepositStatus = 'AWAITING_PAYMENT' | 'CLIENT_MARKED_PAID' | 'NAILIST_CONFIRMED'
 
@@ -31,13 +32,7 @@ const STATUS_LABELS: Record<Appointment['status'], string> = {
   NO_SHOW: 'לא הגיע',
 }
 
-const STATUS_COLORS: Record<Appointment['status'], string> = {
-  PENDING: 'bg-amber-50 text-amber-600 border-amber-200',
-  CONFIRMED: 'bg-green-50 text-green-600 border-green-200',
-  CANCELLED: 'bg-red-50 text-red-500 border-red-200',
-  COMPLETED: 'bg-blue-50 text-blue-600 border-blue-200',
-  NO_SHOW: 'bg-gray-50 text-muted-foreground border-gray-200',
-}
+const STATUS_COLORS = APPOINTMENT_STATUS_COLORS
 
 // Deliberately its own state machine, separate from STATUS_LABELS/COLORS —
 // deposit tracking is informational-only and must never gate the real
@@ -48,11 +43,7 @@ const DEPOSIT_STATUS_LABELS: Record<DepositStatus, string> = {
   NAILIST_CONFIRMED: 'מקדמה התקבלה',
 }
 
-const DEPOSIT_STATUS_COLORS: Record<DepositStatus, string> = {
-  AWAITING_PAYMENT: 'bg-amber-50 text-amber-600 border-amber-200',
-  CLIENT_MARKED_PAID: 'bg-blue-50 text-blue-600 border-blue-200',
-  NAILIST_CONFIRMED: 'bg-green-50 text-green-600 border-green-200',
-}
+const DEPOSIT_STATUS_COLORS = SHARED_DEPOSIT_STATUS_COLORS
 
 export default function NailistAppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -256,7 +247,7 @@ function AppointmentCard({
               variant="outline"
               onClick={() => onUpdate(apt.id, 'CANCELLED')}
               disabled={isUpdating}
-              className="border-red-200 text-red-400 hover:bg-red-50 rounded-xl font-bold gap-1 text-xs"
+              className="border-red-200 dark:border-red-900/50 text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl font-bold gap-1 text-xs"
             >
               <XCircle className="h-3 w-3" />
               בטל

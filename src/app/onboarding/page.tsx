@@ -80,6 +80,15 @@ export default function OnboardingPage() {
   const photoFrameRef = useRef<HTMLDivElement>(null)
   const lastDragPosRef = useRef({ x: 0, y: 0 })
 
+  // Revoke the staged preview's object URL if the wizard unmounts with a
+  // photo still staged (e.g. navigating away mid-step) — the confirm/cancel
+  // paths revoke their own, but nothing else would free this blob.
+  useEffect(() => {
+    return () => {
+      if (pendingPhotoUrl) URL.revokeObjectURL(pendingPhotoUrl)
+    }
+  }, [pendingPhotoUrl])
+
   // Step 3 — photos
   const [photos, setPhotos] = useState<Photo[]>([])
   const [uploading, setUploading] = useState(false)

@@ -224,7 +224,7 @@ export default function NailistServicesPage() {
               >
                 <div className="flex items-center justify-between mb-5">
                   <h2 className="font-black text-foreground">{editingId ? 'עריכת שירות' : 'שירות חדש'}</h2>
-                  <button onClick={closeForm} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/60 transition-colors">
+                  <button onClick={closeForm} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/60 dark:hover:bg-white/10 transition-colors">
                     <X className="h-4 w-4 text-muted-foreground" />
                   </button>
                 </div>

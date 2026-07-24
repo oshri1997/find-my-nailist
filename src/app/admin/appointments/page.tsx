@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
+import { APPOINTMENT_STATUS_COLORS } from '@/lib/status-styles'
 
 interface AdminAppointment {
   id: string
@@ -22,13 +23,7 @@ const STATUS_HE: Record<string, string> = {
   NO_SHOW: 'לא הגיע',
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: 'bg-amber-50 text-amber-600 border-amber-200',
-  CONFIRMED: 'bg-green-50 text-green-600 border-green-200',
-  COMPLETED: 'bg-blue-50 text-blue-600 border-blue-200',
-  CANCELLED: 'bg-red-50 text-red-500 border-red-200',
-  NO_SHOW: 'bg-gray-50 text-gray-500 border-gray-200',
-}
+const STATUS_COLORS = APPOINTMENT_STATUS_COLORS
 
 const ALL_STATUSES = ['', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']
 

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft, Eye, EyeOff, Star, Scissors, Users, Wallet, Calendar, Inbox, MessageSquare, FileText, CalendarClock } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { findUnfillableGaps, type DayWorkingHours } from '@/lib/gap-detection'
+import { APPOINTMENT_STATUS_COLORS } from '@/lib/status-styles'
 
 function CountUp({ to, prefix = '', decimals = 0, duration = 1500 }: {
   to: number
@@ -75,13 +76,7 @@ const STATUS_LABELS: Record<AppStatus, string> = {
   NO_SHOW: 'לא הגיע',
 }
 
-const STATUS_COLORS: Record<AppStatus, string> = {
-  PENDING: 'bg-amber-50 text-amber-600 border-amber-200',
-  CONFIRMED: 'bg-green-50 text-green-600 border-green-200',
-  CANCELLED: 'bg-red-50 text-red-500 border-red-200',
-  COMPLETED: 'bg-blue-50 text-blue-600 border-blue-200',
-  NO_SHOW: 'bg-muted text-muted-foreground border-border',
-}
+const STATUS_COLORS = APPOINTMENT_STATUS_COLORS
 
 function formatAppointmentTime(iso: string) {
   const d = new Date(iso)
@@ -295,7 +290,7 @@ export default function NailistDashboard() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-4"
+          className="mb-6 bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-900/50 rounded-2xl p-4 flex items-center gap-4"
         >
           <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
             <EyeOff className="h-5 w-5 text-amber-600" />
