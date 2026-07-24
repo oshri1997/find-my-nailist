@@ -153,7 +153,7 @@ export default function ResetPasswordPage() {
                 </motion.div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} noValidate className="space-y-5">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-foreground" htmlFor="password">סיסמה חדשה</label>
                   <div className="relative">
