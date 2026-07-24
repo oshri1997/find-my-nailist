@@ -49,7 +49,7 @@ beforeEach(() => {
       return Promise.resolve({ ok: true, json: async () => ({ data: { id: `photo-${servicesAdded}`, url: 'https://example.com/x.jpg' } }) } as Response)
     }
     if (url === '/api/services' && opts?.method === 'POST') {
-      return Promise.resolve({ ok: true, json: async () => ({ data: { id: 'service-1', name: 'מניקור', durationMinutes: 60, price: 100 } }) } as Response)
+      return Promise.resolve({ ok: true, json: async () => ({ data: { id: 'service-1', name: 'פדיקור קוסמטי', durationMinutes: 60, price: 100 } }) } as Response)
     }
     if (url.includes('/api/nailists/') && opts?.method === 'PATCH') {
       return Promise.resolve({ ok: true, json: async () => ({ message: 'ok' }) } as Response)
@@ -84,7 +84,7 @@ it('calls refreshRole before navigating to the dashboard when the wizard finishe
 
   // Step 3 — services, add one
   await waitFor(() => expect(screen.getByText('מה השירותים שלך?')).toBeInTheDocument())
-  fireEvent.change(screen.getByPlaceholderText('שם השירות (למשל: ג׳ל צרפתי)'), { target: { value: 'מניקור' } })
+  fireEvent.change(screen.getByLabelText('שם השירות'), { target: { value: 'פדיקור קוסמטי' } })
   fireEvent.change(screen.getByPlaceholderText('150'), { target: { value: '100' } })
   fireEvent.click(screen.getByText('הוסיפי שירות'))
   await waitFor(() => expect(screen.getByText('המשיכי')).not.toBeDisabled())

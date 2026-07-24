@@ -27,6 +27,17 @@ for (let h = 7; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
 }
 
+// Fixed, curated list — nailists pick from these instead of free-typing a
+// service name, so search filters/categories stay consistent across profiles.
+const SERVICE_NAME_OPTIONS = [
+  "לק ג'ל מבנה אנטומי לציפורניים טבעיות",
+  "מילוי בג'ל / בטיפסים הפוכים",
+  "מיני פדיקור ג'ל",
+  "פדיקור מלא ג'ל",
+  'פדיקור קוסמטי',
+  'בנייה חדשה',
+]
+
 interface Photo { id: string; url: string }
 interface Service { id: string; name: string; durationMinutes: number; price: number }
 interface DayHours { dayOfWeek: number; isActive: boolean; startTime: string; endTime: string }
@@ -599,12 +610,20 @@ export default function OnboardingPage() {
                       </button>
                     )}
                   </div>
-                  <Input
-                    placeholder="שם השירות (למשל: ג׳ל צרפתי)"
-                    value={svcName}
-                    onChange={e => setSvcName(e.target.value)}
-                    className="rounded-xl border-border focus:border-primary h-11 bg-card"
-                  />
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground block mb-1" htmlFor="svcName">שם השירות</label>
+                    <select
+                      id="svcName"
+                      value={svcName}
+                      onChange={e => setSvcName(e.target.value)}
+                      className="w-full h-11 rounded-xl border border-border bg-card px-3 text-sm font-semibold focus:outline-none focus:border-primary"
+                    >
+                      <option value="" disabled>בחרי שירות מהרשימה</option>
+                      {SERVICE_NAME_OPTIONS.map(name => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <label className="text-xs font-bold text-muted-foreground block mb-1">משך (דקות)</label>
