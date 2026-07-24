@@ -24,6 +24,10 @@ const mockAvailability = {
   bookedSlots: [],
 }
 
+function mockUserAgent(ua: string) {
+  Object.defineProperty(window.navigator, 'userAgent', { value: ua, configurable: true })
+}
+
 beforeEach(() => {
   // Pin time to midnight so past-slot filter never removes test time slots
   jest.useFakeTimers()
@@ -32,6 +36,9 @@ beforeEach(() => {
   // Default catch-all so background fetches don't throw
   mockFetch.mockResolvedValue({ ok: true, json: async () => ({ data: {} }) })
   defaultProps.onClose.mockReset()
+  // Bit deposit tests below cover the mobile deep-link UI by default —
+  // desktop-specific behavior gets its own tests with an explicit desktop UA.
+  mockUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15')
 })
 
 afterEach(() => {
@@ -335,5 +342,30 @@ describe('BookingModal — Bit deposit', () => {
       expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ action: 'MARK_PAID' }) })
     )
     expect(screen.queryByRole('button', { name: /כבר שילמתי/ })).not.toBeInTheDocument()
+  })
+})
+
+describe('BookingModal — Bit deposit on desktop web', () => {
+  // bit:// only opens anything with the Bit app installed — a dead click on
+  // desktop, so the "פתחי את Bit" deep link is replaced with plain transfer
+  // instructions (still copy-pasteable via the phone/amount buttons).
+  it('shows transfer instructions with the phone and amount instead of the Bit deep link', async () => {
+    mockUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+    render(<BookingModal {...defaultProps} bitPhone="0501234567" />)
+    await navigateToStep3()
+
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: { id: 'client1' } }) })
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: { id: 'apt1', depositRequired: true, depositAmount: 30, depositCurrency: 'ILS' } }),
+    })
+    fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
+
+    await waitFor(() => expect(screen.getByText(/התור נקבע/)).toBeInTheDocument())
+    expect(screen.getByText(/פתחי את אפליקציית Bit בטלפון שלך והעבירי ₪30 למספר 050-123-4567/)).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'פתחי את Bit' })).not.toBeInTheDocument()
+    // the copy actions still work, so she can paste them once she's on her phone
+    expect(screen.getByText('050-123-4567')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /כבר שילמתי/ })).toBeInTheDocument()
   })
 })

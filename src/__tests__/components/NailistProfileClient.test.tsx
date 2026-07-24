@@ -37,6 +37,8 @@ const baseProfile = {
   services: [] as { id: string }[],
   portfolio: [] as { id: string; url: string; caption?: string }[],
   reviews: [] as { id: string }[],
+  depositEnabled: false,
+  depositPercentage: 0,
 }
 
 function mockProfileFetch(profile: typeof baseProfile, opts?: { asOwner?: boolean }) {
@@ -128,6 +130,36 @@ describe('NailistProfileClient — contact info gating', () => {
     await waitFor(() => {
       expect(screen.getByText('כניסה לצפייה בפרטי קשר')).toBeInTheDocument()
     })
+  })
+})
+
+describe('NailistProfileClient — booking CTA styling', () => {
+  it('inverts to a solid, readable state on hover instead of a washed-out pink-on-pink tint', async () => {
+    // Regression: hover:bg-primary/10 with text-primary produced near-invisible
+    // pink-on-pink text on the pink hero background.
+    mockUseAuth.mockReturnValue({ user: { uid: 'u1', displayName: 'Test' }, role: 'CLIENT' })
+    mockProfileFetch({ ...baseProfile, services: [{ id: 'svc-1' }] }, { asOwner: false })
+    render(<NailistProfileClient id="nailist-1" />)
+
+    const cta = await screen.findByRole('button', { name: 'קביעת תור' })
+    expect(cta).toHaveClass('bg-white')
+    expect(cta).toHaveClass('text-primary')
+    expect(cta).toHaveClass('hover:bg-primary')
+    expect(cta).toHaveClass('hover:text-white')
+    expect(cta.className).not.toContain('hover:bg-primary/10')
+  })
+
+  it('shows the deposit caption at a readable size, not text-xs', async () => {
+    mockUseAuth.mockReturnValue({ user: { uid: 'u1', displayName: 'Test' }, role: 'CLIENT' })
+    mockProfileFetch(
+      { ...baseProfile, services: [{ id: 'svc-1' }], depositEnabled: true, depositPercentage: 20 },
+      { asOwner: false }
+    )
+    render(<NailistProfileClient id="nailist-1" />)
+
+    const caption = await screen.findByText('נדרשת מקדמה של 20% בביט')
+    expect(caption).not.toHaveClass('text-xs')
+    expect(caption).toHaveClass('text-sm')
   })
 })
 

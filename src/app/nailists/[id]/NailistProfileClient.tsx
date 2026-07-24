@@ -338,12 +338,12 @@ export default function NailistProfileClient({ id }: { id: string }) {
             <div className="flex flex-col items-center mt-6">
               <Button
                 onClick={() => openBooking()}
-                className="bg-white text-primary hover:bg-primary/10 border-0 rounded-2xl font-black shadow-lg px-8 h-11"
+                className="bg-white text-primary hover:bg-primary hover:text-white border-0 rounded-2xl font-black shadow-lg px-8 h-11 transition-colors"
               >
                 קביעת תור
               </Button>
               {profile.depositEnabled && (
-                <p className="mt-2 text-xs text-white/70 text-center">
+                <p className="mt-2 text-sm font-semibold text-white/90 text-center">
                   נדרשת מקדמה של {profile.depositPercentage}% בביט
                 </p>
               )}

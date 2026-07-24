@@ -6,6 +6,7 @@ import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, Clock, Scissors, C
 import { Button } from '@/components/ui/button'
 import { generateSlots, isSlotUnavailable, buildMonthCalendarFor, toDateStr, type BookedSlot } from '@/lib/booking-utils'
 import { toBitUrl, formatBitPhoneDisplay } from '@/lib/bit'
+import { isMobileDevice } from '@/lib/device'
 import { getRecommendedSlots } from '@/lib/slot-recommendation'
 
 interface Service {
@@ -69,6 +70,9 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   const [paidMarked, setPaidMarked] = useState(false)
   const [copiedPhone, setCopiedPhone] = useState(false)
   const [copiedAmount, setCopiedAmount] = useState(false)
+  // The bit:// deep link only does anything with the Bit app installed —
+  // a dead click on desktop web, so that flow gets plain transfer instructions instead.
+  const [isMobile] = useState(() => typeof navigator !== 'undefined' && isMobileDevice(navigator.userAgent))
   const [selectedService, setSelectedService] = useState<Service | null>(
     initialServiceId ? (services.find(s => s.id === initialServiceId) ?? null) : null
   )
@@ -635,17 +639,27 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                     <p className="font-black text-foreground text-sm mb-1">
                       נדרשת מקדמה של ₪{depositResult.amount} דרך Bit
                     </p>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      לחצי לפתיחת Bit, והדביקי בתוכה את המספר והסכום שהעתקת כאן. בסיום לחצי על &quot;כבר שילמתי&quot;
-                    </p>
-                    <div className="flex items-center gap-2 mb-3">
-                      <a
-                        href={toBitUrl(bitPhone, depositResult.amount)}
-                        className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary/70 text-white rounded-xl h-11 font-bold text-sm"
-                      >
-                        פתחי את Bit
-                      </a>
-                    </div>
+                    {isMobile ? (
+                      <>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          לחצי לפתיחת Bit, והדביקי בתוכה את המספר והסכום שהעתקת כאן. בסיום לחצי על &quot;כבר שילמתי&quot;
+                        </p>
+                        <div className="flex items-center gap-2 mb-3">
+                          <a
+                            href={toBitUrl(bitPhone, depositResult.amount)}
+                            className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary/70 text-white rounded-xl h-11 font-bold text-sm"
+                          >
+                            פתחי את Bit
+                          </a>
+                        </div>
+                      </>
+                    ) : (
+                      // bit:// only opens anything with the app installed — on desktop
+                      // web it's a dead click, so send her to her phone instead.
+                      <p className="text-xs text-muted-foreground mb-3">
+                        פתחי את אפליקציית Bit בטלפון שלך והעבירי ₪{depositResult.amount} למספר {formatBitPhoneDisplay(bitPhone)}. בסיום לחצי על &quot;כבר שילמתי&quot;
+                      </p>
+                    )}
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
