@@ -125,6 +125,35 @@ describe('Settings page — profile photo', () => {
       expect(patchCall).toBeDefined()
     })
   })
+
+  it('refuses to upload when the nailist profile id never loaded, instead of PATCHing /api/nailists/null', async () => {
+    // Regression: if GET /api/me/nailist-profile resolves with no data (a
+    // transient failure, or the profile doc genuinely doesn't exist yet),
+    // profileId stays null but the page still finishes loading and shows the
+    // upload button. Clicking it used to PATCH the literal string "null",
+    // which fails silently — the real photo never saves, so whatever was
+    // there before (or the Google-photo/backfill default) keeps showing
+    // indefinitely with no visible error.
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.includes('/api/me/nailist-profile')) {
+        return Promise.resolve({ ok: true, json: async () => ({ data: null }) } as Response)
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ data: null }) } as Response)
+    })
+    mockUseAuth.mockReturnValue({ user: { uid: 'nailist-1', email: 'studio@test.com' }, role: 'NAILIST', loading: false, signOut: mockSignOut })
+    const { container } = render(<SettingsPage />)
+    await waitFor(() => expect(screen.getByText('הגדרות חשבון')).toBeInTheDocument())
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(fileInput, { target: { files: [new File(['bytes'], 'avatar.jpg', { type: 'image/jpeg' })] } })
+
+    await waitFor(() => expect(screen.getByText('הפרופיל עדיין נטען — נסי שוב בעוד רגע')).toBeInTheDocument())
+    expect(uploadProfilePhotoMock).not.toHaveBeenCalled()
+    const badPatch = (global.fetch as jest.Mock).mock.calls.find(
+      ([url]: [string]) => url === '/api/nailists/null'
+    )
+    expect(badPatch).toBeUndefined()
+  })
 })
 
 describe('Settings page — personal info (clients only)', () => {

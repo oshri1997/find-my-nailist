@@ -102,6 +102,15 @@ export default function SettingsPage() {
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !user) return
+    // Nailist uploads PATCH /api/nailists/{profileId} — without this guard a
+    // click that lands before the initial profile fetch resolves would PATCH
+    // the literal string "null", fail, and (depending on timing) leave the
+    // photo looking unchanged instead of showing a clear retry prompt.
+    if (role === 'NAILIST' && !profileId) {
+      setPhotoError('הפרופיל עדיין נטען — נסי שוב בעוד רגע')
+      if (photoInputRef.current) photoInputRef.current.value = ''
+      return
+    }
 
     if (file.size > 5 * 1024 * 1024) {
       setPhotoError('הקובץ גדול מדי — מקסימום 5MB')
