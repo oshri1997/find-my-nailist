@@ -7,6 +7,11 @@ import { Input } from '@/components/ui/input'
 import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
 import { CheckCircle2, Loader2, AlertCircle, ImagePlus, X, Camera } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
+import { isValidIsraeliPhone, PHONE_INVALID_MESSAGE } from '@/lib/phone'
+
+function phoneFieldError(value: string): string {
+  return value.trim() && !isValidIsraeliPhone(value) ? PHONE_INVALID_MESSAGE : ''
+}
 
 const EMPTY_FORM = {
   businessName: '',
@@ -179,6 +184,10 @@ export default function NailistSettingsPage() {
     e.preventDefault()
     if (!profileId) return
     setError('')
+    if (phoneFieldError(form.phoneNumber) || phoneFieldError(form.whatsappPhone) || phoneFieldError(form.bitPhone)) {
+      setError('אחד ממספרי הטלפון אינו תקין — בדקי ותקני')
+      return
+    }
     setSaving(true)
     try {
       const res = await fetch(`/api/nailists/${profileId}`, {
@@ -356,7 +365,7 @@ export default function NailistSettingsPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
           className="bg-card rounded-3xl border border-border p-6 shadow-sm space-y-4">
           <h2 className="font-black text-muted-foreground text-sm uppercase tracking-wider">יצירת קשר</h2>
-          <Field label="טלפון" name="phoneNumber" value={form.phoneNumber} onChange={handleChange} placeholder="0501234567" type="tel" />
+          <Field label="טלפון" name="phoneNumber" value={form.phoneNumber} onChange={handleChange} placeholder="0501234567" type="tel" error={phoneFieldError(form.phoneNumber)} />
           <div>
             <label className="text-sm font-bold text-muted-foreground block mb-1.5 flex items-center gap-2">
               <svg viewBox="0 0 24 24" className="h-4 w-4 fill-[#25D366]">
@@ -364,8 +373,19 @@ export default function NailistSettingsPage() {
               </svg>
               מספר WhatsApp
             </label>
-            <Input name="whatsappPhone" value={form.whatsappPhone} onChange={handleChange} placeholder="0501234567" type="tel" className="rounded-xl border-[#25D366]/40 focus:border-[#25D366] h-11" />
-            <p className="text-xs text-muted-foreground mt-1 font-medium">לקוחות יוכלו לשלוח לך הודעה ישירה</p>
+            <Input
+              name="whatsappPhone"
+              value={form.whatsappPhone}
+              onChange={handleChange}
+              placeholder="0501234567"
+              type="tel"
+              className={`rounded-xl h-11 ${phoneFieldError(form.whatsappPhone) ? 'border-red-400 focus:border-red-400' : 'border-[#25D366]/40 focus:border-[#25D366]'}`}
+            />
+            {phoneFieldError(form.whatsappPhone) ? (
+              <p className="text-xs text-red-500 font-semibold mt-1">{phoneFieldError(form.whatsappPhone)}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1 font-medium">לקוחות יוכלו לשלוח לך הודעה ישירה</p>
+            )}
           </div>
         </motion.div>
 
@@ -414,8 +434,19 @@ export default function NailistSettingsPage() {
               </div>
               <div>
                 <label className="text-sm font-bold text-muted-foreground block mb-1.5">מספר טלפון לביט</label>
-                <Input name="bitPhone" value={form.bitPhone} onChange={handleChange} placeholder="0501234567" type="tel" className="rounded-xl border-border focus:border-primary h-11" />
-                <p className="text-xs text-muted-foreground mt-1 font-medium">לקוחות ישלחו את המקדמה למספר הזה דרך אפליקציית Bit</p>
+                <Input
+                  name="bitPhone"
+                  value={form.bitPhone}
+                  onChange={handleChange}
+                  placeholder="0501234567"
+                  type="tel"
+                  className={`rounded-xl h-11 ${phoneFieldError(form.bitPhone) ? 'border-red-400 focus:border-red-400' : 'border-border focus:border-primary'}`}
+                />
+                {phoneFieldError(form.bitPhone) ? (
+                  <p className="text-xs text-red-500 font-semibold mt-1">{phoneFieldError(form.bitPhone)}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1 font-medium">לקוחות ישלחו את המקדמה למספר הזה דרך אפליקציית Bit</p>
+                )}
               </div>
             </div>
           )}
@@ -456,15 +487,23 @@ export default function NailistSettingsPage() {
   )
 }
 
-function Field({ label, name, value, onChange, placeholder, type = 'text' }: {
+function Field({ label, name, value, onChange, placeholder, type = 'text', error }: {
   label: string; name: string; value: string
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  placeholder?: string; type?: string
+  placeholder?: string; type?: string; error?: string
 }) {
   return (
     <div>
       <label className="text-sm font-bold text-muted-foreground block mb-1.5">{label}</label>
-      <Input name={name} value={value} onChange={onChange} placeholder={placeholder} type={type} className="rounded-xl border-border focus:border-primary h-11" />
+      <Input
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        type={type}
+        className={`rounded-xl h-11 ${error ? 'border-red-400 focus:border-red-400' : 'border-border focus:border-primary'}`}
+      />
+      {error && <p className="text-xs text-red-500 font-semibold mt-1">{error}</p>}
     </div>
   )
 }

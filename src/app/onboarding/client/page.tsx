@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
 import { useAuth } from '@/components/auth/auth-provider'
+import { isValidIsraeliPhone, PHONE_INVALID_MESSAGE } from '@/lib/phone'
 
 const STEPS = [
   { label: 'שם' },
@@ -238,10 +239,15 @@ export default function ClientOnboardingPage() {
                       value={phone}
                       onChange={e => setPhone(e.target.value)}
                       placeholder="050-1234567"
-                      className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-card"
+                      className={`pr-10 rounded-xl h-12 bg-card ${
+                        phone.trim() && !isValidIsraeliPhone(phone) ? 'border-red-400 focus:border-red-400' : 'border-border focus:border-primary'
+                      }`}
                       dir="ltr"
                     />
                   </div>
+                  {phone.trim() && !isValidIsraeliPhone(phone) && (
+                    <p className="text-xs text-red-500 font-semibold">{PHONE_INVALID_MESSAGE}</p>
+                  )}
                 </div>
 
                 {error && <p className="text-sm text-red-500 font-semibold mb-4">{error}</p>}
@@ -257,7 +263,7 @@ export default function ClientOnboardingPage() {
                   </Button>
                   <Button
                     type="button"
-                    disabled={!phone.trim()}
+                    disabled={!isValidIsraeliPhone(phone)}
                     onClick={() => setStep(2)}
                     className="flex-1 bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-12 font-black shadow-[0_4px_16px_rgba(245,23,92,0.30)] gap-2 group cursor-pointer disabled:opacity-60"
                   >

@@ -4,13 +4,11 @@ import { COLLECTIONS } from '@/lib/firebase/collections'
 import { geocodeAddress } from '@/lib/geocoding'
 import { isAuthenticatedRequest, computeHasContactInfo, stripNailistContactFields } from '@/lib/nailist-contact'
 import { batchResolveClientDisplayNames } from '@/lib/client-display-name'
+import { isValidIsraeliPhone } from '@/lib/phone'
 import { z } from 'zod'
 
-// Lenient on purpose — real-world numbers/handles come with spaces, dashes,
-// country codes, etc. This only rejects obvious garbage, not exotic formats.
-const PHONE_RE = /^[0-9+\-\s()]{7,20}$/
 const phoneOrEmpty = (label: string) =>
-  z.string().refine((v) => v === '' || PHONE_RE.test(v), { message: `${label} אינו בפורמט תקין` })
+  z.string().refine((v) => v === '' || isValidIsraeliPhone(v), { message: `${label} אינו בפורמט תקין` })
 const urlOrEmpty = (label: string) =>
   z.string().refine((v) => v === '' || /^https?:\/\/.+/i.test(v), {
     message: `${label} חייב להתחיל ב-https://`,

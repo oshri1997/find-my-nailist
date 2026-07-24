@@ -3,15 +3,12 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { FieldValue } from 'firebase-admin/firestore'
 import { z } from 'zod'
-
-// Lenient on purpose — real-world numbers come with spaces, dashes, country
-// codes, etc. This only rejects obvious garbage, not exotic formats.
-const PHONE_RE = /^[0-9+\-\s()]{7,20}$/
+import { isValidIsraeliPhone } from '@/lib/phone'
 
 const patchSchema = z.object({
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
-  phoneNumber: z.string().min(1).regex(PHONE_RE, 'מספר טלפון אינו בפורמט תקין').optional(),
+  phoneNumber: z.string().min(1).refine(isValidIsraeliPhone, { message: 'מספר טלפון אינו בפורמט תקין' }).optional(),
   city: z.string().optional(),
   address: z.string().optional(),
   latitude: z.number().optional(),

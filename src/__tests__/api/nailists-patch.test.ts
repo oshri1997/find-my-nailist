@@ -150,6 +150,24 @@ describe('PATCH /api/nailists/[id]', () => {
     expect(mockUpdateFn).not.toHaveBeenCalled()
   })
 
+  it('rejects a phone number with way too many digits — a real regression, previously accepted', async () => {
+    const res = await PATCH(
+      makeRequest({ phoneNumber: '1232131231231231231231231231231231' }, 'token'),
+      mockParams
+    )
+    expect(res.status).toBe(400)
+    expect(mockUpdateFn).not.toHaveBeenCalled()
+  })
+
+  it('rejects a bitPhone with way too many digits', async () => {
+    const res = await PATCH(
+      makeRequest({ bitPhone: '1232131231231231231231231231231231' }, 'token'),
+      mockParams
+    )
+    expect(res.status).toBe(400)
+    expect(mockUpdateFn).not.toHaveBeenCalled()
+  })
+
   it('rejects an instagram URL missing the https:// scheme', async () => {
     const res = await PATCH(
       makeRequest({ instagramUrl: 'instagram.com/x' }, 'token'),

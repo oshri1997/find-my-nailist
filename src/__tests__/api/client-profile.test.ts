@@ -286,6 +286,13 @@ describe('PATCH /api/me/client-profile', () => {
     expect(mockUpdateFn).not.toHaveBeenCalled()
   })
 
+  it('returns 400 for a phone number with way too many digits — a real regression, previously accepted', async () => {
+    const req = makePatchRequest({ phoneNumber: '1232131231231231231231231231231231' })
+    const res = await PATCH(req)
+    expect(res.status).toBe(400)
+    expect(mockUpdateFn).not.toHaveBeenCalled()
+  })
+
   it('always includes updatedAt in the update', async () => {
     const req = makePatchRequest({ city: 'ירושלים' })
     await PATCH(req)
