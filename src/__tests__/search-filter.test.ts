@@ -147,12 +147,12 @@ describe('filterTags', () => {
 
 describe('PRICE_BANDS', () => {
   it('starts with "הכל" covering the full range', () => {
-    expect(PRICE_BANDS[0]).toEqual({ key: 'all', label: 'הכל', min: 0, max: Infinity })
+    expect(PRICE_BANDS[0]).toEqual({ key: 'all', label: 'הכל', max: Infinity })
   })
 
-  it('has a top-open band for the highest bracket', () => {
-    const top = PRICE_BANDS[PRICE_BANDS.length - 1]
-    expect(top.max).toBe(Infinity)
+  it('is a set of cumulative "up to" caps, not exclusive ranges', () => {
+    const caps = PRICE_BANDS.filter((b) => b.key !== 'all').map((b) => b.max)
+    expect(caps).toEqual([...caps].sort((a, b) => a - b))
   })
 })
 
@@ -163,27 +163,21 @@ describe('matchesPriceBand', () => {
     expect(matchesPriceBand(undefined, 'all')).toBe(true)
   })
 
-  it('matches prices within the band range (inclusive)', () => {
+  it('matches prices at or below the cap (inclusive)', () => {
     expect(matchesPriceBand(50, 'under100')).toBe(true)
     expect(matchesPriceBand(100, 'under100')).toBe(true)
     expect(matchesPriceBand(101, 'under100')).toBe(false)
   })
 
-  it('matches a mid-range band', () => {
-    expect(matchesPriceBand(150, '100-200')).toBe(true)
-    expect(matchesPriceBand(99, '100-200')).toBe(false)
-    expect(matchesPriceBand(201, '100-200')).toBe(false)
+  it('also matches lower prices under a higher cap — bands are cumulative, not exclusive ranges', () => {
+    expect(matchesPriceBand(50, 'under350')).toBe(true)
+    expect(matchesPriceBand(150, 'under350')).toBe(true)
+    expect(matchesPriceBand(351, 'under350')).toBe(false)
   })
 
-  it('matches the open-ended top band', () => {
-    expect(matchesPriceBand(350, '350plus')).toBe(true)
-    expect(matchesPriceBand(10000, '350plus')).toBe(true)
-    expect(matchesPriceBand(349, '350plus')).toBe(false)
-  })
-
-  it('excludes nailists with no known price once a specific band is selected', () => {
+  it('excludes nailists with no known price once a specific cap is selected', () => {
     expect(matchesPriceBand(null, 'under100')).toBe(false)
-    expect(matchesPriceBand(undefined, '200-350')).toBe(false)
+    expect(matchesPriceBand(undefined, 'under350')).toBe(false)
   })
 
   it('falls back to matching everything for an unknown band key', () => {

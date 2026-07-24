@@ -23,10 +23,17 @@ describe('EmailVerificationBanner', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
-  it('shows the verification prompt for an unverified signed-in user', () => {
-    mockUseAuth.mockReturnValue({ user: { emailVerified: false } })
+  it('shows the client-oriented verification prompt for an unverified client', () => {
+    mockUseAuth.mockReturnValue({ user: { emailVerified: false }, role: 'CLIENT' })
     render(<EmailVerificationBanner />)
     expect(screen.getByText('כדי להזמין תור צריך קודם לאשר את ההרשמה במייל.')).toBeInTheDocument()
+  })
+
+  it('shows the nailist-oriented verification prompt for an unverified nailist', () => {
+    mockUseAuth.mockReturnValue({ user: { emailVerified: false }, role: 'NAILIST' })
+    render(<EmailVerificationBanner />)
+    expect(screen.getByText('כדי לקבל תורים מלקוחות צריך קודם לאשר את ההרשמה במייל.')).toBeInTheDocument()
+    expect(screen.queryByText('כדי להזמין תור צריך קודם לאשר את ההרשמה במייל.')).not.toBeInTheDocument()
   })
 
   it('resends the verification email and shows confirmation', async () => {

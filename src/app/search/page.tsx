@@ -108,27 +108,26 @@ export function matchesFilter(serviceNames: string[], filter: string): boolean {
 export interface PriceBand {
   key: string
   label: string
-  min: number
   max: number
 }
 
 export const PRICE_BANDS: PriceBand[] = [
-  { key: 'all', label: 'הכל', min: 0, max: Infinity },
-  { key: 'under100', label: 'עד ₪100', min: 0, max: 100 },
-  { key: '100-200', label: '₪100-200', min: 100, max: 200 },
-  { key: '200-350', label: '₪200-350', min: 200, max: 350 },
-  { key: '350plus', label: '₪350+', min: 350, max: Infinity },
+  { key: 'all', label: 'הכל', max: Infinity },
+  { key: 'under100', label: 'עד ₪100', max: 100 },
+  { key: 'under200', label: 'עד ₪200', max: 200 },
+  { key: 'under350', label: 'עד ₪350', max: 350 },
 ]
 
-// A nailist with no known price is excluded once a specific band is chosen —
-// we can't tell whether they'd fit, so treating "unknown" as "doesn't match"
-// avoids silently showing prices outside the range the visitor asked for.
+// Bands are cumulative caps ("up to X"), not exclusive ranges — a nailist
+// priced at ₪80 must still show up under the ₪200 or ₪350 cap, not just
+// the cheapest one. A nailist with no known price is excluded once a
+// specific cap is chosen, since we can't tell whether they'd fit under it.
 export function matchesPriceBand(minPrice: number | null | undefined, bandKey: string): boolean {
   if (bandKey === 'all') return true
   const band = PRICE_BANDS.find((b) => b.key === bandKey)
   if (!band) return true
   if (minPrice == null) return false
-  return minPrice >= band.min && minPrice <= band.max
+  return minPrice <= band.max
 }
 
 export function matchesQuery(nailist: { businessName: string; city?: string }, query: string): boolean {

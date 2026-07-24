@@ -58,11 +58,24 @@ describe('Search page — price range filter', () => {
     await waitFor(() => expect(screen.getByText('סטודיו זול')).toBeInTheDocument())
 
     await user.click(screen.getByRole('button', { name: 'מחיר' }))
-    await user.click(screen.getByRole('button', { name: '₪350+' }))
+    await user.click(screen.getByRole('button', { name: 'עד ₪350' }))
 
-    expect(screen.getByRole('button', { name: '₪350+' })).toBeInTheDocument()
-    expect(screen.getByText('סטודיו יקר')).toBeInTheDocument()
-    expect(screen.queryByText('סטודיו זול')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'עד ₪350' })).toBeInTheDocument()
+    expect(screen.queryByText('סטודיו יקר')).not.toBeInTheDocument()
+  })
+
+  it('also shows cheaper nailists under a higher cap — caps are cumulative, not exclusive ranges', async () => {
+    const user = userEvent.setup()
+    render(<SearchPage />)
+    await waitFor(() => expect(screen.getByText('סטודיו זול')).toBeInTheDocument())
+
+    await user.click(screen.getByRole('button', { name: 'מחיר' }))
+    await user.click(screen.getByRole('button', { name: 'עד ₪350' }))
+
+    // ₪80 and ₪150 nailists both fall under the ₪350 cap; only the ₪400 one is excluded.
+    expect(screen.getByText('סטודיו זול')).toBeInTheDocument()
+    expect(screen.getByText('סטודיו בינוני')).toBeInTheDocument()
+    expect(screen.queryByText('סטודיו יקר')).not.toBeInTheDocument()
   })
 
   it('restores all nailists when switching back to "הכל"', async () => {

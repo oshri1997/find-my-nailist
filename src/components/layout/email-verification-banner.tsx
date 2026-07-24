@@ -5,7 +5,7 @@ import { Mail, Loader2, Check } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 export function EmailVerificationBanner() {
-  const { user } = useAuth()
+  const { user, role } = useAuth()
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
@@ -42,7 +42,11 @@ export function EmailVerificationBanner() {
     <div className="bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 text-sm">
       <div className="container mx-auto max-w-7xl px-6 py-2.5 flex flex-wrap items-center justify-center gap-2 text-center">
         <Mail className="h-4 w-4 shrink-0" />
-        <span className="font-semibold">כדי להזמין תור צריך קודם לאשר את ההרשמה במייל.</span>
+        <span className="font-semibold">
+          {role === 'NAILIST'
+            ? 'כדי לקבל תורים מלקוחות צריך קודם לאשר את ההרשמה במייל.'
+            : 'כדי להזמין תור צריך קודם לאשר את ההרשמה במייל.'}
+        </span>
         <span className="text-amber-700/80 dark:text-amber-400/80">בדקי את תיבת הדואר (וגם את תיקיית הספאם).</span>
         <button
           type="button"

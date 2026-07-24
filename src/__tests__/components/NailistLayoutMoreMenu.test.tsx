@@ -148,7 +148,7 @@ describe('Dashboard layout — email verification banner', () => {
     render(<DashboardLayout>content</DashboardLayout>)
 
     await waitFor(() => {
-      expect(screen.getByText('כדי להזמין תור צריך קודם לאשר את ההרשמה במייל.')).toBeInTheDocument()
+      expect(screen.getByText('כדי לקבל תורים מלקוחות צריך קודם לאשר את ההרשמה במייל.')).toBeInTheDocument()
     })
   })
 
