@@ -372,8 +372,8 @@ export default function SearchPage() {
       {/* Search controls bar */}
       <div className="bg-card border-b border-border sticky top-16 z-30 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
         <div className="container mx-auto max-w-7xl px-6 py-4">
-          <div className="flex gap-3">
-            <div className="relative flex-1">
+          <div className="flex flex-col gap-3 md:flex-row">
+            <div className="relative md:flex-1">
               <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
               <Input
                 value={locationLabel}
@@ -389,141 +389,143 @@ export default function SearchPage() {
                 readOnly={!!coords}
               />
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleLocate}
-              disabled={locating}
-              className="rounded-xl h-11 border-border gap-2 shrink-0 hover:border-primary/40 hover:bg-primary/50 hover:text-foreground cursor-pointer"
-              title="השתמשי במיקום שלי"
-            >
-              {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4 text-primary" />}
-              <span className="hidden md:inline text-sm font-semibold">קרוב אלי</span>
-            </Button>
-            <Button
-              onClick={() => fetchNailists(coords?.lat, coords?.lng)}
-              className="bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-11 px-6 font-bold gap-2 shadow-[0_2px_12px_rgba(245,23,92,0.25)] cursor-pointer"
-            >
-              <Search className="h-4 w-4" />
-              <span className="hidden md:inline">חפשי</span>
-            </Button>
-            <div className="relative shrink-0">
+            <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setShowDatePicker((v) => !v)}
-                className={`rounded-xl h-11 gap-2 border-border cursor-pointer ${
-                  selectedDate ? 'border-primary/40 text-primary bg-primary/10' : 'hover:border-primary/40'
-                }`}
+                onClick={handleLocate}
+                disabled={locating}
+                className="rounded-xl h-11 border-border gap-2 shrink-0 hover:border-primary/40 hover:bg-primary/50 hover:text-foreground cursor-pointer"
+                title="השתמשי במיקום שלי"
               >
-                <CalendarIcon className="h-4 w-4" />
-                <span className="hidden md:inline text-sm font-semibold">
-                  {selectedDate ? `${selectedDate.getDate()}.${selectedDate.getMonth() + 1}` : 'תאריך'}
-                </span>
+                {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4 text-primary" />}
+                <span className="text-sm font-semibold">קרוב אלי</span>
               </Button>
-              {selectedDate && (
-                <button
-                  onClick={() => selectDate(null)}
-                  aria-label="נקי תאריך"
-                  className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-muted-foreground/70 hover:bg-muted-foreground rounded-full flex items-center justify-center text-white cursor-pointer"
+              <Button
+                onClick={() => fetchNailists(coords?.lat, coords?.lng)}
+                className="hidden md:inline-flex bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-11 px-6 font-bold gap-2 shadow-[0_2px_12px_rgba(245,23,92,0.25)] cursor-pointer shrink-0"
+              >
+                <Search className="h-4 w-4" />
+                <span>חפשי</span>
+              </Button>
+              <div className="relative shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowDatePicker((v) => !v)}
+                  className={`rounded-xl h-11 gap-2 border-border cursor-pointer ${
+                    selectedDate ? 'border-primary/40 text-primary bg-primary/10' : 'hover:border-primary/40'
+                  }`}
                 >
-                  <X className="h-2.5 w-2.5" />
-                </button>
-              )}
-              {showDatePicker && (
-                <div className="absolute z-40 mt-2 top-full left-0 bg-card border border-border rounded-2xl shadow-lg p-4 w-72">
-                  <div className="flex items-center justify-between mb-2">
-                    <button
-                      onClick={prevMonth}
-                      disabled={isAtMinMonth}
-                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </button>
-                    <p className="text-sm font-black text-foreground">{HE_MONTHS[viewMonth]} {viewYear}</p>
-                    <button
-                      onClick={nextMonth}
-                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors cursor-pointer"
-                    >
-                      <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-                    </button>
+                  <CalendarIcon className="h-4 w-4" />
+                  <span className="text-sm font-semibold">
+                    {selectedDate ? `${selectedDate.getDate()}.${selectedDate.getMonth() + 1}` : 'תאריך'}
+                  </span>
+                </Button>
+                {selectedDate && (
+                  <button
+                    onClick={() => selectDate(null)}
+                    aria-label="נקי תאריך"
+                    className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-muted-foreground/70 hover:bg-muted-foreground rounded-full flex items-center justify-center text-white cursor-pointer"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                )}
+                {showDatePicker && (
+                  <div className="absolute z-40 mt-2 top-full left-1/2 -translate-x-1/2 bg-card border border-border rounded-2xl shadow-lg p-4 w-72 max-w-[calc(100vw-2rem)]">
+                    <div className="flex items-center justify-between mb-2">
+                      <button
+                        onClick={prevMonth}
+                        disabled={isAtMinMonth}
+                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                      <p className="text-sm font-black text-foreground">{HE_MONTHS[viewMonth]} {viewYear}</p>
+                      <button
+                        onClick={nextMonth}
+                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors cursor-pointer"
+                      >
+                        <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-7 gap-1 mb-1">
+                      {HE_DAYS_SHORT.map((d) => (
+                        <div key={d} className="text-center text-[10px] font-bold text-muted-foreground py-0.5">{d}</div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1">
+                      {monthDays.map((d, i) => {
+                        if (!d) return <div key={`e-${i}`} />
+                        const isPast = d < now
+                        const isSelected = selectedDate !== null && toDateStr(selectedDate) === toDateStr(d)
+                        const isToday = toDateStr(d) === toDateStr(now)
+                        return (
+                          <button
+                            key={toDateStr(d)}
+                            data-testid="search-date-btn"
+                            disabled={isPast}
+                            onClick={() => selectDate(d)}
+                            className={`flex items-center justify-center h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-primary text-white'
+                                : isPast
+                                ? 'text-muted-foreground/30 cursor-not-allowed'
+                                : isToday
+                                ? 'border border-primary/40 text-primary hover:bg-primary/10'
+                                : 'text-foreground hover:bg-muted'
+                            }`}
+                          >
+                            {d.getDate()}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {selectedDate && (
+                      <button
+                        onClick={() => selectDate(null)}
+                        className="w-full mt-3 text-xs font-bold text-muted-foreground hover:text-primary text-center cursor-pointer"
+                      >
+                        נקי בחירה
+                      </button>
+                    )}
                   </div>
-                  <div className="grid grid-cols-7 gap-1 mb-1">
-                    {HE_DAYS_SHORT.map((d) => (
-                      <div key={d} className="text-center text-[10px] font-bold text-muted-foreground py-0.5">{d}</div>
+                )}
+              </div>
+              <div className="relative shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowPriceFilter((v) => !v)}
+                  className={`rounded-xl h-11 gap-2 border-border cursor-pointer ${
+                    activePriceBand !== 'all' ? 'border-primary/40 text-primary bg-primary/10' : 'hover:border-primary/40'
+                  }`}
+                >
+                  <span className="text-sm font-semibold">
+                    {activePriceBand === 'all' ? 'מחיר' : PRICE_BANDS.find((b) => b.key === activePriceBand)?.label}
+                  </span>
+                </Button>
+                {showPriceFilter && (
+                  <div className="absolute z-40 mt-2 top-full left-1/2 -translate-x-1/2 bg-card border border-border rounded-2xl shadow-lg p-3 w-48 max-w-[calc(100vw-2rem)]">
+                    {PRICE_BANDS.map((band) => (
+                      <button
+                        key={band.key}
+                        onClick={() => {
+                          setActivePriceBand(band.key)
+                          setShowPriceFilter(false)
+                        }}
+                        className={`block w-full text-right rounded-xl px-3 py-2 text-sm font-semibold transition-all cursor-pointer ${
+                          activePriceBand === band.key
+                            ? 'bg-primary/15 text-primary'
+                            : 'text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {band.label}
+                      </button>
                     ))}
                   </div>
-                  <div className="grid grid-cols-7 gap-1">
-                    {monthDays.map((d, i) => {
-                      if (!d) return <div key={`e-${i}`} />
-                      const isPast = d < now
-                      const isSelected = selectedDate !== null && toDateStr(selectedDate) === toDateStr(d)
-                      const isToday = toDateStr(d) === toDateStr(now)
-                      return (
-                        <button
-                          key={toDateStr(d)}
-                          data-testid="search-date-btn"
-                          disabled={isPast}
-                          onClick={() => selectDate(d)}
-                          className={`flex items-center justify-center h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-primary text-white'
-                              : isPast
-                              ? 'text-muted-foreground/30 cursor-not-allowed'
-                              : isToday
-                              ? 'border border-primary/40 text-primary hover:bg-primary/10'
-                              : 'text-foreground hover:bg-muted'
-                          }`}
-                        >
-                          {d.getDate()}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  {selectedDate && (
-                    <button
-                      onClick={() => selectDate(null)}
-                      className="w-full mt-3 text-xs font-bold text-muted-foreground hover:text-primary text-center cursor-pointer"
-                    >
-                      נקי בחירה
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="relative shrink-0">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowPriceFilter((v) => !v)}
-                className={`rounded-xl h-11 gap-2 border-border cursor-pointer ${
-                  activePriceBand !== 'all' ? 'border-primary/40 text-primary bg-primary/10' : 'hover:border-primary/40'
-                }`}
-              >
-                <span className="text-sm font-semibold">
-                  {activePriceBand === 'all' ? 'מחיר' : PRICE_BANDS.find((b) => b.key === activePriceBand)?.label}
-                </span>
-              </Button>
-              {showPriceFilter && (
-                <div className="absolute z-40 mt-2 top-full left-0 bg-card border border-border rounded-2xl shadow-lg p-3 w-48">
-                  {PRICE_BANDS.map((band) => (
-                    <button
-                      key={band.key}
-                      onClick={() => {
-                        setActivePriceBand(band.key)
-                        setShowPriceFilter(false)
-                      }}
-                      className={`block w-full text-right rounded-xl px-3 py-2 text-sm font-semibold transition-all cursor-pointer ${
-                        activePriceBand === band.key
-                          ? 'bg-primary/15 text-primary'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {band.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
 
@@ -548,7 +550,7 @@ export default function SearchPage() {
 
       <div className="flex-1 container mx-auto max-w-7xl px-6 py-8">
         {/* Results header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col gap-3 mb-6 md:flex-row md:items-center md:justify-between">
           <p className="text-muted-foreground font-medium text-sm">
             {loading || !imagesReady ? (
               <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin text-primary" /> מחפשת...</span>
@@ -556,7 +558,7 @@ export default function SearchPage() {
               <>נמצאו <span className="font-black text-foreground">{sorted.length}</span> נייליסטיות</>
             )}
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => {
                 const next = viewMode === 'grid' ? 'map' : 'grid'
@@ -576,7 +578,7 @@ export default function SearchPage() {
                   )
                 }
               }}
-              className={`rounded-xl px-3 py-1.5 text-sm font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`shrink-0 rounded-xl px-3 py-1.5 text-sm font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
                 viewMode === 'map'
                   ? 'border-primary/40 text-primary bg-primary/10 dark:bg-primary/30'
                   : 'border-border text-muted-foreground hover:border-primary/30 hover:text-primary'
@@ -590,7 +592,7 @@ export default function SearchPage() {
                 key={key}
                 onClick={() => setSortBy(key)}
                 disabled={key === 'distance' && !coords}
-                className={`rounded-xl px-3 py-1.5 text-sm font-semibold border transition-all disabled:opacity-40 cursor-pointer ${
+                className={`shrink-0 rounded-xl px-3 py-1.5 text-sm font-semibold border transition-all disabled:opacity-40 cursor-pointer ${
                   sortBy === key
                     ? 'border-primary/40 text-primary bg-primary/10 dark:bg-primary/30'
                     : 'border-border text-muted-foreground hover:border-primary/30 hover:text-primary'
