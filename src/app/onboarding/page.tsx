@@ -700,7 +700,7 @@ export default function OnboardingPage() {
                             type="button"
                             onClick={() => deleteService(s.id)}
                             disabled={deletingServiceId === s.id}
-                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/60 dark:hover:bg-white/10 text-muted-foreground/60 hover:text-red-500 transition-colors"
+                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/60 dark:hover:bg-white/10 text-muted-foreground/60 hover:text-destructive transition-colors"
                             title="מחיקה"
                           >
                             {deletingServiceId === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}

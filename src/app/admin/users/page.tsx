@@ -17,9 +17,9 @@ interface AdminUser {
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  CLIENT: 'bg-blue-50 text-blue-600 border-blue-200',
+  CLIENT: 'bg-info/10 text-info border-info/20',
   NAILIST: 'bg-primary/10 text-primary border-primary/20',
-  ADMIN: 'bg-amber-50 text-amber-600 border-amber-200',
+  ADMIN: 'bg-warning/10 text-warning border-warning/20',
 }
 
 type BulkAction = 'suspend' | 'unsuspend' | 'delete'
@@ -272,7 +272,7 @@ export default function AdminUsersPage() {
           <button
             onClick={() => setConfirmBulk('suspend')}
             disabled={bulkRunning}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-warning/10 text-warning border border-warning/20 hover:bg-warning/20 transition-colors disabled:opacity-40"
           >
             <Ban className="w-3.5 h-3.5" />
             השעה
@@ -280,7 +280,7 @@ export default function AdminUsersPage() {
           <button
             onClick={() => setConfirmBulk('unsuspend')}
             disabled={bulkRunning}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-success/10 text-success border border-success/20 hover:bg-success/20 transition-colors disabled:opacity-40"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             בטל השעיה
@@ -288,7 +288,7 @@ export default function AdminUsersPage() {
           <button
             onClick={() => setConfirmBulk('delete')}
             disabled={bulkRunning}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors disabled:opacity-40"
           >
             <Trash2 className="w-3.5 h-3.5" />
             מחק
@@ -395,7 +395,7 @@ export default function AdminUsersPage() {
                               <button
                                 onClick={() => { setRevokeError(null); setConfirmRevoke(u) }}
                                 title="הסר הרשאות אדמין"
-                                className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-muted/40 text-muted-foreground border-border hover:border-red-300 hover:text-red-600 transition-all"
+                                className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-muted/40 text-muted-foreground border-border hover:border-destructive/40 hover:text-destructive transition-all"
                               >
                                 הסר אדמין
                               </button>
@@ -418,7 +418,7 @@ export default function AdminUsersPage() {
                               className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
                                 u.role === 'CLIENT'
                                   ? ROLE_COLORS.CLIENT
-                                  : 'bg-muted/40 text-muted-foreground border-border hover:border-blue-300 hover:text-blue-600'
+                                  : 'bg-muted/40 text-muted-foreground border-border hover:border-info/40 hover:text-info'
                               }`}
                             >
                               לקוח
@@ -426,7 +426,7 @@ export default function AdminUsersPage() {
                             <button
                               onClick={() => setConfirmPromote(u)}
                               title="הפוך לאדמין בלבד"
-                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border bg-muted/40 text-muted-foreground border-border hover:border-amber-300 hover:text-amber-600 transition-all"
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border bg-muted/40 text-muted-foreground border-border hover:border-warning/40 hover:text-warning transition-all"
                             >
                               <ShieldCheck className="w-3 h-3" />
                               אדמין
@@ -437,11 +437,11 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-5 py-3">
                       {u.suspended ? (
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-red-50 text-red-500 border-red-200">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-destructive/10 text-destructive border-destructive/20">
                           מושעה
                         </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-green-50 text-green-600 border-green-200">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-success/10 text-success border-success/20">
                           פעיל
                         </span>
                       )}
@@ -456,7 +456,7 @@ export default function AdminUsersPage() {
                             onClick={() => handleToggleSuspend(u)}
                             disabled={togglingSuspend === u.id}
                             title={u.suspended ? 'בטל השעיה' : 'השעה'}
-                            className="p-2 rounded-lg text-muted-foreground hover:text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-40"
+                            className="p-2 rounded-lg text-muted-foreground hover:text-warning hover:bg-warning/10 transition-colors disabled:opacity-40"
                           >
                             {togglingSuspend === u.id
                               ? <Loader2 className="w-4 h-4 animate-spin" />

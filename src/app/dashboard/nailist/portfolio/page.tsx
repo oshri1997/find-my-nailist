@@ -248,7 +248,7 @@ export default function PortfolioPage() {
                   onClick={() => handleDelete(photo)}
                   title="מחקי תמונה"
                   aria-label="מחקי תמונה"
-                  className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-500 shadow-sm"
+                  className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive shadow-sm"
                 >
                   <X className="h-4 w-4" />
                 </button>

@@ -290,7 +290,7 @@ export default function SettingsPage() {
           <h2 className="font-black text-foreground text-base">תמונת פרופיל</h2>
           <p className="text-sm text-muted-foreground font-medium">התמונה שמוצגת לצד שמך באתר</p>
           {photoError && (
-            <p className="text-xs text-red-500 font-semibold mt-1 flex items-center gap-1">
+            <p className="text-xs text-destructive font-semibold mt-1 flex items-center gap-1">
               <AlertCircle className="h-3 w-3" />
               {photoError}
             </p>
@@ -298,7 +298,7 @@ export default function SettingsPage() {
           {photoSaved && (
             <motion.p
               initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-              className="text-xs text-green-600 font-bold mt-1 flex items-center gap-1"
+              className="text-xs text-success font-bold mt-1 flex items-center gap-1"
             >
               <CheckCircle2 className="h-3 w-3" />
               התמונה נשמרה בהצלחה!
@@ -334,15 +334,15 @@ export default function SettingsPage() {
               type="tel"
               dir="ltr"
               className={`rounded-xl h-11 ${
-                phone.trim() && !isValidIsraeliPhone(phone) ? 'border-red-400 focus:border-red-400' : 'border-border focus:border-primary'
+                phone.trim() && !isValidIsraeliPhone(phone) ? 'border-destructive focus:border-destructive' : 'border-border focus:border-primary'
               }`}
             />
             {phone.trim() && !isValidIsraeliPhone(phone) && (
-              <p className="text-xs text-red-500 font-semibold mt-1">{PHONE_INVALID_MESSAGE}</p>
+              <p className="text-xs text-destructive font-semibold mt-1">{PHONE_INVALID_MESSAGE}</p>
             )}
           </div>
           {profileError && (
-            <p className="text-sm text-red-500 font-semibold flex items-center gap-1.5">
+            <p className="text-sm text-destructive font-semibold flex items-center gap-1.5">
               <AlertCircle className="h-4 w-4 shrink-0" />
               {profileError}
             </p>
@@ -357,7 +357,7 @@ export default function SettingsPage() {
               {profileSaving ? 'שומרת...' : 'שמרי שינויים'}
             </Button>
             {profileSaved && (
-              <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1.5 text-green-600 font-bold text-sm">
+              <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1.5 text-success font-bold text-sm">
                 <CheckCircle2 className="h-4 w-4" />
                 נשמר בהצלחה!
               </motion.div>
@@ -421,7 +421,7 @@ export default function SettingsPage() {
             </div>
           </div>
           {passwordError && (
-            <p className="text-sm text-red-500 font-semibold flex items-center gap-1.5">
+            <p className="text-sm text-destructive font-semibold flex items-center gap-1.5">
               <AlertCircle className="h-4 w-4 shrink-0" />
               {passwordError}
             </p>
@@ -436,7 +436,7 @@ export default function SettingsPage() {
               {passwordSaving ? 'מעדכנת...' : 'עדכני סיסמה'}
             </Button>
             {passwordSaved && (
-              <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1.5 text-green-600 font-bold text-sm">
+              <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1.5 text-success font-bold text-sm">
                 <CheckCircle2 className="h-4 w-4" />
                 הסיסמה עודכנה!
               </motion.div>
@@ -456,8 +456,8 @@ export default function SettingsPage() {
 
       {/* Danger zone — delete account */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-        className="bg-card rounded-3xl border border-red-200 dark:border-red-900/40 p-6 shadow-sm space-y-4">
-        <h2 className="font-black text-red-500 text-sm uppercase tracking-wider flex items-center gap-2">
+        className="bg-card rounded-3xl border border-destructive/20 p-6 shadow-sm space-y-4">
+        <h2 className="font-black text-destructive text-sm uppercase tracking-wider flex items-center gap-2">
           <Trash2 className="h-3.5 w-3.5" />
           אזור מסוכן
         </h2>
@@ -470,13 +470,13 @@ export default function SettingsPage() {
             type="button"
             onClick={() => setShowDeleteConfirm(true)}
             variant="outline"
-            className="rounded-xl h-11 px-6 font-bold border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 gap-2"
+            className="rounded-xl h-11 px-6 font-bold border-destructive/30 text-destructive hover:bg-destructive/10 gap-2"
           >
             <Trash2 className="h-4 w-4" />
             מחקי את החשבון שלי
           </Button>
         ) : (
-          <div className="space-y-3 pt-2 border-t border-red-100 dark:border-red-900/30">
+          <div className="space-y-3 pt-2 border-t border-destructive/20">
             {hasPassword && (
               <div>
                 <label className="text-sm font-bold text-muted-foreground block mb-1.5" htmlFor="settingsDeletePassword">הזיני סיסמה לאישור</label>
@@ -485,12 +485,12 @@ export default function SettingsPage() {
                   type="password"
                   value={deletePassword}
                   onChange={(e) => setDeletePassword(e.target.value)}
-                  className="rounded-xl border-border focus:border-red-400 h-11"
+                  className="rounded-xl border-border focus:border-destructive h-11"
                 />
               </div>
             )}
             {deleteError && (
-              <p className="text-sm text-red-500 font-semibold flex items-center gap-1.5">
+              <p className="text-sm text-destructive font-semibold flex items-center gap-1.5">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 {deleteError}
               </p>
@@ -509,7 +509,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={handleDeleteAccount}
                 disabled={deleting || (hasPassword && !deletePassword)}
-                className="bg-red-500 hover:bg-red-600 text-white border-0 rounded-xl h-11 px-6 font-black gap-2 disabled:opacity-60"
+                className="bg-destructive hover:bg-destructive/90 text-white border-0 rounded-xl h-11 px-6 font-black gap-2 disabled:opacity-60"
               >
                 {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
                 {deleting ? 'מוחקת...' : 'כן, מחקי לצמיתות'}

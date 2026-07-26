@@ -302,7 +302,7 @@ export default function NailistDashboard() {
           <button
             onClick={activateProfile}
             disabled={activating}
-            className="shrink-0 flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-black rounded-xl px-4 py-2 transition-colors disabled:opacity-60"
+            className="shrink-0 flex items-center gap-2 bg-warning hover:bg-warning/90 text-white text-sm font-black rounded-xl px-4 py-2 transition-colors disabled:opacity-60"
           >
             <Eye className="h-4 w-4" />
             {activating ? 'מפרסמת...' : 'פרסמי עכשיו'}
@@ -333,7 +333,7 @@ export default function NailistDashboard() {
           </div>
           <Link
             href="/dashboard/nailist/services"
-            className="shrink-0 flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-black rounded-xl px-4 py-2 transition-colors"
+            className="shrink-0 flex items-center gap-2 bg-info hover:bg-info/90 text-white text-sm font-black rounded-xl px-4 py-2 transition-colors"
           >
             הוסיפי שירות קצר
           </Link>

@@ -225,7 +225,8 @@ function AppointmentCard({
                 size="sm"
                 onClick={() => onUpdate(apt.id, 'CONFIRMED')}
                 disabled={isUpdating}
-                className="bg-green-500 hover:bg-green-600 border-0 rounded-xl font-bold gap-1 text-xs"
+                variant="success"
+                className="rounded-xl font-bold gap-1 text-xs"
               >
                 {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
                 אשר
@@ -236,7 +237,8 @@ function AppointmentCard({
                 size="sm"
                 onClick={() => onUpdate(apt.id, 'COMPLETED')}
                 disabled={isUpdating}
-                className="bg-blue-500 hover:bg-blue-600 border-0 rounded-xl font-bold gap-1 text-xs"
+                variant="info"
+                className="rounded-xl font-bold gap-1 text-xs"
               >
                 {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Star className="h-3 w-3" />}
                 הושלם
@@ -247,7 +249,7 @@ function AppointmentCard({
               variant="outline"
               onClick={() => onUpdate(apt.id, 'CANCELLED')}
               disabled={isUpdating}
-              className="border-red-200 dark:border-red-900/50 text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl font-bold gap-1 text-xs"
+              className="border-destructive/30 text-destructive/80 hover:bg-destructive/10 rounded-xl font-bold gap-1 text-xs"
             >
               <XCircle className="h-3 w-3" />
               בטל
@@ -266,7 +268,7 @@ function AppointmentCard({
             variant="outline"
             onClick={() => onConfirmDeposit(apt.id)}
             disabled={isUpdatingDeposit}
-            className="border-border text-muted-foreground hover:border-green-300 hover:text-green-600 rounded-xl font-bold gap-1.5 text-xs"
+            className="border-border text-muted-foreground hover:border-success/40 hover:text-success rounded-xl font-bold gap-1.5 text-xs"
           >
             {isUpdatingDeposit ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wallet className="h-3 w-3" />}
             אשרי קבלת מקדמה

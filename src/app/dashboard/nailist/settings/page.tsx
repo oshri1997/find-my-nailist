@@ -308,7 +308,7 @@ export default function NailistSettingsPage() {
                 <button
                   type="button"
                   onClick={handleRemoveCover}
-                  className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-red-500 transition-colors"
+                  className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors"
                 >
                   <X className="h-3 w-3" />
                   הסירי תמונה

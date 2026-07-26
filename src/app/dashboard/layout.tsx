@@ -215,7 +215,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             <button
               onClick={handleSignOut}
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-destructive hover:bg-red-50 dark:hover:bg-red-950/30 transition-all cursor-pointer"
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
               יציאה
@@ -344,7 +344,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
                 <button
                   onClick={handleSignOut}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-destructive hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                 >
                   <LogOut className="h-4 w-4" />
                   יציאה מהחשבון

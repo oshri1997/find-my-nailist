@@ -323,7 +323,7 @@ export default function NailistServicesPage() {
                     <button
                       onClick={() => handleDelete(service.id)}
                       disabled={deletingId === service.id}
-                      className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-950/30 text-muted-foreground/50 hover:text-red-400 transition-colors"
+                      className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-destructive/10 text-muted-foreground/50 hover:text-destructive transition-colors"
                       title="מחיקה"
                     >
                       {deletingId === service.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
