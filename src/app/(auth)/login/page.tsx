@@ -62,6 +62,21 @@ export default function AuthPage() {
     const pendingMode = (sessionStorage.getItem('pendingMode') as Mode | null) ?? mode
     sessionStorage.removeItem('pendingMode')
 
+    const isGoogleUser = user.providerData.some((p) => p.providerId === 'google.com')
+
+    // A Google account gets one shot at a calendar-connect redirect right
+    // after sign-in (never for email/password accounts — there's no Google
+    // token to request in that flow, and no popup to piggyback on). Landing
+    // here again with the calendar already connected just continues on to
+    // the normal destination.
+    function proceed(target: string, googleCalendarConnected: boolean) {
+      if (isGoogleUser && !googleCalendarConnected) {
+        window.location.assign(`/api/auth/google-calendar/connect?next=${encodeURIComponent(target)}`)
+        return
+      }
+      router.replace(target)
+    }
+
     fetch('/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -72,13 +87,16 @@ export default function AuthPage() {
         photoUrl: user.photoURL ?? undefined,
       }),
     })
-      .then(r => ({ isNew: r.status === 201 }))
-      .then(({ isNew }) => {
+      .then(async (r) => ({
+        isNew: r.status === 201,
+        googleCalendarConnected: (await r.json().catch(() => ({})))?.data?.googleCalendarConnected === true,
+      }))
+      .then(({ isNew, googleCalendarConnected }) => {
         // Brand new user → role selection onboarding, always — a deep-link
         // redirect (e.g. bounced here from a protected page) must not skip
         // mandatory onboarding for an account that doesn't exist yet.
         if (isNew) {
-          router.replace('/onboarding/welcome')
+          proceed('/onboarding/welcome', googleCalendarConnected)
           return
         }
 
@@ -88,13 +106,15 @@ export default function AuthPage() {
         // No more "registered as a different role" mismatch check: with no
         // role pre-declared at registration, there's nothing left to
         // mismatch — just sign the account in.
-        router.replace(redirectTo || '/')
+        proceed(redirectTo || '/', googleCalendarConnected)
       })
       .catch(() => {
         // Network failure fallback — a registration attempt might be a brand
         // new account (isNew is unknown here since the request itself
         // failed), so route to onboarding first rather than risk skipping it
-        // via redirectTo, same reasoning as the isNew branch above.
+        // via redirectTo, same reasoning as the isNew branch above. Calendar
+        // connect is skipped here too — safer to land the account than to
+        // chain another network-dependent redirect on top of one that just failed.
         if (pendingMode === 'register') {
           router.replace('/onboarding/welcome')
         } else {

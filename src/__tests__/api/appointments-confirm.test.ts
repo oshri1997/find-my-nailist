@@ -80,6 +80,13 @@ jest.mock('@/lib/email', () => ({
   sendClientConfirmedEmail: (...args: unknown[]) => mockSendClientConfirmedEmail(...args),
 }))
 
+const mockBuildAppointmentEventPayload = jest.fn()
+const mockCreateGoogleCalendarEvent = jest.fn()
+jest.mock('@/lib/google-calendar', () => ({
+  buildAppointmentEventPayload: (...args: unknown[]) => mockBuildAppointmentEventPayload(...args),
+  createGoogleCalendarEvent: (...args: unknown[]) => mockCreateGoogleCalendarEvent(...args),
+}))
+
 // ── Import after mocks ──────────────────────────────────────────────────────
 
 import { GET } from '@/app/api/appointments/confirm/route'
@@ -101,6 +108,7 @@ const pastExpiry = { toDate: () => new Date(Date.now() - 1000) }
 describe('GET /api/appointments/confirm', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockCreateGoogleCalendarEvent.mockResolvedValue({ eventId: 'evt-1' })
 
     collectionStore['appointments'] = [
       {
@@ -115,6 +123,7 @@ describe('GET /api/appointments/confirm', () => {
         price: 150,
         currency: 'ILS',
         startTime: { toDate: () => new Date('2026-07-01T10:00:00Z') },
+        endTime: { toDate: () => new Date('2026-07-01T11:00:00Z') },
       },
     ]
 
@@ -125,8 +134,10 @@ describe('GET /api/appointments/confirm', () => {
     }
     docStore['nailistProfiles/nailist-profile-1'] = {
       businessName: 'סטודיו נייל',
+      userId: 'nailist-user-1',
     }
     docStore['users/client-user-1'] = { email: 'client@test.com' }
+    docStore['users/nailist-user-1'] = { email: 'nailist@test.com' }
   })
 
   it('redirects with error=invalid when no token is provided', async () => {
@@ -215,5 +226,40 @@ describe('GET /api/appointments/confirm', () => {
     const res = await GET(req)
     expect(res.status).toBe(307)
     expect(res.headers.get('Location')).toContain('emailError=1')
+  })
+
+  it('creates a Google Calendar event for both sides when both have tokens on file', async () => {
+    docStore['users/client-user-1'] = { email: 'client@test.com', googleCalendarTokens: { accessToken: 'a', expiryDate: 0, scope: 's' } }
+    docStore['users/nailist-user-1'] = { email: 'nailist@test.com', googleCalendarTokens: { accessToken: 'b', expiryDate: 0, scope: 's' } }
+
+    const req = makeRequest('valid-confirm-token')
+    await GET(req)
+    await new Promise((r) => setTimeout(r, 10))
+
+    expect(mockCreateGoogleCalendarEvent).toHaveBeenCalledTimes(2)
+    expect(mockBuildAppointmentEventPayload).toHaveBeenCalledWith('client', expect.anything())
+    expect(mockBuildAppointmentEventPayload).toHaveBeenCalledWith('nailist', expect.anything())
+
+    const eventIdsUpdate = collectionStore['appointments'][0]
+    expect(eventIdsUpdate.googleCalendarEventIds).toEqual({ client: 'evt-1', nailist: 'evt-1' })
+  })
+
+  it('does not create a Google Calendar event for a side with no tokens on file', async () => {
+    // default users/* docs (set in outer beforeEach) have no googleCalendarTokens
+    const req = makeRequest('valid-confirm-token')
+    await GET(req)
+    await new Promise((r) => setTimeout(r, 10))
+
+    expect(mockCreateGoogleCalendarEvent).not.toHaveBeenCalled()
+  })
+
+  it('still redirects to the confirmed page even if Google Calendar sync fails', async () => {
+    docStore['users/client-user-1'] = { email: 'client@test.com', googleCalendarTokens: { accessToken: 'a', expiryDate: 0, scope: 's' } }
+    mockCreateGoogleCalendarEvent.mockRejectedValue(new Error('boom'))
+
+    const req = makeRequest('valid-confirm-token')
+    const res = await GET(req)
+    expect(res.status).toBe(307)
+    expect(res.headers.get('Location')).toContain('/appointments/confirmed')
   })
 })

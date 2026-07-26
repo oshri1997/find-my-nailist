@@ -50,7 +50,12 @@ export async function POST(request: NextRequest) {
     const snap = await userRef.get()
 
     if (snap.exists) {
-      return NextResponse.json({ data: { id: snap.id, ...snap.data() } })
+      // Never spread the raw doc here — it may carry googleCalendarTokens
+      // (a live OAuth refresh token), which must never reach client-side JS.
+      const { googleCalendarTokens, ...rest } = snap.data() ?? {}
+      return NextResponse.json({
+        data: { id: snap.id, ...rest, googleCalendarConnected: !!googleCalendarTokens },
+      })
     }
 
     const now = FieldValue.serverTimestamp()

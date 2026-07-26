@@ -4,6 +4,12 @@ import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue } from 'firebase-admin/firestore'
 import { sendCancellationEmail, sendReviewRequestEmail } from '@/lib/email'
+import {
+  buildAppointmentEventPayload,
+  createGoogleCalendarEvent,
+  deleteGoogleCalendarEvent,
+} from '@/lib/google-calendar'
+import type { GoogleCalendarTokens } from '@/types'
 
 const schema = z.object({
   status: z.enum(['CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW']),
@@ -84,6 +90,76 @@ export async function PATCH(
       return wasAlreadyRequested
     })
 
+    if (status === 'CONFIRMED') {
+      // Fire-and-forget, same as the COMPLETED/CANCELLED blocks below — a
+      // Calendar API hiccup must never fail the status-update response.
+      void (async () => {
+        try {
+          const clientProfileSnap = await db.collection(COLLECTIONS.CLIENT_PROFILES).doc(existingData.clientProfileId).get()
+          const clientProfile = clientProfileSnap.data()
+          const clientUserId = clientProfile?.userId as string | undefined
+
+          const [clientUserSnap, nailistUserSnap] = await Promise.all([
+            clientUserId ? db.collection(COLLECTIONS.USERS).doc(clientUserId).get() : Promise.resolve(null),
+            cachedNailistData?.userId ? db.collection(COLLECTIONS.USERS).doc(cachedNailistData.userId as string).get() : Promise.resolve(null),
+          ])
+
+          const startTime: Date = existingData.startTime?.toDate?.() ?? new Date(existingData.startTime)
+          const endTime: Date = existingData.endTime?.toDate?.() ?? new Date(existingData.endTime)
+          const eventDetails = {
+            serviceName: existingData.serviceName as string,
+            nailistBusinessName: (cachedNailistData?.businessName as string | undefined) ?? '',
+            clientDisplayName: (existingData.clientDisplayName as string | undefined) ?? 'לקוחה',
+            startTime,
+            endTime,
+            price: existingData.price as number,
+            currency: existingData.currency as string,
+            notes: existingData.notes as string | undefined,
+          }
+
+          const eventIds: { client?: string; nailist?: string } = {}
+
+          const clientTokens = clientUserSnap?.data()?.googleCalendarTokens as GoogleCalendarTokens | undefined
+          if (clientTokens) {
+            try {
+              const { eventId, refreshedTokens } = await createGoogleCalendarEvent(
+                clientTokens,
+                buildAppointmentEventPayload('client', eventDetails)
+              )
+              eventIds.client = eventId
+              if (refreshedTokens && clientUserId) {
+                await db.collection(COLLECTIONS.USERS).doc(clientUserId).update({ googleCalendarTokens: refreshedTokens })
+              }
+            } catch (err) {
+              console.error('[confirm] ❌ client Google Calendar event failed', err)
+            }
+          }
+
+          const nailistTokens = nailistUserSnap?.data()?.googleCalendarTokens as GoogleCalendarTokens | undefined
+          if (nailistTokens) {
+            try {
+              const { eventId, refreshedTokens } = await createGoogleCalendarEvent(
+                nailistTokens,
+                buildAppointmentEventPayload('nailist', eventDetails)
+              )
+              eventIds.nailist = eventId
+              if (refreshedTokens) {
+                await db.collection(COLLECTIONS.USERS).doc(cachedNailistData.userId as string).update({ googleCalendarTokens: refreshedTokens })
+              }
+            } catch (err) {
+              console.error('[confirm] ❌ nailist Google Calendar event failed', err)
+            }
+          }
+
+          if (eventIds.client || eventIds.nailist) {
+            await appointmentRef.update({ googleCalendarEventIds: eventIds })
+          }
+        } catch (err) {
+          console.error('[confirm] ❌ Google Calendar sync failed', err)
+        }
+      })()
+    }
+
     if (status === 'COMPLETED') {
       void (async () => {
         try {
@@ -146,6 +222,54 @@ export async function PATCH(
           console.error('[cancel] ❌ email failed', err)
         }
       })()
+
+      // Separate fire-and-forget from the email one above — this must run
+      // even when there's no client email to notify (the early `return` in
+      // the block above is about the email, not about cleanup).
+      const existingEventIds = existingData.googleCalendarEventIds as { client?: string; nailist?: string } | undefined
+      if (existingEventIds?.client || existingEventIds?.nailist) {
+        void (async () => {
+          try {
+            const clientProfileSnap = await db.collection(COLLECTIONS.CLIENT_PROFILES).doc(existingData.clientProfileId).get()
+            const clientUserId = clientProfileSnap.data()?.userId as string | undefined
+
+            const [clientUserSnap, nailistUserSnap] = await Promise.all([
+              clientUserId ? db.collection(COLLECTIONS.USERS).doc(clientUserId).get() : Promise.resolve(null),
+              cachedNailistData?.userId ? db.collection(COLLECTIONS.USERS).doc(cachedNailistData.userId as string).get() : Promise.resolve(null),
+            ])
+
+            if (existingEventIds.client) {
+              const clientTokens = clientUserSnap?.data()?.googleCalendarTokens as GoogleCalendarTokens | undefined
+              if (clientTokens) {
+                try {
+                  const { refreshedTokens } = await deleteGoogleCalendarEvent(clientTokens, existingEventIds.client)
+                  if (refreshedTokens && clientUserId) {
+                    await db.collection(COLLECTIONS.USERS).doc(clientUserId).update({ googleCalendarTokens: refreshedTokens })
+                  }
+                } catch (err) {
+                  console.error('[cancel] ❌ deleting client Google Calendar event failed', err)
+                }
+              }
+            }
+
+            if (existingEventIds.nailist) {
+              const nailistTokens = nailistUserSnap?.data()?.googleCalendarTokens as GoogleCalendarTokens | undefined
+              if (nailistTokens) {
+                try {
+                  const { refreshedTokens } = await deleteGoogleCalendarEvent(nailistTokens, existingEventIds.nailist)
+                  if (refreshedTokens) {
+                    await db.collection(COLLECTIONS.USERS).doc(cachedNailistData.userId as string).update({ googleCalendarTokens: refreshedTokens })
+                  }
+                } catch (err) {
+                  console.error('[cancel] ❌ deleting nailist Google Calendar event failed', err)
+                }
+              }
+            }
+          } catch (err) {
+            console.error('[cancel] ❌ Google Calendar cleanup failed', err)
+          }
+        })()
+      }
     }
 
     return NextResponse.json({ message: 'Status updated', status })

@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Loader2, AlertCircle, CheckCircle2, Camera, Lock, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Loader2, AlertCircle, CheckCircle2, Camera, Lock, Trash2, Eye, EyeOff, Calendar as CalendarIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/components/auth/auth-provider'
@@ -40,10 +40,16 @@ function friendlyReauthError(err: unknown): string {
 export default function SettingsPage() {
   const { user, role, loading: authLoading, signOut } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [loading, setLoading] = useState(true)
   const [profileId, setProfileId] = useState<string | null>(null)
   const [hasPassword, setHasPassword] = useState(false)
+
+  // Google Calendar connection
+  const [googleCalendarConnected, setGoogleCalendarConnected] = useState<boolean | null>(null)
+  const [googleCalendarBusy, setGoogleCalendarBusy] = useState(false)
+  const [googleCalendarError, setGoogleCalendarError] = useState('')
 
   // Profile photo
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
@@ -110,6 +116,42 @@ export default function SettingsPage() {
         .finally(() => setLoading(false))
     }
   }, [user, authLoading, role, router])
+
+  useEffect(() => {
+    if (authLoading || !user) return
+
+    // Just landed back here from the connect flow — reflect it immediately
+    // instead of waiting on the fetch below, and strip the query param so a
+    // refresh doesn't re-show it.
+    if (searchParams.get('gcal') === 'connected') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setGoogleCalendarConnected(true)
+      router.replace('/settings')
+    }
+
+    fetch('/api/me/google-calendar')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => { if (json) setGoogleCalendarConnected(json.connected === true) })
+      .catch(() => {})
+  }, [user, authLoading, searchParams, router])
+
+  function handleConnectCalendar() {
+    window.location.assign(`/api/auth/google-calendar/connect?next=${encodeURIComponent('/settings')}`)
+  }
+
+  async function handleDisconnectCalendar() {
+    setGoogleCalendarBusy(true)
+    setGoogleCalendarError('')
+    try {
+      const res = await fetch('/api/auth/google-calendar/disconnect', { method: 'POST' })
+      if (!res.ok) throw new Error('failed')
+      setGoogleCalendarConnected(false)
+    } catch {
+      setGoogleCalendarError('שגיאה בניתוק היומן — נסי שוב')
+    } finally {
+      setGoogleCalendarBusy(false)
+    }
+  }
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -453,6 +495,52 @@ export default function SettingsPage() {
           <p className="text-sm text-muted-foreground font-medium">החשבון שלך מחובר דרך Google — אין סיסמה לשינוי כאן.</p>
         </motion.div>
       )}
+
+      {/* Google Calendar sync */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
+        className="bg-card rounded-3xl border border-border p-6 shadow-sm space-y-4 mb-6">
+        <h2 className="font-black text-muted-foreground text-sm uppercase tracking-wider flex items-center gap-2">
+          <CalendarIcon className="h-3.5 w-3.5" />
+          יומן Google
+        </h2>
+        <p className="text-sm text-muted-foreground font-medium">
+          כשהיומן מחובר, תורים שאושרו נוספים אוטומטית גם ליומן ה-Google שלך.
+        </p>
+        {googleCalendarConnected === null ? (
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        ) : googleCalendarConnected ? (
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 text-success font-bold text-sm">
+              <CheckCircle2 className="h-4 w-4" />
+              מחובר
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDisconnectCalendar}
+              disabled={googleCalendarBusy}
+              className="rounded-xl h-9 px-4 text-sm font-bold border-border disabled:opacity-60"
+            >
+              {googleCalendarBusy ? 'מנתקת...' : 'נתקי יומן'}
+            </Button>
+          </div>
+        ) : (
+          <Button
+            type="button"
+            onClick={handleConnectCalendar}
+            className="bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-xl h-11 px-6 font-black gap-2"
+          >
+            <CalendarIcon className="h-4 w-4" />
+            חברי יומן Google
+          </Button>
+        )}
+        {googleCalendarError && (
+          <p className="text-sm text-destructive font-semibold flex items-center gap-1.5">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {googleCalendarError}
+          </p>
+        )}
+      </motion.div>
 
       {/* Danger zone — delete account */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}

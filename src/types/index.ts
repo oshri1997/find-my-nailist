@@ -9,6 +9,13 @@ export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLET
 export type DepositStatus = 'AWAITING_PAYMENT' | 'CLIENT_MARKED_PAID' | 'NAILIST_CONFIRMED'
 
 // Firestore document types (timestamps as Firestore Timestamp)
+export interface GoogleCalendarTokens {
+  accessToken: string
+  refreshToken?: string
+  expiryDate: number   // ms epoch
+  scope: string
+}
+
 export interface UserDoc {
   uid: string
   email: string
@@ -17,6 +24,9 @@ export interface UserDoc {
   role: UserRole
   isAdmin?: boolean
   suspended?: boolean   // blocks new sign-ins/session refresh; distinct from account deletion
+  // Never sent to the client as-is (contains a live OAuth refresh token) —
+  // API routes must strip this field and expose only a derived boolean.
+  googleCalendarTokens?: GoogleCalendarTokens
   createdAt: Timestamp
   updatedAt: Timestamp
 }
@@ -115,6 +125,10 @@ export interface AppointmentDoc {
   depositAmount?: number       // present only when depositRequired
   depositCurrency?: string     // present only when depositRequired
   depositStatus?: DepositStatus // present only when depositRequired
+  // Google Calendar event IDs created when the appointment was confirmed —
+  // kept per-side so a later cancellation can delete each calendar's own
+  // copy (client and nailist each have their own Google account/token).
+  googleCalendarEventIds?: { client?: string; nailist?: string }
   createdAt: Timestamp
   updatedAt: Timestamp
 }

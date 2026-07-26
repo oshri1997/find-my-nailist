@@ -79,6 +79,16 @@ jest.mock('@/lib/email', () => ({
   sendCancellationEmail: (...args: unknown[]) => mockSendCancellationEmail(...args),
 }))
 
+const mockBuildAppointmentEventPayload = jest.fn()
+const mockCreateGoogleCalendarEvent = jest.fn()
+const mockDeleteGoogleCalendarEvent = jest.fn()
+
+jest.mock('@/lib/google-calendar', () => ({
+  buildAppointmentEventPayload: (...args: unknown[]) => mockBuildAppointmentEventPayload(...args),
+  createGoogleCalendarEvent: (...args: unknown[]) => mockCreateGoogleCalendarEvent(...args),
+  deleteGoogleCalendarEvent: (...args: unknown[]) => mockDeleteGoogleCalendarEvent(...args),
+}))
+
 // ── Import after mocks ──────────────────────────────────────────────────────
 
 import { PATCH } from '@/app/api/appointments/[id]/status/route'
@@ -108,6 +118,8 @@ const mockParams: { params: Promise<{ id: string }> } = {
 describe('PATCH /api/appointments/[id]/status', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockCreateGoogleCalendarEvent.mockResolvedValue({ eventId: 'evt-1' })
+    mockDeleteGoogleCalendarEvent.mockResolvedValue({})
 
     // Default appointment doc
     docStore['appointments/appointment-1'] = {
@@ -118,6 +130,7 @@ describe('PATCH /api/appointments/[id]/status', () => {
       clientDisplayName: 'לקוחה',
       reviewRequested: false,
       startTime: { toDate: () => new Date('2026-06-20T10:00:00Z') },
+      endTime: { toDate: () => new Date('2026-06-20T11:00:00Z') },
     }
 
     docStore['clientProfiles/client-profile-1'] = {
@@ -243,6 +256,58 @@ describe('PATCH /api/appointments/[id]/status', () => {
     await new Promise((r) => setTimeout(r, 10))
 
     expect(mockSendCancellationEmail).not.toHaveBeenCalled()
+  })
+
+  it('creates a Google Calendar event for both sides when status → CONFIRMED and both have tokens on file', async () => {
+    docStore['appointments/appointment-1'] = { ...docStore['appointments/appointment-1'], status: 'PENDING' }
+    docStore['users/client-user-1'] = { email: 'client@test.com', googleCalendarTokens: { accessToken: 'a', expiryDate: 0, scope: 's' } }
+    docStore['users/nailist-user-1'] = { email: 'nailist@test.com', googleCalendarTokens: { accessToken: 'b', expiryDate: 0, scope: 's' } }
+
+    const req = makeRequest({ status: 'CONFIRMED' }, 'valid-token')
+    await PATCH(req, mockParams)
+    await new Promise((r) => setTimeout(r, 10))
+
+    expect(mockCreateGoogleCalendarEvent).toHaveBeenCalledTimes(2)
+    expect(mockBuildAppointmentEventPayload).toHaveBeenCalledWith('client', expect.anything())
+    expect(mockBuildAppointmentEventPayload).toHaveBeenCalledWith('nailist', expect.anything())
+
+    const eventIdsUpdate = mockUpdateFn.mock.calls.find(([data]) => data?.googleCalendarEventIds)
+    expect(eventIdsUpdate?.[0]).toEqual({ googleCalendarEventIds: { client: 'evt-1', nailist: 'evt-1' } })
+  })
+
+  it('does NOT create a Google Calendar event for a side with no tokens on file', async () => {
+    docStore['appointments/appointment-1'] = { ...docStore['appointments/appointment-1'], status: 'PENDING' }
+    // client-user-1/nailist-user-1 default docs (set in outer beforeEach) have no googleCalendarTokens
+    const req = makeRequest({ status: 'CONFIRMED' }, 'valid-token')
+    await PATCH(req, mockParams)
+    await new Promise((r) => setTimeout(r, 10))
+
+    expect(mockCreateGoogleCalendarEvent).not.toHaveBeenCalled()
+  })
+
+  it('deletes both sides\' Google Calendar events when status → CANCELLED and event IDs are on file', async () => {
+    docStore['appointments/appointment-1'] = {
+      ...docStore['appointments/appointment-1'],
+      googleCalendarEventIds: { client: 'evt-client', nailist: 'evt-nailist' },
+    }
+    docStore['users/client-user-1'] = { email: 'client@test.com', googleCalendarTokens: { accessToken: 'a', expiryDate: 0, scope: 's' } }
+    docStore['users/nailist-user-1'] = { email: 'nailist@test.com', googleCalendarTokens: { accessToken: 'b', expiryDate: 0, scope: 's' } }
+
+    const req = makeRequest({ status: 'CANCELLED' }, 'valid-token')
+    await PATCH(req, mockParams)
+    await new Promise((r) => setTimeout(r, 10))
+
+    expect(mockDeleteGoogleCalendarEvent).toHaveBeenCalledTimes(2)
+    expect(mockDeleteGoogleCalendarEvent).toHaveBeenCalledWith(expect.objectContaining({ accessToken: 'a' }), 'evt-client')
+    expect(mockDeleteGoogleCalendarEvent).toHaveBeenCalledWith(expect.objectContaining({ accessToken: 'b' }), 'evt-nailist')
+  })
+
+  it('skips Google Calendar cleanup on CANCELLED when there are no event IDs to delete', async () => {
+    const req = makeRequest({ status: 'CANCELLED' }, 'valid-token')
+    await PATCH(req, mockParams)
+    await new Promise((r) => setTimeout(r, 10))
+
+    expect(mockDeleteGoogleCalendarEvent).not.toHaveBeenCalled()
   })
 })
 

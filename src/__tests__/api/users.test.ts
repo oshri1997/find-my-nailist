@@ -108,6 +108,27 @@ describe('POST /api/users', () => {
     expect(mockAdd).not.toHaveBeenCalled()
   })
 
+  it('reports googleCalendarConnected:false and omits the field entirely when no tokens are on file', async () => {
+    docStore['users/user-123'] = { uid: 'user-123', email: 'sarah@test.com', role: 'NAILIST' }
+    const res = await POST(makeRequest(validNailistBody, 'valid-token'))
+    const json = await res.json()
+    expect(json.data.googleCalendarConnected).toBe(false)
+  })
+
+  it('reports googleCalendarConnected:true but never leaks the raw googleCalendarTokens object', async () => {
+    docStore['users/user-123'] = {
+      uid: 'user-123',
+      email: 'sarah@test.com',
+      role: 'NAILIST',
+      googleCalendarTokens: { accessToken: 'secret-access', refreshToken: 'secret-refresh' },
+    }
+    const res = await POST(makeRequest(validNailistBody, 'valid-token'))
+    const json = await res.json()
+    expect(json.data.googleCalendarConnected).toBe(true)
+    expect(json.data.googleCalendarTokens).toBeUndefined()
+    expect(JSON.stringify(json)).not.toContain('secret-access')
+  })
+
   it('creates a client profile hidden behind onboarding until name+phone are set', async () => {
     const res = await POST(makeRequest({ ...validNailistBody, role: 'CLIENT' }, 'valid-token'))
     expect(res.status).toBe(201)

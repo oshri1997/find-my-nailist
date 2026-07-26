@@ -3,6 +3,8 @@ import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { FieldValue } from 'firebase-admin/firestore'
 import { sendClientConfirmedEmail } from '@/lib/email'
+import { buildAppointmentEventPayload, createGoogleCalendarEvent } from '@/lib/google-calendar'
+import type { GoogleCalendarTokens } from '@/types'
 
 export async function GET(request: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://nailistiot.fun'
@@ -100,6 +102,71 @@ export async function GET(request: NextRequest) {
     } else {
       console.warn('[confirm] ⚠️ no clientEmail found — clientProfileId:', apt.clientProfileId)
     }
+
+    // Calendar sync — fire-and-forget, same rationale as the dashboard
+    // confirm path in api/appointments/[id]/status: never let a Calendar API
+    // hiccup affect the redirect the nailist's email link is waiting on.
+    const nailistUserId = nailistSnap.data()?.userId as string | undefined
+    void (async () => {
+      try {
+        const nailistUserSnap = nailistUserId
+          ? await db.collection(COLLECTIONS.USERS).doc(nailistUserId).get()
+          : null
+
+        const startTime: Date = apt.startTime?.toDate?.() ?? new Date(apt.startTime)
+        const endTime: Date = apt.endTime?.toDate?.() ?? new Date(apt.endTime)
+        const eventDetails = {
+          serviceName: apt.serviceName as string,
+          nailistBusinessName,
+          clientDisplayName: (apt.clientDisplayName as string | undefined) ?? 'לקוחה',
+          startTime,
+          endTime,
+          price: apt.price as number,
+          currency: apt.currency as string,
+          notes: apt.notes as string | undefined,
+        }
+
+        const eventIds: { client?: string; nailist?: string } = {}
+
+        const clientTokens = clientUserSnap?.data()?.googleCalendarTokens as GoogleCalendarTokens | undefined
+        if (clientTokens) {
+          try {
+            const { eventId, refreshedTokens } = await createGoogleCalendarEvent(
+              clientTokens,
+              buildAppointmentEventPayload('client', eventDetails)
+            )
+            eventIds.client = eventId
+            if (refreshedTokens && clientUserId) {
+              await db.collection(COLLECTIONS.USERS).doc(clientUserId).update({ googleCalendarTokens: refreshedTokens })
+            }
+          } catch (err) {
+            console.error('[confirm] ❌ client Google Calendar event failed', err)
+          }
+        }
+
+        const nailistTokens = nailistUserSnap?.data()?.googleCalendarTokens as GoogleCalendarTokens | undefined
+        if (nailistTokens) {
+          try {
+            const { eventId, refreshedTokens } = await createGoogleCalendarEvent(
+              nailistTokens,
+              buildAppointmentEventPayload('nailist', eventDetails)
+            )
+            eventIds.nailist = eventId
+            if (refreshedTokens && nailistUserId) {
+              await db.collection(COLLECTIONS.USERS).doc(nailistUserId).update({ googleCalendarTokens: refreshedTokens })
+            }
+          } catch (err) {
+            console.error('[confirm] ❌ nailist Google Calendar event failed', err)
+          }
+        }
+
+        if (eventIds.client || eventIds.nailist) {
+          await doc.ref.update({ googleCalendarEventIds: eventIds })
+        }
+      } catch (err) {
+        console.error('[confirm] ❌ Google Calendar sync failed', err)
+      }
+    })()
 
     const redirectUrl = new URL(`${appUrl}/appointments/confirmed`)
     if (!emailSent) redirectUrl.searchParams.set('emailError', '1')

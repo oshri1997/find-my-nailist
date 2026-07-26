@@ -30,6 +30,7 @@ Nailistiot a full-stack booking platform for nail artists in Israel. Clients dis
 - **Email notifications** — Hebrew RTL emails for booking requests and confirmations via Resend
 - **Portfolio & map** — photo gallery per nailist; pins on Google Maps in the search view
 - **Auth** — Firebase Auth with email/password and Google OAuth
+- **Google Calendar sync** — optional per-user connection; a confirmed appointment is added to both the client's and the nailist's calendar, and removed again if it's later cancelled
 
 ## Tech Stack
 
@@ -83,6 +84,9 @@ Open [http://localhost:3000](http://localhost:3000).
 | `NEXT_PUBLIC_APP_URL` | ✅ | Full public URL (e.g. `https://nailistiot.fun`) |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | ❌ | Google Maps key (client-side map view) |
 | `GOOGLE_MAPS_API_KEY` | ❌ | Google Maps key (server-side place details) |
+| `GOOGLE_CALENDAR_CLIENT_ID` | ❌ | OAuth 2.0 client ID for Google Calendar sync |
+| `GOOGLE_CALENDAR_CLIENT_SECRET` | ❌ | OAuth 2.0 client secret for Google Calendar sync |
+| `GOOGLE_CALENDAR_REDIRECT_URI` | ❌ | Override for the OAuth redirect URI (defaults to `${NEXT_PUBLIC_APP_URL}/api/auth/google-calendar/callback`) |
 | `DEBUG_EMAIL_SECRET` | ❌ | Secret for `GET /api/debug/email` test endpoint |
 
 ## CI/CD Pipeline
