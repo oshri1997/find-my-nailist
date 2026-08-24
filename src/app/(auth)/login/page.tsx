@@ -16,6 +16,11 @@ import { NailLoader } from '@/components/ui/nail-loader'
 
 type Mode = 'login' | 'register'
 
+// Shared by both panels so the slide-to-the-other-side swap stays perfectly
+// in sync — a light spring reads as "alive" without overshooting into
+// bounciness that would fight the form content still settling underneath it.
+const SWAP_TRANSITION = { type: 'spring', stiffness: 260, damping: 28, mass: 0.9 } as const
+
 const PANEL_CONTENT = {
   login: {
     heading: 'ברוכה השבה',
@@ -249,8 +254,14 @@ export default function AuthPage() {
   return (
     <>
     <div className="min-h-screen flex bg-background">
-      {/* ── Form panel (first in DOM = right side in RTL) ── */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+      {/* ── Form panel — DOM order is fixed; `order` + a shared layout
+          animation is what actually swaps its visual side with the
+          decorative panel below when `mode` flips. ── */}
+      <motion.div
+        layout
+        transition={SWAP_TRANSITION}
+        className={`flex-1 flex items-center justify-center p-6 lg:p-12 ${mode === 'login' ? 'order-1' : 'order-2'}`}
+      >
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="text-center mb-8">
@@ -450,10 +461,14 @@ export default function AuthPage() {
             </motion.div>
           </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
-      {/* ── Decorative panel (second in DOM = left side in RTL) ── */}
-      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-primary via-primary/80 to-accent items-center justify-center relative overflow-hidden">
+      {/* ── Decorative panel — same layout-swap treatment, mirrored order. ── */}
+      <motion.div
+        layout
+        transition={SWAP_TRANSITION}
+        className={`hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-primary via-primary/80 to-accent items-center justify-center relative overflow-hidden ${mode === 'login' ? 'order-2' : 'order-1'}`}
+      >
         <div className="absolute top-[-15%] left-[-15%] w-80 h-80 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute bottom-[-15%] right-[-15%] w-96 h-96 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute inset-0 dot-pattern pointer-events-none opacity-10" />
@@ -490,7 +505,7 @@ export default function AuthPage() {
             </div>
           </motion.div>
         </AnimatePresence>
-      </div>
+      </motion.div>
     </div>
 
     {legalModal && (
