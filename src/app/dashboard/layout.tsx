@@ -29,13 +29,14 @@ const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { user, isAdmin, displayName: resolvedDisplayName, signOut } = useAuth()
+  const { user, loading: authLoading, isAdmin, displayName: resolvedDisplayName, signOut } = useAuth()
   const router = useRouter()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [showMoreSheet, setShowMoreSheet] = useState(false)
   const [profileId, setProfileId] = useState<string | null>(null)
 
   useEffect(() => {
+    if (authLoading) return
     if (!user) { router.replace('/login'); return }
 
     const controller = new AbortController()
@@ -57,7 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       })
 
     return () => { clearTimeout(timeout); controller.abort() }
-  }, [user, router])
+  }, [user, authLoading, router])
 
   useEffect(() => {
     if (!authorized) return

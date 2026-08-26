@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react'
 import type { User } from 'firebase/auth'
 import * as Sentry from '@sentry/nextjs'
-import { NailLoader } from '@/components/ui/nail-loader'
 
 type UserRole = 'NAILIST' | 'CLIENT' | 'ADMIN' | null
 
@@ -148,14 +147,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsub?.()
   }, [])
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background">
-        <NailLoader />
-      </div>
-    )
-  }
-
+  // `children` renders immediately regardless of `loading` — this used to
+  // early-return a full-screen spinner in its place while loading was true,
+  // which is *always* true on the server (Firebase auth only resolves inside
+  // the client-only effect above), so server-rendered HTML for every route
+  // was just this spinner shell, not the real page. Consumers that care
+  // about the loading window already read `loading` from context themselves
+  // (most show their own local loading state); nothing here needs to gate
+  // the whole tree behind it.
   return (
     <AuthContext.Provider value={{ user, loading, role, isAdmin, onboardingCompleted, displayName, signOut, refreshRole }}>
       {children}
