@@ -13,7 +13,23 @@
  * the sign-out + early-return.
  */
 import { render, screen, waitFor } from '@testing-library/react'
-import { AuthProvider } from '@/components/auth/auth-provider'
+import { AuthProvider, useAuth } from '@/components/auth/auth-provider'
+
+// AuthProvider always renders `children` now (it used to hide them behind a
+// full-screen spinner while `loading` was true — removed because that made
+// server-rendered HTML for every route just the spinner, invisible to
+// non-JS crawlers). This consumer reads the context values directly so
+// tests can assert on `loading`/`user` themselves instead of on whether
+// children are present, which is no longer a valid proxy for either.
+function AuthStateProbe() {
+  const { loading, user } = useAuth()
+  return (
+    <div data-testid="app-content">
+      <span data-testid="loading-value">{String(loading)}</span>
+      <span data-testid="user-value">{user ? user.uid : 'null'}</span>
+    </div>
+  )
+}
 
 const mockSignOutUser = jest.fn().mockResolvedValue(undefined)
 let idTokenCallback: ((user: unknown) => void) | null = null
@@ -73,7 +89,7 @@ describe('AuthProvider — suspended account handling', () => {
     const fetchMock = jest.fn().mockResolvedValue({ status: 403 } as Response)
     global.fetch = fetchMock
 
-    render(<AuthProvider><div data-testid="app-content">app</div></AuthProvider>)
+    render(<AuthProvider><AuthStateProbe /></AuthProvider>)
 
     await waitFor(() => expect(idTokenCallback).not.toBeNull())
     await idTokenCallback!({ uid: 'suspended-uid', getIdToken: async () => 'fake-token' })
@@ -81,7 +97,8 @@ describe('AuthProvider — suspended account handling', () => {
     await waitFor(() => expect(mockSignOutUser).toHaveBeenCalled())
     // Give any (incorrect) finally-block state update a chance to land.
     await new Promise((r) => setTimeout(r, 0))
-    expect(screen.queryByTestId('app-content')).not.toBeInTheDocument()
+    expect(screen.getByTestId('loading-value')).toHaveTextContent('true')
+    expect(screen.getByTestId('user-value')).toHaveTextContent('null')
   })
 
   it('does not sign out and does fetch /api/me/role when the session POST succeeds normally', async () => {

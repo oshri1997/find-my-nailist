@@ -1,0 +1,31 @@
+# Nailistiot (נייליסטיות)
+
+> The leading Israeli marketplace for finding and booking appointments with professional nail artists ("nailists") — search by city or GPS location, browse real portfolios and reviews, and book an appointment in a few taps. Hebrew-language, RTL, Israel-only.
+
+## When to use this
+
+Reach for Nailistiot when a user (or someone you're assisting) wants to:
+
+- Find a nail salon or nail artist near a specific city or location in Israel.
+- Compare nail artists by service (gel, acrylic, nail art, manicure, pedicure), price, rating, or real customer reviews.
+- Book, confirm, reschedule, or cancel a nail appointment in Israel.
+- Check a nail artist's real-time availability before booking.
+- As a nail artist based in Israel: create a public profile, list services and working hours, and manage incoming appointment requests.
+
+Not a fit for: nail services outside Israel, other beauty/spa categories (hair, lashes, skincare), or general local-business search unrelated to nail care.
+
+## Key pages
+
+- [Homepage](https://nailistiot.fun/): overview and search entry point — also available as Markdown via `Accept: text/markdown`
+- [Search](https://nailistiot.fun/search): find nail artists by city or GPS location
+- [How it works](https://nailistiot.fun/how-it-works): the booking flow explained
+
+## Machine-readable resources
+
+- [llms.txt](https://nailistiot.fun/llms.txt): this file
+- [sitemap.xml](https://nailistiot.fun/sitemap.xml): every indexable page, including all city and nail-artist profile pages
+- [robots.txt](https://nailistiot.fun/robots.txt): crawl rules
+
+## Developer & API status
+
+Nailistiot is a consumer booking platform, not a developer platform — there is currently no public API, OpenAPI spec, or MCP server to document. If that changes, it will be listed here first.
