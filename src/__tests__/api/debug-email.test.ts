@@ -17,14 +17,15 @@ function makeRequest(params: Record<string, string> = {}): NextRequest {
 }
 
 describe('GET /api/debug/email', () => {
+  const mutableEnv = process.env as Record<string, string | undefined>
   const originalEnv = process.env.NODE_ENV
 
   afterEach(() => {
-    Object.defineProperty(process.env, 'NODE_ENV', { value: originalEnv, writable: true })
+    mutableEnv.NODE_ENV = originalEnv
   })
 
   it('returns 404 in production', async () => {
-    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true })
+    mutableEnv.NODE_ENV = 'production'
     const res = await GET(makeRequest({ secret: 'any-secret' }))
     expect(res.status).toBe(404)
   })
@@ -36,7 +37,7 @@ describe('GET /api/debug/email', () => {
   })
 
   it('returns 403 in development with wrong secret', async () => {
-    Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true })
+    mutableEnv.NODE_ENV = 'development'
     process.env.DEBUG_EMAIL_SECRET = 'correct-secret'
     const res = await GET(makeRequest({ secret: 'wrong-secret' }))
     expect(res.status).toBe(403)

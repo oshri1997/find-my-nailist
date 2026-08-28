@@ -48,7 +48,7 @@ describe('Registration form — no role picker', () => {
     expect(formPanel).toHaveClass('order-1')
     expect(decorativePanel).toHaveClass('order-2')
 
-    fireEvent.click(screen.getByRole('button', { name: 'התחברות', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: 'התחברות' }))
 
     expect(formPanel).toHaveClass('order-1')
     expect(decorativePanel).toHaveClass('order-2')
