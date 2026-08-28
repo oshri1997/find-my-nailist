@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { motion, AnimatePresence, type Variants } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { Mail, Lock, User, ArrowLeft, AlertCircle, Check, Eye, EyeOff } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
@@ -13,25 +13,9 @@ import Link from 'next/link'
 import LegalModal from '@/components/auth/LegalModal'
 import { sanitizeRedirect } from '@/lib/sanitize-redirect'
 import { NailLoader } from '@/components/ui/nail-loader'
+import { AUTH_TAB_TRANSITION, getAuthContentVariants } from '@/lib/auth-motion'
 
 type Mode = 'login' | 'register'
-
-// Shared by both panels so the slide-to-the-other-side swap stays perfectly
-// in sync — a light spring reads as "alive" without overshooting into
-// bounciness that would fight the form content still settling underneath it.
-const SWAP_TRANSITION = { type: 'spring', stiffness: 260, damping: 28, mass: 0.9 } as const
-
-// One unhurried, smoothly-eased motion for the whole content block — no
-// per-field stagger (that read as a rapid, mechanical line-by-line reveal
-// rather than something considered). Asymmetric on purpose: content arrives
-// from slightly below over half a second, and leaves faster/upward — an
-// unmistakably different feel from a flat instant swap, without calling
-// attention to itself the way a multi-step cascade does.
-const CONTENT_VARIANTS: Variants = {
-  enter: { opacity: 0, y: 18 },
-  center: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
-  exit: { opacity: 0, y: -10, transition: { duration: 0.25, ease: [0.4, 0, 1, 1] } },
-}
 
 const PANEL_CONTENT = {
   login: {
@@ -50,6 +34,8 @@ export default function AuthPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, loading: authLoading } = useAuth()
+  const reducedMotion = useReducedMotion()
+  const contentVariants = getAuthContentVariants(Boolean(reducedMotion))
 
   const redirectTo = sanitizeRedirect(searchParams.get('redirect'))
 
@@ -265,14 +251,12 @@ export default function AuthPage() {
 
   return (
     <>
-    <div className="min-h-screen flex bg-background">
-      {/* ── Form panel — DOM order is fixed; `order` + a shared layout
-          animation is what actually swaps its visual side with the
-          decorative panel below when `mode` flips. ── */}
-      <motion.div
-        layout
-        transition={SWAP_TRANSITION}
-        className={`flex-1 flex items-center justify-center p-6 lg:p-12 ${mode === 'login' ? 'order-1' : 'order-2'}`}
+    <div className="flex h-dvh min-h-screen overflow-y-auto bg-background [scrollbar-gutter:stable]">
+      {/* Keep both halves anchored. Mode changes should help the user orient,
+          not make the entire page move around her. */}
+      <div
+        data-testid="auth-form-panel"
+        className="order-1 flex flex-1 items-center justify-center p-6 lg:p-12"
       >
         <div className="w-full max-w-md">
           {/* Logo */}
@@ -290,13 +274,18 @@ export default function AuthPage() {
                 key={m}
                 type="button"
                 onClick={() => switchMode(m)}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
-                  mode === m
-                    ? 'bg-card text-primary shadow-sm shadow-primary/30'
-                    : 'text-muted-foreground hover:text-foreground'
+                className={`relative flex-1 overflow-hidden rounded-lg py-2.5 text-sm font-bold transition-colors cursor-pointer ${
+                  mode === m ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {m === 'login' ? 'התחברות' : 'הרשמה'}
+                {mode === m && (
+                  <motion.span
+                    layoutId="auth-mode-polish"
+                    transition={reducedMotion ? { duration: 0 } : AUTH_TAB_TRANSITION}
+                    className="absolute inset-0 rounded-lg border border-primary/10 bg-card shadow-sm shadow-primary/20"
+                  />
+                )}
+                <span className="relative z-10">{m === 'login' ? 'התחברות' : 'הרשמה'}</span>
               </button>
             ))}
           </div>
@@ -304,8 +293,8 @@ export default function AuthPage() {
           <AnimatePresence mode="wait">
             <motion.div
               key={mode}
-              variants={CONTENT_VARIANTS}
-              initial="enter"
+              variants={contentVariants}
+              initial={reducedMotion ? false : 'enter'}
               animate="center"
               exit="exit"
             >
@@ -473,13 +462,11 @@ export default function AuthPage() {
             </motion.div>
           </AnimatePresence>
         </div>
-      </motion.div>
+      </div>
 
-      {/* ── Decorative panel — same layout-swap treatment, mirrored order. ── */}
-      <motion.div
-        layout
-        transition={SWAP_TRANSITION}
-        className={`hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-primary via-primary/80 to-accent items-center justify-center relative overflow-hidden ${mode === 'login' ? 'order-2' : 'order-1'}`}
+      <div
+        data-testid="auth-decorative-panel"
+        className="order-2 hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-primary via-primary/80 to-accent items-center justify-center relative overflow-hidden"
       >
         <div className="absolute top-[-15%] left-[-15%] w-80 h-80 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute bottom-[-15%] right-[-15%] w-96 h-96 bg-white/10 rounded-full blur-3xl" />
@@ -488,8 +475,8 @@ export default function AuthPage() {
         <AnimatePresence mode="wait">
           <motion.div
             key={mode}
-            variants={CONTENT_VARIANTS}
-            initial="enter"
+            variants={contentVariants}
+            initial={reducedMotion ? false : 'enter'}
             animate="center"
             exit="exit"
             className="relative z-10 text-white text-center px-10 max-w-xs"
@@ -511,7 +498,7 @@ export default function AuthPage() {
             </div>
           </motion.div>
         </AnimatePresence>
-      </motion.div>
+      </div>
     </div>
 
     {legalModal && (

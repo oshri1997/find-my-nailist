@@ -40,6 +40,20 @@ beforeEach(() => {
 })
 
 describe('Registration form — no role picker', () => {
+  it('keeps the form and decorative panels anchored when switching modes', () => {
+    render(<LoginPage />)
+    const formPanel = screen.getByTestId('auth-form-panel')
+    const decorativePanel = screen.getByTestId('auth-decorative-panel')
+
+    expect(formPanel).toHaveClass('order-1')
+    expect(decorativePanel).toHaveClass('order-2')
+
+    fireEvent.click(screen.getByRole('button', { name: 'התחברות', exact: true }))
+
+    expect(formPanel).toHaveClass('order-1')
+    expect(decorativePanel).toHaveClass('order-2')
+  })
+
   it('does not render a nailist/client role selector', () => {
     render(<LoginPage />)
     expect(screen.queryByText('נייליסטית', { exact: true })).not.toBeInTheDocument()
