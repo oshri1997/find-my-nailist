@@ -186,7 +186,7 @@ export async function PATCH(
             appointmentId: id,
             appUrl: process.env.NEXT_PUBLIC_APP_URL,
           })
-          console.log(`[complete] ✅ review request email sent to ${clientEmail}`)
+          console.log('[complete] ✅ review request email sent')
         } catch (err) {
           console.error('[complete] ❌ review request email failed', err)
         }
@@ -217,7 +217,7 @@ export async function PATCH(
             serviceName: existingData.serviceName as string,
             startTime: existingData.startTime?.toDate?.() ?? new Date(existingData.startTime),
           })
-          console.log(`[cancel] ✅ cancellation email sent to ${clientEmail}`)
+          console.log('[cancel] ✅ cancellation email sent')
         } catch (err) {
           console.error('[cancel] ❌ email failed', err)
         }

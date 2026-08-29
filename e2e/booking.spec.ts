@@ -125,15 +125,13 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
 
-    // The underlying services tab is already open in the background (from
-    // the click above), so it also renders these same service names — .last()
-    // targets the modal's own copy, which is appended later in DOM order.
-    await expect(page.getByText("מניקור ג'ל").last()).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByText('פדיקור').last()).toBeVisible()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByRole('button', { name: /מניקור ג'ל/ })).toBeVisible({ timeout: 10_000 })
+    await expect(dialog.getByRole('button', { name: /פדיקור/ })).toBeVisible()
 
     // Continue isn't disabled — clicking with no service selected shows an
     // inline validation message instead and stays on step 1.
-    await page.getByRole('button', { name: /המשך/ }).click()
+    await dialog.getByRole('button', { name: /המשך/ }).click()
     await expect(page.getByText('יש לבחור שירות כדי להמשיך')).toBeVisible()
   })
 
@@ -142,8 +140,9 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
 
-    await page.getByText("מניקור ג'ל").last().click()
-    await page.getByRole('button', { name: /המשך/ }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('button', { name: /מניקור ג'ל/ }).click()
+    await dialog.getByRole('button', { name: /המשך/ }).click()
     await expect(page.getByText(/בחרי תאריך ושעה/)).toBeVisible({ timeout: 10_000 })
   })
 
@@ -151,8 +150,9 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
-    await page.getByText("מניקור ג'ל").last().click()
-    await page.getByRole('button', { name: /המשך/ }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('button', { name: /מניקור ג'ל/ }).click()
+    await dialog.getByRole('button', { name: /המשך/ }).click()
 
     await expect(page.getByText(/בחרי תאריך ושעה/)).toBeVisible({ timeout: 10_000 })
     await expect(page.getByTestId('date-btn').first()).toBeVisible()
@@ -162,12 +162,13 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
-    await page.getByText("מניקור ג'ל").last().click()
-    await page.getByRole('button', { name: /המשך/ }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('button', { name: /מניקור ג'ל/ }).click()
+    await dialog.getByRole('button', { name: /המשך/ }).click()
 
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
-    await page.locator(`[data-date="${toDateStr(tomorrow)}"]`).click()
+    await dialog.locator(`[data-date="${toDateStr(tomorrow)}"]`).click()
 
     await expect(page.getByText('08:00')).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('09:00')).toBeVisible()
@@ -177,14 +178,15 @@ test.describe.serial('Booking modal (real session)', () => {
     await page.goto('/nailists/n1')
     await page.getByRole('button', { name: /שירותים/ }).click()
     await page.getByRole('button', { name: /קביעת תור/ }).first().click()
-    await page.getByText("מניקור ג'ל").last().click()
-    await page.getByRole('button', { name: /המשך/ }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('button', { name: /מניקור ג'ל/ }).click()
+    await dialog.getByRole('button', { name: /המשך/ }).click()
 
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
-    await page.locator(`[data-date="${toDateStr(tomorrow)}"]`).click()
-    await page.getByText('08:00').click()
-    await page.getByRole('button', { name: /המשך/ }).click()
+    await dialog.locator(`[data-date="${toDateStr(tomorrow)}"]`).click()
+    await dialog.getByText('08:00').click()
+    await dialog.getByRole('button', { name: /המשך/ }).click()
 
     await expect(page.getByText('אישור הזמנה')).toBeVisible()
     await expect(page.getByText('₪150').last()).toBeVisible()

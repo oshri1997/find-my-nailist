@@ -10,7 +10,7 @@ const steps = [
     Icon: MapPin,
     step: '01',
     title: 'גלי נייליסטיות בקרבתך',
-    desc: 'השתמשי במיקום שלך כדי לגלות מאות מומחיות ציפורניים באזורך.',
+    desc: 'השתמשי במיקום שלך כדי לגלות מומחיות ציפורניים באזורך.',
     iconBg: 'bg-primary',
     cardBg: 'bg-primary/10 dark:bg-primary/40',
     border: 'border-primary/20 dark:border-primary/50',
@@ -20,7 +20,7 @@ const steps = [
     Icon: Star,
     step: '02',
     title: 'עיצוב ופורטפוליו',
-    desc: 'עיצובים before & after, ביקורות אמיתיות ומחירים שקופים.',
+    desc: 'עיצובים לפני ואחרי, ביקורות אמיתיות ומחירים שקופים.',
     iconBg: 'bg-rose-700',
     cardBg: 'bg-rose-50 dark:bg-rose-950/40',
     border: 'border-rose-100 dark:border-rose-900/50',
@@ -58,7 +58,7 @@ export function HowItWorksSection() {
             איך זה <span className="gradient-text">עובד?</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-lg mx-auto">
-            מ״חיפוש״ ל״תור מאושר״ — פחות מ-60 שניות
+            מחיפוש ועד שליחת בקשת תור — בפחות מדקה
           </p>
         </motion.div>
 

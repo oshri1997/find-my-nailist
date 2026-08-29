@@ -41,7 +41,7 @@ const baseProfile = {
   depositPercentage: 0,
 }
 
-function mockProfileFetch(profile: typeof baseProfile, opts?: { asOwner?: boolean }) {
+function mockProfileFetch(profile: typeof baseProfile, opts?: { asOwner?: boolean; favoriteUpdateOk?: boolean }) {
   global.fetch = jest.fn().mockImplementation((url: string, init?: RequestInit) => {
     if (url.includes('/api/me/nailist-profile')) {
       return Promise.resolve({
@@ -56,6 +56,15 @@ function mockProfileFetch(profile: typeof baseProfile, opts?: { asOwner?: boolea
       return Promise.resolve({ ok: true, json: async () => ({ data: profile }) } as Response)
     }
     if (url.includes('/api/favorites/')) {
+      if (init?.method) {
+        const ok = opts?.favoriteUpdateOk !== false
+        return Promise.resolve({
+          ok,
+          json: async () => ok
+            ? ({ data: { isFavorited: init.method === 'POST' } })
+            : ({ error: 'Failed' }),
+        } as Response)
+      }
       return Promise.resolve({ ok: true, json: async () => ({ data: { isFavorited: false } }) } as Response)
     }
     return Promise.resolve({ ok: true, json: async () => ({ data: null }) } as Response)
@@ -160,6 +169,21 @@ describe('NailistProfileClient — booking CTA styling', () => {
     const caption = await screen.findByText('נדרשת מקדמה של 20% בביט')
     expect(caption).not.toHaveClass('text-xs')
     expect(caption).toHaveClass('text-sm')
+  })
+})
+
+describe('NailistProfileClient — favorites', () => {
+  it('does not show a failed favorite update as successful', async () => {
+    mockUseAuth.mockReturnValue({ user: { uid: 'u1' }, role: 'CLIENT' })
+    mockProfileFetch(baseProfile, { favoriteUpdateOk: false })
+    render(<NailistProfileClient id="nailist-1" />)
+
+    const saveButton = await screen.findByRole('button', { name: /שמרי/ })
+    fireEvent.click(saveButton)
+
+    await waitFor(() => expect(saveButton).not.toBeDisabled())
+    expect(screen.getByRole('button', { name: /שמרי/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /שמורה/ })).not.toBeInTheDocument()
   })
 })
 

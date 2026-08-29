@@ -169,6 +169,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
     const method = isFavorited ? 'DELETE' : 'POST'
     try {
       const res = await fetch(`/api/favorites/${id}`, { method })
+      if (!res.ok) throw new Error('Favorite update failed')
       const json = await res.json()
       setIsFavorited(json?.data?.isFavorited ?? !isFavorited)
     } catch {
@@ -546,7 +547,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                         onClick={() => openBooking(service.id)}
                         className="bg-gradient-to-r from-primary to-accent border-0 rounded-xl font-bold shadow-sm shadow-primary/40"
                       >
-                        הזמני
+                        הזמיני
                       </Button>
                     )}
                   </div>

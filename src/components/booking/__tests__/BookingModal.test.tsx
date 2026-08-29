@@ -68,6 +68,7 @@ async function navigateToStep3() {
 describe('BookingModal', () => {
   it('renders step title and business name', () => {
     render(<BookingModal {...defaultProps} />)
+    expect(screen.getByRole('dialog', { name: 'בחרי שירות' })).toHaveAttribute('aria-modal', 'true')
     expect(screen.getByText('בחרי שירות')).toBeInTheDocument()
     expect(screen.getByText('סטודיו שרה')).toBeInTheDocument()
   })
@@ -148,7 +149,7 @@ describe('BookingModal', () => {
     fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
 
     await waitFor(() =>
-      expect(screen.getByText(/התור נקבע/)).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /^בקשת התור נשלחה!$/ })).toBeInTheDocument()
     )
   })
 
@@ -276,7 +277,7 @@ describe('BookingModal — Bit deposit', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
 
-    await waitFor(() => expect(screen.getByText(/התור נקבע/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: /^בקשת התור נשלחה!$/ })).toBeInTheDocument())
     expect(screen.queryByText(/נדרשת מקדמה/)).not.toBeInTheDocument()
   })
 
@@ -292,7 +293,7 @@ describe('BookingModal — Bit deposit', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
 
-    await waitFor(() => expect(screen.getByText(/התור נקבע/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: /^בקשת התור נשלחה!$/ })).toBeInTheDocument())
     expect(screen.getByText(/נדרשת מקדמה של ₪30 דרך Bit/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'פתחי את Bit' })).toHaveAttribute('href', 'bit://pay/972501234567?amount=30')
     expect(screen.getByText('050-123-4567')).toBeInTheDocument()
@@ -312,7 +313,7 @@ describe('BookingModal — Bit deposit', () => {
       json: async () => ({ data: { id: 'apt1', depositRequired: true, depositAmount: 30, depositCurrency: 'ILS' } }),
     })
     fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
-    await waitFor(() => expect(screen.getByText(/התור נקבע/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: /^בקשת התור נשלחה!$/ })).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'העתקת מספר טלפון לביט' }))
     expect(writeText).toHaveBeenLastCalledWith('0501234567')
@@ -331,7 +332,7 @@ describe('BookingModal — Bit deposit', () => {
       json: async () => ({ data: { id: 'apt1', depositRequired: true, depositAmount: 30, depositCurrency: 'ILS' } }),
     })
     fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
-    await waitFor(() => expect(screen.getByText(/התור נקבע/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: /^בקשת התור נשלחה!$/ })).toBeInTheDocument())
 
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ message: 'ok' }) })
     fireEvent.click(screen.getByRole('button', { name: /כבר שילמתי/ }))
@@ -361,7 +362,7 @@ describe('BookingModal — Bit deposit on desktop web', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: /אישור/ }))
 
-    await waitFor(() => expect(screen.getByText(/התור נקבע/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: /^בקשת התור נשלחה!$/ })).toBeInTheDocument())
     expect(screen.getByText(/פתחי את אפליקציית Bit בטלפון שלך והעבירי ₪30 למספר 050-123-4567/)).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'פתחי את Bit' })).not.toBeInTheDocument()
     // the copy actions still work, so she can paste them once she's on her phone

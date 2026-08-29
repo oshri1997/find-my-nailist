@@ -4,7 +4,7 @@
  * ("המיקום שלי") and the client-side substring filter, so real nailists
  * (whose businessName/city never contains "המיקום שלי") were filtered out.
  */
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react'
 import SearchPage from '@/app/search/page'
 
 jest.mock('@/components/layout/navbar', () => ({ Navbar: () => null }))
@@ -48,5 +48,24 @@ describe('Search page — near-me location search', () => {
 
     await waitFor(() => expect(screen.getByDisplayValue('המיקום שלי')).toBeInTheDocument())
     await waitFor(() => expect(screen.getByText('סטודיו שרה')).toBeInTheDocument())
+  })
+
+  it('shows a retry state when search fails instead of claiming there are no nailists', async () => {
+    let attempts = 0
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.includes('/api/nailists')) {
+        attempts++
+        if (attempts === 1) return Promise.resolve({ ok: false, status: 503 } as Response)
+        return Promise.resolve({ ok: true, json: async () => ({ data: nailists, hasMore: false }) } as Response)
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ data: null }) } as Response)
+    })
+
+    render(<SearchPage />)
+    expect(await screen.findByRole('alert')).toHaveTextContent('לא הצלחנו לטעון את התוצאות')
+    expect(screen.queryByText('לא נמצאו נייליסטיות')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'נסי שוב' }))
+    expect(await screen.findByText('סטודיו שרה')).toBeInTheDocument()
   })
 })

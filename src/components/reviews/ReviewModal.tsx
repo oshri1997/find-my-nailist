@@ -207,7 +207,7 @@ export default function ReviewModal({
                   disabled={submitting}
                   onClick={() => submit(false)}
                 >
-                  {submitting ? 'שולח...' : 'שלחי'}
+                  {submitting ? 'שולחת...' : 'שלחי'}
                 </Button>
               </div>
             </motion.div>

@@ -135,6 +135,7 @@ export async function GET(request: NextRequest) {
     const pageSize = Number(searchParams.get('pageSize') ?? '12')
     const offset = Math.max(0, Number(searchParams.get('offset') ?? '0'))
     const date = searchParams.get('date') ?? undefined
+    const searchQuery = searchParams.get('query')?.trim().toLowerCase() ?? ''
 
     const db = adminDb()
     const isAuthenticated = await isAuthenticatedRequest(request)
@@ -171,6 +172,39 @@ export async function GET(request: NextRequest) {
       }
 
       nailists.sort((a, b) => (a.distanceKm as number) - (b.distanceKm as number))
+      const page = nailists.slice(offset, offset + pageSize)
+      await Promise.all([attachServiceNames(db, page), attachAvailability(db, page, date)])
+      sanitizeNailists(page, isAuthenticated)
+
+      return NextResponse.json({
+        data: page,
+        total: nailists.length,
+        hasMore: nailists.length > offset + pageSize,
+      })
+    }
+
+    // Firestore cannot perform case-insensitive substring search. Fetch the
+    // active set before paginating when a text query is submitted, otherwise
+    // the client would only search the current page and could report a false
+    // "no results" while a matching business exists on a later page.
+    if (searchQuery) {
+      const snap = await db
+        .collection(COLLECTIONS.NAILIST_PROFILES)
+        .where('isActive', '==', true)
+        .get()
+
+      const nailists = snap.docs
+        .map((d): Record<string, unknown> & { id: string } => ({
+          id: d.id,
+          ...(d.data() as Record<string, unknown>),
+        }))
+        .filter((nailist) => {
+          const businessName = String(nailist['businessName'] ?? '').toLowerCase()
+          const city = String(nailist['city'] ?? '').toLowerCase()
+          return businessName.includes(searchQuery) || city.includes(searchQuery)
+        })
+        .sort((a, b) => a.id.localeCompare(b.id))
+
       const page = nailists.slice(offset, offset + pageSize)
       await Promise.all([attachServiceNames(db, page), attachAvailability(db, page, date)])
       sanitizeNailists(page, isAuthenticated)

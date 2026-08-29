@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
           serviceName: apt.serviceName,
           startTime: apt.startTime?.toDate?.() ?? new Date(apt.startTime),
         })
-        console.log('[decline] ✅ cancellation email sent to', clientEmail)
+        console.log('[decline] ✅ cancellation email sent')
       }
     } catch (err) {
       console.error('[decline] ❌ cancellation email failed:', err)

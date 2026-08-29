@@ -55,6 +55,9 @@ export async function GET(
     }
 
     const profileData = snap.data()!
+    if (profileData.isActive === false) {
+      return NextResponse.json({ error: 'Nailist not found' }, { status: 404 })
+    }
     const hasContactInfo = computeHasContactInfo(profileData)
     if (!isAuthenticated) {
       stripNailistContactFields(profileData)

@@ -146,6 +146,7 @@ describe('POST /api/appointments', () => {
       durationMinutes: 60,
       price: 120,
       currency: 'ILS',
+      nailistProfileId: 'nailist-profile-1',
     }
 
     // Seed nailist profile
@@ -209,6 +210,36 @@ describe('POST /api/appointments', () => {
     const req = makeRequest('POST', validBody, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(404)
+  })
+
+  it('returns 404 when the service belongs to a different nailist', async () => {
+    docStore['services/service-1'] = {
+      ...docStore['services/service-1'],
+      nailistProfileId: 'another-nailist-profile',
+    }
+    const req = makeRequest('POST', validBody, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(404)
+    expect(mockAppointmentAdd).not.toHaveBeenCalled()
+  })
+
+  it('returns 404 when the nailist profile is inactive', async () => {
+    docStore['nailistProfiles/nailist-profile-1'] = {
+      ...docStore['nailistProfiles/nailist-profile-1'],
+      isActive: false,
+    }
+    const req = makeRequest('POST', validBody, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(404)
+    expect(mockAppointmentAdd).not.toHaveBeenCalled()
+  })
+
+  it('returns 404 when the nailist profile does not exist', async () => {
+    delete docStore['nailistProfiles/nailist-profile-1']
+    const req = makeRequest('POST', validBody, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(404)
+    expect(mockAppointmentAdd).not.toHaveBeenCalled()
   })
 
   it('returns 409 when there is a time conflict', async () => {

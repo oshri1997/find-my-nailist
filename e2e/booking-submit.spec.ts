@@ -47,17 +47,16 @@ async function openBookingModal(page: Page) {
 }
 
 async function selectServiceAndTime(page: Page) {
-  // The underlying services tab is already open in the background (from
-  // openBookingModal's tab click), so it renders the same service name —
-  // .last() targets the modal's own copy, appended later in DOM order.
-  await page.getByText("מניקור ג'ל").last().click()
-  await page.getByRole('button', { name: /המשך/ }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: /מניקור ג'ל/ }).click()
+  await dialog.getByRole('button', { name: /המשך/ }).click()
 
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
-  await page.locator(`[data-date="${toDateStr(tomorrow)}"]`).click()
-  await page.getByText('08:00').click()
-  await page.getByRole('button', { name: /המשך/ }).click()
+  await dialog.locator(`[data-date="${toDateStr(tomorrow)}"]`).click()
+  await dialog.getByText('08:00').click()
+  await dialog.getByRole('button', { name: /המשך/ }).click()
 }
 
 test.describe.serial('Booking — full submission flow', () => {
@@ -102,10 +101,11 @@ test.describe.serial('Booking — full submission flow', () => {
     await openBookingModal(page)
     await selectServiceAndTime(page)
 
-    await expect(page.getByText(/אישור הזמנה/)).toBeVisible()
-    await expect(page.getByText("מניקור ג'ל").last()).toBeVisible()
-    await expect(page.getByText('₪150').last()).toBeVisible()
-    await expect(page.getByText('סטודיו שרה').last()).toBeVisible()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByText(/אישור הזמנה/)).toBeVisible()
+    await expect(dialog.getByText("מניקור ג'ל")).toBeVisible()
+    await expect(dialog.getByText('₪150')).toBeVisible()
+    await expect(dialog.getByText('סטודיו שרה')).toBeVisible()
   })
 
   test('successful booking shows done step', async () => {
@@ -120,7 +120,7 @@ test.describe.serial('Booking — full submission flow', () => {
     await selectServiceAndTime(page)
     await page.getByRole('button', { name: /אישור וקביעת תור/ }).click()
 
-    await expect(page.getByText('התור נקבע!')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('בקשת התור נשלחה!')).toBeVisible({ timeout: 10_000 })
   })
 
   test('booking sends correct payload to API', async () => {
@@ -170,15 +170,16 @@ test.describe.serial('Booking — full submission flow', () => {
     )
 
     await openBookingModal(page)
-    await page.getByText("מניקור ג'ל").last().click()
-    await page.getByRole('button', { name: /המשך/ }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('button', { name: /מניקור ג'ל/ }).click()
+    await dialog.getByRole('button', { name: /המשך/ }).click()
 
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
-    await page.locator(`[data-date="${toDateStr(tomorrow)}"]`).click()
-    await page.getByText('08:00').click()
-    await page.getByRole('button', { name: /המשך/ }).click()
-    await page.getByRole('button', { name: /אישור וקביעת תור/ }).click()
+    await dialog.locator(`[data-date="${toDateStr(tomorrow)}"]`).click()
+    await dialog.getByText('08:00').click()
+    await dialog.getByRole('button', { name: /המשך/ }).click()
+    await dialog.getByRole('button', { name: /אישור וקביעת תור/ }).click()
 
     await expect(page.getByText(/יש להתחבר|התחברות|login/i)).toBeVisible({ timeout: 10_000 })
   })

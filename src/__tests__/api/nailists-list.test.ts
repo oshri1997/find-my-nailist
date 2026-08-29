@@ -139,6 +139,22 @@ describe('GET /api/nailists — pagination (no location)', () => {
       .map((r) => r.value)
     expect(profileRefs.some((ref) => ref.orderBy.mock.calls.length > 0)).toBe(true)
   })
+
+  it('searches the full active set before pagination', async () => {
+    collectionStore['nailistProfiles'] = [
+      { __id: 'nailist-1', businessName: 'סטודיו תל אביב', city: 'תל אביב', isActive: true },
+      { __id: 'nailist-2', businessName: 'סטודיו השרון', city: 'נתניה', isActive: true },
+      { __id: 'nailist-3', businessName: 'הציפורן היפה', city: 'חיפה', isActive: true },
+    ]
+
+    const res = await GET(makeRequest(undefined, 'query=חיפה&pageSize=1'))
+    const json = await res.json()
+
+    expect(json.data).toHaveLength(1)
+    expect(json.data[0].id).toBe('nailist-3')
+    expect(json.total).toBe(1)
+    expect(json.hasMore).toBe(false)
+  })
 })
 
 describe('GET /api/nailists — minPrice', () => {

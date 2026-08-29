@@ -141,6 +141,7 @@ export default function SearchPage() {
   const { user } = useAuth()
   const [nailists, setNailists] = useState<Nailist[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [togglingFav, setTogglingFav] = useState<string | null>(null)
   const [imagesReady, setImagesReady] = useState(false)
@@ -172,18 +173,27 @@ export default function SearchPage() {
   // Date used for the current result set — "load more" reuses this rather
   // than whatever's selected right now, for the same reason as activeCoordsRef.
   const activeDateRef = useRef<string | undefined>(undefined)
+  const activeQueryRef = useRef<string | undefined>(undefined)
   // Coords used for the current result set — "load more" reuses these rather
   // than whatever's in the location input right now, so it can't silently
   // switch search context mid-scroll.
   const activeCoordsRef = useRef<{ lat?: number; lng?: number }>({})
 
-  const fetchNailists = useCallback(async (lat?: number, lng?: number, offset = 0, date?: string) => {
+  const fetchNailists = useCallback(async (
+    lat?: number,
+    lng?: number,
+    offset = 0,
+    date?: string,
+    query?: string
+  ) => {
     const myId = offset === 0 ? ++fetchIdRef.current : fetchIdRef.current
     if (offset === 0) {
       setLoading(true)
+      setFetchError(false)
       setImagesReady(false)
       activeCoordsRef.current = { lat, lng }
       activeDateRef.current = date
+      activeQueryRef.current = query?.trim() || undefined
     } else {
       setLoadingMore(true)
     }
@@ -198,8 +208,12 @@ export default function SearchPage() {
       if (activeDate) {
         params.set('date', activeDate)
       }
+      const activeQuery = offset === 0 ? query?.trim() : activeQueryRef.current
+      if (activeQuery && lat == null && lng == null) {
+        params.set('query', activeQuery)
+      }
       const res = await fetch(`/api/nailists?${params}`)
-      if (!res.ok) return
+      if (!res.ok) throw new Error('Search request failed')
       const { data, hasMore: more } = await res.json()
       if (myId !== fetchIdRef.current) return  // stale — a newer fetch is in flight
       setNailists((prev) => (offset === 0 ? data : [...prev, ...data]))
@@ -209,6 +223,8 @@ export default function SearchPage() {
         setSkeletonCount(count)
         try { localStorage.setItem('nailists-count', String(count)) } catch {}
       }
+    } catch {
+      if (myId === fetchIdRef.current && offset === 0) setFetchError(true)
     } finally {
       if (myId === fetchIdRef.current) {
         setLoading(false)
@@ -219,13 +235,25 @@ export default function SearchPage() {
 
   function loadMore() {
     if (loadingMore || !hasMore) return
-    fetchNailists(activeCoordsRef.current.lat, activeCoordsRef.current.lng, nailists.length, activeDateRef.current)
+    fetchNailists(
+      activeCoordsRef.current.lat,
+      activeCoordsRef.current.lng,
+      nailists.length,
+      activeDateRef.current,
+      activeQueryRef.current
+    )
   }
 
   function selectDate(d: Date | null) {
     setSelectedDate(d)
     setShowDatePicker(false)
-    fetchNailists(coords?.lat, coords?.lng, 0, d ? toDateStr(d) : undefined)
+    fetchNailists(
+      coords?.lat,
+      coords?.lng,
+      0,
+      d ? toDateStr(d) : undefined,
+      coords ? undefined : locationLabel
+    )
   }
 
   const isAtMinMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth()
@@ -301,7 +329,8 @@ export default function SearchPage() {
       return next
     })
     try {
-      await fetch(`/api/favorites/${nailistId}`, { method: isFav ? 'DELETE' : 'POST' })
+      const res = await fetch(`/api/favorites/${nailistId}`, { method: isFav ? 'DELETE' : 'POST' })
+      if (!res.ok) throw new Error('Favorite update failed')
     } catch {
       // revert on failure
       setFavorites(prev => {
@@ -323,7 +352,7 @@ export default function SearchPage() {
         setCoords({ lat: latitude, lng: longitude })
         setLocationLabel('המיקום שלי')
         setSortBy('distance')
-        fetchNailists(latitude, longitude)
+        fetchNailists(latitude, longitude, 0, selectedDate ? toDateStr(selectedDate) : undefined)
         setLocating(false)
       },
       () => setLocating(false)
@@ -381,7 +410,13 @@ export default function SearchPage() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
-                    fetchNailists(coords?.lat, coords?.lng)
+                    fetchNailists(
+                      coords?.lat,
+                      coords?.lng,
+                      0,
+                      selectedDate ? toDateStr(selectedDate) : undefined,
+                      coords ? undefined : locationLabel
+                    )
                   }
                 }}
                 className="pr-9 rounded-xl border-border focus:border-primary h-11 bg-card"
@@ -399,10 +434,16 @@ export default function SearchPage() {
                 title="השתמשי במיקום שלי"
               >
                 {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4 text-primary" />}
-                <span className="text-sm font-semibold">קרוב אלי</span>
+                <span className="text-sm font-semibold">קרוב אליי</span>
               </Button>
               <Button
-                onClick={() => fetchNailists(coords?.lat, coords?.lng)}
+                onClick={() => fetchNailists(
+                  coords?.lat,
+                  coords?.lng,
+                  0,
+                  selectedDate ? toDateStr(selectedDate) : undefined,
+                  coords ? undefined : locationLabel
+                )}
                 className="hidden md:inline-flex bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-11 px-6 font-bold gap-2 shadow-[0_2px_12px_rgba(245,23,92,0.25)] cursor-pointer shrink-0"
               >
                 <Search className="h-4 w-4" />
@@ -610,6 +651,26 @@ export default function SearchPage() {
             {Array.from({ length: loading ? skeletonCount : sorted.length }).map((_, i) => (
               <NailistCardSkeleton key={i} />
             ))}
+          </div>
+        ) : fetchError ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center" role="alert">
+            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-5">
+              <Search className="w-7 h-7 text-muted-foreground/60" />
+            </div>
+            <p className="font-black text-foreground text-lg mb-2">לא הצלחנו לטעון את התוצאות</p>
+            <p className="text-sm text-muted-foreground mb-4">בדקי את החיבור ונסי שוב</p>
+            <button
+              onClick={() => fetchNailists(
+                activeCoordsRef.current.lat,
+                activeCoordsRef.current.lng,
+                0,
+                activeDateRef.current,
+                activeQueryRef.current
+              )}
+              className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white cursor-pointer"
+            >
+              נסי שוב
+            </button>
           </div>
         ) : sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">

@@ -95,9 +95,9 @@ export async function GET(request: NextRequest) {
           currency: apt.currency,
         })
         emailSent = true
-        console.log('[confirm] ✅ confirmation email sent to', clientEmail)
+        console.log('[confirm] ✅ confirmation email sent')
       } catch (emailErr) {
-        console.error('[confirm] ❌ email failed for', clientEmail, '—', emailErr)
+        console.error('[confirm] ❌ email failed:', emailErr)
       }
     } else {
       console.warn('[confirm] ⚠️ no clientEmail found — clientProfileId:', apt.clientProfileId)

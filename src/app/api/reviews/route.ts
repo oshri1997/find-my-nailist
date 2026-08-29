@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
           serviceName: (apptData.serviceName as string | undefined) ?? '',
           appUrl: process.env.NEXT_PUBLIC_APP_URL,
         })
-        console.log('[review] ✅ nailist review email sent to', nailistEmail)
+        console.log('[review] ✅ nailist review email sent')
       } catch (err) {
         console.error('[review] ❌ nailist review email failed:', err)
       }

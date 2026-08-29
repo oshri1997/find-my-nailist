@@ -11,7 +11,8 @@ async function getNailistMeta(id: string) {
   try {
     const snap = await adminDb().collection(COLLECTIONS.NAILIST_PROFILES).doc(id).get()
     if (!snap.exists) return null
-    return snap.data() as Record<string, unknown>
+    const data = snap.data() as Record<string, unknown>
+    return data.isActive === false ? null : data
   } catch {
     return null
   }
@@ -20,7 +21,7 @@ async function getNailistMeta(id: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
   const p = await getNailistMeta(id)
-  if (!p) return {}
+  if (!p) return { robots: { index: false, follow: false } }
 
   const name = p.businessName as string
   const city = p.city as string | undefined
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = city ? `${name} — נייליסטית ב${city}` : `${name} — נייליסטית`
   const description = bio
     ? bio.slice(0, 155)
-    : `${name}${city ? ` ב${city}` : ''} — נייליסטית מקצועית. הזמיני תור לעיצוב גל, נייל ארט ומניקור בנייליסטיות.`
+    : `${name}${city ? ` ב${city}` : ''} — נייליסטית מקצועית. הזמיני תור לעיצוב ג׳ל, נייל ארט ומניקור בנייליסטיות.`
 
   return {
     title,

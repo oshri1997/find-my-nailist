@@ -9,8 +9,8 @@ const features = [
   { Icon: Search, title: 'חיפוש חכם', desc: 'סינון לפי מיקום, סוג שירות, מחיר וזמינות בזמן אמת.' },
   { Icon: Star, title: 'ביקורות אמיתיות', desc: 'רק לקוחות שהגיעו לתור יכולות לכתוב ביקורת — שקיפות מלאה.' },
   { Icon: Smartphone, title: 'הזמנה מהטלפון', desc: 'ממשק מותאם לנייד — הזמיני תור מכל מקום, בכל זמן.' },
-  { Icon: Shield, title: 'בטוח ואמין', desc: 'כל הנייליסטיות עוברות אימות. הנתונים שלך מוגנים.' },
-  { Icon: MessageCircle, title: 'תקשורת ישירה', desc: 'שלחי הודעות ישירות לנייליסטית לפני ואחרי התור.' },
+  { Icon: Shield, title: 'שקוף ואמין', desc: 'נייליסטיות מאומתות מסומנות בתג, ותעבורת האתר מוצפנת.' },
+  { Icon: MessageCircle, title: 'תקשורת ישירה', desc: 'פתחי שיחת WhatsApp אם הנייליסטית הוסיפה מספר.' },
   { Icon: Image, title: 'גלריית עיצובים', desc: 'ראי תמונות של עיצובים אמיתיים לפני שתחליטי.' },
 ]
 
@@ -28,7 +28,7 @@ export function FeaturesSection() {
           className="text-center mb-16"
         >
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 rounded-full px-4 py-2 text-sm font-semibold mb-5">
-            הכי טוב בשוק
+            פשוט, ברור ונוח
           </div>
           <h2 className="text-4xl md:text-5xl font-black mb-4 text-foreground">
             כל מה שצריך{' '}

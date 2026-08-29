@@ -275,6 +275,9 @@ export default function BookingModal({ nailistProfileId, businessName, services,
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="booking-modal-title"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 40 }}
@@ -296,11 +299,11 @@ export default function BookingModal({ nailistProfileId, businessName, services,
           )}
           {(step === 'done' || step === 'service') && <div className="w-8" />}
           <div className="text-center">
-            <h2 className="text-base font-black text-foreground">
+            <h2 id="booking-modal-title" className="text-base font-black text-foreground">
               {step === 'service' && 'בחרי שירות'}
               {step === 'datetime' && 'בחרי תאריך ושעה'}
               {step === 'confirm' && 'אישור הזמנה'}
-              {step === 'done' && 'הזמנה בוצעה!'}
+              {step === 'done' && 'בקשת התור נשלחה'}
             </h2>
             <p className="text-xs text-muted-foreground font-medium">{businessName}</p>
           </div>
@@ -525,7 +528,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   <textarea
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
-                    placeholder="צבע נלו, עיצוב מסוים, מידע רלוונטי..."
+                    placeholder="צבע ניוד, עיצוב מסוים, מידע רלוונטי..."
                     rows={2}
                     className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:bg-background transition-colors resize-none"
                   />
@@ -627,12 +630,12 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                 >
                   <CheckCircle2 className="h-10 w-10 text-white" />
                 </motion.div>
-                <h3 className="text-2xl font-black text-foreground mb-2">התור נקבע!</h3>
+                <h3 className="text-2xl font-black text-foreground mb-2">בקשת התור נשלחה!</h3>
                 <p className="text-sm text-muted-foreground font-medium mb-1">
                   {selectedDate?.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </p>
                 <p className="text-sm text-primary font-black mb-6">{selectedTime} · {selectedService?.name}</p>
-                <p className="text-xs text-muted-foreground mb-6">אישור ישלח למייל שלך בקרוב</p>
+                <p className="text-xs text-muted-foreground mb-6">נעדכן אותך במייל לאחר אישור הנייליסטית</p>
 
                 {depositResult && bitPhone && (
                   <div className="bg-primary/10 border border-primary/20 rounded-2xl p-5 mb-6 text-right">

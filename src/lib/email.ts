@@ -35,7 +35,7 @@ async function sendResend(to: string, subject: string, html: string, text: strin
   }
 
   const data = await res.json() as { id?: string }
-  console.log('[email] sent to', to, '| id:', data.id)
+  console.log('[email] sent | id:', data.id)
 }
 
 export function formatDate(d: Date) {

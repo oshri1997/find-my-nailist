@@ -60,6 +60,12 @@ export async function POST(request: NextRequest) {
     }
     const service = serviceSnap.data()!
 
+    // The service is part of the price/duration snapshot. Never allow a
+    // caller to pair a service from one business with another nailist ID.
+    if (service.nailistProfileId !== data.nailistProfileId) {
+      return NextResponse.json({ error: 'Service not found' }, { status: 404 })
+    }
+
     const ownedProfileId = clientProfileOwnerSnap.empty ? null : clientProfileOwnerSnap.docs[0].id
     if (!ownedProfileId || ownedProfileId !== data.clientProfileId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -76,6 +82,10 @@ export async function POST(request: NextRequest) {
     ])
     const nailist = nailistSnap.data()
     const clientProfile = clientProfileSnap.data()
+
+    if (!nailistSnap.exists || nailist?.isActive === false) {
+      return NextResponse.json({ error: 'Nailist not found' }, { status: 404 })
+    }
 
     const confirmToken = randomUUID()
     const declineToken = randomUUID()
@@ -161,7 +171,7 @@ export async function POST(request: NextRequest) {
     const nailistEmail: string | undefined = (nailist?.email as string | undefined) || (nailistUserSnap?.data()?.email as string | undefined) || undefined
     const clientEmail: string | undefined = (clientProfile?.email as string | undefined) || (clientUserSnap.data()?.email as string | undefined) || undefined
 
-    console.log('[booking] email lookup — nailistEmail:', nailistEmail, 'clientEmail:', clientEmail)
+    console.log('[booking] email recipients resolved:', !!nailistEmail && !!clientEmail)
 
     if (nailistEmail && clientEmail) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://nailistiot.fun'
@@ -180,12 +190,12 @@ export async function POST(request: NextRequest) {
           confirmUrl,
           declineUrl,
         })
-        console.log('[booking] ✅ emails sent — nailist:', nailistEmail, '| client:', clientEmail)
+        console.log('[booking] ✅ appointment emails sent')
       } catch (emailErr) {
-        console.error('[booking] ❌ email failed — nailist:', nailistEmail, '| client:', clientEmail, '|', emailErr)
+        console.error('[booking] ❌ appointment email failed:', emailErr)
       }
     } else {
-      console.warn('[booking] ⚠️ skipping email — nailistEmail:', nailistEmail, 'clientEmail:', clientEmail)
+      console.warn('[booking] ⚠️ skipping email — missing recipient')
     }
 
     return NextResponse.json({
@@ -315,7 +325,7 @@ export async function GET(request: NextRequest) {
                 appointmentId: doc.id,
                 appUrl: process.env.NEXT_PUBLIC_APP_URL,
               })
-              console.log('[auto-complete] ✅ review request email sent to', clientEmail)
+              console.log('[auto-complete] ✅ review request email sent')
             }
           } catch (err) {
             console.error('[auto-complete] ❌ review request email failed:', err)
@@ -373,7 +383,7 @@ export async function GET(request: NextRequest) {
                 serviceName: apt.serviceName,
                 startTime: apt.startTime?.toDate?.() ?? new Date(apt.startTime),
               })
-              console.log('[auto-cancel] ✅ cancellation email sent to', clientEmail)
+              console.log('[auto-cancel] ✅ cancellation email sent')
             }
           } catch (err) {
             console.error('[auto-cancel] ❌ cancellation email failed:', err)

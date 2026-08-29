@@ -115,6 +115,17 @@ describe('GET /api/nailists/[id] — contact info gating', () => {
     expect(res.status).toBe(404)
   })
 
+  it('returns 404 for an inactive profile, even with a direct URL', async () => {
+    docStore['nailistProfiles/nailist-profile-1'] = {
+      ...docStore['nailistProfiles/nailist-profile-1'],
+      isActive: false,
+    }
+    const anonymousRes = await GET(makeRequest(), mockParams)
+    const authenticatedRes = await GET(makeRequest('valid-token'), mockParams)
+    expect(anonymousRes.status).toBe(404)
+    expect(authenticatedRes.status).toBe(404)
+  })
+
   it('reports hasContactInfo=true for anonymous callers even though the fields are stripped', async () => {
     const res = await GET(makeRequest(), mockParams)
     const json = await res.json()

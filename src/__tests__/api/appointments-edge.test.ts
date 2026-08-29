@@ -130,7 +130,13 @@ const validBody = {
 describe('POST /api/appointments — edge cases', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    docStore['services/service-1'] = { name: 'ג׳ל', durationMinutes: 60, price: 130, currency: 'ILS' }
+    docStore['services/service-1'] = {
+      name: 'ג׳ל',
+      durationMinutes: 60,
+      price: 130,
+      currency: 'ILS',
+      nailistProfileId: 'nailist-profile-1',
+    }
     docStore['nailistProfiles/nailist-profile-1'] = { businessName: 'Studio', userId: 'nailist-user' }
     docStore['clientProfiles/client-profile-1'] = { displayName: 'Client', userId: 'user-123' }
     collectionStore['clientProfiles'] = [{ __id: 'client-profile-1', userId: 'user-123' }]
