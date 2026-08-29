@@ -162,6 +162,7 @@ export default function SearchPage() {
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [activePriceBand, setActivePriceBand] = useState('all')
   const [showPriceFilter, setShowPriceFilter] = useState(false)
+  const activeMaxPrice = activePriceBand === 'all' ? undefined : PRICE_BANDS.find((b) => b.key === activePriceBand)?.max
   const now = new Date()
   now.setHours(0, 0, 0, 0)
   const [viewYear, setViewYear] = useState(now.getFullYear())
@@ -174,6 +175,7 @@ export default function SearchPage() {
   // than whatever's selected right now, for the same reason as activeCoordsRef.
   const activeDateRef = useRef<string | undefined>(undefined)
   const activeQueryRef = useRef<string | undefined>(undefined)
+  const filterFetchInitializedRef = useRef(false)
   // Coords used for the current result set — "load more" reuses these rather
   // than whatever's in the location input right now, so it can't silently
   // switch search context mid-scroll.
@@ -184,13 +186,18 @@ export default function SearchPage() {
     lng?: number,
     offset = 0,
     date?: string,
-    query?: string
+    query?: string,
+    service?: string,
+    maxPrice?: number,
+    preserveResults = false
   ) => {
     const myId = offset === 0 ? ++fetchIdRef.current : fetchIdRef.current
     if (offset === 0) {
-      setLoading(true)
-      setFetchError(false)
-      setImagesReady(false)
+      if (!preserveResults) {
+        setLoading(true)
+        setFetchError(false)
+        setImagesReady(false)
+      }
       activeCoordsRef.current = { lat, lng }
       activeDateRef.current = date
       activeQueryRef.current = query?.trim() || undefined
@@ -212,6 +219,8 @@ export default function SearchPage() {
       if (activeQuery && lat == null && lng == null) {
         params.set('query', activeQuery)
       }
+      if (service && service !== 'הכל') params.set('service', (FILTER_KEYWORDS[service] ?? [service]).join('||'))
+      if (maxPrice != null) params.set('maxPrice', String(maxPrice))
       const res = await fetch(`/api/nailists?${params}`)
       if (!res.ok) throw new Error('Search request failed')
       const { data, hasMore: more } = await res.json()
@@ -240,7 +249,9 @@ export default function SearchPage() {
       activeCoordsRef.current.lng,
       nailists.length,
       activeDateRef.current,
-      activeQueryRef.current
+      activeQueryRef.current,
+      activeFilter,
+      activeMaxPrice,
     )
   }
 
@@ -252,7 +263,9 @@ export default function SearchPage() {
       coords?.lng,
       0,
       d ? toDateStr(d) : undefined,
-      coords ? undefined : locationLabel
+      coords ? undefined : locationLabel,
+      activeFilter,
+      activeMaxPrice,
     )
   }
 
@@ -316,6 +329,23 @@ export default function SearchPage() {
       .catch(() => {})
   }, [user])
 
+  useEffect(() => {
+    if (!filterFetchInitializedRef.current) {
+      filterFetchInitializedRef.current = true
+      return
+    }
+    void fetchNailists(
+      activeCoordsRef.current.lat,
+      activeCoordsRef.current.lng,
+      0,
+      activeDateRef.current,
+      activeQueryRef.current,
+      activeFilter,
+      activePriceBand === 'all' ? undefined : PRICE_BANDS.find((b) => b.key === activePriceBand)?.max,
+      true,
+    )
+  }, [activeFilter, activePriceBand, fetchNailists])
+
   async function toggleFavorite(e: React.MouseEvent, nailistId: string) {
     e.preventDefault()
     e.stopPropagation()
@@ -352,11 +382,18 @@ export default function SearchPage() {
         setCoords({ lat: latitude, lng: longitude })
         setLocationLabel('המיקום שלי')
         setSortBy('distance')
-        fetchNailists(latitude, longitude, 0, selectedDate ? toDateStr(selectedDate) : undefined)
+        fetchNailists(latitude, longitude, 0, selectedDate ? toDateStr(selectedDate) : undefined, undefined, activeFilter, activeMaxPrice)
         setLocating(false)
       },
       () => setLocating(false)
     )
+  }
+
+  function clearLocation() {
+    setCoords(null)
+    setLocationLabel('')
+    setSortBy('rating')
+    void fetchNailists(undefined, undefined, 0, selectedDate ? toDateStr(selectedDate) : undefined, undefined, activeFilter, activeMaxPrice)
   }
 
   const sorted = [...nailists]
@@ -415,14 +452,27 @@ export default function SearchPage() {
                       coords?.lng,
                       0,
                       selectedDate ? toDateStr(selectedDate) : undefined,
-                      coords ? undefined : locationLabel
+                      coords ? undefined : locationLabel,
+                      activeFilter,
+                      activeMaxPrice
                     )
                   }
                 }}
                 className="pr-9 rounded-xl border-border focus:border-primary h-11 bg-card"
                 placeholder="עיר או שם עסק..."
+                aria-label="עיר או שם עסק"
                 readOnly={!!coords}
               />
+              {coords && (
+                <button
+                  type="button"
+                  onClick={clearLocation}
+                  aria-label="חזרה לחיפוש לפי עיר או שם עסק"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -442,9 +492,12 @@ export default function SearchPage() {
                   coords?.lng,
                   0,
                   selectedDate ? toDateStr(selectedDate) : undefined,
-                  coords ? undefined : locationLabel
+                  coords ? undefined : locationLabel,
+                  activeFilter,
+                  activeMaxPrice
                 )}
-                className="hidden md:inline-flex bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-11 px-6 font-bold gap-2 shadow-[0_2px_12px_rgba(245,23,92,0.25)] cursor-pointer shrink-0"
+                className="inline-flex bg-primary hover:bg-primary/90 text-white border-0 rounded-xl h-11 px-5 md:px-6 font-bold gap-2 shadow-[0_2px_12px_rgba(245,23,92,0.25)] cursor-pointer shrink-0"
+                aria-label="חיפוש"
               >
                 <Search className="h-4 w-4" />
                 <span>חפשי</span>
@@ -454,6 +507,8 @@ export default function SearchPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setShowDatePicker((v) => !v)}
+                  aria-expanded={showDatePicker}
+                  aria-haspopup="dialog"
                   className={`rounded-xl h-11 gap-2 border-border cursor-pointer ${
                     selectedDate ? 'border-primary/40 text-primary bg-primary/10' : 'hover:border-primary/40'
                   }`}
@@ -478,6 +533,7 @@ export default function SearchPage() {
                       <button
                         onClick={prevMonth}
                         disabled={isAtMinMonth}
+                        aria-label="חודש קודם"
                         className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                       >
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -485,6 +541,7 @@ export default function SearchPage() {
                       <p className="text-sm font-black text-foreground">{HE_MONTHS[viewMonth]} {viewYear}</p>
                       <button
                         onClick={nextMonth}
+                        aria-label="חודש הבא"
                         className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors cursor-pointer"
                       >
                         <ChevronLeft className="h-4 w-4 text-muted-foreground" />
@@ -538,6 +595,8 @@ export default function SearchPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setShowPriceFilter((v) => !v)}
+                  aria-expanded={showPriceFilter}
+                  aria-haspopup="menu"
                   className={`rounded-xl h-11 gap-2 border-border cursor-pointer ${
                     activePriceBand !== 'all' ? 'border-primary/40 text-primary bg-primary/10' : 'hover:border-primary/40'
                   }`}
@@ -576,6 +635,7 @@ export default function SearchPage() {
               <button
                 key={tag}
                 onClick={() => setActiveFilter(tag)}
+                aria-pressed={activeFilter === tag}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition-all cursor-pointer ${
                   activeFilter === tag
                     ? 'bg-primary text-white shadow-[0_2px_8px_rgba(245,23,92,0.25)]'
@@ -612,13 +672,14 @@ export default function SearchPage() {
                       setCoords({ lat: latitude, lng: longitude })
                       setLocationLabel('המיקום שלי')
                       setSortBy('distance')
-                      void fetchNailists(latitude, longitude)
+                      void fetchNailists(latitude, longitude, 0, selectedDate ? toDateStr(selectedDate) : undefined, undefined, activeFilter, activeMaxPrice)
                       setLocating(false)
                     },
                     () => setLocating(false)
                   )
                 }
               }}
+              aria-pressed={viewMode === 'map'}
               className={`shrink-0 rounded-xl px-3 py-1.5 text-sm font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
                 viewMode === 'map'
                   ? 'border-primary/40 text-primary bg-primary/10 dark:bg-primary/30'
@@ -632,6 +693,7 @@ export default function SearchPage() {
               <button
                 key={key}
                 onClick={() => setSortBy(key)}
+                aria-pressed={sortBy === key}
                 disabled={key === 'distance' && !coords}
                 className={`shrink-0 rounded-xl px-3 py-1.5 text-sm font-semibold border transition-all disabled:opacity-40 cursor-pointer ${
                   sortBy === key
@@ -665,7 +727,9 @@ export default function SearchPage() {
                 activeCoordsRef.current.lng,
                 0,
                 activeDateRef.current,
-                activeQueryRef.current
+                activeQueryRef.current,
+                activeFilter,
+                activeMaxPrice
               )}
               className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white cursor-pointer"
             >
@@ -740,6 +804,8 @@ export default function SearchPage() {
                   <button
                     onClick={(e) => toggleFavorite(e, nailist.id)}
                     disabled={togglingFav === nailist.id}
+                    aria-label={`${favorites.has(nailist.id) ? 'הסירי' : 'שמרי'} את ${nailist.businessName} מהמועדפים`}
+                    aria-pressed={favorites.has(nailist.id)}
                     className="absolute top-2.5 left-2.5 w-8 h-8 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-card transition-colors cursor-pointer disabled:opacity-60"
                   >
                     <Heart className={`h-4 w-4 transition-all ${favorites.has(nailist.id) ? 'fill-primary text-primary scale-110' : 'text-muted-foreground/60'}`} />

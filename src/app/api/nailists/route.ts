@@ -6,6 +6,7 @@ import { findNextAvailableSlot, computeDateAvailability, getDayOfWeek, israelNow
 
 import { geohashQueryBounds, distanceBetween } from 'geofire-common'
 import { FieldPath, type Firestore } from 'firebase-admin/firestore'
+import { filterNailists } from '@/lib/search-filters'
 
 // No specific service is known yet at search time, so slots are computed
 // against this representative duration — long enough to cover most services,
@@ -136,6 +137,12 @@ export async function GET(request: NextRequest) {
     const offset = Math.max(0, Number(searchParams.get('offset') ?? '0'))
     const date = searchParams.get('date') ?? undefined
     const searchQuery = searchParams.get('query')?.trim().toLowerCase() ?? ''
+    const service = searchParams.get('service')?.trim() || undefined
+    const maxPriceParam = searchParams.get('maxPrice')
+    const parsedMaxPrice = maxPriceParam == null ? undefined : Number(maxPriceParam)
+    const maxPrice = parsedMaxPrice != null && Number.isFinite(parsedMaxPrice) && parsedMaxPrice >= 0
+      ? parsedMaxPrice
+      : undefined
 
     const db = adminDb()
     const isAuthenticated = await isAuthenticatedRequest(request)
@@ -172,14 +179,15 @@ export async function GET(request: NextRequest) {
       }
 
       nailists.sort((a, b) => (a.distanceKm as number) - (b.distanceKm as number))
-      const page = nailists.slice(offset, offset + pageSize)
-      await Promise.all([attachServiceNames(db, page), attachAvailability(db, page, date)])
+      await Promise.all([attachServiceNames(db, nailists), attachAvailability(db, nailists, date)])
+      const filtered = filterNailists(nailists, service, maxPrice)
+      const page = filtered.slice(offset, offset + pageSize)
       sanitizeNailists(page, isAuthenticated)
 
       return NextResponse.json({
         data: page,
-        total: nailists.length,
-        hasMore: nailists.length > offset + pageSize,
+        total: filtered.length,
+        hasMore: filtered.length > offset + pageSize,
       })
     }
 
@@ -205,14 +213,15 @@ export async function GET(request: NextRequest) {
         })
         .sort((a, b) => a.id.localeCompare(b.id))
 
-      const page = nailists.slice(offset, offset + pageSize)
-      await Promise.all([attachServiceNames(db, page), attachAvailability(db, page, date)])
+      await Promise.all([attachServiceNames(db, nailists), attachAvailability(db, nailists, date)])
+      const filtered = filterNailists(nailists, service, maxPrice)
+      const page = filtered.slice(offset, offset + pageSize)
       sanitizeNailists(page, isAuthenticated)
 
       return NextResponse.json({
         data: page,
-        total: nailists.length,
-        hasMore: nailists.length > offset + pageSize,
+        total: filtered.length,
+        hasMore: filtered.length > offset + pageSize,
       })
     }
 
@@ -224,22 +233,24 @@ export async function GET(request: NextRequest) {
     // createdAt, which isn't indexed for this collection) while still being
     // deterministic. Fetch one extra doc beyond the requested page to detect
     // hasMore without a separate count query (Firestore has no cheap COUNT).
-    const snap = await db
+    const baseQuery = db
       .collection(COLLECTIONS.NAILIST_PROFILES)
       .where('isActive', '==', true)
       .orderBy(FieldPath.documentId())
-      .limit(offset + pageSize + 1)
-      .get()
+    const snap = service || maxPrice != null || date
+      ? await baseQuery.get()
+      : await baseQuery.limit(offset + pageSize + 1).get()
 
     const nailists = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-    const hasMore = nailists.length > offset + pageSize
-    const page = nailists.slice(offset, offset + pageSize)
-    await Promise.all([attachServiceNames(db, page), attachAvailability(db, page, date)])
+    await Promise.all([attachServiceNames(db, nailists), attachAvailability(db, nailists, date)])
+    const filtered = filterNailists(nailists, service, maxPrice)
+    const hasMore = filtered.length > offset + pageSize
+    const page = filtered.slice(offset, offset + pageSize)
     sanitizeNailists(page, isAuthenticated)
 
     return NextResponse.json({
       data: page,
-      total: nailists.length,
+      total: filtered.length,
       hasMore,
     })
   } catch (error) {
