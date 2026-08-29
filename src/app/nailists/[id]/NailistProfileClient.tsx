@@ -236,7 +236,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/50" dir="rtl">
+    <div className="min-h-screen flex flex-col overflow-x-hidden bg-muted/50" dir="rtl">
       {/* Hero — a consistent gradient, never a nailist-uploaded photo, so the header
           always looks clean regardless of what image someone sets as their cover */}
       <div className="relative text-white overflow-hidden bg-gradient-to-br from-primary via-primary/60 to-accent">
@@ -272,8 +272,8 @@ export default function NailistProfileClient({ id }: { id: string }) {
           </div>
         )}
 
-        <div className="container mx-auto max-w-2xl px-6 py-12 relative z-10">
-          <div className="flex flex-col items-center text-center">
+        <div className="container mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-10 relative z-10">
+          <div className="flex flex-col items-center text-center md:flex-row md:items-start md:justify-center md:text-right md:gap-7">
             {/* Avatar */}
             <div className="relative mb-4">
               <div className="w-24 h-24 rounded-full bg-white/15 backdrop-blur ring-4 ring-white/25 shadow-xl overflow-hidden flex items-center justify-center">
@@ -305,7 +305,8 @@ export default function NailistProfileClient({ id }: { id: string }) {
               </p>
             )}
 
-            <h1 className="text-2xl font-black mb-1.5 flex items-center justify-center gap-1.5">
+            <div className="flex flex-col items-center md:items-start">
+            <h1 className="text-2xl sm:text-3xl font-black mb-1.5 flex items-center justify-center md:justify-start gap-1.5">
               {profile.businessName}
               {profile.isVerified && (
                 <span title="נייליסטית מאומתת">
@@ -314,7 +315,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
               )}
             </h1>
 
-            <div className="flex items-center flex-wrap justify-center gap-x-3 gap-y-1 text-sm mb-1">
+            <div className="flex items-center flex-wrap justify-center md:justify-start gap-x-3 gap-y-1 text-sm mb-1">
               {profile.city && (
                 <div className="flex items-center gap-1 text-white/80">
                   <MapPin className="h-3.5 w-3.5" />
@@ -331,12 +332,13 @@ export default function NailistProfileClient({ id }: { id: string }) {
             </div>
 
             {profile.bio && (
-              <p className="mt-3 text-white/80 text-sm leading-relaxed max-w-md">{profile.bio}</p>
+              <p className="mt-2.5 text-white/80 text-sm leading-relaxed max-w-md">{profile.bio}</p>
             )}
+            </div>
           </div>
 
           {isOwner === false && profile.services.length > 0 && (
-            <div className="flex flex-col items-center mt-6">
+            <div className="flex flex-col items-center mt-5">
               <Button
                 onClick={() => openBooking()}
                 className="bg-white text-primary hover:bg-primary hover:text-white border-0 rounded-2xl font-black shadow-lg px-8 h-11 transition-colors"
@@ -449,7 +451,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
       </div>
 
       {/* Tabs */}
-      <div className="bg-card border-b border-border sticky top-20 z-20">
+      <div className="bg-card border-b border-border sticky top-16 z-20">
         <div className="container mx-auto max-w-6xl px-6">
           <div className="flex gap-1">
             {([['portfolio', 'פורטפוליו'], ['services', 'שירותים'], ['reviews', 'ביקורות']] as const).map(([key, label]) => (
@@ -470,7 +472,21 @@ export default function NailistProfileClient({ id }: { id: string }) {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto max-w-6xl px-6 py-8">
+      <div className="container mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-8 pb-24 md:pb-8">
+        <section aria-label="סיכום הפרופיל" className="grid grid-cols-3 gap-2 sm:gap-4 mb-7">
+          <div className="rounded-2xl border border-border bg-card px-3 py-3 text-center">
+            <p className="text-[11px] text-muted-foreground">שירותים</p>
+            <p className="mt-0.5 font-black text-foreground">{profile.services.length}</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card px-3 py-3 text-center">
+            <p className="text-[11px] text-muted-foreground">דירוג</p>
+            <p className="mt-0.5 font-black text-foreground">{profile.avgRating > 0 ? profile.avgRating.toFixed(1) : 'חדש'}</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card px-3 py-3 text-center">
+            <p className="text-[11px] text-muted-foreground">מקדמה</p>
+            <p className="mt-0.5 font-black text-foreground">{profile.depositEnabled ? `${profile.depositPercentage}%` : 'ללא'}</p>
+          </div>
+        </section>
         {activeTab === 'portfolio' && (
           <div>
             {profile.portfolio.length === 0 ? (
@@ -596,6 +612,18 @@ export default function NailistProfileClient({ id }: { id: string }) {
           </div>
         )}
       </div>
+
+      {isOwner === false && profile.services.length > 0 && (
+        <div className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-card/95 backdrop-blur px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(0,0,0,.10)]">
+          <Button
+            aria-label="קביעת תור מהירה"
+            onClick={() => openBooking()}
+            className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-black shadow-[0_4px_16px_rgba(245,23,92,.3)]"
+          >
+            קביעת תור
+          </Button>
+        </div>
+      )}
 
       {showBooking && (
         <BookingModal

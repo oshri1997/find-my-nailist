@@ -143,6 +143,21 @@ describe('NailistProfileClient — contact info gating', () => {
 })
 
 describe('NailistProfileClient — booking CTA styling', () => {
+  it('shows compact profile facts and a separate quick-booking CTA for mobile', async () => {
+    mockUseAuth.mockReturnValue({ user: { uid: 'u1', displayName: 'Test' }, role: 'CLIENT' })
+    mockProfileFetch(
+      { ...baseProfile, services: [{ id: 'svc-1' }], depositEnabled: true, depositPercentage: 20 },
+      { asOwner: false }
+    )
+    render(<NailistProfileClient id="nailist-1" />)
+
+    const summary = await screen.findByLabelText('סיכום הפרופיל')
+    expect(summary).toHaveTextContent('שירותים')
+    expect(summary).toHaveTextContent('דירוג')
+    expect(summary).toHaveTextContent('מקדמה')
+    expect(await screen.findByRole('button', { name: 'קביעת תור מהירה' })).toBeInTheDocument()
+  })
+
   it('inverts to a solid, readable state on hover instead of a washed-out pink-on-pink tint', async () => {
     // Regression: hover:bg-primary/10 with text-primary produced near-invisible
     // pink-on-pink text on the pink hero background.
