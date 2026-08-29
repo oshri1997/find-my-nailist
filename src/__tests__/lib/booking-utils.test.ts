@@ -1,4 +1,4 @@
-import { generateSlots, isSlotUnavailable, buildDateStrip, buildMonthCalendar, toDateStr, computeDateAvailability, filterExpiredConfirmed, israelWallClockToUtc, todayInIsrael, findFirstAvailableSlot, findNextAvailableSlot, israelNow, getDayOfWeek, addDays } from '@/lib/booking-utils'
+import { generateSlots, isSlotUnavailable, buildDateStrip, buildMonthCalendar, toDateStr, computeDateAvailability, filterExpiredConfirmed, israelWallClockToUtc, israelDateTimeParts, todayInIsrael, findFirstAvailableSlot, findNextAvailableSlot, israelNow, getDayOfWeek, addDays } from '@/lib/booking-utils'
 
 // bookedSlots in production are real UTC instants derived from Israel
 // wall-clock booking times — construct test fixtures the same way instead of
@@ -134,6 +134,15 @@ describe('toDateStr', () => {
 
   it('handles end-of-year dates', () => {
     expect(toDateStr(new Date(2024, 11, 31))).toBe('2024-12-31')
+  })
+})
+
+describe('israelDateTimeParts', () => {
+  it('uses Israel wall-clock time rather than the browser or server timezone', () => {
+    expect(israelDateTimeParts(new Date('2026-07-01T10:00:00.000Z'))).toEqual({
+      dateStr: '2026-07-01',
+      timeStr: '13:00',
+    })
   })
 })
 

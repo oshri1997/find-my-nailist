@@ -4,7 +4,18 @@ import { COLLECTIONS } from '@/lib/firebase/collections'
 import { FieldValue } from 'firebase-admin/firestore'
 import { sendCancellationEmail } from '@/lib/email'
 
+// GET is intentionally read-only so mail-security scanners cannot cancel a
+// real appointment merely by previewing the email link.
 export async function GET(request: NextRequest) {
+  const token = request.nextUrl.searchParams.get('token')
+  if (!token) return new NextResponse(errorPage('קישור שגוי', 'לא נמצא טוקן בקישור.'), { status: 400, headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+  return new NextResponse(declinePage(token), {
+    status: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+  })
+}
+
+export async function POST(request: NextRequest) {
   const token = request.nextUrl.searchParams.get('token')
   if (!token) {
     return new NextResponse(errorPage('קישור שגוי', 'לא נמצא טוקן בקישור.'), {
@@ -112,6 +123,11 @@ export async function GET(request: NextRequest) {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     })
   }
+}
+
+function declinePage(token: string) {
+  const action = `/api/appointments/decline?token=${encodeURIComponent(token)}`
+  return `<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>דחיית תור</title><style>body{font-family:Arial,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#fff7fa;color:#2b1a22}.card{background:#fff;border-radius:20px;padding:36px;max-width:420px;width:86%;text-align:center;box-shadow:0 8px 32px #0001}button{border:0;border-radius:12px;padding:14px 28px;background:#b42318;color:white;font-weight:bold;font-size:16px;cursor:pointer}</style></head><body><main class="card"><h1>לדחות את התור?</h1><p>לחיצה על הכפתור תבטל את הבקשה ותשלח עדכון ללקוחה.</p><form method="POST" action="${action}"><button type="submit">דחיית התור</button></form></main></body></html>`
 }
 
 function successPage(clientName: string, serviceName: string, businessName: string) {

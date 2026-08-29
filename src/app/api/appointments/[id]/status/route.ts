@@ -74,21 +74,33 @@ export async function PATCH(
       )
     }
 
-    // Transactional re-check of reviewRequested — a plain pre-read guard here
-    // would race against the lazy auto-complete path in GET /api/appointments
-    // (both can observe reviewRequested: false before either write commits),
-    // sending the client duplicate "how was your appointment" emails.
+    // Re-check both the transition and review flag in one transaction. A
+    // dashboard tab can be stale, and two simultaneous actions must never
+    // turn the same appointment into two different terminal states.
     const appointmentRef = db.collection(COLLECTIONS.APPOINTMENTS).doc(id)
-    const alreadyRequested = await db.runTransaction(async (tx) => {
+    const transition = await db.runTransaction(async (tx) => {
       const freshSnap = await tx.get(appointmentRef)
-      const wasAlreadyRequested = freshSnap.data()?.reviewRequested === true
+      const freshData = freshSnap.data()!
+      const freshStatus = freshData.status as string
+      if (!(VALID_TRANSITIONS[freshStatus] ?? []).includes(status)) {
+        return { applied: false, currentStatus: freshStatus, alreadyRequested: false }
+      }
+      const wasAlreadyRequested = freshData.reviewRequested === true
       tx.update(appointmentRef, {
         status,
         ...(status === 'COMPLETED' ? { reviewRequested: true } : {}),
         updatedAt: FieldValue.serverTimestamp(),
       })
-      return wasAlreadyRequested
+      return { applied: true, currentStatus: freshStatus, alreadyRequested: wasAlreadyRequested }
     })
+
+    if (!transition.applied) {
+      return NextResponse.json(
+        { error: `Cannot change status from ${transition.currentStatus} to ${status}` },
+        { status: 409 }
+      )
+    }
+    const alreadyRequested = transition.alreadyRequested
 
     if (status === 'CONFIRMED') {
       // Fire-and-forget, same as the COMPLETED/CANCELLED blocks below — a

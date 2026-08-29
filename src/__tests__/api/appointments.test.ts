@@ -138,6 +138,7 @@ describe('POST /api/appointments', () => {
   }
 
   beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-01T00:00:00.000Z'))
     jest.clearAllMocks()
 
     // Seed service doc
@@ -168,7 +169,12 @@ describe('POST /api/appointments', () => {
 
     // No conflicting appointments
     collectionStore['appointments'] = []
+    collectionStore['workingHours'] = [
+      { __id: 'hours-1', nailistProfileId: 'nailist-profile-1', dayOfWeek: 3, startTime: '08:00', endTime: '18:00', isActive: true },
+    ]
   })
+
+  afterEach(() => jest.useRealTimers())
 
   it('returns 401 when no auth token', async () => {
     const req = makeRequest('POST', validBody) // no cookie

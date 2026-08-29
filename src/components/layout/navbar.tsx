@@ -11,7 +11,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
 
 export function Navbar() {
-  const { user, role, isAdmin, displayName, signOut } = useAuth()
+  const { user, loading, role, isAdmin, displayName, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
   const [showMenu, setShowMenu] = useState(false)
@@ -93,7 +93,12 @@ export function Navbar() {
 
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            {user ? (
+            {loading ? (
+              // Firebase restores a session only after hydration. Keep this
+              // area neutral during that short window instead of flashing
+              // guest-only login and registration buttons to signed-in users.
+              <div className="h-9 w-24" aria-hidden="true" />
+            ) : user ? (
               <>
                 {/* Desktop already has a /search link in the center nav row
                     (hidden below md) — only fill the gap here for mobile,

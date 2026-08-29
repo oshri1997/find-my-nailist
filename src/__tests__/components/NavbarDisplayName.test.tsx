@@ -21,6 +21,20 @@ jest.mock('@/components/auth/auth-provider', () => ({
 jest.mock('@/components/theme-toggle', () => ({ ThemeToggle: () => null }))
 
 describe('Navbar — display name', () => {
+  it('does not flash guest actions while Firebase restores an existing session', () => {
+    mockUseAuth.mockReturnValue({
+      user: null,
+      role: null,
+      isAdmin: false,
+      loading: true,
+      signOut: jest.fn(),
+    })
+    render(<Navbar />)
+
+    expect(screen.queryByText('התחברות')).not.toBeInTheDocument()
+    expect(screen.queryByText('הצטרפי עכשיו')).not.toBeInTheDocument()
+  })
+
   it('shows only the first name on the compact nav button, but the full name inside the dropdown', () => {
     mockUseAuth.mockReturnValue({
       user: { uid: 'u1', displayName: 'ישר דקאטוס', email: 'drakatosyt@gmail.com', photoURL: null },

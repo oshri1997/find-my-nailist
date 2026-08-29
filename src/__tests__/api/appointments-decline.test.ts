@@ -82,7 +82,7 @@ jest.mock('@/lib/email', () => ({
 
 // ── Import after mocks ──────────────────────────────────────────────────────
 
-import { GET } from '@/app/api/appointments/decline/route'
+import { GET, POST } from '@/app/api/appointments/decline/route'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -128,49 +128,55 @@ describe('GET /api/appointments/decline', () => {
     docStore['users/client-user-1'] = { email: 'client@test.com' }
   })
 
+  it('does not cancel an appointment when an email scanner follows the GET link', async () => {
+    const res = await GET(makeRequest('valid-token'))
+    expect(res.status).toBe(200)
+    expect(collectionStore['appointments'][0].status).toBe('PENDING')
+  })
+
   it('returns 400 when no token is provided', async () => {
     const req = makeRequest()
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(400)
   })
 
   it('returns 404 when token does not match any appointment', async () => {
     const req = makeRequest('non-existent-token')
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(404)
   })
 
   it('returns 409 when appointment is already not PENDING', async () => {
     collectionStore['appointments'][0].status = 'CONFIRMED'
     const req = makeRequest('valid-token')
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(409)
   })
 
   it('returns 409 when appointment is CANCELLED', async () => {
     collectionStore['appointments'][0].status = 'CANCELLED'
     const req = makeRequest('valid-token')
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(409)
   })
 
   it('returns 410 when token is expired', async () => {
     collectionStore['appointments'][0].declineTokenExpiresAt = pastExpiry
     const req = makeRequest('valid-token')
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(410)
   })
 
   it('returns 200 HTML on successful decline', async () => {
     const req = makeRequest('valid-token')
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toMatch(/text\/html/)
   })
 
   it('success page contains the client name and service', async () => {
     const req = makeRequest('valid-token')
-    const res = await GET(req)
+    const res = await POST(req)
     const html = await res.text()
     expect(html).toContain('שרה כ.')
     expect(html).toContain('מניקור')
@@ -178,7 +184,7 @@ describe('GET /api/appointments/decline', () => {
 
   it('sends cancellation email on successful decline', async () => {
     const req = makeRequest('valid-token')
-    await GET(req)
+    await POST(req)
     await new Promise((r) => setTimeout(r, 10))
     expect(mockSendCancellationEmail).toHaveBeenCalledTimes(1)
     expect(mockSendCancellationEmail).toHaveBeenCalledWith(
@@ -198,7 +204,7 @@ describe('GET /api/appointments/decline', () => {
     docStore['users/client-user-1'] = { email: 'user@fallback.com' }
 
     const req = makeRequest('valid-token')
-    await GET(req)
+    await POST(req)
     await new Promise((r) => setTimeout(r, 10))
 
     expect(mockSendCancellationEmail).toHaveBeenCalledWith(
@@ -209,7 +215,7 @@ describe('GET /api/appointments/decline', () => {
   it('does not crash when no client email can be resolved (gracefully skips email)', async () => {
     docStore['clientProfiles/client-profile-1'] = { displayName: 'שרה' }
     const req = makeRequest('valid-token')
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(200)
     await new Promise((r) => setTimeout(r, 10))
     expect(mockSendCancellationEmail).not.toHaveBeenCalled()
@@ -217,7 +223,7 @@ describe('GET /api/appointments/decline', () => {
 
   it('error page contains the token-not-found message', async () => {
     const req = makeRequest('bad-token')
-    const res = await GET(req)
+    const res = await POST(req)
     const html = await res.text()
     expect(html).toContain('לא תקין')
   })

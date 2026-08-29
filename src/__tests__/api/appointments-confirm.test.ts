@@ -89,7 +89,7 @@ jest.mock('@/lib/google-calendar', () => ({
 
 // ── Import after mocks ──────────────────────────────────────────────────────
 
-import { GET } from '@/app/api/appointments/confirm/route'
+import { GET, POST } from '@/app/api/appointments/confirm/route'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -140,16 +140,22 @@ describe('GET /api/appointments/confirm', () => {
     docStore['users/nailist-user-1'] = { email: 'nailist@test.com' }
   })
 
+  it('does not confirm an appointment when an email scanner follows the GET link', async () => {
+    const res = await GET(makeRequest('valid-confirm-token'))
+    expect(res.status).toBe(200)
+    expect(collectionStore['appointments'][0].status).toBe('PENDING')
+  })
+
   it('redirects with error=invalid when no token is provided', async () => {
     const req = makeRequest()
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(307)
     expect(res.headers.get('Location')).toContain('error=invalid')
   })
 
   it('redirects with error=invalid when token does not exist', async () => {
     const req = makeRequest('non-existent-token')
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(307)
     expect(res.headers.get('Location')).toContain('error=invalid')
   })
@@ -157,7 +163,7 @@ describe('GET /api/appointments/confirm', () => {
   it('redirects with error=expired when token is past its expiry', async () => {
     collectionStore['appointments'][0].confirmTokenExpiresAt = pastExpiry
     const req = makeRequest('valid-confirm-token')
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(307)
     expect(res.headers.get('Location')).toContain('error=expired')
   })
@@ -165,7 +171,7 @@ describe('GET /api/appointments/confirm', () => {
   it('redirects with already=1 when appointment is already CONFIRMED', async () => {
     collectionStore['appointments'][0].status = 'CONFIRMED'
     const req = makeRequest('valid-confirm-token')
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(307)
     expect(res.headers.get('Location')).toContain('already=1')
   })
@@ -173,14 +179,14 @@ describe('GET /api/appointments/confirm', () => {
   it('redirects with already=1 when appointment is CANCELLED', async () => {
     collectionStore['appointments'][0].status = 'CANCELLED'
     const req = makeRequest('valid-confirm-token')
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(307)
     expect(res.headers.get('Location')).toContain('already=1')
   })
 
   it('redirects to confirmed page on success', async () => {
     const req = makeRequest('valid-confirm-token')
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(307)
     expect(res.headers.get('Location')).toContain('/appointments/confirmed')
     expect(res.headers.get('Location')).not.toContain('error=')
@@ -188,7 +194,7 @@ describe('GET /api/appointments/confirm', () => {
 
   it('sends confirmation email on success', async () => {
     const req = makeRequest('valid-confirm-token')
-    await GET(req)
+    await POST(req)
 
     expect(mockSendClientConfirmedEmail).toHaveBeenCalledTimes(1)
     expect(mockSendClientConfirmedEmail).toHaveBeenCalledWith(
@@ -211,7 +217,7 @@ describe('GET /api/appointments/confirm', () => {
     docStore['users/client-user-1'] = { email: 'fallback@test.com' }
 
     const req = makeRequest('valid-confirm-token')
-    await GET(req)
+    await POST(req)
 
     expect(mockSendClientConfirmedEmail).toHaveBeenCalledWith(
       expect.objectContaining({ clientEmail: 'fallback@test.com' })
@@ -223,7 +229,7 @@ describe('GET /api/appointments/confirm', () => {
     docStore['users/client-user-1'] = {}
 
     const req = makeRequest('valid-confirm-token')
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(307)
     expect(res.headers.get('Location')).toContain('emailError=1')
   })
@@ -233,7 +239,7 @@ describe('GET /api/appointments/confirm', () => {
     docStore['users/nailist-user-1'] = { email: 'nailist@test.com', googleCalendarTokens: { accessToken: 'b', expiryDate: 0, scope: 's' } }
 
     const req = makeRequest('valid-confirm-token')
-    await GET(req)
+    await POST(req)
     await new Promise((r) => setTimeout(r, 10))
 
     expect(mockCreateGoogleCalendarEvent).toHaveBeenCalledTimes(2)
@@ -247,7 +253,7 @@ describe('GET /api/appointments/confirm', () => {
   it('does not create a Google Calendar event for a side with no tokens on file', async () => {
     // default users/* docs (set in outer beforeEach) have no googleCalendarTokens
     const req = makeRequest('valid-confirm-token')
-    await GET(req)
+    await POST(req)
     await new Promise((r) => setTimeout(r, 10))
 
     expect(mockCreateGoogleCalendarEvent).not.toHaveBeenCalled()
@@ -258,7 +264,7 @@ describe('GET /api/appointments/confirm', () => {
     mockCreateGoogleCalendarEvent.mockRejectedValue(new Error('boom'))
 
     const req = makeRequest('valid-confirm-token')
-    const res = await GET(req)
+    const res = await POST(req)
     expect(res.status).toBe(307)
     expect(res.headers.get('Location')).toContain('/appointments/confirmed')
   })

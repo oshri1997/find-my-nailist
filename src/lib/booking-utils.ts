@@ -42,6 +42,24 @@ export function todayInIsrael(): string {
   return `${parts.year}-${parts.month}-${parts.day}`
 }
 
+// Turns a real instant back into the date and clock time the business uses.
+// This is the inverse-facing helper for israelWallClockToUtc and keeps server
+// validation independent of the visitor's or server's local timezone.
+export function israelDateTimeParts(instant: Date): { dateStr: string; timeStr: string } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jerusalem',
+    hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).formatToParts(instant).reduce((acc, p) => {
+    if (p.type !== 'literal') acc[p.type] = p.value
+    return acc
+  }, {} as Record<string, string>)
+  return {
+    dateStr: `${parts.year}-${parts.month}-${parts.day}`,
+    timeStr: `${parts.hour}:${parts.minute}`,
+  }
+}
+
 export function toDateStr(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }

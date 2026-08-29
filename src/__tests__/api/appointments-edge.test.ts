@@ -129,6 +129,7 @@ const validBody = {
 
 describe('POST /api/appointments — edge cases', () => {
   beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-01T00:00:00.000Z'))
     jest.clearAllMocks()
     docStore['services/service-1'] = {
       name: 'ג׳ל',
@@ -141,7 +142,12 @@ describe('POST /api/appointments — edge cases', () => {
     docStore['clientProfiles/client-profile-1'] = { displayName: 'Client', userId: 'user-123' }
     collectionStore['clientProfiles'] = [{ __id: 'client-profile-1', userId: 'user-123' }]
     collectionStore['appointments'] = []
+    collectionStore['workingHours'] = [
+      { __id: 'hours-1', nailistProfileId: 'nailist-profile-1', dayOfWeek: 6, startTime: '08:00', endTime: '18:00', isActive: true },
+    ]
   })
+
+  afterEach(() => jest.useRealTimers())
 
   it('allows adjacent appointments (non-overlapping) to be booked', async () => {
     // Existing appointment ends at 11:00; new one starts at 11:00 — no conflict
@@ -183,6 +189,26 @@ describe('POST /api/appointments — edge cases', () => {
     const req = makeRequest('POST', { ...validBody, startTime: '2026-08-01' }, 'token')
     const res = await POST(req)
     expect(res.status).toBe(400)
+  })
+
+  it('rejects a direct request for a time outside the nailist working hours', async () => {
+    const req = makeRequest(
+      'POST',
+      { ...validBody, startTime: new Date('2026-08-01T02:00:00.000Z').toISOString() },
+      'token'
+    )
+    const res = await POST(req)
+    expect(res.status).toBe(409)
+  })
+
+  it('rejects a direct request beyond the public six-month booking window', async () => {
+    const req = makeRequest(
+      'POST',
+      { ...validBody, startTime: new Date('2027-01-01T10:00:00.000Z').toISOString() },
+      'token'
+    )
+    const res = await POST(req)
+    expect(res.status).toBe(409)
   })
 
   it('calculates endTime correctly based on service duration', async () => {

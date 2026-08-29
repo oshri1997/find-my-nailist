@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare, CalendarOff, Copy, Check, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { generateSlots, isSlotUnavailable, buildMonthCalendarFor, toDateStr, type BookedSlot } from '@/lib/booking-utils'
+import { generateSlots, isSlotUnavailable, buildMonthCalendarFor, israelWallClockToUtc, toDateStr, type BookedSlot } from '@/lib/booking-utils'
 import { toBitUrl, formatBitPhoneDisplay } from '@/lib/bit'
 import { isMobileDevice } from '@/lib/device'
 import { getRecommendedSlots } from '@/lib/slot-recommendation'
@@ -85,6 +85,8 @@ export default function BookingModal({ nailistProfileId, businessName, services,
 
   const [availability, setAvailability] = useState<Availability | null>(null)
   const [loadingSlots, setLoadingSlots] = useState(false)
+  const [availabilityError, setAvailabilityError] = useState(false)
+  const [availabilityRetry, setAvailabilityRetry] = useState(0)
   const [dateSummary, setDateSummary] = useState<Record<string, { workingDay: boolean; fullyBooked: boolean }> | null>(null)
 
   const now = new Date()
@@ -126,13 +128,22 @@ export default function BookingModal({ nailistProfileId, businessName, services,
     if (!selectedDate) return
     const dateStr = toDateStr(selectedDate)
     let cancelled = false
+    setAvailabilityError(false)
     fetch(`/api/nailists/${nailistProfileId}/availability?date=${dateStr}`)
-      .then((r) => r.json())
+      .then(async (r) => {
+        if (!r.ok) throw new Error('Availability request failed')
+        return r.json()
+      })
       .then(({ data }) => { if (!cancelled) setAvailability(data ?? null) })
-      .catch(() => { if (!cancelled) setAvailability(null) })
+      .catch(() => {
+        if (!cancelled) {
+          setAvailability(null)
+          setAvailabilityError(true)
+        }
+      })
       .finally(() => { if (!cancelled) setLoadingSlots(false) })
     return () => { cancelled = true }
-  }, [selectedDate, nailistProfileId])
+  }, [selectedDate, nailistProfileId, availabilityRetry])
 
   async function handleConfirm() {
     if (!selectedService || !selectedDate || !selectedTime) return
@@ -146,7 +157,9 @@ export default function BookingModal({ nailistProfileId, businessName, services,
       }
       const { data: clientProfile } = await meRes.json()
       const dateStr = toDateStr(selectedDate)
-      const startTime = new Date(`${dateStr}T${selectedTime}:00`)
+      // Appointment times are Israeli business hours, regardless of the
+      // visitor's own browser timezone.
+      const startTime = israelWallClockToUtc(dateStr, selectedTime)
       const res = await fetch('/api/appointments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -446,6 +459,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                             setSelectedDate(d)
                             setSelectedTime('')
                             setLoadingSlots(true)
+                            setAvailabilityError(false)
                             setAvailability(null)
                           }}
                           className={`flex flex-col items-center py-2 rounded-xl border-2 transition-all ${
@@ -486,6 +500,21 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                       <div className="flex items-center gap-2 text-muted-foreground text-sm py-5 justify-center">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <span className="font-medium">טוענת שעות פנויות...</span>
+                      </div>
+                    ) : availabilityError ? (
+                      <div className="text-sm text-muted-foreground bg-muted rounded-2xl p-5 text-center">
+                        <CalendarOff className="h-7 w-7 text-muted-foreground mx-auto mb-2" />
+                        <p className="font-bold">לא הצלחנו לטעון שעות פנויות</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLoadingSlots(true)
+                            setAvailabilityRetry((value) => value + 1)
+                          }}
+                          className="mt-3 text-xs font-black text-primary hover:underline"
+                        >
+                          נסי שוב
+                        </button>
                       </div>
                     ) : !availability?.workingDay ? (
                       <div className="text-sm text-muted-foreground bg-muted rounded-2xl p-5 text-center">

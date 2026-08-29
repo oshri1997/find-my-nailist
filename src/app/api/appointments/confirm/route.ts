@@ -6,7 +6,18 @@ import { sendClientConfirmedEmail } from '@/lib/email'
 import { buildAppointmentEventPayload, createGoogleCalendarEvent } from '@/lib/google-calendar'
 import type { GoogleCalendarTokens } from '@/types'
 
+// Email scanners routinely follow GET links. Showing a confirmation page is
+// safe; changing an appointment only happens after the nailist submits POST.
 export async function GET(request: NextRequest) {
+  const token = request.nextUrl.searchParams.get('token')
+  if (!token) return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL ?? 'https://nailistiot.fun'}/appointments/confirmed?error=invalid`)
+  return new NextResponse(confirmPage(token), {
+    status: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+  })
+}
+
+export async function POST(request: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://nailistiot.fun'
   const { searchParams } = new URL(request.url)
   const token = searchParams.get('token')
@@ -175,4 +186,9 @@ export async function GET(request: NextRequest) {
     console.error('Confirm appointment error:', err)
     return NextResponse.redirect(`${appUrl}/appointments/confirmed?error=server`)
   }
+}
+
+function confirmPage(token: string) {
+  const action = `/api/appointments/confirm?token=${encodeURIComponent(token)}`
+  return `<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>אישור תור</title><style>body{font-family:Arial,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#fff7fa;color:#2b1a22}.card{background:#fff;border-radius:20px;padding:36px;max-width:420px;width:86%;text-align:center;box-shadow:0 8px 32px #0001}button{border:0;border-radius:12px;padding:14px 28px;background:#d83b67;color:white;font-weight:bold;font-size:16px;cursor:pointer}</style></head><body><main class="card"><h1>לאשר את התור?</h1><p>לחיצה על הכפתור תאשר את בקשת התור ותשלח עדכון ללקוחה.</p><form method="POST" action="${action}"><button type="submit">אישור התור</button></form></main></body></html>`
 }

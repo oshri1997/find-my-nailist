@@ -4,6 +4,7 @@ import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue, Timestamp, type Firestore, type DocumentReference } from 'firebase-admin/firestore'
 import { sendAppointmentRequest, sendReviewRequestEmail, sendCancellationEmail } from '@/lib/email'
+import { addDays, generateSlots, getDayOfWeek, israelDateTimeParts, israelWallClockToUtc, todayInIsrael } from '@/lib/booking-utils'
 import { randomUUID } from 'crypto'
 
 // Firestore batched writes cap at 500 operations — split larger update sets into chunks.
@@ -26,7 +27,7 @@ const createSchema = z.object({
   clientProfileId: z.string(),
   serviceId: z.string(),
   startTime: z.string().datetime(),
-  notes: z.string().optional(),
+  notes: z.string().max(1000).optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -72,7 +73,36 @@ export async function POST(request: NextRequest) {
     }
 
     const startTime = new Date(data.startTime)
+    if (Number.isNaN(startTime.getTime()) || startTime <= new Date()) {
+      return NextResponse.json({ error: 'Time slot not available' }, { status: 409 })
+    }
+    const { dateStr: bookingDate, timeStr: bookingTime } = israelDateTimeParts(startTime)
+    const today = todayInIsrael()
+    if (bookingDate < today || bookingDate > addDays(today, 180)) {
+      return NextResponse.json({ error: 'Time slot not available' }, { status: 409 })
+    }
+
+    // The client UI shows only valid slots, but it is not an authority. A
+    // direct request must obey the same Israel-time working-hours rules.
+    const hoursSnap = await db
+      .collection(COLLECTIONS.WORKING_HOURS)
+      .where('nailistProfileId', '==', data.nailistProfileId)
+      .get()
+    const hours = hoursSnap.docs
+      .map((doc) => doc.data())
+      .find((item) => item.dayOfWeek === getDayOfWeek(bookingDate) && item.isActive)
+    const expectedStart = israelWallClockToUtc(bookingDate, bookingTime)
+    if (
+      !hours ||
+      expectedStart.getTime() !== startTime.getTime() ||
+      !generateSlots(hours.startTime, hours.endTime).includes(bookingTime)
+    ) {
+      return NextResponse.json({ error: 'Time slot not available' }, { status: 409 })
+    }
     const endTime = new Date(startTime.getTime() + service.durationMinutes * 60 * 1000)
+    if (endTime > israelWallClockToUtc(bookingDate, hours.endTime)) {
+      return NextResponse.json({ error: 'Time slot not available' }, { status: 409 })
+    }
 
     // Fetch nailist + client profiles (needed for denormalized fields + email)
     const [nailistSnap, clientProfileSnap, clientUserSnap] = await Promise.all([
