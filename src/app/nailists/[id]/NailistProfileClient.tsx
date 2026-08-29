@@ -473,20 +473,6 @@ export default function NailistProfileClient({ id }: { id: string }) {
 
       {/* Content */}
       <div className="container mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-8 pb-24 md:pb-8">
-        <section aria-label="סיכום הפרופיל" className="grid grid-cols-3 gap-2 sm:gap-4 mb-7">
-          <div className="rounded-2xl border border-border bg-card px-3 py-3 text-center">
-            <p className="text-[11px] text-muted-foreground">שירותים</p>
-            <p className="mt-0.5 font-black text-foreground">{profile.services.length}</p>
-          </div>
-          <div className="rounded-2xl border border-border bg-card px-3 py-3 text-center">
-            <p className="text-[11px] text-muted-foreground">דירוג</p>
-            <p className="mt-0.5 font-black text-foreground">{profile.avgRating > 0 ? profile.avgRating.toFixed(1) : 'חדש'}</p>
-          </div>
-          <div className="rounded-2xl border border-border bg-card px-3 py-3 text-center">
-            <p className="text-[11px] text-muted-foreground">מקדמה</p>
-            <p className="mt-0.5 font-black text-foreground">{profile.depositEnabled ? `${profile.depositPercentage}%` : 'ללא'}</p>
-          </div>
-        </section>
         {activeTab === 'portfolio' && (
           <div>
             {profile.portfolio.length === 0 ? (

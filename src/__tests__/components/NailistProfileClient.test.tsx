@@ -143,7 +143,7 @@ describe('NailistProfileClient — contact info gating', () => {
 })
 
 describe('NailistProfileClient — booking CTA styling', () => {
-  it('shows compact profile facts and a separate quick-booking CTA for mobile', async () => {
+  it('shows a separate quick-booking CTA for mobile without repeating profile facts', async () => {
     mockUseAuth.mockReturnValue({ user: { uid: 'u1', displayName: 'Test' }, role: 'CLIENT' })
     mockProfileFetch(
       { ...baseProfile, services: [{ id: 'svc-1' }], depositEnabled: true, depositPercentage: 20 },
@@ -151,10 +151,8 @@ describe('NailistProfileClient — booking CTA styling', () => {
     )
     render(<NailistProfileClient id="nailist-1" />)
 
-    const summary = await screen.findByLabelText('סיכום הפרופיל')
-    expect(summary).toHaveTextContent('שירותים')
-    expect(summary).toHaveTextContent('דירוג')
-    expect(summary).toHaveTextContent('מקדמה')
+    await screen.findByRole('button', { name: 'קביעת תור' })
+    expect(screen.queryByLabelText('סיכום הפרופיל')).not.toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'קביעת תור מהירה' })).toBeInTheDocument()
   })
 
