@@ -236,10 +236,10 @@ export default function NailistProfileClient({ id }: { id: string }) {
   }
 
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-hidden flex flex-col bg-[#f7f3f1] text-[#2a2126]" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-muted/50" dir="rtl">
       {/* Hero — a consistent gradient, never a nailist-uploaded photo, so the header
           always looks clean regardless of what image someone sets as their cover */}
-      <div className="relative text-white overflow-hidden bg-[radial-gradient(circle_at_18%_10%,rgba(255,178,198,.28),transparent_34%),linear-gradient(135deg,#2d1b28_0%,#6f2948_52%,#b94f74_100%)]">
+      <div className="relative text-white overflow-hidden bg-gradient-to-br from-primary via-primary/60 to-accent">
         {/* Mobile-only back-to-search — the navbar's own "חיפוש" link is desktop-only
             (hidden md:flex), so mobile visitors would otherwise have no way back.
             Absolutely positioned at top-3 to sit on the same baseline as the owner
@@ -272,11 +272,11 @@ export default function NailistProfileClient({ id }: { id: string }) {
           </div>
         )}
 
-        <div className="container mx-auto w-full max-w-6xl px-5 sm:px-8 py-10 sm:py-14 relative z-10">
+        <div className="container mx-auto max-w-2xl px-6 py-12 relative z-10">
           <div className="flex flex-col items-center text-center">
             {/* Avatar */}
             <div className="relative mb-4">
-              <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-[2rem] rotate-3 bg-white/15 backdrop-blur ring-4 ring-white/25 shadow-2xl overflow-hidden flex items-center justify-center">
+              <div className="w-24 h-24 rounded-full bg-white/15 backdrop-blur ring-4 ring-white/25 shadow-xl overflow-hidden flex items-center justify-center">
                 {profile.photoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={profile.photoUrl} alt={profile.businessName} className="w-full h-full object-cover" />
@@ -305,7 +305,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
               </p>
             )}
 
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight mb-2 flex items-center justify-center gap-2">
+            <h1 className="text-2xl font-black mb-1.5 flex items-center justify-center gap-1.5">
               {profile.businessName}
               {profile.isVerified && (
                 <span title="נייליסטית מאומתת">
@@ -314,7 +314,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
               )}
             </h1>
 
-            <div className="flex items-center flex-wrap justify-center gap-x-4 gap-y-2 text-sm sm:text-base mb-1">
+            <div className="flex items-center flex-wrap justify-center gap-x-3 gap-y-1 text-sm mb-1">
               {profile.city && (
                 <div className="flex items-center gap-1 text-white/80">
                   <MapPin className="h-3.5 w-3.5" />
@@ -331,7 +331,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
             </div>
 
             {profile.bio && (
-              <p className="mt-4 text-white/80 text-sm sm:text-base leading-relaxed max-w-xl">{profile.bio}</p>
+              <p className="mt-3 text-white/80 text-sm leading-relaxed max-w-md">{profile.bio}</p>
             )}
           </div>
 
@@ -339,7 +339,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
             <div className="flex flex-col items-center mt-6">
               <Button
                 onClick={() => openBooking()}
-                className="bg-white text-primary hover:bg-primary hover:text-white border-0 rounded-full font-black shadow-xl px-10 h-12 text-base transition-all hover:scale-[1.02]"
+                className="bg-white text-primary hover:bg-primary hover:text-white border-0 rounded-2xl font-black shadow-lg px-8 h-11 transition-colors"
               >
                 קביעת תור
               </Button>
@@ -449,14 +449,14 @@ export default function NailistProfileClient({ id }: { id: string }) {
       </div>
 
       {/* Tabs */}
-      <div className="bg-[#fffdfb]/95 backdrop-blur border-b border-[#eadfe0] sticky top-0 z-20 shadow-[0_4px_18px_rgba(78,37,53,.06)]">
-        <div className="container mx-auto w-full max-w-6xl px-5 sm:px-8">
-          <div className="flex gap-1 overflow-x-auto">
+      <div className="bg-card border-b border-border sticky top-20 z-20">
+        <div className="container mx-auto max-w-6xl px-6">
+          <div className="flex gap-1">
             {([['portfolio', 'פורטפוליו'], ['services', 'שירותים'], ['reviews', 'ביקורות']] as const).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
-                className={`py-4 px-5 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${
+                className={`py-4 px-4 text-sm font-bold border-b-2 transition-colors ${
                   activeTab === key
                     ? 'border-primary text-primary'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -470,7 +470,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto w-full max-w-6xl px-5 sm:px-8 py-8 sm:py-12 pb-28 md:pb-12">
+      <div className="container mx-auto max-w-6xl px-6 py-8">
         {activeTab === 'portfolio' && (
           <div>
             {profile.portfolio.length === 0 ? (
@@ -481,14 +481,14 @@ export default function NailistProfileClient({ id }: { id: string }) {
                 <p className="font-bold">אין תמונות בפורטפוליו עדיין</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                 {profile.portfolio.map((photo, i) => (
                   <motion.div
                     key={photo.id}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.05 }}
-                    className="aspect-square rounded-[1.25rem] overflow-hidden bg-[#eadfe0] shadow-sm"
+                    className="aspect-square rounded-2xl overflow-hidden bg-muted"
                   >
                     <button
                       type="button"
@@ -527,7 +527,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.07 }}
-                  className="bg-[#fffdfb] rounded-[1.25rem] border border-[#eadfe0] p-5 sm:p-6 flex items-center justify-between shadow-[0_8px_24px_rgba(78,37,53,.05)] hover:border-[#c65b7b] hover:-translate-y-0.5 transition-all"
+                  className="bg-card rounded-2xl border border-border p-5 flex items-center justify-between hover:border-primary/30 transition-colors"
                 >
                   <div>
                     <h3 className="font-black text-foreground">{service.name}</h3>
@@ -545,7 +545,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                       <Button
                         size="sm"
                         onClick={() => openBooking(service.id)}
-                        className="bg-[#8b3156] hover:bg-[#6f2948] border-0 rounded-full font-bold shadow-sm shadow-[#8b3156]/30"
+                        className="bg-gradient-to-r from-primary to-accent border-0 rounded-xl font-bold shadow-sm shadow-primary/40"
                       >
                         הזמיני
                       </Button>
@@ -573,7 +573,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.07 }}
-                  className="bg-[#fffdfb] rounded-[1.25rem] border border-[#eadfe0] p-5 sm:p-6 shadow-[0_8px_24px_rgba(78,37,53,.05)]"
+                  className="bg-card rounded-2xl border border-border p-5"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="font-bold text-muted-foreground">{formatReviewerName(review.clientDisplayName)}</div>
@@ -596,17 +596,6 @@ export default function NailistProfileClient({ id }: { id: string }) {
           </div>
         )}
       </div>
-
-      {isOwner === false && profile.services.length > 0 && (
-        <div aria-hidden="true" className="md:hidden fixed bottom-0 inset-x-0 z-30 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 bg-[#fffdfb]/95 backdrop-blur border-t border-[#eadfe0] shadow-[0_-8px_24px_rgba(78,37,53,.12)]">
-          <Button
-            onClick={() => openBooking()}
-            className="w-full h-12 rounded-full bg-[#8b3156] hover:bg-[#6f2948] text-white font-black text-base shadow-lg shadow-[#8b3156]/25"
-          >
-            קביעת תור
-          </Button>
-        </div>
-      )}
 
       {showBooking && (
         <BookingModal
