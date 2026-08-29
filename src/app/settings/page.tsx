@@ -496,7 +496,7 @@ export default function SettingsPage() {
         </motion.div>
       )}
 
-      {process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ENABLED !== 'false' && <>
+      {false && <>
       {/* Google Calendar sync */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
         className="bg-card rounded-3xl border border-border p-6 shadow-sm space-y-4 mb-6">
