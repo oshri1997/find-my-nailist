@@ -9,6 +9,7 @@ import NextImage from 'next/image'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { EmailVerificationBanner } from '@/components/layout/email-verification-banner'
+import { FeedbackLauncher } from '@/components/feedback/FeedbackLauncher'
 
 const primaryNavLinks = [
   { href: '/dashboard/nailist', label: 'סקירה', Icon: LayoutDashboard, dynamic: false },
@@ -201,6 +202,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Search className="h-4 w-4" />
               חיפוש נייליסטיות
             </Link>
+            <FeedbackLauncher compact />
             {isAdmin && (
               <Link
                 href="/admin"
@@ -339,6 +341,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     פאנל ניהול
                   </Link>
                 )}
+                <FeedbackLauncher compact onClose={() => setShowMoreSheet(false)} className="px-4 py-3" />
                 <div className="flex items-center justify-between px-4 py-2.5 rounded-xl">
                   <span className="text-sm font-semibold text-muted-foreground">מצב תצוגה</span>
                   <ThemeToggle />

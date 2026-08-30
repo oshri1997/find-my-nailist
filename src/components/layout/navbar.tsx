@@ -9,6 +9,7 @@ import { LogOut, LayoutDashboard, ChevronDown, CalendarDays, Shield, Heart, Sear
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { FeedbackLauncher } from '@/components/feedback/FeedbackLauncher'
 
 export function Navbar() {
   const { user, loading, role, isAdmin, displayName, signOut } = useAuth()
@@ -174,6 +175,7 @@ export function Navbar() {
                         <Settings className="h-4 w-4 text-primary" />
                         הגדרות חשבון
                       </Link>
+                      <FeedbackLauncher onClose={() => setShowMenu(false)} className="w-full justify-start rounded-lg px-3 py-2 text-foreground hover:bg-muted/60 hover:text-primary" />
                       {isAdmin && (
                         <Link
                           href="/admin"

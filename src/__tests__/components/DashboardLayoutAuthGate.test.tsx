@@ -27,6 +27,12 @@ jest.mock('@/components/layout/email-verification-banner', () => ({
   EmailVerificationBanner: () => null,
 }))
 
+jest.mock('@/components/feedback/FeedbackLauncher', () => ({
+  FeedbackLauncher: () => <button type="button">עזרה ומשוב</button>,
+}))
+
+jest.mock('@/components/theme-toggle', () => ({ ThemeToggle: () => null }))
+
 beforeEach(() => {
   jest.clearAllMocks()
   global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ role: 'NAILIST' }) } as Response)
@@ -58,5 +64,14 @@ describe('DashboardLayout — auth gate', () => {
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalledWith('/api/me/role', expect.anything()))
     expect(mockReplace).not.toHaveBeenCalledWith('/login')
+  })
+
+  it('exposes the feedback entry from the nailist dashboard once access is granted', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { uid: 'nailist-1' }, loading: false, isAdmin: false, displayName: 'שרה', signOut: jest.fn(),
+    })
+    const { getByText } = render(<DashboardLayout>child</DashboardLayout>)
+
+    await waitFor(() => expect(getByText('עזרה ומשוב')).toBeInTheDocument())
   })
 })

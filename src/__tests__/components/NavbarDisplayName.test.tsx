@@ -19,6 +19,9 @@ jest.mock('@/components/auth/auth-provider', () => ({
 }))
 
 jest.mock('@/components/theme-toggle', () => ({ ThemeToggle: () => null }))
+jest.mock('@/components/feedback/FeedbackLauncher', () => ({
+  FeedbackLauncher: () => <button type="button">עזרה ומשוב</button>,
+}))
 
 describe('Navbar — display name', () => {
   it('does not flash guest actions while Firebase restores an existing session', () => {
@@ -84,5 +87,19 @@ describe('Navbar — display name', () => {
 
     fireEvent.click(screen.getByText('ישראלה'))
     expect(screen.getByText('ישראלה ישראלית')).toBeInTheDocument()
+  })
+
+  it('shows the feedback entry only inside a signed-in user menu', () => {
+    mockUseAuth.mockReturnValue({
+      user: { uid: 'u1', displayName: 'ישראלה ישראלית', email: 'israela@test.com', photoURL: null },
+      role: 'CLIENT',
+      isAdmin: false,
+      signOut: jest.fn(),
+    })
+    render(<Navbar />)
+
+    expect(screen.queryByText('עזרה ומשוב')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByText('ישראלה'))
+    expect(screen.getByText('עזרה ומשוב')).toBeInTheDocument()
   })
 })
