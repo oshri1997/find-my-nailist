@@ -11,4 +11,6 @@ export const COLLECTIONS = {
   FAVORITES: 'favorites',
   SEARCH_EVENTS: 'searchEvents',
   AUDIT_LOGS: 'auditLogs',
+  FEEDBACK: 'feedback',
+  FEEDBACK_RATE_LIMITS: 'feedbackRateLimits',
 } as const

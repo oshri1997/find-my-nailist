@@ -7,6 +7,9 @@ export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLET
 // or the lazy auto-complete/auto-cancel logic in GET /api/appointments, so a
 // deposit can never gate or interfere with the real appointment lifecycle.
 export type DepositStatus = 'AWAITING_PAYMENT' | 'CLIENT_MARKED_PAID' | 'NAILIST_CONFIRMED'
+export type FeedbackType = 'BUG' | 'IDEA' | 'QUESTION' | 'OTHER'
+export type FeedbackStatus = 'NEW' | 'IN_REVIEW' | 'PLANNED' | 'RESOLVED' | 'CLOSED'
+export type FeedbackPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL'
 
 // Firestore document types (timestamps as Firestore Timestamp)
 export interface GoogleCalendarTokens {
@@ -164,6 +167,36 @@ export interface AuditLogDoc {
   createdAt: Timestamp
 }
 
+// Support/feedback reports are always attributed on the server from the
+// authenticated Firebase session. Reporter fields are snapshots so the admin
+// can understand an older report even if a user later changes their profile.
+export interface FeedbackDoc {
+  reporterUid: string
+  reporterEmail: string
+  reporterDisplayName: string
+  reporterRole?: UserRole
+  type: FeedbackType
+  subject: string
+  description: string
+  status: FeedbackStatus
+  priority: FeedbackPriority
+  pageUrl: string
+  appVersion?: string
+  userAgent?: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+// One bounded ledger per reporter. Each accepted report atomically prunes and
+// rewrites it, so it stays at one document per UID and needs no TTL policy or
+// cleanup job. `expiresAt` is business-window metadata; reports are manager
+// records and are never deleted by this limiter.
+export interface FeedbackRateLimitDoc {
+  submissionTimes: number[]
+  expiresAt: Timestamp
+  updatedAt: Timestamp
+}
+
 // Serialized types for client-side use (Timestamps converted to strings)
 export interface User extends Omit<UserDoc, 'createdAt' | 'updatedAt'> {
   id: string
@@ -219,6 +252,12 @@ export interface Review extends Omit<ReviewDoc, 'createdAt' | 'updatedAt'> {
 export interface AuditLog extends Omit<AuditLogDoc, 'createdAt'> {
   id: string
   createdAt: string
+}
+
+export interface Feedback extends Omit<FeedbackDoc, 'createdAt' | 'updatedAt'> {
+  id: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface ApiResponse<T> {
