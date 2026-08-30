@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   const token = searchParams.get('token')
 
   if (!token) {
-    return NextResponse.redirect(`${appUrl}/appointments/confirmed?error=invalid`)
+    return postRedirect(`${appUrl}/appointments/confirmed?error=invalid`)
   }
 
   try {
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       .get()
 
     if (snap.empty) {
-      return NextResponse.redirect(`${appUrl}/appointments/confirmed?error=invalid`)
+      return postRedirect(`${appUrl}/appointments/confirmed?error=invalid`)
     }
 
     const doc = snap.docs[0]
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     const expiresAt: Date = apt.confirmTokenExpiresAt?.toDate?.() ?? new Date(0)
     if (new Date() > expiresAt) {
-      return NextResponse.redirect(`${appUrl}/appointments/confirmed?error=expired`)
+      return postRedirect(`${appUrl}/appointments/confirmed?error=expired`)
     }
 
     // Transactional check-then-update — a plain read-then-write here would let
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       // Report the appointment's real current status — "already confirmed"
       // would be actively misleading for one that was actually auto-cancelled
       // (e.g. a stale-PENDING cleanup) in the meantime.
-      return NextResponse.redirect(`${appUrl}/appointments/confirmed?already=1&status=${currentStatus}`)
+      return postRedirect(`${appUrl}/appointments/confirmed?already=1&status=${currentStatus}`)
     }
 
     // Look up client email (CLIENT_PROFILES may lack email — fall back to USERS)
@@ -181,14 +181,20 @@ export async function POST(request: NextRequest) {
 
     const redirectUrl = new URL(`${appUrl}/appointments/confirmed`)
     if (!emailSent) redirectUrl.searchParams.set('emailError', '1')
-    return NextResponse.redirect(redirectUrl.toString())
+    return postRedirect(redirectUrl.toString())
   } catch (err) {
     console.error('Confirm appointment error:', err)
-    return NextResponse.redirect(`${appUrl}/appointments/confirmed?error=server`)
+    return postRedirect(`${appUrl}/appointments/confirmed?error=server`)
   }
+}
+
+// A POST confirmation must redirect with See Other, so the browser follows up
+// with a GET and a page refresh cannot resubmit the one-time confirmation.
+function postRedirect(url: string) {
+  return NextResponse.redirect(url, 303)
 }
 
 function confirmPage(token: string) {
   const action = `/api/appointments/confirm?token=${encodeURIComponent(token)}`
-  return `<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>אישור תור</title><style>body{font-family:Arial,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#fff7fa;color:#2b1a22}.card{background:#fff;border-radius:20px;padding:36px;max-width:420px;width:86%;text-align:center;box-shadow:0 8px 32px #0001}button{border:0;border-radius:12px;padding:14px 28px;background:#d83b67;color:white;font-weight:bold;font-size:16px;cursor:pointer}</style></head><body><main class="card"><h1>לאשר את התור?</h1><p>לחיצה על הכפתור תאשר את בקשת התור ותשלח עדכון ללקוחה.</p><form method="POST" action="${action}"><button type="submit">אישור התור</button></form></main></body></html>`
+  return `<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>אישור תור</title><style>body{font-family:Arial,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#fff7fa;color:#2b1a22}.card{background:#fff;border-radius:20px;padding:36px;max-width:420px;width:86%;text-align:center;box-shadow:0 8px 32px #0001}button{border:0;border-radius:12px;padding:14px 28px;background:#F5175C;color:white;font-weight:bold;font-size:16px;cursor:pointer}</style></head><body><main class="card"><h1>לאשר את התור?</h1><p>לחיצה על הכפתור תאשר את בקשת התור ותשלח עדכון ללקוחה.</p><form method="POST" action="${action}"><button type="submit">אישור התור</button></form></main></body></html>`
 }

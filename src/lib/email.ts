@@ -1,6 +1,21 @@
 const FROM = 'נייליסטיות <noreply@nailistiot.fun>'
 const REPLY_TO = 'noreply@nailistiot.fun'
 const APP_URL = 'https://nailistiot.fun'
+// Keep transactional email visually aligned with the app's light-theme
+// primary (#F5175C) and accent (#9D174D), rather than the old orange CTA.
+const BRAND_PRIMARY = '#F5175C'
+const BRAND_ACCENT = '#9D174D'
+const BRAND_GRADIENT = `linear-gradient(135deg,${BRAND_PRIMARY},${BRAND_ACCENT})`
+
+export function escapeHtml(value: unknown): string {
+  return String(value).replace(/[&<>'"]/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;',
+  })[character]!)
+}
 
 async function sendResend(to: string, subject: string, html: string, text: string): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY
@@ -63,17 +78,22 @@ export interface AppointmentEmailParams {
 export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise<void> {
   const symbol = p.currency === 'ILS' ? '₪' : '$'
   const dateStr = formatDate(p.startTime)
+  const clientName = escapeHtml(p.clientName)
+  const businessName = escapeHtml(p.nailistBusinessName)
+  const serviceName = escapeHtml(p.serviceName)
+  const confirmUrl = escapeHtml(p.confirmUrl)
+  const declineUrl = p.declineUrl ? escapeHtml(p.declineUrl) : undefined
 
   const [clientResult, nailistResult] = await Promise.allSettled([
     sendResend(
       p.clientEmail,
       `בקשת תור אצל ${p.nailistBusinessName} נשלחה`,
       `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-        <h2 style="color:#d946a8">בקשת התור שלך נשלחה!</h2>
-        <p>שלום ${p.clientName},</p>
-        <p>בקשת התור שלך אצל <strong>${p.nailistBusinessName}</strong> התקבלה ומחכה לאישור.</p>
+        <h2 style="color:${BRAND_PRIMARY}">בקשת התור שלך נשלחה!</h2>
+        <p>שלום ${clientName},</p>
+        <p>בקשת התור שלך אצל <strong>${businessName}</strong> התקבלה ומחכה לאישור.</p>
         <div style="background:#fdf4ff;border-radius:12px;padding:16px;margin:20px 0">
-          <p style="margin:4px 0"><strong>שירות:</strong> ${p.serviceName}</p>
+          <p style="margin:4px 0"><strong>שירות:</strong> ${serviceName}</p>
           <p style="margin:4px 0"><strong>תאריך ושעה:</strong> ${dateStr}</p>
           <p style="margin:4px 0"><strong>מחיר:</strong> ${symbol}${p.price}</p>
         </div>
@@ -86,19 +106,19 @@ export async function sendAppointmentRequest(p: AppointmentEmailParams): Promise
       p.nailistEmail,
       `תור חדש מ-${p.clientName} — ממתין לאישורך`,
       `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-        <h2 style="color:#d946a8">תור חדש מחכה לאישור</h2>
+        <h2 style="color:${BRAND_PRIMARY}">תור חדש מחכה לאישור</h2>
         <div style="background:#fdf4ff;border-radius:12px;padding:16px;margin:20px 0">
-          <p style="margin:4px 0"><strong>לקוחה:</strong> ${p.clientName}</p>
-          <p style="margin:4px 0"><strong>שירות:</strong> ${p.serviceName}</p>
+          <p style="margin:4px 0"><strong>לקוחה:</strong> ${clientName}</p>
+          <p style="margin:4px 0"><strong>שירות:</strong> ${serviceName}</p>
           <p style="margin:4px 0"><strong>תאריך ושעה:</strong> ${dateStr}</p>
           <p style="margin:4px 0"><strong>מחיר:</strong> ${symbol}${p.price}</p>
         </div>
         <div style="text-align:center;margin:32px 0;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-          <a href="${p.confirmUrl}"
-            style="background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;padding:18px 48px;border-radius:50px;font-size:20px;font-weight:bold;display:inline-block">
+          <a href="${confirmUrl}"
+            style="background:${BRAND_GRADIENT};color:white;text-decoration:none;padding:18px 48px;border-radius:50px;font-size:20px;font-weight:bold;display:inline-block">
             אישור התור
           </a>
-          ${p.declineUrl ? `<a href="${p.declineUrl}"
+          ${declineUrl ? `<a href="${declineUrl}"
             style="background:#f3f4f6;color:#6b7280;text-decoration:none;padding:18px 48px;border-radius:50px;font-size:20px;font-weight:bold;display:inline-block;border:2px solid #e5e7eb">
             דחיית התור
           </a>` : ''}
@@ -129,18 +149,21 @@ export async function sendCancellationEmail(p: {
   startTime: Date
 }): Promise<void> {
   const dateStr = formatDate(p.startTime)
+  const clientName = escapeHtml(p.clientName)
+  const businessName = escapeHtml(p.nailistBusinessName)
+  const serviceName = escapeHtml(p.serviceName)
   await sendResend(
     p.clientEmail,
     `התור שלך אצל ${p.nailistBusinessName} בוטל`,
     `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-      <div style="background:linear-gradient(135deg,#c2542d,#d9a441);border-radius:16px 16px 0 0;padding:32px;text-align:center">
+      <div style="background:${BRAND_GRADIENT};border-radius:16px 16px 0 0;padding:32px;text-align:center">
         <h2 style="color:white;margin:0;font-size:24px">התור בוטל</h2>
       </div>
       <div style="padding:24px;background:#fafafa;border-radius:0 0 16px 16px">
-        <p>שלום ${p.clientName},</p>
-        <p>לצערנו, <strong>${p.nailistBusinessName}</strong> ביטלה את התור הקרוב שלך.</p>
+        <p>שלום ${clientName},</p>
+        <p>לצערנו, <strong>${businessName}</strong> ביטלה את התור הקרוב שלך.</p>
         <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:20px 0">
-          <p style="margin:4px 0"><strong>שירות:</strong> ${p.serviceName}</p>
+          <p style="margin:4px 0"><strong>שירות:</strong> ${serviceName}</p>
           <p style="margin:4px 0"><strong>תאריך ושעה:</strong> ${dateStr}</p>
         </div>
         <p>ניתן לקבוע תור חדש דרך האתר בכל עת.</p>
@@ -162,23 +185,27 @@ export async function sendReviewRequestEmail(p: {
 }): Promise<void> {
   const dateStr = formatDate(p.startTime)
   const url = (p.appUrl ?? 'https://nailistiot.fun') + `/my-appointments?review=${p.appointmentId}`
+  const clientName = escapeHtml(p.clientName)
+  const businessName = escapeHtml(p.nailistBusinessName)
+  const serviceName = escapeHtml(p.serviceName)
+  const safeUrl = escapeHtml(url)
   await sendResend(
     p.clientEmail,
     `איך היה התור אצל ${p.nailistBusinessName}?`,
     `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-      <div style="background:linear-gradient(135deg,#c2542d,#d9a441);border-radius:16px 16px 0 0;padding:32px;text-align:center">
+      <div style="background:${BRAND_GRADIENT};border-radius:16px 16px 0 0;padding:32px;text-align:center">
         <h2 style="color:white;margin:0;font-size:24px">איך היה התור?</h2>
       </div>
       <div style="padding:24px;background:#fafafa;border-radius:0 0 16px 16px">
-        <p>שלום ${p.clientName},</p>
-        <p>התור שלך אצל <strong>${p.nailistBusinessName}</strong> הסתיים. נשמח לשמוע מה חשבת!</p>
+        <p>שלום ${clientName},</p>
+        <p>התור שלך אצל <strong>${businessName}</strong> הסתיים. נשמח לשמוע מה חשבת!</p>
         <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:20px 0">
-          <p style="margin:4px 0"><strong>שירות:</strong> ${p.serviceName}</p>
+          <p style="margin:4px 0"><strong>שירות:</strong> ${serviceName}</p>
           <p style="margin:4px 0"><strong>תאריך:</strong> ${dateStr}</p>
         </div>
         <div style="text-align:center;margin:32px 0">
-          <a href="${url}"
-            style="background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;padding:16px 40px;border-radius:50px;font-size:18px;font-weight:bold;display:inline-block">
+          <a href="${safeUrl}"
+            style="background:${BRAND_GRADIENT};color:white;text-decoration:none;padding:16px 40px;border-radius:50px;font-size:18px;font-weight:bold;display:inline-block">
             כתבי ביקורת
           </a>
         </div>
@@ -201,24 +228,28 @@ export async function sendNailistReviewEmail(p: {
 }): Promise<void> {
   const stars = '⭐'.repeat(p.rating)
   const url = (p.appUrl ?? 'https://nailistiot.fun') + '/dashboard/nailist/reviews'
+  const nailistName = escapeHtml(p.nailistName)
+  const clientName = escapeHtml(p.clientName)
+  const serviceName = escapeHtml(p.serviceName)
+  const safeUrl = escapeHtml(url)
   const commentHtml = p.comment
-    ? `<div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:16px 0;font-style:italic">"${p.comment}"</div>`
+    ? `<div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:16px 0;font-style:italic">"${escapeHtml(p.comment)}"</div>`
     : ''
   await sendResend(
     p.nailistEmail,
     `ביקורת חדשה מ-${p.clientName} — ${p.rating}/5 כוכבים`,
     `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-      <div style="background:linear-gradient(135deg,#c2542d,#d9a441);border-radius:16px 16px 0 0;padding:32px;text-align:center">
+      <div style="background:${BRAND_GRADIENT};border-radius:16px 16px 0 0;padding:32px;text-align:center">
         <h2 style="color:white;margin:0;font-size:24px">ביקורת חדשה — ${stars}</h2>
       </div>
       <div style="padding:24px;background:#fafafa;border-radius:0 0 16px 16px">
-        <p>שלום ${p.nailistName},</p>
-        <p><strong>${p.clientName}</strong> השאירה ביקורת על <strong>${p.serviceName}</strong>:</p>
+        <p>שלום ${nailistName},</p>
+        <p><strong>${clientName}</strong> השאירה ביקורת על <strong>${serviceName}</strong>:</p>
         <div style="text-align:center;font-size:28px;margin:16px 0">${stars}</div>
         ${commentHtml}
         <div style="text-align:center;margin:32px 0">
-          <a href="${url}"
-            style="background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-size:16px;font-weight:bold;display:inline-block">
+          <a href="${safeUrl}"
+            style="background:${BRAND_GRADIENT};color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-size:16px;font-weight:bold;display:inline-block">
             צפי בביקורת
           </a>
         </div>
@@ -240,16 +271,19 @@ export async function sendClientConfirmedEmail(p: {
 }): Promise<void> {
   const symbol = p.currency === 'ILS' ? '₪' : '$'
   const dateStr = formatDate(p.startTime)
+  const clientName = escapeHtml(p.clientName)
+  const businessName = escapeHtml(p.nailistBusinessName)
+  const serviceName = escapeHtml(p.serviceName)
 
   await sendResend(
     p.clientEmail,
     `התור שלך אצל ${p.nailistBusinessName} אושר`,
     `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-      <h2 style="color:#22c55e">התור שלך אושר!</h2>
-      <p>שלום ${p.clientName},</p>
-      <p><strong>${p.nailistBusinessName}</strong> אישרה את התור שלך!</p>
-      <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:16px;margin:20px 0">
-        <p style="margin:4px 0"><strong>שירות:</strong> ${p.serviceName}</p>
+      <h2 style="color:${BRAND_PRIMARY}">התור שלך אושר!</h2>
+      <p>שלום ${clientName},</p>
+      <p><strong>${businessName}</strong> אישרה את התור שלך!</p>
+      <div style="background:#fff1f5;border:2px solid #fbcfe8;border-radius:12px;padding:16px;margin:20px 0">
+        <p style="margin:4px 0"><strong>שירות:</strong> ${serviceName}</p>
         <p style="margin:4px 0"><strong>תאריך ושעה:</strong> ${dateStr}</p>
         <p style="margin:4px 0"><strong>מחיר:</strong> ${symbol}${p.price}</p>
       </div>
@@ -267,7 +301,7 @@ export async function sendPasswordResetEmail(p: {
     p.email,
     'איפוס סיסמה — נייליסטיות',
     `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-      <div style="background:linear-gradient(135deg,#c2542d,#d9a441);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center">
+      <div style="background:${BRAND_GRADIENT};border-radius:16px 16px 0 0;padding:28px 32px;text-align:center">
         <h1 style="color:white;margin:0;font-size:22px;font-weight:900">נייליסטיות</h1>
       </div>
       <div style="background:#fff;border:1px solid #f3e8ff;border-top:none;border-radius:0 0 16px 16px;padding:32px">
@@ -275,12 +309,12 @@ export async function sendPasswordResetEmail(p: {
         <p style="color:#666;margin:0 0 24px">קיבלנו בקשה לאיפוס הסיסמה לחשבון שלך.</p>
         <p style="color:#666;margin:0 0 24px">לחצי על הכפתור כדי לאפס את הסיסמה — הקישור בתוקף ל-24 שעות.</p>
         <div style="text-align:center;margin:28px 0">
-          <a href="${p.resetLink}" style="background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;border-radius:12px;padding:14px 32px;font-weight:900;font-size:16px;display:inline-block">
+          <a href="${escapeHtml(p.resetLink)}" style="background:${BRAND_GRADIENT};color:white;text-decoration:none;border-radius:12px;padding:14px 32px;font-weight:900;font-size:16px;display:inline-block">
             איפוס סיסמה
           </a>
         </div>
         <p style="color:#999;font-size:12px;margin:24px 0 0">אם לא ביקשת לאפס סיסמה, אפשר להתעלם ממייל זה.</p>
-        <p style="color:#ccc;font-size:11px;margin:8px 0 0">הקישור: <a href="${p.resetLink}" style="color:#d9a441;word-break:break-all">${p.resetLink}</a></p>
+        <p style="color:#ccc;font-size:11px;margin:8px 0 0">הקישור: <a href="${escapeHtml(p.resetLink)}" style="color:${BRAND_PRIMARY};word-break:break-all">${escapeHtml(p.resetLink)}</a></p>
       </div>
     </div>`,
     `איפוס סיסמה — נייליסטיות\n\nלחצי על הקישור הבא לאיפוס הסיסמה (בתוקף ל-24 שעות):\n${p.resetLink}\n\nאם לא ביקשת לאפס סיסמה, אפשר להתעלם ממייל זה.\n\nצוות נייליסטיות`
@@ -306,19 +340,19 @@ export async function sendVerificationEmail(p: {
     p.email,
     'אימות כתובת מייל — נייליסטיות',
     `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-      <div style="background:linear-gradient(135deg,#c2542d,#d9a441);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center">
+      <div style="background:${BRAND_GRADIENT};border-radius:16px 16px 0 0;padding:28px 32px;text-align:center">
         <h1 style="color:white;margin:0;font-size:22px;font-weight:900">נייליסטיות</h1>
       </div>
       <div style="background:#fff;border:1px solid #f3e8ff;border-top:none;border-radius:0 0 16px 16px;padding:32px">
         <h2 style="font-size:20px;font-weight:900;margin:0 0 8px">אימות כתובת מייל</h2>
         <p style="color:#666;margin:0 0 24px">${copy.intro}</p>
         <div style="text-align:center;margin:28px 0">
-          <a href="${p.verifyLink}" style="background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;border-radius:12px;padding:14px 32px;font-weight:900;font-size:16px;display:inline-block">
+          <a href="${escapeHtml(p.verifyLink)}" style="background:${BRAND_GRADIENT};color:white;text-decoration:none;border-radius:12px;padding:14px 32px;font-weight:900;font-size:16px;display:inline-block">
             ${copy.cta}
           </a>
         </div>
         <p style="color:#999;font-size:12px;margin:24px 0 0">אם לא נרשמת לאתר, אפשר להתעלם ממייל זה.</p>
-        <p style="color:#ccc;font-size:11px;margin:8px 0 0">הקישור: <a href="${p.verifyLink}" style="color:#d9a441;word-break:break-all">${p.verifyLink}</a></p>
+        <p style="color:#ccc;font-size:11px;margin:8px 0 0">הקישור: <a href="${escapeHtml(p.verifyLink)}" style="color:${BRAND_PRIMARY};word-break:break-all">${escapeHtml(p.verifyLink)}</a></p>
       </div>
     </div>`,
     `אימות כתובת מייל — נייליסטיות\n\n${copy.intro}\n\nלחצי על הקישור הבא:\n${p.verifyLink}\n\nאם לא נרשמת לאתר, אפשר להתעלם ממייל זה.\n\nצוות נייליסטיות`

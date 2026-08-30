@@ -42,6 +42,20 @@ export function todayInIsrael(): string {
   return `${parts.year}-${parts.month}-${parts.day}`
 }
 
+// Creates a local Date that represents a calendar day, rather than an instant
+// in a particular timezone. Calendar controls use Date objects for their
+// year/month/day helpers, so start from Israel's calendar date and construct
+// the object in the browser's local calendar. This avoids a visitor west of
+// Israel seeing yesterday as the first available date around Israel midnight.
+export function calendarDateFromDateStr(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+export function todayCalendarDateInIsrael(): Date {
+  return calendarDateFromDateStr(todayInIsrael())
+}
+
 // Turns a real instant back into the date and clock time the business uses.
 // This is the inverse-facing helper for israelWallClockToUtc and keeps server
 // validation independent of the visitor's or server's local timezone.

@@ -182,6 +182,21 @@ describe('GET /api/appointments/decline', () => {
     expect(html).toContain('מניקור')
   })
 
+  it('escapes dynamic appointment values before rendering the success HTML', async () => {
+    collectionStore['appointments'][0].clientDisplayName = '<img src=x onerror=alert(1)>'
+    collectionStore['appointments'][0].serviceName = '<script>alert(2)</script>'
+    collectionStore['appointments'][0].nailistBusinessName = 'סטודיו & בניו'
+
+    const res = await POST(makeRequest('valid-token'))
+    const html = await res.text()
+
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;')
+    expect(html).toContain('&lt;script&gt;alert(2)&lt;/script&gt;')
+    expect(html).toContain('סטודיו &amp; בניו')
+    expect(html).not.toContain('<img src=x')
+    expect(html).not.toContain('<script>alert(2)</script>')
+  })
+
   it('sends cancellation email on successful decline', async () => {
     const req = makeRequest('valid-token')
     await POST(req)

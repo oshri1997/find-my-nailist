@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare, CalendarOff, Copy, Check, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { generateSlots, isSlotUnavailable, buildMonthCalendarFor, israelWallClockToUtc, toDateStr, type BookedSlot } from '@/lib/booking-utils'
+import { generateSlots, isSlotUnavailable, buildMonthCalendarFor, israelNow, israelWallClockToUtc, todayCalendarDateInIsrael, todayInIsrael, toDateStr, type BookedSlot } from '@/lib/booking-utils'
 import { toBitUrl, formatBitPhoneDisplay } from '@/lib/bit'
 import { isMobileDevice } from '@/lib/device'
 import { getRecommendedSlots } from '@/lib/slot-recommendation'
@@ -88,9 +88,14 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   const [availabilityError, setAvailabilityError] = useState(false)
   const [availabilityRetry, setAvailabilityRetry] = useState(0)
   const [dateSummary, setDateSummary] = useState<Record<string, { workingDay: boolean; fullyBooked: boolean }> | null>(null)
+  const [loadingDateSummary, setLoadingDateSummary] = useState(false)
+  const [dateSummaryError, setDateSummaryError] = useState(false)
+  const [dateSummaryRetry, setDateSummaryRetry] = useState(0)
 
-  const now = new Date()
-  now.setHours(0, 0, 0, 0)
+  // The calendar represents a nailist's Israel business days, not the
+  // visitor's local date. The Date is only a calendar-control container;
+  // every API value remains the Israel YYYY-MM-DD string.
+  const now = todayCalendarDateInIsrael()
 
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth())
@@ -114,21 +119,34 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   const monthDays = buildMonthCalendarFor(viewYear, viewMonth)
 
   useEffect(() => {
-    if (!selectedService) return
-    const from = toDateStr(new Date())
+    if (!selectedService || step !== 'datetime') return
+    let cancelled = false
+    const from = todayInIsrael()
     fetch(
       `/api/nailists/${nailistProfileId}/availability/batch?from=${from}&days=180&durationMinutes=${selectedService.durationMinutes}`
     )
-      .then((r) => r.json())
-      .then(({ data }) => setDateSummary(data ?? null))
-      .catch(() => setDateSummary(null))
-  }, [selectedService, nailistProfileId])
+      .then(async (r) => {
+        if (!r.ok) throw new Error('Batch availability request failed')
+        return r.json()
+      })
+      .then(({ data }) => {
+        if (!data || typeof data !== 'object') throw new Error('Invalid batch availability response')
+        if (!cancelled) setDateSummary(data)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDateSummary(null)
+          setDateSummaryError(true)
+        }
+      })
+      .finally(() => { if (!cancelled) setLoadingDateSummary(false) })
+    return () => { cancelled = true }
+  }, [selectedService, nailistProfileId, dateSummaryRetry, step])
 
   useEffect(() => {
     if (!selectedDate) return
     const dateStr = toDateStr(selectedDate)
     let cancelled = false
-    setAvailabilityError(false)
     fetch(`/api/nailists/${nailistProfileId}/availability?date=${dateStr}`)
       .then(async (r) => {
         if (!r.ok) throw new Error('Availability request failed')
@@ -219,14 +237,13 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   }
 
   const dateStr = selectedDate ? toDateStr(selectedDate) : ''
-  const todayStr = toDateStr(new Date())
+  const { dateStr: todayStr, minutesSinceMidnight: nowMinutesInIsrael } = israelNow()
   const slots =
     availability?.workingDay && availability.startTime && availability.endTime
       ? generateSlots(availability.startTime, availability.endTime).filter((t) => {
           if (!selectedDate || toDateStr(selectedDate) !== todayStr) return true
           const [h, m] = t.split(':').map(Number)
-          const cur = new Date()
-          return h > cur.getHours() || (h === cur.getHours() && m > cur.getMinutes())
+          return h * 60 + m > nowMinutesInIsrael
         })
       : []
 
@@ -352,7 +369,13 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                     return (
                       <button
                         key={s.id}
-                        onClick={() => { setSelectedService(s); setDateSummary(null); setServiceError(false) }}
+                        onClick={() => {
+                          setSelectedService(s)
+                          setDateSummary(null)
+                          setLoadingDateSummary(true)
+                          setDateSummaryError(false)
+                          setServiceError(false)
+                        }}
                         className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-right transition-all ${
                           selected
                             ? 'border-primary bg-primary/10 shadow-sm'
@@ -385,6 +408,9 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   onClick={() => {
                     if (!selectedService) { setServiceError(true); return }
                     setServiceError(false)
+                    setDateSummary(null)
+                    setLoadingDateSummary(true)
+                    setDateSummaryError(false)
                     setStep('datetime')
                   }}
                   className="w-full mt-4 bg-gradient-to-r from-primary to-primary/70 border-0 rounded-2xl h-12 font-black shadow-md shadow-primary/40"
@@ -448,7 +474,10 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                       const summary = dateSummary?.[toDateStr(d)]
                       const isNonWorking = summary !== undefined && !summary.workingDay
                       const isFullyBooked = summary?.workingDay && summary.fullyBooked
-                      const isDisabled = isPast || isNonWorking || (isToday && !!isFullyBooked)
+                      // A failed batch lookup must never make a day appear
+                      // bookable. The individual-day endpoint is only a
+                      // follow-up once the calendar summary is trustworthy.
+                      const isDisabled = loadingDateSummary || dateSummaryError || isPast || isNonWorking || (isToday && !!isFullyBooked)
                       return (
                         <button
                           key={toDateStr(d)}
@@ -490,6 +519,30 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                   </div>
                 </div>
 
+                {loadingDateSummary ? (
+                  <div className="mx-6 mt-4 flex items-center gap-2 text-muted-foreground text-sm py-3 justify-center" role="status" aria-live="polite">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="font-medium">טוענת זמינות ימים...</span>
+                  </div>
+                ) : dateSummaryError ? (
+                  <div className="mx-6 mt-4 text-sm text-muted-foreground bg-muted rounded-2xl p-5 text-center" role="alert" aria-live="assertive">
+                    <CalendarOff className="h-7 w-7 text-muted-foreground mx-auto mb-2" />
+                    <p className="font-bold">לא הצלחנו לטעון זמינות ימים</p>
+                    <p className="text-xs text-muted-foreground mt-1">לא ניתן לבחור תאריך עד שהזמינות תיטען</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoadingDateSummary(true)
+                        setDateSummaryError(false)
+                        setDateSummaryRetry((value) => value + 1)
+                      }}
+                      className="mt-3 text-xs font-black text-primary hover:underline"
+                    >
+                      נסי שוב
+                    </button>
+                  </div>
+                ) : null}
+
                 {/* Time slots */}
                 {selectedDate && (
                   <div className="mt-4 px-6">
@@ -502,13 +555,14 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                         <span className="font-medium">טוענת שעות פנויות...</span>
                       </div>
                     ) : availabilityError ? (
-                      <div className="text-sm text-muted-foreground bg-muted rounded-2xl p-5 text-center">
+                      <div className="text-sm text-muted-foreground bg-muted rounded-2xl p-5 text-center" role="alert" aria-live="assertive">
                         <CalendarOff className="h-7 w-7 text-muted-foreground mx-auto mb-2" />
                         <p className="font-bold">לא הצלחנו לטעון שעות פנויות</p>
                         <button
                           type="button"
                           onClick={() => {
                             setLoadingSlots(true)
+                            setAvailabilityError(false)
                             setAvailabilityRetry((value) => value + 1)
                           }}
                           className="mt-3 text-xs font-black text-primary hover:underline"

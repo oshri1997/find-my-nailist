@@ -33,8 +33,19 @@ beforeEach(() => {
   jest.useFakeTimers()
   jest.setSystemTime(new Date('2025-01-15T00:00:00'))
   mockFetch.mockReset()
-  // Default catch-all so background fetches don't throw
-  mockFetch.mockResolvedValue({ ok: true, json: async () => ({ data: {} }) })
+  // Keep the calendar's batch request and the selected-day request distinct.
+  // The modal deliberately disables all dates until the batch result arrives,
+  // so tests must receive a real batch response before clicking a date.
+  mockFetch.mockImplementation((request) => {
+    const url = String(request)
+    if (url.includes('/availability/batch')) {
+      return Promise.resolve({ ok: true, json: async () => ({ data: {} }) })
+    }
+    if (url.includes('/availability?')) {
+      return Promise.resolve({ ok: true, json: async () => ({ data: mockAvailability }) })
+    }
+    return Promise.resolve({ ok: true, json: async () => ({ data: {} }) })
+  })
   defaultProps.onClose.mockReset()
   // Bit deposit tests below cover the mobile deep-link UI by default —
   // desktop-specific behavior gets its own tests with an explicit desktop UA.
@@ -48,17 +59,20 @@ afterEach(() => {
 async function navigateToStep2(serviceName = "מניקור ג'ל") {
   fireEvent.click(screen.getByText(serviceName))
   fireEvent.click(screen.getByRole('button', { name: /המשך/ }))
+  await screen.findByText(/בחרי תאריך ושעה/)
+}
+
+async function getEnabledDateButtons() {
+  return waitFor(() => {
+    const dateButtons = screen.getAllByTestId('date-btn').filter(btn => !btn.hasAttribute('disabled'))
+    expect(dateButtons.length).toBeGreaterThan(0)
+    return dateButtons
+  })
 }
 
 async function navigateToStep3() {
   await navigateToStep2()
-  // Override default with actual availability data for the per-date fetch
-  mockFetch.mockResolvedValueOnce({
-    ok: true,
-    json: async () => ({ data: mockAvailability }),
-  })
-  // Click the first enabled date button in the month calendar
-  const dateButtons = screen.getAllByTestId('date-btn').filter(btn => !btn.hasAttribute('disabled'))
+  const dateButtons = await getEnabledDateButtons()
   fireEvent.click(dateButtons[0])
   await waitFor(() => screen.getByText('08:00'))
   fireEvent.click(screen.getByText('08:00'))
@@ -108,11 +122,7 @@ describe('BookingModal', () => {
   it('shows time slots after a date is selected', async () => {
     render(<BookingModal {...defaultProps} />)
     await navigateToStep2()
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: mockAvailability }),
-    })
-    const dateButtons = screen.getAllByTestId('date-btn').filter(btn => !btn.hasAttribute('disabled'))
+    const dateButtons = await getEnabledDateButtons()
     fireEvent.click(dateButtons[0])
     await waitFor(() => expect(screen.getByText('08:00')).toBeInTheDocument())
     expect(screen.getByText('09:00')).toBeInTheDocument()
@@ -173,13 +183,8 @@ describe('BookingModal', () => {
     render(<BookingModal {...defaultProps} />)
     await navigateToStep2()
 
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: mockAvailability }),
-    })
-
     // Today (Jan 15) should be the first enabled date at 09:00 AM
-    const dateButtons = screen.getAllByTestId('date-btn').filter((btn) => !btn.hasAttribute('disabled'))
+    const dateButtons = await getEnabledDateButtons()
     fireEvent.click(dateButtons[0])
 
     await waitFor(() => expect(screen.getByText('09:30')).toBeInTheDocument())
@@ -195,13 +200,8 @@ describe('BookingModal', () => {
     render(<BookingModal {...defaultProps} />)
     await navigateToStep2()
 
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: mockAvailability }),
-    })
-
     // Click a future date (not the first = today, but the second enabled)
-    const dateButtons = screen.getAllByTestId('date-btn').filter((btn) => !btn.hasAttribute('disabled'))
+    const dateButtons = await getEnabledDateButtons()
     fireEvent.click(dateButtons[1]) // Second enabled = Jan 16
 
     await waitFor(() => expect(screen.getByText('08:00')).toBeInTheDocument())
@@ -233,7 +233,7 @@ describe('BookingModal', () => {
     render(<BookingModal {...defaultProps} />)
     await navigateToStep2("מניקור ג'ל") // 60-minute service
 
-    const dateButtons = screen.getAllByTestId('date-btn').filter((btn) => !btn.hasAttribute('disabled'))
+    const dateButtons = await getEnabledDateButtons()
     const dateStr = dateButtons[0].getAttribute('data-date')!
 
     mockFetch.mockResolvedValueOnce({

@@ -93,11 +93,11 @@ import { GET, POST } from '@/app/api/appointments/confirm/route'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function makeRequest(token?: string): NextRequest {
+function makeRequest(token?: string, method: 'GET' | 'POST' = 'GET'): NextRequest {
   const url = token
     ? `http://localhost/api/appointments/confirm?token=${token}`
     : 'http://localhost/api/appointments/confirm'
-  return new NextRequest(url)
+  return new NextRequest(url, { method })
 }
 
 const futureExpiry = { toDate: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) }
@@ -146,54 +146,68 @@ describe('GET /api/appointments/confirm', () => {
     expect(collectionStore['appointments'][0].status).toBe('PENDING')
   })
 
-  it('redirects with error=invalid when no token is provided', async () => {
-    const req = makeRequest()
-    const res = await POST(req)
+  it('renders the scanner-safe POST confirmation form in the app primary color', async () => {
+    const res = await GET(makeRequest('valid-confirm-token'))
+    const html = await res.text()
+    expect(html).toContain('method="POST"')
+    expect(html).toContain('background:#F5175C')
+  })
+
+  it('keeps a GET redirect as a normal navigation without changing an appointment', async () => {
+    const res = await GET(makeRequest())
     expect(res.status).toBe(307)
+    expect(res.headers.get('Location')).toContain('error=invalid')
+    expect(collectionStore['appointments'][0].status).toBe('PENDING')
+  })
+
+  it('uses See Other after a POST with no token, preventing form resubmission', async () => {
+    const req = makeRequest(undefined, 'POST')
+    const res = await POST(req)
+    expect(res.status).toBe(303)
     expect(res.headers.get('Location')).toContain('error=invalid')
   })
 
   it('redirects with error=invalid when token does not exist', async () => {
-    const req = makeRequest('non-existent-token')
+    const req = makeRequest('non-existent-token', 'POST')
     const res = await POST(req)
-    expect(res.status).toBe(307)
+    expect(res.status).toBe(303)
     expect(res.headers.get('Location')).toContain('error=invalid')
   })
 
   it('redirects with error=expired when token is past its expiry', async () => {
     collectionStore['appointments'][0].confirmTokenExpiresAt = pastExpiry
-    const req = makeRequest('valid-confirm-token')
+    const req = makeRequest('valid-confirm-token', 'POST')
     const res = await POST(req)
-    expect(res.status).toBe(307)
+    expect(res.status).toBe(303)
     expect(res.headers.get('Location')).toContain('error=expired')
   })
 
   it('redirects with already=1 when appointment is already CONFIRMED', async () => {
     collectionStore['appointments'][0].status = 'CONFIRMED'
-    const req = makeRequest('valid-confirm-token')
+    const req = makeRequest('valid-confirm-token', 'POST')
     const res = await POST(req)
-    expect(res.status).toBe(307)
+    expect(res.status).toBe(303)
     expect(res.headers.get('Location')).toContain('already=1')
   })
 
   it('redirects with already=1 when appointment is CANCELLED', async () => {
     collectionStore['appointments'][0].status = 'CANCELLED'
-    const req = makeRequest('valid-confirm-token')
+    const req = makeRequest('valid-confirm-token', 'POST')
     const res = await POST(req)
-    expect(res.status).toBe(307)
+    expect(res.status).toBe(303)
     expect(res.headers.get('Location')).toContain('already=1')
   })
 
   it('redirects to confirmed page on success', async () => {
-    const req = makeRequest('valid-confirm-token')
+    const req = makeRequest('valid-confirm-token', 'POST')
     const res = await POST(req)
-    expect(res.status).toBe(307)
+    expect(res.status).toBe(303)
     expect(res.headers.get('Location')).toContain('/appointments/confirmed')
     expect(res.headers.get('Location')).not.toContain('error=')
   })
 
   it('sends confirmation email on success', async () => {
-    const req = makeRequest('valid-confirm-token')
+    const req = makeRequest('valid-confirm-token', 'POST')
     await POST(req)
 
     expect(mockSendClientConfirmedEmail).toHaveBeenCalledTimes(1)
@@ -216,7 +230,7 @@ describe('GET /api/appointments/confirm', () => {
     }
     docStore['users/client-user-1'] = { email: 'fallback@test.com' }
 
-    const req = makeRequest('valid-confirm-token')
+    const req = makeRequest('valid-confirm-token', 'POST')
     await POST(req)
 
     expect(mockSendClientConfirmedEmail).toHaveBeenCalledWith(
@@ -228,9 +242,9 @@ describe('GET /api/appointments/confirm', () => {
     docStore['clientProfiles/client-profile-1'] = { displayName: 'שרה' }
     docStore['users/client-user-1'] = {}
 
-    const req = makeRequest('valid-confirm-token')
+    const req = makeRequest('valid-confirm-token', 'POST')
     const res = await POST(req)
-    expect(res.status).toBe(307)
+    expect(res.status).toBe(303)
     expect(res.headers.get('Location')).toContain('emailError=1')
   })
 
@@ -238,7 +252,7 @@ describe('GET /api/appointments/confirm', () => {
     docStore['users/client-user-1'] = { email: 'client@test.com', googleCalendarTokens: { accessToken: 'a', expiryDate: 0, scope: 's' } }
     docStore['users/nailist-user-1'] = { email: 'nailist@test.com', googleCalendarTokens: { accessToken: 'b', expiryDate: 0, scope: 's' } }
 
-    const req = makeRequest('valid-confirm-token')
+    const req = makeRequest('valid-confirm-token', 'POST')
     await POST(req)
     await new Promise((r) => setTimeout(r, 10))
 
@@ -252,7 +266,7 @@ describe('GET /api/appointments/confirm', () => {
 
   it('does not create a Google Calendar event for a side with no tokens on file', async () => {
     // default users/* docs (set in outer beforeEach) have no googleCalendarTokens
-    const req = makeRequest('valid-confirm-token')
+    const req = makeRequest('valid-confirm-token', 'POST')
     await POST(req)
     await new Promise((r) => setTimeout(r, 10))
 
@@ -263,9 +277,9 @@ describe('GET /api/appointments/confirm', () => {
     docStore['users/client-user-1'] = { email: 'client@test.com', googleCalendarTokens: { accessToken: 'a', expiryDate: 0, scope: 's' } }
     mockCreateGoogleCalendarEvent.mockRejectedValue(new Error('boom'))
 
-    const req = makeRequest('valid-confirm-token')
+    const req = makeRequest('valid-confirm-token', 'POST')
     const res = await POST(req)
-    expect(res.status).toBe(307)
+    expect(res.status).toBe(303)
     expect(res.headers.get('Location')).toContain('/appointments/confirmed')
   })
 })

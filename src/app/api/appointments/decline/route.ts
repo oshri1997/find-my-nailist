@@ -131,6 +131,9 @@ function declinePage(token: string) {
 }
 
 function successPage(clientName: string, serviceName: string, businessName: string) {
+  const safeClientName = escapeHtml(clientName)
+  const safeServiceName = escapeHtml(serviceName)
+  const safeBusinessName = escapeHtml(businessName)
   return `<!DOCTYPE html>
 <html dir="rtl" lang="he">
 <head>
@@ -145,17 +148,17 @@ function successPage(clientName: string, serviceName: string, businessName: stri
     p{color:#6b7280;line-height:1.6;margin:4px 0}
     .details{background:#f9fafb;border-radius:12px;padding:16px;margin:24px 0;text-align:right}
     .details p{margin:4px 0;font-size:14px}
-    a{display:inline-block;margin-top:24px;background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-weight:bold;font-size:16px}
+    a{display:inline-block;margin-top:24px;background:linear-gradient(135deg,#F5175C,#9D174D);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-weight:bold;font-size:16px}
   </style>
 </head>
 <body>
   <div class="card">
     <div class="icon">❌</div>
     <h1>התור בוטל</h1>
-    <p>ביטלת את התור של <strong>${clientName}</strong></p>
+    <p>ביטלת את התור של <strong>${safeClientName}</strong></p>
     <div class="details">
-      <p><strong>שירות:</strong> ${serviceName}</p>
-      <p><strong>עסק:</strong> ${businessName}</p>
+      <p><strong>שירות:</strong> ${safeServiceName}</p>
+      <p><strong>עסק:</strong> ${safeBusinessName}</p>
     </div>
     <p>הלקוחה תקבל הודעה על הביטול במייל.</p>
     <a href="/dashboard/nailist">לדשבורד</a>
@@ -165,28 +168,40 @@ function successPage(clientName: string, serviceName: string, businessName: stri
 }
 
 function errorPage(title: string, message: string) {
+  const safeTitle = escapeHtml(title)
+  const safeMessage = escapeHtml(message)
   return `<!DOCTYPE html>
 <html dir="rtl" lang="he">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>${title}</title>
+  <title>${safeTitle}</title>
   <style>
     body{font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fdf4ff}
     .card{background:white;border-radius:20px;padding:40px;max-width:440px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.1)}
     .icon{font-size:56px;margin-bottom:16px}
     h1{color:#374151;font-size:24px;margin:0 0 8px}
     p{color:#6b7280;line-height:1.6}
-    a{display:inline-block;margin-top:24px;background:linear-gradient(135deg,#c2542d,#d9a441);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-weight:bold;font-size:16px}
+    a{display:inline-block;margin-top:24px;background:linear-gradient(135deg,#F5175C,#9D174D);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-weight:bold;font-size:16px}
   </style>
 </head>
 <body>
   <div class="card">
     <div class="icon">⚠️</div>
-    <h1>${title}</h1>
-    <p>${message}</p>
+    <h1>${safeTitle}</h1>
+    <p>${safeMessage}</p>
     <a href="/dashboard/nailist">לדשבורד</a>
   </div>
 </body>
 </html>`
+}
+
+function escapeHtml(value: unknown): string {
+  return String(value).replace(/[&<>'"]/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;',
+  })[character]!)
 }
