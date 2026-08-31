@@ -1,20 +1,13 @@
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject, type FirebaseStorage } from 'firebase/storage'
 import { initFirebase } from './client'
+import { validateFeedbackScreenshot } from '@/lib/feedback-screenshot'
+
+export { FEEDBACK_SCREENSHOT_MAX_BYTES, validateFeedbackScreenshot } from '@/lib/feedback-screenshot'
 
 async function getStorage(): Promise<FirebaseStorage> {
   const clients = await initFirebase()
   if (!clients?.storage) throw new Error('Firebase Storage is not initialized. Check your Firebase env vars.')
   return clients.storage
-}
-
-export const FEEDBACK_SCREENSHOT_MAX_BYTES = 5 * 1024 * 1024
-const FEEDBACK_SCREENSHOT_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
-
-/** A browser-side guard; the API validates the uploaded object again. */
-export function validateFeedbackScreenshot(file: File): string | null {
-  if (!FEEDBACK_SCREENSHOT_TYPES.has(file.type)) return 'אפשר לצרף רק PNG, JPEG או WebP.'
-  if (file.size > FEEDBACK_SCREENSHOT_MAX_BYTES) return 'גודל התמונה המקסימלי הוא 5MB.'
-  return null
 }
 
 /**

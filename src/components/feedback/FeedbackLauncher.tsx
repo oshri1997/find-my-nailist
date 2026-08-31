@@ -8,7 +8,7 @@ import { Bug, CheckCircle2, HelpCircle, ImagePlus, Lightbulb, Loader2, MessageCi
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { FeedbackType } from '@/types'
-import { uploadFeedbackScreenshot, validateFeedbackScreenshot } from '@/lib/firebase/storage'
+import { validateFeedbackScreenshot } from '@/lib/feedback-screenshot'
 import { useAuth } from '@/components/auth/auth-provider'
 
 type FeedbackCategory = {
@@ -153,6 +153,9 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
           return
         }
         setUploadProgress(0)
+        // Keep Firebase Storage out of the initial client bundle/module graph:
+        // users who only open or submit text feedback do not initialize it.
+        const { uploadFeedbackScreenshot } = await import('@/lib/firebase/storage')
         const uploaded = await uploadFeedbackScreenshot(user.uid, screenshot, setUploadProgress)
         screenshotStorageKey = uploaded.storageKey
       }

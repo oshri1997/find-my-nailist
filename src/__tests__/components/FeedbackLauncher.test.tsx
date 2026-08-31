@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { FeedbackLauncher } from '@/components/feedback/FeedbackLauncher'
-import { uploadFeedbackScreenshot, validateFeedbackScreenshot } from '@/lib/firebase/storage'
+import { uploadFeedbackScreenshot } from '@/lib/firebase/storage'
+import { validateFeedbackScreenshot } from '@/lib/feedback-screenshot'
 
 jest.mock('next/navigation', () => ({
   usePathname: () => '/my-appointments',
@@ -9,6 +10,9 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('@/lib/firebase/storage', () => ({
   uploadFeedbackScreenshot: jest.fn(),
+}))
+
+jest.mock('@/lib/feedback-screenshot', () => ({
   validateFeedbackScreenshot: jest.fn(() => null),
 }))
 
