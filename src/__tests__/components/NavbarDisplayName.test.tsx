@@ -36,6 +36,7 @@ describe('Navbar — display name', () => {
 
     expect(screen.queryByText('התחברות')).not.toBeInTheDocument()
     expect(screen.queryByText('הצטרפי עכשיו')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('טוען את החשבון')
   })
 
   it('shows only the first name on the compact nav button, but the full name inside the dropdown', () => {
