@@ -170,9 +170,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(245,23,92,0.15),transparent_38%),radial-gradient(circle_at_18%_78%,rgba(157,23,77,0.08),transparent_28%)]" />
             <div className="relative flex flex-col items-center">
               <NailLoader size="lg" text="מכינות לך את החוויה" />
-              <p className="mt-3 text-center text-xs font-semibold tracking-[0.18em] text-muted-foreground/80">
-                רגע קטן של ברק
-              </p>
             </div>
           </motion.div>
         )}
