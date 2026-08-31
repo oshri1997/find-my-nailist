@@ -15,6 +15,7 @@ const firstFeedback = {
   pageUrl: '/nailists/abc?from=search',
   appVersion: '1.6.0',
   internalNote: null,
+  hasScreenshot: false,
   createdAt: '2026-08-31T08:00:00.000Z',
   updatedAt: '2026-08-31T08:00:00.000Z',
 }
@@ -83,6 +84,21 @@ describe('AdminFeedbackPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'פתיחת פנייה אי אפשר לבחור שעה' }))
     expect(screen.getByText('העמוד אינו זמין')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /search/i })).not.toBeInTheDocument()
+  })
+
+  it('loads a private screenshot through the admin endpoint only', async () => {
+    const withScreenshot = { ...firstFeedback, hasScreenshot: true }
+    const fetchMock = global.fetch as jest.Mock
+    fetchMock
+      .mockResolvedValueOnce(listResponse([withScreenshot]))
+      .mockResolvedValueOnce(response({ data: { url: 'https://storage.example/signed-preview?signature=short-lived' } }))
+    render(<AdminFeedbackPage />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'פתיחת פנייה אי אפשר לבחור שעה' }))
+    const preview = await screen.findByRole('img', { name: 'צילום המסך שצורף לפנייה' })
+    expect(preview).toHaveAttribute('src', expect.stringContaining('signed-preview'))
+    expect(fetchMock).toHaveBeenCalledWith('/api/admin/feedback/report-1/screenshot')
+    expect(screen.queryByText(/feedback\/user-1/i)).not.toBeInTheDocument()
   })
 
   it('sends selected filters and a committed one-token search to the list API', async () => {

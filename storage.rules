@@ -22,5 +22,13 @@ service firebase.storage {
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
+    // Report attachments remain private. The submitting user can write and
+    // later remove their own image; reads are intentionally server-only.
+    match /feedback/{userId}/{fileName} {
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(png|jpeg|webp)');
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
   }
 }

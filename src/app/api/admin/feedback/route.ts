@@ -110,6 +110,9 @@ function serializeFeedback(id: string, data: Record<string, unknown>) {
     pageUrl: typeof data.pageUrl === 'string' ? data.pageUrl : '',
     appVersion: typeof data.appVersion === 'string' ? data.appVersion : null,
     internalNote: typeof data.internalNote === 'string' ? data.internalNote : null,
+    // The list response intentionally exposes only presence. The private
+    // Storage key is resolved by a separate, admin-authenticated endpoint.
+    hasScreenshot: typeof data.screenshotStorageKey === 'string' && data.screenshotStorageKey.length > 0,
     createdAt: timestamp(data.createdAt),
     updatedAt: timestamp(data.updatedAt),
   }

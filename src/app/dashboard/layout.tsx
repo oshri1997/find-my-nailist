@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Loader2, Menu, X, Search, Eye, Shield } from 'lucide-react'
+import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Loader2, Menu, X, Search, Eye, Shield, MessageCircleMore } from 'lucide-react'
 import NextImage from 'next/image'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -202,6 +202,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Search className="h-4 w-4" />
               חיפוש נייליסטיות
             </Link>
+            <Link
+              href="/my-feedback"
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-all"
+            >
+              <MessageCircleMore className="h-4 w-4" />
+              הפניות שלי
+            </Link>
             <FeedbackLauncher compact />
             {isAdmin && (
               <Link
@@ -331,6 +338,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
 
               <div className="border-t border-border pt-3 space-y-1">
+                <Link
+                  href="/my-feedback"
+                  onClick={() => setShowMoreSheet(false)}
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
+                >
+                  <MessageCircleMore className="h-4 w-4" />
+                  הפניות שלי
+                </Link>
                 {isAdmin && (
                   <Link
                     href="/admin"

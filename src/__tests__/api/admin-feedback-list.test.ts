@@ -141,7 +141,16 @@ describe('GET /api/admin/feedback', () => {
     expect(json.data[0]).toEqual(expect.objectContaining({ id: 'newer' }))
     expect(json.data[0]).not.toHaveProperty('userAgent')
     expect(json.data[0]).not.toHaveProperty('searchTerms')
+    expect(json.data[0]).not.toHaveProperty('screenshotStorageKey')
+    expect(json.data[0]).toHaveProperty('hasScreenshot', false)
     expect(json.counts).toEqual(expect.objectContaining({ NEW: 1, IN_REVIEW: 1, total: 2 }))
+  })
+
+  it('returns only screenshot presence to the admin workspace', async () => {
+    addFeedback('with-image', { screenshotStorageKey: 'feedback/user-1/12345678-1234-1234-1234-123456789012.png' })
+    const body = await (await GET(request())).json()
+    expect(body.data[0]).toEqual(expect.objectContaining({ hasScreenshot: true }))
+    expect(body.data[0]).not.toHaveProperty('screenshotStorageKey')
   })
 
   it('uses an opaque cursor without duplicate records', async () => {

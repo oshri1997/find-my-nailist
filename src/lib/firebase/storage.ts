@@ -7,6 +7,39 @@ async function getStorage(): Promise<FirebaseStorage> {
   return clients.storage
 }
 
+export const FEEDBACK_SCREENSHOT_MAX_BYTES = 5 * 1024 * 1024
+const FEEDBACK_SCREENSHOT_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
+
+/** A browser-side guard; the API validates the uploaded object again. */
+export function validateFeedbackScreenshot(file: File): string | null {
+  if (!FEEDBACK_SCREENSHOT_TYPES.has(file.type)) return 'אפשר לצרף רק PNG, JPEG או WebP.'
+  if (file.size > FEEDBACK_SCREENSHOT_MAX_BYTES) return 'גודל התמונה המקסימלי הוא 5MB.'
+  return null
+}
+
+/**
+ * Uploads an optional report screenshot to a private, UID-scoped path.
+ * Deliberately return only the storage key: download tokens/URLs must never
+ * become permanent feedback-document data.
+ */
+export async function uploadFeedbackScreenshot(
+  userId: string,
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<{ storageKey: string }> {
+  const validationError = validateFeedbackScreenshot(file)
+  if (validationError) throw new Error(validationError)
+  const storage = await getStorage()
+  const extension = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
+  const nonce = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  const storageKey = `feedback/${userId}/${nonce}.${extension}`
+  const task = uploadBytesResumable(ref(storage, storageKey), file, { contentType: file.type })
+  await new Promise<void>((resolve, reject) => task.on('state_changed', snapshot => {
+    onProgress?.(Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100))
+  }, reject, () => resolve()))
+  return { storageKey }
+}
+
 export async function uploadPortfolioPhoto(
   nailistId: string,
   file: File,

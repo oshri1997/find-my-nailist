@@ -1,9 +1,19 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { FeedbackLauncher } from '@/components/feedback/FeedbackLauncher'
+import { uploadFeedbackScreenshot, validateFeedbackScreenshot } from '@/lib/firebase/storage'
 
 jest.mock('next/navigation', () => ({
   usePathname: () => '/my-appointments',
+}))
+
+jest.mock('@/lib/firebase/storage', () => ({
+  uploadFeedbackScreenshot: jest.fn(),
+  validateFeedbackScreenshot: jest.fn(() => null),
+}))
+
+jest.mock('@/components/auth/auth-provider', () => ({
+  useAuth: () => ({ user: { uid: 'user-123' } }),
 }))
 
 describe('FeedbackLauncher', () => {
@@ -91,5 +101,23 @@ describe('FeedbackLauncher', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(launcher).toHaveFocus()
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('uploads one validated screenshot before creating the report and links to history on success', async () => {
+    const user = userEvent.setup()
+    ;(validateFeedbackScreenshot as jest.Mock).mockReturnValue(null)
+    ;(uploadFeedbackScreenshot as jest.Mock).mockResolvedValue({ storageKey: 'feedback/user-123/12345678-1234-1234-1234-123456789012.png' })
+    ;(global.fetch as jest.Mock).mockResolvedValue({ ok: true, status: 201, json: async () => ({ data: { id: 'feedback-image' } }) })
+    render(<FeedbackLauncher />)
+    await user.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
+    fireEvent.change(screen.getByLabelText('כותרת קצרה'), { target: { value: 'צילום תקלה' } })
+    fireEvent.change(screen.getByLabelText('פרטים'), { target: { value: 'זה קורה במסך הבחירה.' } })
+    const file = new File(['image'], 'bug.png', { type: 'image/png' })
+    await user.upload(screen.getByLabelText(/צילום מסך/), file)
+    await user.click(screen.getByRole('button', { name: 'שלחי פנייה' }))
+    await waitFor(() => expect(uploadFeedbackScreenshot).toHaveBeenCalledWith('user-123', file, expect.any(Function)))
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body)
+    expect(body.screenshotStorageKey).toMatch(/^feedback\/user-123\//)
+    expect(await screen.findByRole('link', { name: 'הפניות שלי' })).toHaveAttribute('href', '/my-feedback')
   })
 })

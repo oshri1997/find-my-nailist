@@ -3,10 +3,13 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bug, CheckCircle2, HelpCircle, Lightbulb, Loader2, MessageCircleMore, Send, Sparkles, X } from 'lucide-react'
+import Link from 'next/link'
+import { Bug, CheckCircle2, HelpCircle, ImagePlus, Lightbulb, Loader2, MessageCircleMore, Send, Sparkles, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { FeedbackType } from '@/types'
+import { uploadFeedbackScreenshot, validateFeedbackScreenshot } from '@/lib/firebase/storage'
+import { useAuth } from '@/components/auth/auth-provider'
 
 type FeedbackCategory = {
   type: FeedbackType
@@ -52,6 +55,7 @@ function getFocusableElements(container: HTMLElement) {
  */
 export function FeedbackLauncher({ compact = false, className, onClose }: FeedbackLauncherProps) {
   const pathname = usePathname()
+  const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const [type, setType] = useState<FeedbackType>('BUG')
   const [subject, setSubject] = useState('')
@@ -59,6 +63,8 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [referenceId, setReferenceId] = useState<string | null>(null)
+  const [screenshot, setScreenshot] = useState<File | null>(null)
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const openerRef = useRef<HTMLButtonElement>(null)
   const lastActiveElement = useRef<HTMLElement | null>(null)
@@ -73,6 +79,8 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
     setDescription('')
     setError('')
     setReferenceId(null)
+    setScreenshot(null)
+    setUploadProgress(null)
   }
 
   function openDialog() {
@@ -138,6 +146,16 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
     setSubmitting(true)
     setError('')
     try {
+      let screenshotStorageKey: string | undefined
+      if (screenshot) {
+        if (!user?.uid) {
+          setError('יש להתחבר מחדש לפני צירוף צילום.')
+          return
+        }
+        setUploadProgress(0)
+        const uploaded = await uploadFeedbackScreenshot(user.uid, screenshot, setUploadProgress)
+        screenshotStorageKey = uploaded.storageKey
+      }
       const relativeUrl = typeof window === 'undefined'
         ? pathname
         : `${pathname}${window.location.search}${window.location.hash}`
@@ -151,6 +169,7 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
           pageUrl: relativeUrl,
           ...(process.env.NEXT_PUBLIC_APP_VERSION ? { appVersion: process.env.NEXT_PUBLIC_APP_VERSION } : {}),
           ...(typeof navigator !== 'undefined' ? { userAgent: navigator.userAgent.slice(0, 500) } : {}),
+          ...(screenshotStorageKey ? { screenshotStorageKey } : {}),
         }),
       })
       const payload: unknown = await response.json().catch(() => ({}))
@@ -171,6 +190,7 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
       setError('לא הצלחנו להתחבר לשרת. בדקי את החיבור ונסי שוב.')
     } finally {
       setSubmitting(false)
+      setUploadProgress(null)
     }
   }
 
@@ -254,9 +274,10 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
                   <p className="mt-5 inline-flex rounded-full border border-primary/15 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary" aria-label={`מספר פנייה ${referenceId}`}>
                     מספר פנייה: {referenceId}
                   </p>
-                  <Button type="button" onClick={closeDialog} className="mx-auto mt-7 flex rounded-xl bg-primary px-8 font-black text-white hover:bg-primary/90">
-                    סגור
-                  </Button>
+                  <div className="mx-auto mt-7 flex justify-center gap-2">
+                    <Link href="/my-feedback" onClick={closeDialog} className="inline-flex h-10 items-center justify-center rounded-xl border border-input bg-background px-4 text-sm font-bold text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground">הפניות שלי</Link>
+                    <Button type="button" onClick={closeDialog} className="rounded-xl bg-primary px-6 font-black text-white hover:bg-primary/90">סגור</Button>
+                  </div>
                 </motion.div>
               ) : (
                 <form onSubmit={submit} className="space-y-5 px-5 py-6 sm:px-7 sm:py-7">
@@ -284,6 +305,29 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
                         )
                       })}
                     </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="feedback-screenshot" className="mb-1.5 block text-sm font-black text-foreground">צילום מסך <span className="font-medium text-muted-foreground">(אופציונלי)</span></label>
+                    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/30 bg-primary/[0.035] px-3 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/55 hover:bg-primary/[0.07]">
+                      <ImagePlus className="h-4 w-4 shrink-0 text-primary" />
+                      <span className="min-w-0 flex-1 truncate">{screenshot ? screenshot.name : 'PNG, JPEG או WebP עד 5MB'}</span>
+                      <span className="text-xs font-bold text-primary">בחירת קובץ</span>
+                      <input
+                        id="feedback-screenshot"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="sr-only"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] ?? null
+                          const validationError = file ? validateFeedbackScreenshot(file) : null
+                          if (validationError) { setScreenshot(null); setError(validationError); event.target.value = ''; return }
+                          setScreenshot(file)
+                          setError('')
+                        }}
+                      />
+                    </label>
+                    {uploadProgress !== null && <p className="mt-1.5 text-xs font-bold text-primary" role="status">מעלים צילום… {uploadProgress}%</p>}
                   </div>
 
                   <div>
@@ -329,7 +373,7 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
                     </button>
                     <Button type="submit" disabled={submitting || !subject.trim() || !description.trim()} className="rounded-xl bg-gradient-to-l from-[#9D174D] to-[#F5175C] px-5 font-black text-white shadow-[0_6px_18px_rgba(245,23,92,0.26)] hover:brightness-105 disabled:shadow-none">
                       {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                      {submitting ? 'שולחים...' : 'שלחי פנייה'}
+                      {submitting ? (uploadProgress !== null ? 'מעלים צילום...' : 'שולחים...') : 'שלחי פנייה'}
                     </Button>
                   </div>
                 </form>

@@ -189,6 +189,8 @@ export interface FeedbackDoc {
   // callers never supply or control this field.
   searchTerms: string[]
   internalNote?: string
+  // Private Firebase Storage key only — never a public/download URL.
+  screenshotStorageKey?: string
   createdAt: Timestamp
   updatedAt: Timestamp
 }

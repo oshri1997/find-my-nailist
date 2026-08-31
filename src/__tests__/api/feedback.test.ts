@@ -8,6 +8,7 @@ let nextFeedbackId = 1
 let transactionRetryCount = 0
 let transactionCallbackCalls = 0
 const verifyIdTokenMock = jest.fn()
+const getMetadataMock = jest.fn()
 
 // Firestore references in this focused mock carry their collection as a hidden
 // implementation detail; production code only relies on id/get/set semantics.
@@ -23,12 +24,25 @@ function documentRef(collection: string, id: string) {
 }
 
 const mockDb = {
-  collection: jest.fn((collection: string) => ({
+  collection: jest.fn((collection: string) => {
+    const filters: Array<[string, unknown]> = []
+    const query: any = {
+      where: jest.fn((field: string, _operator: string, value: unknown) => { filters.push([field, value]); return query }),
+      orderBy: jest.fn().mockReturnThis(),
+      startAfter: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      get: jest.fn(async () => ({ docs: Object.entries(docs[collection] ?? {})
+        .filter(([, data]) => filters.every(([field, value]) => data[field] === value))
+        .map(([id, data]) => ({ id, data: () => data })) })),
+    }
+    return {
     doc: jest.fn((requestedId?: string) => documentRef(
       collection,
       requestedId ?? (collection === 'feedback' ? `feedback-${nextFeedbackId++}` : 'generated-id')
     )),
-  })),
+    where: query.where,
+    orderBy: query.orderBy,
+  }}),
   runTransaction: jest.fn().mockImplementation(async (callback: (tx: {
     get: (ref: ReturnType<typeof documentRef>) => ReturnType<typeof ref.get>
     set: (ref: ReturnType<typeof documentRef>, data: StoredDoc) => void
@@ -56,13 +70,15 @@ const mockDb = {
 jest.mock('@/lib/firebase/admin', () => ({
   adminAuth: jest.fn(() => ({ verifyIdToken: verifyIdTokenMock })),
   adminDb: jest.fn(() => mockDb),
+  adminStorage: jest.fn(() => ({ bucket: () => ({ file: () => ({ getMetadata: getMetadataMock }) }) })),
 }))
 
 jest.mock('firebase-admin/firestore', () => ({
   FieldValue: { serverTimestamp: jest.fn(() => 'SERVER_TIMESTAMP') },
+  FieldPath: { documentId: jest.fn(() => '__name__') },
 }))
 
-import { POST } from '@/app/api/feedback/route'
+import { GET, POST } from '@/app/api/feedback/route'
 
 const validPayload = {
   type: 'BUG',
@@ -102,6 +118,7 @@ describe('POST /api/feedback', () => {
     transactionCallbackCalls = 0
     jest.clearAllMocks()
     verifyIdTokenMock.mockResolvedValue({ uid: 'user-123', email: 'auth@example.com' })
+    getMetadataMock.mockResolvedValue([{ size: '100', contentType: 'image/png' }])
   })
 
   it('requires an authenticated Firebase cookie', async () => {
@@ -290,5 +307,28 @@ describe('POST /api/feedback', () => {
     expect(transactionCallbackCalls).toBe(2)
     expect(Object.keys(docs.feedback)).toEqual(['feedback-1'])
     expect(docs.feedbackRateLimits['user-123'].submissionTimes).toHaveLength(1)
+  })
+
+  it('accepts only a verified private screenshot owned by the reporter', async () => {
+    const storageKey = 'feedback/user-123/12345678-1234-1234-1234-123456789012.png'
+    expect((await POST(makeRequest({ ...validPayload, screenshotStorageKey: storageKey }, 'token'))).status).toBe(201)
+    expect(docs.feedback['feedback-1']).toEqual(expect.objectContaining({ screenshotStorageKey: storageKey }))
+    expect((await POST(makeRequest({ ...validPayload, screenshotStorageKey: 'feedback/other/12345678-1234-1234-1234-123456789012.png' }, 'token'))).status).toBe(400)
+  })
+
+  it('returns only the signed-in reporter’s safe history fields', async () => {
+    docs.feedback = {
+      mine: { reporterUid: 'user-123', type: 'BUG', subject: 'שלי', description: 'פרטים', status: 'NEW', priority: 'NORMAL', pageUrl: '/search', reporterEmail: 'secret@example.com', internalNote: 'private', userAgent: 'fingerprint', createdAt: { toDate: () => new Date('2026-01-01T00:00:00Z') } },
+      other: { reporterUid: 'other-user', type: 'IDEA', subject: 'אחר', description: 'לא שלי', status: 'NEW', priority: 'NORMAL', pageUrl: '/', createdAt: { toDate: () => new Date('2026-01-02T00:00:00Z') } },
+    }
+    const response = await GET(makeRequest({}, 'token'))
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.data).toHaveLength(1)
+    expect(body.data[0].id).toBe('mine')
+    expect(body.data[0]).not.toHaveProperty('reporterEmail')
+    expect(body.data[0]).not.toHaveProperty('internalNote')
+    expect(body.data[0]).not.toHaveProperty('userAgent')
+    expect(body.data[0]).not.toHaveProperty('priority')
   })
 })
