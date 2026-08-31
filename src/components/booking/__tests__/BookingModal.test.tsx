@@ -178,7 +178,9 @@ describe('BookingModal', () => {
 
   it('hides past time slots when current time is 09:00 and today is selected', async () => {
     // Override to 09:00 — 08:00, 08:30, 09:00 should be hidden; 09:30+ shown
-    jest.setSystemTime(new Date('2025-01-15T09:00:00'))
+    // The booking clock is Israel time. Use UTC explicitly so this remains
+    // 09:00 in Israel on CI runners, which execute in UTC.
+    jest.setSystemTime(new Date('2025-01-15T07:00:00.000Z'))
 
     render(<BookingModal {...defaultProps} />)
     await navigateToStep2()
