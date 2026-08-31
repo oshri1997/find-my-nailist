@@ -156,12 +156,13 @@ export type AuditAction =
   | 'REVIEW_DELETE'
   | 'NAILIST_TOGGLE_ACTIVE'
   | 'NAILIST_TOGGLE_VERIFIED'
+  | 'FEEDBACK_UPDATE'
 
 export interface AuditLogDoc {
   actorUid: string
   actorEmail: string
   action: AuditAction
-  targetType: 'user' | 'review' | 'nailistProfile'
+  targetType: 'user' | 'review' | 'nailistProfile' | 'feedback'
   targetId: string
   metadata?: Record<string, unknown>
   createdAt: Timestamp
@@ -183,6 +184,11 @@ export interface FeedbackDoc {
   pageUrl: string
   appVersion?: string
   userAgent?: string
+  // Derived exclusively on the server from the report's subject and reporter
+  // snapshots. These bounded token prefixes permit an indexed admin search;
+  // callers never supply or control this field.
+  searchTerms: string[]
+  internalNote?: string
   createdAt: Timestamp
   updatedAt: Timestamp
 }

@@ -223,6 +223,10 @@ describe('POST /api/feedback', () => {
       status: 'NEW',
       priority: 'NORMAL',
     }))
+    // Search terms are derived from trusted server snapshots, not accepted
+    // from the browser payload. The admin endpoint uses these bounded prefixes
+    // in an indexed array-contains query.
+    expect(stored.searchTerms).toEqual(expect.arrayContaining(['ל', 'לא', 'ניתן', 'א', 'או', 'אושרי', 'a', 'au', 'auth']))
     expect(stored).not.toEqual(expect.objectContaining({
       reporterUid: 'attacker',
       reporterEmail: 'attacker@example.com',

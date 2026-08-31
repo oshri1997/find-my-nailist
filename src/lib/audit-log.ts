@@ -9,7 +9,7 @@ export async function writeAuditLog(params: {
   actorUid: string
   actorEmail: string
   action: AuditAction
-  targetType: 'user' | 'review' | 'nailistProfile'
+  targetType: 'user' | 'review' | 'nailistProfile' | 'feedback'
   targetId: string
   metadata?: Record<string, unknown>
 }) {

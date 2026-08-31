@@ -183,7 +183,10 @@ describe('BookingModal — daily availability fetch', () => {
       expect(screen.getAllByTestId('date-btn').some((button) => !(button as HTMLButtonElement).disabled)).toBe(true)
     })
     const selectedDateButton = screen.getAllByTestId('date-btn').find(
-      (button) => !(button as HTMLButtonElement).disabled && button.getAttribute('data-date') !== todayInIsrael()
+      // On the final day of a month the current calendar view may not contain
+      // another future day. Today's calendar cell is still a valid selection
+      // for proving the daily-request retry flow.
+      (button) => !(button as HTMLButtonElement).disabled
     )
     expect(selectedDateButton).toBeDefined()
     fireEvent.click(selectedDateButton!)

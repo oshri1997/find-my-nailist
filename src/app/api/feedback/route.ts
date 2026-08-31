@@ -11,6 +11,37 @@ const FIRST_PARTY_HTTPS_ORIGINS = new Set([
   'https://dev.nailistiot.fun',
 ])
 
+// Firestore has no safe arbitrary substring search. Store only bounded
+// prefixes of server-owned report snapshots so the manager can use a single
+// indexed `array-contains` query (for example, "תור" or "oshri"). We do not
+// index the full description: it is usually sensitive and would inflate every
+// report document/index entry without making triage meaningfully better.
+const MAX_SEARCH_TERMS = 120
+const MAX_SEARCH_TOKEN_LENGTH = 40
+
+export function buildFeedbackSearchTerms(values: string[]): string[] {
+  const terms = new Set<string>()
+
+  for (const value of values) {
+    const normalized = value
+      .normalize('NFKD')
+      .toLocaleLowerCase('he-IL')
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim()
+
+    for (const rawToken of normalized.split(/\s+/)) {
+      if (!rawToken) continue
+      const token = rawToken.slice(0, MAX_SEARCH_TOKEN_LENGTH)
+      for (let length = 1; length <= token.length; length++) {
+        terms.add(token.slice(0, length))
+        if (terms.size >= MAX_SEARCH_TERMS) return [...terms]
+      }
+    }
+  }
+
+  return [...terms]
+}
+
 function isAllowedPageUrl(value: string) {
   if (value.startsWith('/')) {
     return !value.startsWith('//') && !value.includes('\\') && !/\s/.test(value)
@@ -69,6 +100,11 @@ export async function POST(request: NextRequest) {
     const user = userSnap.data() as { email?: string; displayName?: string; role?: string } | undefined
     const reporterEmail = decoded.email ?? user?.email ?? ''
     const reporterDisplayName = user?.displayName?.trim() || reporterEmail || 'משתמשת'
+    const searchTerms = buildFeedbackSearchTerms([
+      data.subject,
+      reporterDisplayName,
+      reporterEmail,
+    ])
     const feedbackRef = db.collection(COLLECTIONS.FEEDBACK).doc()
     const rateLimitRef = db.collection(COLLECTIONS.FEEDBACK_RATE_LIMITS).doc(decoded.uid)
     const nowMs = Date.now()
@@ -98,6 +134,7 @@ export async function POST(request: NextRequest) {
           reporterEmail,
           reporterDisplayName,
           ...(user?.role ? { reporterRole: user.role } : {}),
+          searchTerms,
           status: 'NEW',
           priority: 'NORMAL',
           createdAt: now,
