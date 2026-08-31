@@ -1,12 +1,8 @@
 /**
- * AuthProvider used to hide `children` behind a full-screen spinner while
- * `loading` was true — and `loading` starts `true` and only ever flips to
- * `false` inside a client-only effect (Firebase auth resolution), so it is
- * *always* true during server-side rendering. That meant the server-
- * rendered HTML for every route in the app was just the spinner shell, with
- * none of the real page content — invisible to any crawler that doesn't
- * execute JavaScript. This locks in the fix: children must always render,
- * synchronously, regardless of the loading state.
+ * During auth restoration, the user sees a full-screen NailLoader. The page
+ * itself must still render synchronously underneath it, so server-rendered
+ * content remains available to crawlers and the overlay can disappear without
+ * mounting the page a second time.
  */
 import { render, screen } from '@testing-library/react'
 import { AuthProvider } from '@/components/auth/auth-provider'
@@ -30,7 +26,7 @@ describe('AuthProvider — renders children immediately', () => {
     expect(screen.getByTestId('marketing-copy')).toBeInTheDocument()
   })
 
-  it('does not render a blocking full-screen loader over the content', () => {
+  it('shows a full-screen NailLoader over already-rendered content while auth resolves', () => {
     const { container } = render(
       <AuthProvider>
         <main data-testid="page-content">content</main>
@@ -38,6 +34,7 @@ describe('AuthProvider — renders children immediately', () => {
     )
 
     expect(screen.getByTestId('page-content')).toBeInTheDocument()
-    expect(container.querySelector('.fixed.inset-0')).not.toBeInTheDocument()
+    expect(container.querySelector('.fixed.inset-0')).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'טוען את החשבון' })).toBeInTheDocument()
   })
 })

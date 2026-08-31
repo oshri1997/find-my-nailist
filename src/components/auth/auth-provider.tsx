@@ -1,8 +1,10 @@
 'use client'
 
+import { AnimatePresence, motion } from 'framer-motion'
 import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react'
 import type { User } from 'firebase/auth'
 import * as Sentry from '@sentry/nextjs'
+import { NailLoader } from '@/components/ui/nail-loader'
 
 type UserRole = 'NAILIST' | 'CLIENT' | 'ADMIN' | null
 
@@ -147,17 +149,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsub?.()
   }, [])
 
-  // `children` renders immediately regardless of `loading` — this used to
-  // early-return a full-screen spinner in its place while loading was true,
-  // which is *always* true on the server (Firebase auth only resolves inside
-  // the client-only effect above), so server-rendered HTML for every route
-  // was just this spinner shell, not the real page. Consumers that care
-  // about the loading window already read `loading` from context themselves
-  // (most show their own local loading state); nothing here needs to gate
-  // the whole tree behind it.
+  // Keep the actual page in the DOM while Firebase restores the session, so
+  // the server response remains useful to crawlers. A full-screen layer
+  // covers it for people until both auth and the initial role data resolve.
   return (
     <AuthContext.Provider value={{ user, loading, role, isAdmin, onboardingCompleted, displayName, signOut, refreshRole }}>
       {children}
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-background/95 px-6 backdrop-blur-md"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            role="status"
+            aria-live="polite"
+            aria-label="טוען את החשבון"
+          >
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(245,23,92,0.15),transparent_38%),radial-gradient(circle_at_18%_78%,rgba(157,23,77,0.08),transparent_28%)]" />
+            <div className="relative flex flex-col items-center">
+              <NailLoader size="lg" text="מכינות לך את החוויה" />
+              <p className="mt-3 text-center text-xs font-semibold tracking-[0.18em] text-muted-foreground/80">
+                רגע קטן של ברק
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </AuthContext.Provider>
   )
 }

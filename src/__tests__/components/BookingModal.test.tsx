@@ -169,7 +169,10 @@ describe('BookingModal — daily availability fetch', () => {
         return Promise.resolve(
           dailyRequests === 1
             ? ({ ok: false, status: 503, json: async () => ({ error: 'Unavailable' }) } as Response)
-            : ({ ok: true, json: async () => ({ data: { workingDay: true, startTime: '09:00', endTime: '10:00', bookedSlots: [] } }) } as Response)
+            // Use a late slot so this retry proof is stable even when the
+            // test runs after the morning; today's past slots are correctly
+            // hidden from real bookers.
+            : ({ ok: true, json: async () => ({ data: { workingDay: true, startTime: '23:00', endTime: '23:30', bookedSlots: [] } }) } as Response)
         )
       }
       return Promise.resolve({ ok: true, json: async () => ({ data: null }) } as Response)
@@ -197,7 +200,7 @@ describe('BookingModal — daily availability fetch', () => {
     fireEvent.click(screen.getByRole('button', { name: 'נסי שוב' }))
     await waitFor(() => {
       expect(dailyRequests).toBe(2)
-      expect(screen.getByText('09:00')).toBeInTheDocument()
+      expect(screen.getByText('23:00')).toBeInTheDocument()
     })
   })
 })

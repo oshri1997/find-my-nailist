@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { LogOut, LayoutDashboard, ChevronDown, CalendarDays, Shield, Heart, Search, Settings, MessageCircleMore, LoaderCircle } from 'lucide-react'
+import { LogOut, LayoutDashboard, ChevronDown, CalendarDays, Shield, Heart, Search, Settings, MessageCircleMore } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -95,20 +95,9 @@ export function Navbar() {
           <div className="flex items-center gap-3">
             <ThemeToggle />
             {loading ? (
-              // Firebase restores a session only after hydration. Keep this
-              // area neutral during that short window instead of flashing
-              // guest-only login and registration buttons to signed-in users.
-              // Reserving the profile control's footprint prevents the nav
-              // from jumping when the restored user arrives.
-              <div
-                className="flex h-9 min-w-24 items-center justify-center gap-2 rounded-xl text-muted-foreground"
-                role="status"
-                aria-live="polite"
-              >
-                <LoaderCircle className="h-4 w-4 animate-spin text-primary" aria-hidden="true" />
-                <span className="hidden sm:inline text-xs font-semibold">טוען חשבון</span>
-                <span className="sr-only">טוען את החשבון</span>
-              </div>
+              // The full-screen auth layer owns this loading state. Keep this
+              // reserved footprint behind it so the navbar never shifts.
+              <div className="h-9 w-24" aria-hidden="true" />
             ) : user ? (
               <>
                 {/* Desktop already has a /search link in the center nav row
