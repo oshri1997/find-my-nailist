@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { ArrowRight, Inbox, Loader2, MessageCircleMore } from 'lucide-react'
-import { Navbar } from '@/components/layout/navbar'
 import { FeedbackLauncher } from '@/components/feedback/FeedbackLauncher'
 import type { FeedbackStatus, FeedbackType } from '@/types'
 
@@ -38,7 +37,7 @@ export default function MyFeedbackPage() {
 
   useEffect(() => { load().catch((e: Error) => setError(e.message)).finally(() => setLoading(false)) }, [])
 
-  return <div dir="rtl" className="min-h-screen bg-background"><Navbar />
+  return <div dir="rtl" className="min-h-screen bg-background">
     <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
       <Link href="/" className="inline-flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-primary"><ArrowRight className="h-4 w-4" /> חזרה לאתר</Link>
       <section className="mt-5 overflow-hidden rounded-[28px] border border-primary/15 bg-card shadow-[0_16px_60px_rgba(96,18,58,0.09)]">

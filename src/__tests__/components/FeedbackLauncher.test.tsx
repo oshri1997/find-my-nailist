@@ -107,6 +107,17 @@ describe('FeedbackLauncher', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  it('uses a clean, undecorated close icon in the feedback header', async () => {
+    const user = userEvent.setup()
+    render(<FeedbackLauncher />)
+
+    await user.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
+    const closeButton = document.querySelector('[data-feedback-close]')
+    expect(closeButton).toBeInTheDocument()
+    expect(closeButton).not.toHaveClass('rounded-xl')
+    expect(closeButton).not.toHaveClass('p-2')
+  })
+
   it('uploads one validated screenshot before creating the report and links to history on success', async () => {
     const user = userEvent.setup()
     ;(validateFeedbackScreenshot as jest.Mock).mockReturnValue(null)

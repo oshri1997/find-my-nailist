@@ -239,8 +239,6 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
               className="relative w-full max-w-xl overflow-hidden rounded-t-[28px] sm:rounded-[28px] border border-white/20 bg-card shadow-[0_28px_100px_rgba(73,8,38,0.35)]"
             >
               <div className="relative overflow-hidden bg-gradient-to-l from-[#9D174D] via-[#D31558] to-[#F5175C] px-5 pb-6 pt-5 sm:px-7 sm:pt-6">
-                <div className="pointer-events-none absolute -left-10 -top-12 h-36 w-36 rounded-full border border-white/20" />
-                <div className="pointer-events-none absolute left-16 top-7 h-2 w-2 rounded-full bg-white/60 shadow-[0_0_24px_8px_rgba(255,255,255,0.16)]" />
                 <div className="relative flex items-start justify-between gap-4">
                   <div>
                     <p className="mb-1 flex items-center gap-1.5 text-xs font-bold tracking-wide text-white/80">
@@ -256,7 +254,7 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
                     onClick={closeDialog}
                     disabled={submitting}
                     aria-label="סגירת חלון המשוב"
-                    className="mt-0.5 rounded-xl p-2 text-white/85 transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-50"
+                    className="mt-0.5 p-0 text-white/90 transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#D31558] disabled:opacity-50"
                   >
                     <X className="h-5 w-5" />
                   </button>
