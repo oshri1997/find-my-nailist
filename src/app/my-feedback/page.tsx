@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { ArrowRight, Inbox, Loader2, MessageCircleMore } from 'lucide-react'
+import { ArrowRight, Inbox, Loader2 } from 'lucide-react'
 import { FeedbackLauncher } from '@/components/feedback/FeedbackLauncher'
 import type { FeedbackStatus, FeedbackType } from '@/types'
 
@@ -35,7 +35,15 @@ export default function MyFeedbackPage() {
     setNextCursor(payload.nextCursor ?? null)
   }
 
-  useEffect(() => { load().catch((e: Error) => setError(e.message)).finally(() => setLoading(false)) }, [])
+  useEffect(() => {
+    const task = window.setTimeout(() => {
+      load()
+        .catch((e: Error) => setError(e.message))
+        .finally(() => setLoading(false))
+    }, 0)
+
+    return () => window.clearTimeout(task)
+  }, [])
 
   return <div dir="rtl" className="min-h-screen bg-background">
     <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">

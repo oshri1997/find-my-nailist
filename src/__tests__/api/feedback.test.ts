@@ -2,6 +2,13 @@
 import { NextRequest } from 'next/server'
 
 type StoredDoc = Record<string, unknown>
+type QueryMock = {
+  where: jest.Mock
+  orderBy: jest.Mock
+  startAfter: jest.Mock
+  limit: jest.Mock
+  get: jest.Mock
+}
 
 const docs: Record<string, Record<string, StoredDoc>> = {}
 let nextFeedbackId = 1
@@ -26,15 +33,14 @@ function documentRef(collection: string, id: string) {
 const mockDb = {
   collection: jest.fn((collection: string) => {
     const filters: Array<[string, unknown]> = []
-    const query: any = {
-      where: jest.fn((field: string, _operator: string, value: unknown) => { filters.push([field, value]); return query }),
-      orderBy: jest.fn().mockReturnThis(),
-      startAfter: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-      get: jest.fn(async () => ({ docs: Object.entries(docs[collection] ?? {})
+    const query = {} as QueryMock
+    query.where = jest.fn((field: string, _operator: string, value: unknown) => { filters.push([field, value]); return query })
+    query.orderBy = jest.fn().mockReturnValue(query)
+    query.startAfter = jest.fn().mockReturnValue(query)
+    query.limit = jest.fn().mockReturnValue(query)
+    query.get = jest.fn(async () => ({ docs: Object.entries(docs[collection] ?? {})
         .filter(([, data]) => filters.every(([field, value]) => data[field] === value))
-        .map(([id, data]) => ({ id, data: () => data })) })),
-    }
+        .map(([id, data]) => ({ id, data: () => data })) }))
     return {
     doc: jest.fn((requestedId?: string) => documentRef(
       collection,

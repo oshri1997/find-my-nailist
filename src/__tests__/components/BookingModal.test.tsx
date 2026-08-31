@@ -159,6 +159,10 @@ describe('BookingModal — batch availability fetch', () => {
 
 describe('BookingModal — daily availability fetch', () => {
   it('shows a retryable error rather than a non-working day when the selected-date request fails', async () => {
+    jest.useFakeTimers()
+    // Keep the returned 23:00 slot in the future. Without a fixed clock this
+    // regression test fails when it happens to run after 23:00 in Israel.
+    jest.setSystemTime(new Date('2026-01-15T12:00:00.000Z'))
     let dailyRequests = 0
     ;(global.fetch as jest.Mock).mockImplementation((url: string) => {
       if (url.includes('/availability/batch')) {
@@ -169,9 +173,7 @@ describe('BookingModal — daily availability fetch', () => {
         return Promise.resolve(
           dailyRequests === 1
             ? ({ ok: false, status: 503, json: async () => ({ error: 'Unavailable' }) } as Response)
-            // Use a late slot so this retry proof is stable even when the
-            // test runs after the morning; today's past slots are correctly
-            // hidden from real bookers.
+            // The fixed clock above keeps this same-day slot bookable.
             : ({ ok: true, json: async () => ({ data: { workingDay: true, startTime: '23:00', endTime: '23:30', bookedSlots: [] } }) } as Response)
         )
       }
