@@ -155,7 +155,7 @@ export default function HowItWorksPage() {
           animate={{ scale: [1.1, 1, 1.1], rotate: [20, 0, 20] }}
           transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
           className="absolute bottom-[-15%] left-[-10%] w-[400px] h-[400px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, hsl(240,6%,10%) 0%, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, rgba(157,23,77,0.95) 0%, rgba(245,23,92,0.32) 46%, transparent 72%)' }}
         />
 
         <div className="container mx-auto max-w-4xl px-6 text-center relative z-10">
