@@ -49,7 +49,7 @@ describe('FeedbackLauncher', () => {
     await user.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
 
     const dialog = screen.getByRole('dialog')
-    expect(dialog).toHaveClass('max-h-[calc(100dvh-0.75rem)]')
+    expect(dialog).toHaveStyle({ maxHeight: 'calc(100dvh - 1.5rem)' })
     expect(screen.getByTestId('feedback-form-scroll')).toHaveClass('overflow-y-auto')
   })
 

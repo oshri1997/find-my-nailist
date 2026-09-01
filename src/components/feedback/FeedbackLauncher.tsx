@@ -214,7 +214,7 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
 
       <AnimatePresence>
         {open && (
-          <div className="fixed inset-0 z-[70] flex items-end justify-center p-0 sm:items-center sm:p-5" dir="rtl">
+          <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto p-3 sm:p-5" dir="rtl">
             <motion.button
               type="button"
               aria-label="סגירת חלון המשוב"
@@ -234,7 +234,8 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 28, scale: 0.98 }}
               transition={{ type: 'spring', stiffness: 360, damping: 30 }}
-              className="relative flex max-h-[calc(100dvh-0.75rem)] w-full max-w-xl flex-col overflow-hidden rounded-t-[28px] border border-white/20 bg-card shadow-[0_28px_100px_rgba(73,8,38,0.35)] sm:max-h-[calc(100dvh-2.5rem)] sm:rounded-[28px]"
+              style={{ maxHeight: 'calc(100dvh - 1.5rem)' }}
+              className="relative my-auto flex w-full max-w-xl flex-col overflow-hidden rounded-[28px] border border-white/20 bg-card shadow-[0_28px_100px_rgba(73,8,38,0.35)]"
             >
               <div className="relative shrink-0 overflow-hidden bg-gradient-to-l from-[#9D174D] via-[#D31558] to-[#F5175C] px-5 pb-6 pt-5 sm:px-7 sm:pt-6">
                 <div className="relative flex items-start justify-between gap-4">
@@ -279,7 +280,7 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
                   </div>
                 </motion.div>
               ) : (
-                <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+                <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
                   <div data-testid="feedback-form-scroll" className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7 sm:py-6">
                     <div>
                       <p className="mb-2 text-sm font-black text-foreground">סוג הפנייה</p>
