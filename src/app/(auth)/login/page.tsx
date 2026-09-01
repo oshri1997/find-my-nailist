@@ -262,7 +262,7 @@ export default function AuthPage() {
           {/* Logo */}
           <div className="text-center mb-8">
             <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <Image src="/logo.png" alt="נייליסטיות לוגו" width={48} height={48} className="group-hover:scale-105 transition-transform" />
+              <Image src="/logo.svg" alt="נייליסטיות לוגו" width={48} height={48} />
               <span className="text-xl font-black gradient-text">נייליסטיות</span>
             </Link>
           </div>
@@ -482,7 +482,7 @@ export default function AuthPage() {
             className="relative z-10 text-white text-center px-10 max-w-xs"
           >
             <div className="mx-auto mb-7 w-16 h-16 rounded-2xl overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.2)]">
-              <Image src="/logo.png" alt="נייליסטיות לוגו" width={64} height={64} className="w-full h-full object-cover" />
+              <Image src="/logo.svg" alt="נייליסטיות לוגו" width={64} height={64} className="w-full h-full object-cover" />
             </div>
             <h2 className="text-3xl font-black mb-2 leading-tight">{panel.heading}</h2>
             <p className="text-white/70 text-base mb-8">{panel.sub}</p>

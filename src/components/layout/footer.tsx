@@ -22,7 +22,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           <div>
             <Link href="/" className="inline-flex items-center gap-2.5 font-black text-xl mb-5">
-              <Image src="/logo.png" alt="נייליסטיות לוגו" width={36} height={36} />
+              <Image src="/logo.svg" alt="נייליסטיות לוגו" width={36} height={36} />
               <span className="gradient-text">נייליסטיות</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">

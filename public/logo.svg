@@ -1,0 +1,31 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">נייליסטיות</title>
+  <desc id="desc">סמל מינימליסטי של ציפורן מטופחת בגווני ורוד ושזיף</desc>
+  <defs>
+    <linearGradient id="frame" x1="9" y1="6" x2="56" y2="59" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6D1749"/>
+      <stop offset=".46" stop-color="#C8185E"/>
+      <stop offset="1" stop-color="#FF4C87"/>
+    </linearGradient>
+    <linearGradient id="nail" x1="21" y1="14" x2="44" y2="51" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF8FA"/>
+      <stop offset=".42" stop-color="#FFD8E6"/>
+      <stop offset="1" stop-color="#F61662"/>
+    </linearGradient>
+    <linearGradient id="polish" x1="22" y1="35" x2="44" y2="51" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF5A91"/>
+      <stop offset=".48" stop-color="#EC0E58"/>
+      <stop offset="1" stop-color="#9C174D"/>
+    </linearGradient>
+    <filter id="shadow" x="4" y="3" width="57" height="61" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.4" flood-color="#7C103D" flood-opacity=".28"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="7" y="7" width="50" height="50" rx="18" fill="url(#frame)"/>
+    <path d="M21.5 27.5C21.5 20.55 25.2 16 32 16s10.5 4.55 10.5 11.5v13.25C42.5 47.5 38.8 51 32 51s-10.5-3.5-10.5-10.25V27.5Z" fill="url(#nail)"/>
+    <path d="M21.5 36.25h21v4.5C42.5 47.5 38.8 51 32 51s-10.5-3.5-10.5-10.25v-4.5Z" fill="url(#polish)"/>
+    <path d="M23.75 27.5C23.75 21.95 26.55 18.25 32 18.25s8.25 3.7 8.25 9.25" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M24.5 38.85h15" stroke="#fff" stroke-opacity=".55" stroke-width="1.25" stroke-linecap="round"/>
+  </g>
+</svg>

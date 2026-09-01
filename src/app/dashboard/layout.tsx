@@ -100,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header className="md:hidden sticky top-0 z-40 bg-card border-b border-border shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
         <div className="flex items-center justify-between px-4 h-14">
           <Link href="/" className="flex items-center gap-2 group">
-            <NextImage src="/logo.png" alt="נייליסטיות לוגו" width={36} height={36} className="group-hover:scale-105 transition-transform" />
+            <NextImage src="/logo.svg" alt="נייליסטיות לוגו" width={36} height={36} />
             <span className="font-black text-base gradient-text">נייליסטיות</span>
           </Link>
 
@@ -137,7 +137,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Logo */}
           <div className="h-18 flex items-center px-5 border-b border-border py-5">
             <Link href="/" className="flex items-center gap-2 group">
-              <NextImage src="/logo.png" alt="נייליסטיות לוגו" width={36} height={36} className="group-hover:scale-105 transition-transform" />
+              <NextImage src="/logo.svg" alt="נייליסטיות לוגו" width={36} height={36} />
               <span className="font-black text-base gradient-text">נייליסטיות</span>
             </Link>
           </div>

@@ -44,7 +44,7 @@ export default function OnboardingWelcomePage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <Image src="/logo.png" alt="נייליסטיות לוגו" width={56} height={56} className="mx-auto mb-1" />
+          <Image src="/logo.svg" alt="נייליסטיות לוגו" width={56} height={56} className="mx-auto mb-1" />
           <h1 className="text-2xl font-black gradient-text">נייליסטיות</h1>
           <p className="text-muted-foreground text-sm mt-1">ברוכה הבאה, בואי נתחיל</p>
         </div>

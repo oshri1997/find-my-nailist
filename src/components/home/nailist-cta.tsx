@@ -36,7 +36,7 @@ export function NailistCtaSection() {
 
           <div className="relative z-10">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl overflow-hidden mb-8 shadow-[0_16px_40px_rgba(0,0,0,0.25)]">
-              <Image src="/logo.png" alt="נייליסטיות" width={64} height={64} className="w-full h-full object-cover" />
+              <Image src="/logo.svg" alt="נייליסטיות" width={64} height={64} className="w-full h-full object-cover" />
             </div>
 
             <h2 className="text-4xl md:text-5xl font-black mb-4 leading-tight">

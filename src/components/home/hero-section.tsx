@@ -159,7 +159,7 @@ export function HeroSection() {
                   <div className="p-5 pt-2">
                     <div className="text-center mb-5">
                       <div className="w-10 h-10 rounded-xl mx-auto mb-2 overflow-hidden shadow-[0_4px_12px_rgba(245,23,92,0.3)]">
-                        <Image src="/logo.png" alt="נייליסטיות" width={40} height={40} className="w-full h-full object-cover" />
+                        <Image src="/logo.svg" alt="נייליסטיות" width={40} height={40} className="w-full h-full object-cover" />
                       </div>
                       <h3 className="font-black text-base text-foreground">נייליסטיות</h3>
                       <p className="text-xs text-muted-foreground">גלי את המושלמת עבורך</p>

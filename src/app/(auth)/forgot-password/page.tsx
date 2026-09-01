@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
         {/* Logo */}
         <div className="text-center mb-10">
           <Link href="/" className="inline-flex items-center gap-2.5 group mb-8">
-            <Image src="/logo.png" alt="נייליסטיות לוגו" width={48} height={48} className="group-hover:scale-105 transition-transform" />
+            <Image src="/logo.svg" alt="נייליסטיות לוגו" width={48} height={48} />
             <span className="text-xl font-black gradient-text">נייליסטיות</span>
           </Link>
         </div>

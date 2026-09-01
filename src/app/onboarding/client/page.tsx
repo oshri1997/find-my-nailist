@@ -117,7 +117,7 @@ export default function ClientOnboardingPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Image src="/logo.png" alt="נייליסטיות לוגו" width={56} height={56} className="mx-auto mb-1" />
+          <Image src="/logo.svg" alt="נייליסטיות לוגו" width={56} height={56} className="mx-auto mb-1" />
           <h1 className="text-2xl font-black gradient-text">נייליסטיות</h1>
           <p className="text-muted-foreground text-sm mt-1">בואי נכיר אותך קצת יותר</p>
         </div>

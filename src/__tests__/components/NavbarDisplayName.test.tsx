@@ -24,6 +24,21 @@ jest.mock('@/components/feedback/FeedbackLauncher', () => ({
 }))
 
 describe('Navbar — display name', () => {
+  it('uses the compact SVG brand mark so the logo stays sharp at every size', () => {
+    mockUseAuth.mockReturnValue({
+      user: null,
+      role: null,
+      isAdmin: false,
+      loading: false,
+      signOut: jest.fn(),
+    })
+    render(<Navbar />)
+
+    const logo = screen.getByAltText('נייליסטיות לוגו')
+    expect(logo).toHaveAttribute('src', '/logo.svg')
+    expect(logo).not.toHaveClass('group-hover:scale-105')
+  })
+
   it('does not flash guest actions while Firebase restores an existing session', () => {
     mockUseAuth.mockReturnValue({
       user: null,
