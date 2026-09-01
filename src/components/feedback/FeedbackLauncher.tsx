@@ -71,8 +71,6 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
   const titleId = useId()
   const descriptionId = useId()
 
-  const selectedCategory = CATEGORIES.find((category) => category.type === type) ?? CATEGORIES[0]
-
   function resetForm() {
     setType('BUG')
     setSubject('')
@@ -216,7 +214,7 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
 
       <AnimatePresence>
         {open && (
-          <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-5" dir="rtl">
+          <div className="fixed inset-0 z-[70] flex items-end justify-center p-0 sm:items-center sm:p-5" dir="rtl">
             <motion.button
               type="button"
               aria-label="סגירת חלון המשוב"
@@ -236,9 +234,9 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 28, scale: 0.98 }}
               transition={{ type: 'spring', stiffness: 360, damping: 30 }}
-              className="relative w-full max-w-xl overflow-hidden rounded-t-[28px] sm:rounded-[28px] border border-white/20 bg-card shadow-[0_28px_100px_rgba(73,8,38,0.35)]"
+              className="relative flex max-h-[calc(100dvh-0.75rem)] w-full max-w-xl flex-col overflow-hidden rounded-t-[28px] border border-white/20 bg-card shadow-[0_28px_100px_rgba(73,8,38,0.35)] sm:max-h-[calc(100dvh-2.5rem)] sm:rounded-[28px]"
             >
-              <div className="relative overflow-hidden bg-gradient-to-l from-[#9D174D] via-[#D31558] to-[#F5175C] px-5 pb-6 pt-5 sm:px-7 sm:pt-6">
+              <div className="relative shrink-0 overflow-hidden bg-gradient-to-l from-[#9D174D] via-[#D31558] to-[#F5175C] px-5 pb-6 pt-5 sm:px-7 sm:pt-6">
                 <div className="relative flex items-start justify-between gap-4">
                   <div>
                     <p className="mb-1 flex items-center gap-1.5 text-xs font-bold tracking-wide text-white/80">
@@ -265,7 +263,7 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
                 <motion.div
                   initial={{ opacity: 0, scale: 0.97 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="px-6 py-10 text-center sm:px-10"
+                  className="min-h-0 overflow-y-auto px-6 py-10 text-center sm:px-10"
                 >
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-emerald-500/12 text-emerald-600">
                     <CheckCircle2 className="h-9 w-9" />
@@ -281,10 +279,11 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
                   </div>
                 </motion.div>
               ) : (
-                <form onSubmit={submit} className="space-y-5 px-5 py-6 sm:px-7 sm:py-7">
-                  <div>
-                    <p className="mb-2 text-sm font-black text-foreground">סוג הפנייה</p>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="סוג הפנייה">
+                <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+                  <div data-testid="feedback-form-scroll" className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7 sm:py-6">
+                    <div>
+                      <p className="mb-2 text-sm font-black text-foreground">סוג הפנייה</p>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="סוג הפנייה">
                       {CATEGORIES.map((category) => {
                         const selected = category.type === type
                         return (
@@ -305,8 +304,8 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
                           </button>
                         )
                       })}
+                      </div>
                     </div>
-                  </div>
 
                   <div>
                     <label htmlFor="feedback-screenshot" className="mb-1.5 block text-sm font-black text-foreground">צילום מסך <span className="font-medium text-muted-foreground">(אופציונלי)</span></label>
@@ -353,7 +352,7 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
                       onChange={(event) => { setDescription(event.target.value); setError('') }}
                       maxLength={4000}
                       required
-                      rows={5}
+                      rows={4}
                       placeholder={type === 'BUG'
                         ? 'מה ניסית לעשות, מה קרה בפועל ומה ציפית שיקרה?'
                         : 'כמה שיותר הקשר יעזור לנו להבין ולטפל מהר.'}
@@ -368,7 +367,9 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
                     <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/8 px-3 py-2.5 text-sm font-semibold text-destructive">{error}</p>
                   )}
 
-                  <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+                  </div>
+
+                  <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-border bg-card px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:pb-6">
                     <button type="button" onClick={closeDialog} disabled={submitting} className="rounded-xl px-4 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50">
                       ביטול
                     </button>

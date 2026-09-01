@@ -42,6 +42,17 @@ describe('FeedbackLauncher', () => {
     expect(screen.queryByPlaceholderText('מה ניסית לעשות, מה קרה בפועל ומה ציפית שיקרה?')).not.toBeInTheDocument()
   })
 
+  it('keeps the feedback form inside the viewport with a dedicated scroll area', async () => {
+    const user = userEvent.setup()
+    render(<FeedbackLauncher />)
+
+    await user.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
+
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveClass('max-h-[calc(100dvh-0.75rem)]')
+    expect(screen.getByTestId('feedback-form-scroll')).toHaveClass('overflow-y-auto')
+  })
+
   it('posts a compact relative page context and confirms with the reference id', async () => {
     const user = userEvent.setup()
     ;(global.fetch as jest.Mock).mockResolvedValue({
