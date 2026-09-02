@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
@@ -213,7 +214,7 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
       </button>
 
       <AnimatePresence>
-        {open && (
+        {open && createPortal(
           <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto p-3 sm:p-5" dir="rtl">
             <motion.button
               type="button"
@@ -382,7 +383,8 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
                 </form>
               )}
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
     </>

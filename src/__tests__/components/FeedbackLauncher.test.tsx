@@ -42,6 +42,17 @@ describe('FeedbackLauncher', () => {
     expect(screen.queryByPlaceholderText('מה ניסית לעשות, מה קרה בפועל ומה ציפית שיקרה?')).not.toBeInTheDocument()
   })
 
+  it('renders the dialog in the document body so it is not trapped by the animated navbar', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<FeedbackLauncher />)
+
+    await user.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
+
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.parentElement?.parentElement).toBe(document.body)
+    expect(container).not.toContainElement(dialog)
+  })
+
   it('keeps the feedback form inside the viewport with a dedicated scroll area', async () => {
     const user = userEvent.setup()
     render(<FeedbackLauncher />)
