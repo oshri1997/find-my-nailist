@@ -15,6 +15,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Test files go in `__tests__/` next to the code they test, or in a top-level `__tests__/` directory — follow the existing pattern in the repo.
 - Use Jest + `@testing-library/react` for React components, and plain Jest for utility/API logic.
 
+# Required Multi-Agent Delivery Flow
+
+For every implementation, bug fix, refactor, or other code change, use this flow before pushing:
+
+1. **Planner** — inspect the relevant code and produce a scoped implementation plan, including affected files, risks, and tests.
+2. **Implementer** — make only the approved, scoped code and test changes. Preserve any unrelated user changes.
+3. **Independent verifier** — review the resulting diff and run the focused checks plus the full `npm test` suite. The verifier must confirm the change meets the request and has not introduced a regression.
+4. **Push gate** — commit and push to `main` only after the verifier approves and all required checks pass. If the verifier finds an issue or a check fails, return to implementation and repeat verification.
+
+The coordinating agent must keep the roles independent: the verifier does not author the implementation it approves. For read-only questions, explanations, and status updates, use this workflow only when code changes are requested.
+
 # Release Rules
 
 - **Before creating any git tag / release**, update `package.json` `"version"` to match the tag version.
