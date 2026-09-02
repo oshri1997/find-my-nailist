@@ -79,6 +79,7 @@ export function FeedbackLauncher({ compact = false, className, onClose, open: co
   const titleId = useId()
   const descriptionId = useId()
   const open = controlledOpen ?? uncontrolledOpen
+  const portalHost = typeof document === 'undefined' ? null : document.body
 
   const setOpen = useCallback((nextOpen: boolean) => {
     if (controlledOpen === undefined) setUncontrolledOpen(nextOpen)
@@ -232,9 +233,16 @@ export function FeedbackLauncher({ compact = false, className, onClose, open: co
         </button>
       )}
 
-      <AnimatePresence>
-        {open && createPortal(
-          <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto p-3 sm:p-5" dir="rtl">
+      {portalHost && createPortal(
+        <AnimatePresence>
+          {open && (
+          <motion.div
+            className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto p-3 sm:p-5"
+            dir="rtl"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
             <motion.button
               type="button"
               aria-label="סגירת חלון המשוב"
@@ -402,10 +410,11 @@ export function FeedbackLauncher({ compact = false, className, onClose, open: co
                 </form>
               )}
             </motion.div>
-          </div>,
-          document.body
-        )}
-      </AnimatePresence>
+          </motion.div>
+          )}
+        </AnimatePresence>,
+        portalHost
+      )}
     </>
   )
 }
