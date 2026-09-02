@@ -5,7 +5,7 @@
  * value was reused inside the dropdown's header row, which has plenty of
  * room for the full name (same width as the email line right under it).
  */
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { Navbar } from '@/components/layout/navbar'
 
 jest.mock('next/navigation', () => ({
@@ -19,9 +19,6 @@ jest.mock('@/components/auth/auth-provider', () => ({
 }))
 
 jest.mock('@/components/theme-toggle', () => ({ ThemeToggle: () => null }))
-jest.mock('@/components/feedback/FeedbackLauncher', () => ({
-  FeedbackLauncher: () => <button type="button">עזרה ומשוב</button>,
-}))
 
 describe('Navbar — display name', () => {
   it('uses the compact SVG brand mark so the logo stays sharp at every size', () => {
@@ -104,7 +101,7 @@ describe('Navbar — display name', () => {
     expect(screen.getByText('ישראלה ישראלית')).toBeInTheDocument()
   })
 
-  it('shows the feedback entry only inside a signed-in user menu', () => {
+  it('opens feedback after closing the transient user menu, keeping dialog mounted in the document body', async () => {
     mockUseAuth.mockReturnValue({
       user: { uid: 'u1', displayName: 'ישראלה ישראלית', email: 'israela@test.com', photoURL: null },
       role: 'CLIENT',
@@ -115,6 +112,14 @@ describe('Navbar — display name', () => {
 
     expect(screen.queryByText('עזרה ומשוב')).not.toBeInTheDocument()
     fireEvent.click(screen.getByText('ישראלה'))
-    expect(screen.getByText('עזרה ומשוב')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
+
+    expect(screen.queryByText('ישראלה ישראלית')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'מה תרצי לשתף?' })).toBeInTheDocument())
+    expect(screen.getByRole('dialog').parentElement?.parentElement).toBe(document.body)
+
+    fireEvent.click(document.querySelector('[data-feedback-close]')!)
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('ישראלה').closest('button')).toHaveFocus())
   })
 })

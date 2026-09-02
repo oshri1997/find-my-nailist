@@ -16,7 +16,9 @@ export function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
   const [showMenu, setShowMenu] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const profileButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (!showMenu) return
@@ -33,6 +35,11 @@ export function Navbar() {
     setShowMenu(false)
     await signOut()
     router.push('/')
+  }
+
+  function handleFeedbackOpenChange(nextOpen: boolean) {
+    setFeedbackOpen(nextOpen)
+    if (!nextOpen) window.setTimeout(() => profileButtonRef.current?.focus(), 0)
   }
 
   // Prefer the name she actually entered in the app over the raw Firebase
@@ -131,6 +138,7 @@ export function Navbar() {
                 {/* Profile dropdown */}
                 <div ref={menuRef} className="relative">
                   <button
+                    ref={profileButtonRef}
                     onClick={() => setShowMenu(v => !v)}
                     className="flex items-center gap-2 hover:bg-muted/60 px-2 py-1.5 rounded-xl transition-colors cursor-pointer"
                   >
@@ -182,7 +190,17 @@ export function Navbar() {
                         <Settings className="h-4 w-4 text-primary" />
                         הגדרות חשבון
                       </Link>
-                      <FeedbackLauncher onClose={() => setShowMenu(false)} className="w-full justify-start rounded-lg px-3 py-2 text-foreground hover:bg-muted/60 hover:text-primary" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMenu(false)
+                          setFeedbackOpen(true)
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
+                      >
+                        <MessageCircleMore className="h-[17px] w-[17px]" />
+                        עזרה ומשוב
+                      </button>
                       {isAdmin && (
                         <Link
                           href="/admin"
@@ -203,6 +221,12 @@ export function Navbar() {
                     </div>
                   )}
                 </div>
+                <FeedbackLauncher
+                  open={feedbackOpen}
+                  onOpenChange={handleFeedbackOpenChange}
+                  hideTrigger
+                  returnFocusRef={profileButtonRef}
+                />
               </>
             ) : (
               <>

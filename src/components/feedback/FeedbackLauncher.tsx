@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -33,6 +33,13 @@ type FeedbackLauncherProps = {
   className?: string
   /** Useful when the trigger lives inside a menu that should close after the dialog is dismissed. */
   onClose?: () => void
+  /** Lets a parent keep the dialog mounted when its trigger is transient UI, such as a dropdown. */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  /** Hides the built-in trigger when a parent supplies its own. */
+  hideTrigger?: boolean
+  /** Stable element to return focus to after a parent-owned dialog closes. */
+  returnFocusRef?: RefObject<HTMLElement | null>
 }
 
 function friendlyError(status: number, payload: unknown) {
@@ -54,10 +61,10 @@ function getFocusableElements(container: HTMLElement) {
  * One small, authenticated route to the manager. Context is captured locally
  * (page, version and browser) but deliberately never displayed in the form.
  */
-export function FeedbackLauncher({ compact = false, className, onClose }: FeedbackLauncherProps) {
+export function FeedbackLauncher({ compact = false, className, onClose, open: controlledOpen, onOpenChange, hideTrigger = false, returnFocusRef }: FeedbackLauncherProps) {
   const pathname = usePathname()
   const { user } = useAuth()
-  const [open, setOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
   const [type, setType] = useState<FeedbackType>('BUG')
   const [subject, setSubject] = useState('')
   const [description, setDescription] = useState('')
@@ -71,6 +78,12 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
   const lastActiveElement = useRef<HTMLElement | null>(null)
   const titleId = useId()
   const descriptionId = useId()
+  const open = controlledOpen ?? uncontrolledOpen
+
+  const setOpen = useCallback((nextOpen: boolean) => {
+    if (controlledOpen === undefined) setUncontrolledOpen(nextOpen)
+    onOpenChange?.(nextOpen)
+  }, [controlledOpen, onOpenChange])
 
   function resetForm() {
     setType('BUG')
@@ -83,19 +96,20 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
   }
 
   function openDialog() {
-    lastActiveElement.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    lastActiveElement.current = returnFocusRef?.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null)
     resetForm()
     setOpen(true)
   }
 
-  function closeDialog() {
+  const closeDialog = useCallback(() => {
     if (submitting) return
     setOpen(false)
     onClose?.()
-  }
+  }, [onClose, setOpen, submitting])
 
   useEffect(() => {
     if (!open) return
+    lastActiveElement.current ??= returnFocusRef?.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null)
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const focusTimer = window.setTimeout(() => {
@@ -127,11 +141,14 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
       window.clearTimeout(focusTimer)
       document.body.style.overflow = previousOverflow
       document.removeEventListener('keydown', handleKeyDown)
-      lastActiveElement.current?.focus()
+      // Closing unmounts the focused dialog control. Restore after that DOM
+      // removal so browsers do not move focus back to document.body.
+      const focusTarget = lastActiveElement.current
+      window.setTimeout(() => focusTarget?.focus(), 0)
     }
-  // `closeDialog` only reads current `submitting`; re-registering is needed
-  // to keep Escape disabled while the request is in flight.
-  }, [open, submitting])
+  // Re-register when submission or focus target changes so Escape and focus
+  // restoration always use current state.
+  }, [closeDialog, open, returnFocusRef])
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -198,20 +215,22 @@ export function FeedbackLauncher({ compact = false, className, onClose }: Feedba
 
   return (
     <>
-      <button
-        ref={openerRef}
-        type="button"
-        onClick={openDialog}
-        className={cn(
-          compact
-            ? 'flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-all cursor-pointer'
-            : 'inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors cursor-pointer',
-          className
-        )}
-      >
-        <MessageCircleMore className={compact ? 'h-4 w-4' : 'h-[17px] w-[17px]'} />
-        עזרה ומשוב
-      </button>
+      {!hideTrigger && (
+        <button
+          ref={openerRef}
+          type="button"
+          onClick={openDialog}
+          className={cn(
+            compact
+              ? 'flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-all cursor-pointer'
+              : 'inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors cursor-pointer',
+            className
+          )}
+        >
+          <MessageCircleMore className={compact ? 'h-4 w-4' : 'h-[17px] w-[17px]'} />
+          עזרה ומשוב
+        </button>
+      )}
 
       <AnimatePresence>
         {open && createPortal(
