@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { MapPin, Search, Star, Heart, Loader2, LocateFixed, Map as MapIcon, LayoutGrid, Sparkles, BadgeCheck, Clock, Calendar as CalendarIcon, ChevronRight, ChevronLeft, X } from 'lucide-react'
+import { MapPin, Search, Star, Heart, Loader2, LocateFixed, Map as MapIcon, LayoutGrid, Sparkles, BadgeCheck, Clock, Calendar as CalendarIcon, ChevronRight, ChevronLeft, X, SlidersHorizontal } from 'lucide-react'
 import { toWhatsAppUrl, whatsAppBookingMessage } from '@/lib/whatsapp'
 import { formatDistance, formatNextSlotLabel } from '@/lib/format-utils'
 import { buildMonthCalendarFor, toDateStr } from '@/lib/booking-utils'
@@ -162,6 +162,7 @@ export default function SearchPage() {
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [activePriceBand, setActivePriceBand] = useState('all')
   const [showPriceFilter, setShowPriceFilter] = useState(false)
+  const [showServiceFilter, setShowServiceFilter] = useState(false)
   const activeMaxPrice = activePriceBand === 'all' ? undefined : PRICE_BANDS.find((b) => b.key === activePriceBand)?.max
   const now = new Date()
   now.setHours(0, 0, 0, 0)
@@ -437,9 +438,10 @@ export default function SearchPage() {
     <div className="min-h-screen flex flex-col bg-background">
       {/* Search controls bar */}
       <div className="bg-card border-b border-border sticky top-16 z-30 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-        <div className="container mx-auto max-w-7xl px-6 py-4">
-          <div className="flex flex-col gap-3 md:flex-row">
-            <div className="relative md:flex-1">
+        <div className="container mx-auto max-w-7xl px-6 py-3">
+          <div className="rounded-2xl border border-border/80 bg-background/35 p-2 shadow-[0_4px_18px_rgba(0,0,0,0.035)]">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <div className="relative md:flex-1">
               <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
               <Input
                 value={locationLabel}
@@ -458,7 +460,7 @@ export default function SearchPage() {
                     )
                   }
                 }}
-                className="pr-9 rounded-xl border-border focus:border-primary h-11 bg-card"
+                className="pr-9 rounded-xl border-border focus:border-primary h-11 bg-card shadow-none"
                 placeholder="עיר או שם עסק..."
                 aria-label="עיר או שם עסק"
                 readOnly={!!coords}
@@ -474,7 +476,7 @@ export default function SearchPage() {
                 </button>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
+              <div className="flex gap-2">
               <Button
                 type="button"
                 variant="outline"
@@ -502,6 +504,11 @@ export default function SearchPage() {
                 <Search className="h-4 w-4" />
                 <span>חפשי</span>
               </Button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 border-t border-border/65 mt-2 pt-2">
+              <span className="hidden sm:inline text-xs font-bold text-muted-foreground mr-1">סינון לפי</span>
               <div className="relative shrink-0">
                 <Button
                   type="button"
@@ -626,25 +633,59 @@ export default function SearchPage() {
                   </div>
                 )}
               </div>
+              <div className="relative shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowServiceFilter((v) => !v)}
+                  aria-expanded={showServiceFilter}
+                  aria-haspopup="menu"
+                  aria-label="בחירת שירות"
+                  className={`rounded-xl h-10 gap-2 border-border cursor-pointer ${
+                    activeFilter !== 'הכל' ? 'border-primary/40 text-primary bg-primary/10' : 'hover:border-primary/40'
+                  }`}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  <span className="text-sm font-semibold">{activeFilter === 'הכל' ? 'כל השירותים' : activeFilter}</span>
+                </Button>
+                {showServiceFilter && (
+                  <div className="absolute z-40 mt-2 top-full right-0 w-[min(28rem,calc(100vw-3rem))] rounded-2xl border border-border bg-card p-3 shadow-xl">
+                    <div className="flex items-center justify-between px-1 pb-2">
+                      <p className="text-sm font-black text-foreground">בחירת שירות</p>
+                      {activeFilter !== 'הכל' && (
+                        <button
+                          type="button"
+                          onClick={() => { setActiveFilter('הכל'); setShowServiceFilter(false) }}
+                          className="text-xs font-bold text-primary hover:text-primary/80 cursor-pointer"
+                        >
+                          נקי סינון
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                      {filterTags.map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => { setActiveFilter(tag); setShowServiceFilter(false) }}
+                          aria-pressed={activeFilter === tag}
+                          className={`rounded-xl px-3 py-2 text-right text-sm font-semibold transition-colors cursor-pointer ${
+                            activeFilter === tag
+                              ? 'bg-primary text-white'
+                              : 'text-foreground hover:bg-muted'
+                          }`}
+                        >
+                          {tag === 'הכל' ? 'כל השירותים' : tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {activeFilter !== 'הכל' && (
+                <span className="text-xs text-muted-foreground">מציגות {activeFilter}</span>
+              )}
             </div>
-          </div>
-
-          {/* Filter tags */}
-          <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
-            {filterTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => setActiveFilter(tag)}
-                aria-pressed={activeFilter === tag}
-                className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition-all cursor-pointer ${
-                  activeFilter === tag
-                    ? 'bg-primary text-white shadow-[0_2px_8px_rgba(245,23,92,0.25)]'
-                    : 'bg-card border border-border text-muted-foreground hover:border-primary/40 hover:text-primary'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
           </div>
         </div>
       </div>

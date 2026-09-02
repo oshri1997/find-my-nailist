@@ -74,6 +74,7 @@ describe('Search page — analytics logging', () => {
     render(<SearchPage />)
     await act(async () => { await Promise.resolve() })
 
+    fireEvent.click(screen.getByRole('button', { name: 'בחירת שירות' }))
     fireEvent.click(screen.getByText("ג'ל"))
     act(() => { jest.advanceTimersByTime(900) })
 
