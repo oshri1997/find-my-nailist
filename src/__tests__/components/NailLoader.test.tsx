@@ -13,6 +13,7 @@ jest.mock('framer-motion', () => {
       return mockReact.createElement(element, {
         ...props,
         'data-motion-initial': initial === undefined ? undefined : JSON.stringify(initial),
+        'data-motion-animate': animate === undefined ? undefined : JSON.stringify(animate),
       })
     }
 
@@ -39,12 +40,16 @@ describe('NailLoader', () => {
     expect(container.querySelector('[data-testid="nail-polish-brush"]')).toBeInTheDocument()
   })
 
-  it('gives the polish rect a concrete initial geometry', () => {
+  it('animates polish geometry from a collapsed position', () => {
     const { container } = render(<NailLoader />)
     const polishRect = container.querySelector('[data-testid="nail-polish-layer"] rect')
 
-    expect(polishRect).toHaveAttribute('y', '152')
-    expect(polishRect).toHaveAttribute('height', '0')
-    expect(polishRect).toHaveAttribute('data-motion-initial', JSON.stringify({ height: 0 }))
+    expect(polishRect).not.toHaveAttribute('y')
+    expect(polishRect).not.toHaveAttribute('height')
+    expect(polishRect).toHaveAttribute('data-motion-initial', JSON.stringify({ y: 152, height: 0 }))
+    expect(polishRect).toHaveAttribute('data-motion-animate', JSON.stringify({
+      y: [152, 102, 58, 58, 152],
+      height: [0, 50, 96, 96, 0],
+    }))
   })
 })

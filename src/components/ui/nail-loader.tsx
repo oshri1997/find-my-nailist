@@ -26,7 +26,7 @@ export function NailLoader({ text = 'טוענת…', size = 'md' }: NailLoaderPr
         <path d="M34 202V116C34 75 55 51 88 51C121 51 142 75 142 116V202H34Z" fill="url(#nail-loader-skin)" />
         <path d="M54 147V93C54 63 68 48 88 48C108 48 122 63 122 93V147C112 160 64 160 54 147Z" fill="url(#nail-loader-bed)" />
         <g clipPath="url(#nail-loader-clip)" data-testid="nail-polish-layer">
-          <motion.rect x="49" y="152" width="78" height="0" fill="url(#nail-loader-lacquer)" initial={{ height: 0 }} animate={reduceMotion ? undefined : { y: [152, 102, 58, 58, 152], height: [0, 50, 96, 96, 0] }} transition={cycle} />
+          <motion.rect x="49" width="78" fill="url(#nail-loader-lacquer)" initial={{ y: 152, height: 0 }} animate={reduceMotion ? undefined : { y: [152, 102, 58, 58, 152], height: [0, 50, 96, 96, 0] }} transition={cycle} />
           <motion.path d="M70 66C73 86 71 119 69 139" stroke="#FFF7FA" strokeWidth="4" strokeLinecap="round" animate={reduceMotion ? undefined : { pathLength: [0, .5, 1, 1, 0], opacity: [0, .18, .52, .52, 0] }} transition={cycle} />
         </g>
         <path d="M54 147V93C54 63 68 48 88 48C108 48 122 63 122 93V147C112 160 64 160 54 147Z" stroke="#B66A68" strokeOpacity=".22" strokeWidth="1.2" />
