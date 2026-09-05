@@ -27,6 +27,12 @@ const MOCK_NAILISTS = [
   },
 ]
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('cookieNoticeDismissed', '1')
+  })
+})
+
 test.describe('Search page', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('/api/nailists**', route =>
@@ -77,10 +83,14 @@ test.describe('Search page', () => {
 
   test('filter tags are clickable', async ({ page }) => {
     await page.goto('/search')
-    const jelTag = page.getByRole('button', { name: "ג'ל", exact: true })
+    const servicePicker = page.getByRole('button', { name: 'בחירת שירות' })
+    await expect(servicePicker).toBeVisible()
+    await servicePicker.click()
+
+    const jelTag = page.getByText("ג'ל", { exact: true })
     await expect(jelTag).toBeVisible()
     await jelTag.click()
-    await expect(jelTag).toHaveClass(/bg-primary/)
+    await expect(page.getByText("מציגות ג'ל", { exact: true })).toBeVisible()
   })
 
   test('clicking a card navigates to the nailist page', async ({ page }) => {
