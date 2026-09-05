@@ -112,7 +112,9 @@ describe('Navbar — display name', () => {
 
     expect(screen.queryByText('עזרה ומשוב')).not.toBeInTheDocument()
     fireEvent.click(screen.getByText('ישראלה'))
-    fireEvent.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
+    const feedbackButton = screen.getByRole('button', { name: 'עזרה ומשוב' })
+    expect(feedbackButton.querySelector('svg')).toHaveClass('text-primary')
+    fireEvent.click(feedbackButton)
 
     expect(screen.queryByText('ישראלה ישראלית')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('dialog', { name: 'מה תרצי לשתף?' })).toBeInTheDocument())

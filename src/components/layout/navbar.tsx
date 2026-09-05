@@ -198,7 +198,7 @@ export function Navbar() {
                         }}
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
                       >
-                        <MessageCircleMore className="h-[17px] w-[17px]" />
+                        <MessageCircleMore className="h-[17px] w-[17px] text-primary" />
                         עזרה ומשוב
                       </button>
                       {isAdmin && (
