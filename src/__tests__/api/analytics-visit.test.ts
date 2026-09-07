@@ -17,6 +17,8 @@ jest.mock('firebase-admin/firestore', () => ({
 import { POST } from '@/app/api/analytics/visit/route'
 
 let requestNumber = 0
+const originalAnalyticsSecret = process.env.VISIT_ANALYTICS_COOKIE_SECRET
+const originalRailwayEnvironmentName = process.env.RAILWAY_ENVIRONMENT_NAME
 
 function makeRequest(body: unknown, options: { origin?: string; cookie?: string; networkIdentity?: string; url?: string } = {}): NextRequest {
   requestNumber += 1
@@ -33,8 +35,22 @@ function makeRequest(body: unknown, options: { origin?: string; cookie?: string;
 
 beforeEach(() => {
   jest.clearAllMocks()
-  requestNumber = 0
   process.env.VISIT_ANALYTICS_COOKIE_SECRET = 'test-visit-analytics-secret'
+  process.env.RAILWAY_ENVIRONMENT_NAME = 'production'
+})
+
+afterAll(() => {
+  if (originalAnalyticsSecret === undefined) {
+    delete process.env.VISIT_ANALYTICS_COOKIE_SECRET
+  } else {
+    process.env.VISIT_ANALYTICS_COOKIE_SECRET = originalAnalyticsSecret
+  }
+
+  if (originalRailwayEnvironmentName === undefined) {
+    delete process.env.RAILWAY_ENVIRONMENT_NAME
+  } else {
+    process.env.RAILWAY_ENVIRONMENT_NAME = originalRailwayEnvironmentName
+  }
 })
 
 describe('POST /api/analytics/visit', () => {
@@ -60,6 +76,24 @@ describe('POST /api/analytics/visit', () => {
     expect(mockAdd).not.toHaveBeenCalled()
   })
 
+  it('fails closed when Railway environment is missing', async () => {
+    delete process.env.RAILWAY_ENVIRONMENT_NAME
+
+    const res = await POST(makeRequest({ source: 'direct' }))
+
+    expect(res.status).toBe(403)
+    expect(mockAdd).not.toHaveBeenCalled()
+  })
+
+  it.each(['development', 'staging', 'Production'])('rejects Railway environment %s', async (environment) => {
+    process.env.RAILWAY_ENVIRONMENT_NAME = environment
+
+    const res = await POST(makeRequest({ source: 'direct' }))
+
+    expect(res.status).toBe(403)
+    expect(mockAdd).not.toHaveBeenCalled()
+  })
+
   it.each([
     'https://dev.nailistiot.fun',
     'http://localhost:3000',
@@ -71,14 +105,11 @@ describe('POST /api/analytics/visit', () => {
     expect(mockAdd).not.toHaveBeenCalled()
   })
 
-  it('rejects a dev-host request with forged production Origin', async () => {
-    const res = await POST(makeRequest(
-      { source: 'direct' },
-      { origin: 'https://nailistiot.fun', url: 'https://dev.nailistiot.fun/api/analytics/visit' },
-    ))
+  it('accepts the exact production Origin in Railway production', async () => {
+    const res = await POST(makeRequest({ source: 'direct' }))
 
-    expect(res.status).toBe(403)
-    expect(mockAdd).not.toHaveBeenCalled()
+    expect(res.status).toBe(201)
+    expect(mockAdd).toHaveBeenCalledTimes(1)
   })
 
   it('requires analytics cookie signing configuration instead of logging unguarded visits', async () => {

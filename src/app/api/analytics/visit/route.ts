@@ -13,7 +13,6 @@ const RATE_WINDOW_SECONDS = 10 * 60
 const MAX_VISITS_PER_WINDOW = 3
 const MAX_TRANSIENT_RATE_LIMITS = 10_000
 const PRODUCTION_ORIGIN = 'https://nailistiot.fun'
-const PRODUCTION_HOSTNAME = 'nailistiot.fun'
 
 type RateLimit = { issuedAt: number; count: number }
 
@@ -24,7 +23,7 @@ const transientNetworkLimits = new Map<string, RateLimit>()
 
 function isAllowedOrigin(request: NextRequest) {
   const origin = request.headers.get('origin')
-  return request.nextUrl.hostname === PRODUCTION_HOSTNAME && origin === PRODUCTION_ORIGIN
+  return process.env.RAILWAY_ENVIRONMENT_NAME === 'production' && origin === PRODUCTION_ORIGIN
 }
 
 function cookieSecret() {
