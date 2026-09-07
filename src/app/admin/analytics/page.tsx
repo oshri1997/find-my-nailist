@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Filter, AlertTriangle } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { Search, Filter, AlertTriangle, Link as LinkIcon, MousePointerClick } from 'lucide-react'
 
 interface Counted {
   value: string
@@ -13,6 +14,12 @@ interface SearchAnalytics {
   topQueries: Counted[]
   topFilters: Counted[]
   zeroResultQueries: Counted[]
+  visitAnalytics: {
+    sampledVisits: number
+    googleVisits: number
+    directVisits: number
+    otherVisits: number
+  }
 }
 
 function CountedList({ items, emptyText }: { items: Counted[]; emptyText: string }) {
@@ -66,6 +73,8 @@ export default function AdminAnalyticsPage() {
 
   if (!data) return <div className="p-4 md:p-8 text-muted-foreground">שגיאה בטעינת הנתונים</div>
 
+  const visits = data.visitAnalytics
+
   return (
     <div className="p-4 md:p-8 space-y-6 md:space-y-8">
       <div>
@@ -74,6 +83,18 @@ export default function AdminAnalyticsPage() {
           מה לקוחות מחפשות — מבוסס על {data.sampledEvents.toLocaleString()} חיפושים אחרונים
         </p>
       </div>
+
+      <section aria-labelledby="visit-analytics-heading" className="space-y-3">
+        <div>
+          <h2 id="visit-analytics-heading" className="text-lg font-black text-foreground">כניסות לאפליקציה</h2>
+          <p className="text-muted-foreground text-sm">{visits.sampledVisits.toLocaleString()} כניסות אנונימיות אחרונות לפי מקור הגעה</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <VisitCard label="מגוגל" count={visits.googleVisits} icon={<Search className="w-4 h-4" />} />
+          <VisitCard label="קישור ישיר" count={visits.directVisits} icon={<LinkIcon className="w-4 h-4" />} />
+          <VisitCard label="מקור אחר" count={visits.otherVisits} icon={<MousePointerClick className="w-4 h-4" />} />
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-card border border-border rounded-2xl p-5">
@@ -107,6 +128,18 @@ export default function AdminAnalyticsPage() {
           <CountedList items={data.zeroResultQueries} emptyText="כל החיפושים החזירו תוצאות" />
         </div>
       </div>
+    </div>
+  )
+}
+
+function VisitCard({ label, count, icon }: { label: string; count: number; icon: ReactNode }) {
+  return (
+    <div className="bg-card border border-border rounded-2xl p-5">
+      <div className="flex items-center gap-2 text-muted-foreground text-sm font-semibold">
+        <span className="p-2 rounded-xl bg-primary/10 text-primary">{icon}</span>
+        {label}
+      </div>
+      <p className="text-3xl font-black text-foreground mt-4">{count.toLocaleString()}</p>
     </div>
   )
 }

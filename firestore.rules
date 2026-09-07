@@ -76,5 +76,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Anonymous visit-source analytics. Written through the Admin SDK only;
+    // visitors never receive read access to the event stream.
+    match /visitEvents/{eventId} {
+      allow read: if false;
+      allow write: if false;
+    }
+
   }
 }

@@ -10,6 +10,13 @@ interface Counted {
   count: number
 }
 
+interface VisitAnalytics {
+  sampledVisits: number
+  googleVisits: number
+  directVisits: number
+  otherVisits: number
+}
+
 function topCounts(values: string[], limit: number): Counted[] {
   const counts = new Map<string, number>()
   for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1)
@@ -38,6 +45,24 @@ export async function GET(request: NextRequest) {
     }
   })
 
+  const visitSnap = await db
+    .collection(COLLECTIONS.VISIT_EVENTS)
+    .orderBy('createdAt', 'desc')
+    .limit(SAMPLE_LIMIT)
+    .get()
+  const visitAnalytics: VisitAnalytics = {
+    sampledVisits: visitSnap.docs.length,
+    googleVisits: 0,
+    directVisits: 0,
+    otherVisits: 0,
+  }
+  for (const visit of visitSnap.docs) {
+    const source = visit.data().source
+    if (source === 'google') visitAnalytics.googleVisits += 1
+    else if (source === 'direct') visitAnalytics.directVisits += 1
+    else if (source === 'other') visitAnalytics.otherVisits += 1
+  }
+
   const queries = events.map(e => e.query?.trim().toLowerCase()).filter((q): q is string => !!q)
   const filters = events.map(e => e.filter)
   const zeroResultQueries = events
@@ -50,6 +75,7 @@ export async function GET(request: NextRequest) {
       topQueries: topCounts(queries, 20),
       topFilters: topCounts(filters, 20),
       zeroResultQueries: topCounts(zeroResultQueries, 20),
+      visitAnalytics,
     },
   })
 }

@@ -6,6 +6,12 @@ const data = {
   topQueries: [{ value: 'רחובות', count: 5 }],
   topFilters: [{ value: "ג'ל", count: 8 }],
   zeroResultQueries: [{ value: 'אקסטנשן ברמלה', count: 2 }],
+  visitAnalytics: {
+    sampledVisits: 12,
+    googleVisits: 7,
+    directVisits: 4,
+    otherVisits: 1,
+  },
 }
 
 beforeEach(() => {
@@ -23,6 +29,9 @@ describe('AdminAnalyticsPage', () => {
     expect(screen.getByText('רחובות')).toBeInTheDocument()
     expect(screen.getByText("ג'ל")).toBeInTheDocument()
     expect(screen.getByText('אקסטנשן ברמלה')).toBeInTheDocument()
+    expect(screen.getByText('כניסות לאפליקציה')).toBeInTheDocument()
+    expect(screen.getByText('מגוגל')).toBeInTheDocument()
+    expect(screen.getByText('קישור ישיר')).toBeInTheDocument()
   })
 
   it('shows an empty-state message when a section has no data', async () => {

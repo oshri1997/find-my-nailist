@@ -70,6 +70,12 @@ beforeEach(() => {
     { __id: 'e5', query: 'אקסטנשן ברמלה', filter: 'הכל', resultsCount: 0 },
     { __id: 'e6', query: 'אקסטנשן ברמלה', filter: 'הכל', resultsCount: 0 },
   ]
+  collectionStore.visitEvents = [
+    { __id: 'v1', source: 'google' },
+    { __id: 'v2', source: 'google' },
+    { __id: 'v3', source: 'direct' },
+    { __id: 'v4', source: 'other' },
+  ]
 })
 
 describe('GET /api/admin/analytics/search', () => {
@@ -109,5 +115,17 @@ describe('GET /api/admin/analytics/search', () => {
     const res = await GET(adminRequest())
     const json = await res.json()
     expect(json.data.sampledEvents).toBe(6)
+  })
+
+  it('returns anonymous visit counts grouped by acquisition source', async () => {
+    const res = await GET(adminRequest())
+    const json = await res.json()
+
+    expect(json.data.visitAnalytics).toEqual({
+      sampledVisits: 4,
+      googleVisits: 2,
+      directVisits: 1,
+      otherVisits: 1,
+    })
   })
 })

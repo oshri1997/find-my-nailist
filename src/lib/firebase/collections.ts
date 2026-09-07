@@ -10,6 +10,7 @@ export const COLLECTIONS = {
   REVIEWS: 'reviews',
   FAVORITES: 'favorites',
   SEARCH_EVENTS: 'searchEvents',
+  VISIT_EVENTS: 'visitEvents',
   AUDIT_LOGS: 'auditLogs',
   FEEDBACK: 'feedback',
   FEEDBACK_RATE_LIMITS: 'feedbackRateLimits',
