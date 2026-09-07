@@ -7,8 +7,8 @@ export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
 export default async function Image() {
-  const logoData = await readFile(join(process.cwd(), 'public/logo-og.png'), 'base64')
-  const logoSrc = `data:image/png;base64,${logoData}`
+  const logoData = await readFile(join(process.cwd(), 'public/logo.svg'), 'base64')
+  const logoSrc = `data:image/svg+xml;base64,${logoData}`
 
   return new ImageResponse(
     (
@@ -19,7 +19,7 @@ export default async function Image() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #c2542d, #d9a441)',
+          background: 'linear-gradient(135deg, #160810, #6D1749)',
         }}
       >
         <img src={logoSrc} width={560} height={506} style={{ objectFit: 'contain' }} alt="נייליסטיות" />

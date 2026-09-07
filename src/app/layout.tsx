@@ -65,7 +65,7 @@ const orgJsonLd = [
     '@type': 'Organization',
     name: 'נייליסטיות',
     url: APP_URL,
-    logo: `${APP_URL}/icon.png`,
+    logo: `${APP_URL}/icon`,
     description: "פלטפורמה ישראלית להזמנת תורים אצל נייליסטיות — ג'ל, מניקור, נייל ארט ופדיקור",
     foundingLocation: { '@type': 'Place', addressCountry: 'IL' },
     areaServed: { '@type': 'Country', name: 'Israel' },

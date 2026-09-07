@@ -9,8 +9,8 @@ export const size = { width: 96, height: 96 }
 export const contentType = 'image/png'
 
 export default async function Icon() {
-  const logoData = await readFile(join(process.cwd(), 'public/logo-og.png'), 'base64')
-  const logoSrc = `data:image/png;base64,${logoData}`
+  const logoData = await readFile(join(process.cwd(), 'public/logo.svg'), 'base64')
+  const logoSrc = `data:image/svg+xml;base64,${logoData}`
 
   return new ImageResponse(
     (
