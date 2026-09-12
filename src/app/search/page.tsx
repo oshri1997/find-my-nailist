@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
@@ -16,6 +16,24 @@ const NailistMap = dynamic(() => import('@/components/search/NailistMap'), { ssr
 
 const HE_DAYS_SHORT = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
 const HE_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר']
+const DEFAULT_SKELETON_COUNT = 3
+
+function subscribeToSkeletonCount() {
+  return () => {}
+}
+
+function getStoredSkeletonCount() {
+  try {
+    const savedCount = parseInt(localStorage.getItem('nailists-count') ?? '', 10)
+    return Number.isFinite(savedCount) ? Math.max(1, savedCount) : DEFAULT_SKELETON_COUNT
+  } catch {
+    return DEFAULT_SKELETON_COUNT
+  }
+}
+
+function getServerSkeletonCount() {
+  return DEFAULT_SKELETON_COUNT
+}
 
 function NailistCardSkeleton() {
   return (
@@ -145,9 +163,15 @@ export default function SearchPage() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [togglingFav, setTogglingFav] = useState<string | null>(null)
   const [imagesReady, setImagesReady] = useState(false)
-  // Start with a deterministic value so server and first client render match.
-  // Restore the remembered count after hydration.
-  const [skeletonCount, setSkeletonCount] = useState(3)
+  // Server snapshot keeps initial client HTML deterministic. Browser storage
+  // restores after hydration, while fresh results take precedence afterwards.
+  const storedSkeletonCount = useSyncExternalStore(
+    subscribeToSkeletonCount,
+    getStoredSkeletonCount,
+    getServerSkeletonCount,
+  )
+  const [fetchedSkeletonCount, setFetchedSkeletonCount] = useState<number | null>(null)
+  const skeletonCount = fetchedSkeletonCount ?? storedSkeletonCount
   const [locating, setLocating] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [locationLabel, setLocationLabel] = useState('')
@@ -179,13 +203,6 @@ export default function SearchPage() {
   // than whatever's in the location input right now, so it can't silently
   // switch search context mid-scroll.
   const activeCoordsRef = useRef<{ lat?: number; lng?: number }>({})
-
-  useEffect(() => {
-    try {
-      const savedCount = parseInt(localStorage.getItem('nailists-count') ?? '', 10)
-      if (Number.isFinite(savedCount)) setSkeletonCount(Math.max(1, savedCount))
-    } catch {}
-  }, [])
 
   const fetchNailists = useCallback(async (
     lat?: number,
@@ -235,7 +252,7 @@ export default function SearchPage() {
       setHasMore(!!more)
       if (offset === 0) {
         const count = Math.max(1, (data as Nailist[]).length)
-        setSkeletonCount(count)
+        setFetchedSkeletonCount(count)
         try { localStorage.setItem('nailists-count', String(count)) } catch {}
       }
     } catch {
