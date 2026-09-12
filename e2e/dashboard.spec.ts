@@ -51,6 +51,9 @@ test.describe.serial('Dashboard (mocked data, real session)', () => {
     await page.route('/api/me/nailist-profile', route =>
       route.fulfill({ json: { data: MOCK_PROFILE } })
     )
+    await page.route('/api/me/verification-readiness', route =>
+      route.fulfill({ json: { data: { isReady: true, checks: [], passedCount: 10, totalCount: 10 } } })
+    )
     await page.route('/api/services**', route =>
       route.fulfill({ json: { data: MOCK_SERVICES } })
     )
