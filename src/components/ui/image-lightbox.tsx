@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
@@ -13,6 +13,8 @@ interface ImageLightboxProps {
   onNext?: () => void
   canGoPrevious?: boolean
   canGoNext?: boolean
+  currentIndex?: number
+  totalImages?: number
 }
 
 // Facebook-style photo viewer: click a thumbnail to open it full-size,
@@ -25,8 +27,11 @@ export function ImageLightbox({
   onNext,
   canGoPrevious = false,
   canGoNext = false,
+  currentIndex = 0,
+  totalImages = 1,
 }: ImageLightboxProps) {
   const showNavigation = Boolean(onPrevious && onNext)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -37,6 +42,25 @@ export function ImageLightbox({
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [canGoNext, canGoPrevious, onClose, onNext, onPrevious])
+
+  function handleTouchStart(event: React.TouchEvent<HTMLImageElement>) {
+    const touch = event.touches[0]
+    if (touch) touchStart.current = { x: touch.clientX, y: touch.clientY }
+  }
+
+  function handleTouchEnd(event: React.TouchEvent<HTMLImageElement>) {
+    const start = touchStart.current
+    touchStart.current = null
+    const touch = event.changedTouches[0]
+    if (!start || !touch) return
+
+    const deltaX = touch.clientX - start.x
+    const deltaY = touch.clientY - start.y
+    if (Math.abs(deltaX) < 50 || Math.abs(deltaX) <= Math.abs(deltaY)) return
+
+    if (deltaX < 0 && canGoNext) onNext?.()
+    if (deltaX > 0 && canGoPrevious) onPrevious?.()
+  }
 
   return createPortal(
     <AnimatePresence>
@@ -54,7 +78,7 @@ export function ImageLightbox({
               onClick={(event) => { event.stopPropagation(); onPrevious?.() }}
               disabled={!canGoPrevious}
               aria-label="תמונה קודמת"
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-white transition-colors"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 disabled:opacity-40 disabled:cursor-not-allowed hidden md:flex items-center justify-center text-white transition-colors"
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
@@ -63,7 +87,7 @@ export function ImageLightbox({
               onClick={(event) => { event.stopPropagation(); onNext?.() }}
               disabled={!canGoNext}
               aria-label="תמונה הבאה"
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-white transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 disabled:opacity-40 disabled:cursor-not-allowed hidden md:flex items-center justify-center text-white transition-colors"
             >
               <ChevronRight className="h-6 w-6" />
             </button>
@@ -77,6 +101,21 @@ export function ImageLightbox({
         >
           <X className="h-5 w-5" />
         </button>
+        {totalImages > 1 && (
+          <div
+            aria-hidden="true"
+            data-testid="lightbox-pagination"
+            className="pointer-events-none absolute bottom-7 left-1/2 -translate-x-1/2 flex items-center gap-1.5 md:hidden"
+          >
+            {Array.from({ length: totalImages }, (_, index) => (
+              <span
+                key={index}
+                data-testid={`lightbox-dot-${index}`}
+                className={`h-1.5 rounded-full transition-all ${index === currentIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/55'}`}
+              />
+            ))}
+          </div>
+        )}
         <motion.img
           initial={{ scale: 0.92, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -85,6 +124,8 @@ export function ImageLightbox({
           src={src}
           alt={alt ?? ''}
           onClick={(e) => e.stopPropagation()}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           className="max-w-full max-h-full rounded-xl object-contain shadow-2xl cursor-auto"
         />
       </motion.div>

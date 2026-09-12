@@ -641,6 +641,8 @@ export default function NailistProfileClient({ id }: { id: string }) {
           }}
           canGoPrevious={profile.portfolio.findIndex((photo) => photo.id === lightboxPhoto.id) > 0}
           canGoNext={profile.portfolio.findIndex((photo) => photo.id === lightboxPhoto.id) < profile.portfolio.length - 1}
+          currentIndex={profile.portfolio.findIndex((photo) => photo.id === lightboxPhoto.id)}
+          totalImages={profile.portfolio.length}
         />
       )}
     </div>

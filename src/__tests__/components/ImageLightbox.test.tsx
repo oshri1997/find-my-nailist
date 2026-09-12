@@ -64,4 +64,79 @@ describe('ImageLightbox', () => {
     expect(screen.queryByLabelText('תמונה קודמת')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('תמונה הבאה')).not.toBeInTheDocument()
   })
+
+  it('shows noninteractive mobile pagination dots with the current photo active', () => {
+    render(
+      <ImageLightbox
+        src="https://example.com/second.jpg"
+        onClose={jest.fn()}
+        onPrevious={jest.fn()}
+        onNext={jest.fn()}
+        currentIndex={1}
+        totalImages={3}
+      />
+    )
+
+    const pagination = screen.getByTestId('lightbox-pagination')
+    expect(pagination).toHaveClass('md:hidden')
+    expect(pagination.querySelectorAll('button')).toHaveLength(0)
+    expect(screen.getByTestId('lightbox-dot-1')).toHaveClass('bg-white')
+    expect(screen.getByTestId('lightbox-dot-0')).toHaveClass('bg-white/55')
+    expect(screen.getByLabelText('תמונה קודמת')).toHaveClass('hidden', 'md:flex')
+  })
+
+  it('swipes left for next and right for previous, but ignores short and vertical gestures', () => {
+    const onPrevious = jest.fn()
+    const onNext = jest.fn()
+    render(
+      <ImageLightbox
+        src="https://example.com/photo.jpg"
+        alt="תמונת החלקה"
+        onClose={jest.fn()}
+        onPrevious={onPrevious}
+        onNext={onNext}
+        canGoPrevious
+        canGoNext
+      />
+    )
+    const image = screen.getByAltText('תמונת החלקה')
+
+    fireEvent.touchStart(image, { touches: [{ clientX: 200, clientY: 100 }] })
+    fireEvent.touchEnd(image, { changedTouches: [{ clientX: 120, clientY: 104 }] })
+    fireEvent.touchStart(image, { touches: [{ clientX: 120, clientY: 100 }] })
+    fireEvent.touchEnd(image, { changedTouches: [{ clientX: 200, clientY: 104 }] })
+    expect(onNext).toHaveBeenCalledTimes(1)
+    expect(onPrevious).toHaveBeenCalledTimes(1)
+
+    fireEvent.touchStart(image, { touches: [{ clientX: 200, clientY: 100 }] })
+    fireEvent.touchEnd(image, { changedTouches: [{ clientX: 160, clientY: 100 }] })
+    fireEvent.touchStart(image, { touches: [{ clientX: 200, clientY: 100 }] })
+    fireEvent.touchEnd(image, { changedTouches: [{ clientX: 190, clientY: 220 }] })
+    expect(onNext).toHaveBeenCalledTimes(1)
+    expect(onPrevious).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not navigate past an endpoint when swiped', () => {
+    const onPrevious = jest.fn()
+    const onNext = jest.fn()
+    render(
+      <ImageLightbox
+        src="https://example.com/first.jpg"
+        alt="תמונה ראשונה"
+        onClose={jest.fn()}
+        onPrevious={onPrevious}
+        onNext={onNext}
+        canGoPrevious={false}
+        canGoNext
+      />
+    )
+    const image = screen.getByAltText('תמונה ראשונה')
+
+    fireEvent.touchStart(image, { touches: [{ clientX: 100, clientY: 100 }] })
+    fireEvent.touchEnd(image, { changedTouches: [{ clientX: 180, clientY: 100 }] })
+    fireEvent.touchStart(image, { touches: [{ clientX: 180, clientY: 100 }] })
+    fireEvent.touchEnd(image, { changedTouches: [{ clientX: 100, clientY: 100 }] })
+    expect(onPrevious).not.toHaveBeenCalled()
+    expect(onNext).toHaveBeenCalledTimes(1)
+  })
 })

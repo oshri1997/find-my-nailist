@@ -306,9 +306,12 @@ describe('NailistProfileClient — portfolio lightbox', () => {
     fireEvent.click(await screen.findByAltText('ראשונה'))
     expect(screen.getByLabelText('תמונה קודמת')).toBeDisabled()
     expect(screen.getByLabelText('תמונה הבאה')).not.toBeDisabled()
+    expect(screen.getByTestId('lightbox-pagination').children).toHaveLength(2)
+    expect(screen.getByTestId('lightbox-dot-0')).toHaveClass('bg-white')
 
     fireEvent.click(screen.getByLabelText('תמונה הבאה'))
     expect(screen.getAllByAltText('שנייה')).toHaveLength(2)
+    expect(screen.getByTestId('lightbox-dot-1')).toHaveClass('bg-white')
     expect(screen.getByLabelText('תמונה הבאה')).toBeDisabled()
     expect(screen.getByLabelText('תמונה קודמת')).not.toBeDisabled()
 
