@@ -96,6 +96,7 @@ it('calls refreshRole before navigating to the dashboard when the wizard finishe
 
   // Step 5 — social links, skip
   await waitFor(() => expect(screen.getByText('רשתות חברתיות')).toBeInTheDocument())
+  expect(screen.getByText('אופציונלי, אך מומלץ כדי לעמוד בתנאים לבדיקת תג אימות. תג אימות ניתן רק לאחר בדיקה.')).toBeInTheDocument()
   fireEvent.click(screen.getByText('המשיכי'))
 
   // Step 6 — working hours, finish
