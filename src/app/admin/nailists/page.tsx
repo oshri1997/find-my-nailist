@@ -14,6 +14,12 @@ interface AdminNailist {
   avgRating: number
   reviewCount: number
   createdAt: string | null
+  verificationReadiness?: {
+    checks: Array<{ key: string; label: string; passed: boolean; missing: string }>
+    passedCount: number
+    totalCount: number
+    isReady: boolean
+  }
 }
 
 export default function AdminNailistsPage() {
@@ -103,6 +109,7 @@ export default function AdminNailistsPage() {
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">דירוג</th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">הצטרפה</th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">סטטוס</th>
+                  <th className="text-right px-5 py-3 font-semibold text-muted-foreground">מוכנות לאימות</th>
                   <th className="px-5 py-3" />
                 </tr>
               </thead>
@@ -122,6 +129,22 @@ export default function AdminNailistsPage() {
                           </span>
                         )}
                       </div>
+                    </td>
+                    <td className="px-5 py-3 min-w-56">
+                      {n.verificationReadiness ? (
+                        <details>
+                          <summary className={`cursor-pointer text-xs font-semibold ${n.verificationReadiness.isReady ? 'text-green-600' : 'text-amber-600'}`}>
+                            {n.verificationReadiness.isReady ? 'עומדת בכל הקריטריונים' : `חסרים קריטריונים`} ({n.verificationReadiness.passedCount}/{n.verificationReadiness.totalCount})
+                          </summary>
+                          <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                            {n.verificationReadiness.checks.map((check) => (
+                              <li key={check.key} className={check.passed ? 'text-green-600' : 'text-red-500'}>
+                                {check.passed ? '✓' : '✕'} {check.passed ? check.label : `חסר: ${check.missing}`}
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      ) : '—'}
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">
                       <div className="flex items-center gap-1">
@@ -183,7 +206,7 @@ export default function AdminNailistsPage() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">אין תוצאות</td>
+                    <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">אין תוצאות</td>
                   </tr>
                 )}
               </tbody>

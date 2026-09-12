@@ -10,6 +10,13 @@ import AdminNailistsPage from '@/app/admin/nailists/page'
 const nailist = {
   id: 'n1', userId: 'u1', businessName: 'סטודיו יופי', city: 'תל אביב',
   isActive: true, isVerified: false, avgRating: 4.8, reviewCount: 12, createdAt: null,
+  verificationReadiness: {
+    passedCount: 8, totalCount: 10, isReady: false,
+    checks: [
+      { key: 'emailVerified', label: 'כתובת אימייל מאומתת', passed: true, missing: 'אימות כתובת אימייל' },
+      { key: 'portfolio', label: 'לפחות 5 תמונות בתיק העבודות', passed: false, missing: 'לפחות 5 תמונות בתיק העבודות' },
+    ],
+  },
 }
 
 let lastPatchBody: unknown = null
@@ -111,5 +118,17 @@ describe('AdminNailistsPage — verify toggle', () => {
     })
     // No success response ever arrived, so the optimistic flip never happens.
     expect(screen.queryByText('מאומתת')).not.toBeInTheDocument()
+  })
+
+  it('shows exact readiness checks without changing the manual verify action', async () => {
+    mockFetch()
+    render(<AdminNailistsPage />)
+    await screen.findByText(/חסרים קריטריונים/)
+
+    fireEvent.click(screen.getByText(/חסרים קריטריונים/))
+
+    expect(screen.getByText('✓ כתובת אימייל מאומתת')).toBeInTheDocument()
+    expect(screen.getByText('✕ חסר: לפחות 5 תמונות בתיק העבודות')).toBeInTheDocument()
+    expect(screen.getByTitle('אמת נייליסטית')).toBeEnabled()
   })
 })

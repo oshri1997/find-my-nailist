@@ -6,9 +6,14 @@ import { NextRequest } from 'next/server'
 // ── Firebase Admin mocks ────────────────────────────────────────────────────
 
 const mockVerifyIdToken = jest.fn()
+const mockGetUsers = jest.fn()
 
 jest.mock('@/lib/firebase/admin', () => ({
-  adminAuth: () => ({ verifyIdToken: mockVerifyIdToken, deleteUser: jest.fn().mockResolvedValue(undefined) }),
+  adminAuth: () => ({
+    verifyIdToken: mockVerifyIdToken,
+    deleteUser: jest.fn().mockResolvedValue(undefined),
+    getUsers: mockGetUsers,
+  }),
   adminDb: () => mockDb,
 }))
 
@@ -109,6 +114,7 @@ function unauthRequest(path = '/api/admin/stats') {
 describe('GET /api/admin/stats', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockGetUsers.mockResolvedValue({ users: [] })
     collectionStore.users = [
       { __id: 'u1', email: 'a@test.com', role: 'CLIENT', createdAt: { toDate: () => new Date() } },
       { __id: 'u2', email: 'b@test.com', role: 'NAILIST', createdAt: { toDate: () => new Date() } },
@@ -246,5 +252,28 @@ describe('GET /api/admin/nailists', () => {
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(Array.isArray(json.data)).toBe(true)
+    expect(json.data[0].verificationReadiness).toMatchObject({ totalCount: 10, isReady: false })
+  })
+
+  it('returns factual readiness checks with exact missing criteria', async () => {
+    collectionStore.nailistProfiles = [{
+      __id: 'n1', userId: 'u1', businessName: 'Test Nails', city: 'Tel Aviv', address: 'Main 1',
+      phoneNumber: '0501234567', photoUrl: 'https://example.com/photo.jpg', instagramUrl: 'https://instagram.com/test',
+      onboardingCompleted: true, createdAt: { toDate: () => new Date() },
+    }]
+    collectionStore.services = [{ __id: 's1', nailistProfileId: 'n1', isActive: true }]
+    collectionStore.workingHours = [{ __id: 'h1', nailistProfileId: 'n1', isActive: true }]
+    collectionStore.portfolioPhotos = Array.from({ length: 4 }, (_, index) => ({ __id: `p${index}`, nailistProfileId: 'n1' }))
+    mockGetUsers.mockResolvedValue({ users: [{ uid: 'u1', emailVerified: true }] })
+
+    const { GET } = await import('@/app/api/admin/nailists/route')
+    const json = await (await GET(adminRequest('/api/admin/nailists'))).json()
+    const readiness = json.data[0].verificationReadiness
+
+    expect(mockGetUsers).toHaveBeenCalledWith([{ uid: 'u1' }])
+    expect(readiness).toMatchObject({ passedCount: 9, totalCount: 10, isReady: false })
+    expect(readiness.checks).toContainEqual(expect.objectContaining({
+      key: 'portfolio', passed: false, missing: 'לפחות 5 תמונות בתיק העבודות',
+    }))
   })
 })
