@@ -1,9 +1,11 @@
 // Runs only against local Firebase emulators, never a deployed project.
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS script uses top-level requires. */
 const { readFileSync } = require('node:fs')
 const { test, before, after } = require('node:test')
 const { initializeTestEnvironment, assertFails, assertSucceeds } = require('@firebase/rules-unit-testing')
 const { doc, getDoc, setDoc, collection, getDocs } = require('firebase/firestore')
 const { ref, uploadBytes, getBytes, deleteObject } = require('firebase/storage')
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 let environment
 before(async () => {
