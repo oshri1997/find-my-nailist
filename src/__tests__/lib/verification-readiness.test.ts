@@ -20,7 +20,16 @@ describe('evaluateVerificationReadiness', () => {
 
     expect(result).toMatchObject({ passedCount: 4, totalCount: 10, isReady: false })
     expect(result.checks.filter((check) => !check.passed).map((check) => check.missing)).toEqual([
-      'אימות כתובת אימייל', 'שם עסק', 'עיר וכתובת עסק', 'לפחות שירות פעיל אחד', 'לפחות שעת עבודה פעילה אחת', 'לפחות 5 תמונות בתיק העבודות',
+      'אימות כתובת אימייל', 'שם עסק', 'עיר וכתובת עסק', 'לפחות שירות פעיל אחד', 'לפחות שעת עבודה פעילה אחת', 'הוסיפי עוד 1 תמונה לתיק העבודות',
     ])
+  })
+
+  it('states exact remaining portfolio photo count', () => {
+    const result = evaluateVerificationReadiness({ ...complete, portfolioPhotoCount: 3 })
+
+    expect(result.checks.find((check) => check.key === 'portfolio')).toMatchObject({
+      passed: false,
+      missing: 'הוסיפי עוד 2 תמונות לתיק העבודות',
+    })
   })
 })

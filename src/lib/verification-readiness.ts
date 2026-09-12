@@ -76,7 +76,8 @@ export function evaluateVerificationReadiness(input: VerificationReadinessInput)
     },
     {
       key: 'portfolio', label: 'לפחות 5 תמונות בתיק העבודות',
-      passed: input.portfolioPhotoCount >= 5, missing: 'לפחות 5 תמונות בתיק העבודות',
+      passed: input.portfolioPhotoCount >= 5,
+      missing: `הוסיפי עוד ${Math.max(0, 5 - input.portfolioPhotoCount)} ${Math.max(0, 5 - input.portfolioPhotoCount) === 1 ? 'תמונה' : 'תמונות'} לתיק העבודות`,
     },
     {
       key: 'socialProfile', label: 'אינסטגרם או טיקטוק',

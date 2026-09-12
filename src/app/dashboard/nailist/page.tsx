@@ -102,15 +102,15 @@ interface NailistProfile {
 
 const VERIFICATION_REMINDER_KEY_PREFIX = 'nailist-verification-contact-reminder'
 const REMIND_LATER_MS = 7 * 24 * 60 * 60 * 1000
-const CONTACT_CTA_COOLDOWN_MS = 5 * 60 * 1000
 
 interface VerificationReminderPreference {
   dismissed?: boolean
   nextPromptAt?: number
 }
 
-function hasContactNumber(profile: NailistProfile) {
-  return Boolean(profile.phoneNumber?.trim() || profile.whatsappPhone?.trim())
+interface VerificationReadiness {
+  isReady: boolean
+  checks: Array<{ key: string; passed: boolean; missing: string }>
 }
 
 function verificationReminderKey(profileId: string) {
@@ -172,6 +172,7 @@ export default function NailistDashboard() {
   const [workingHoursFull, setWorkingHoursFull] = useState<DayWorkingHours[]>([])
   const [minServiceDuration, setMinServiceDuration] = useState<number | null>(null)
   const [showVerificationReminder, setShowVerificationReminder] = useState(false)
+  const [verificationReadiness, setVerificationReadiness] = useState<VerificationReadiness | null>(null)
   const verificationDialogRef = useRef<HTMLDivElement>(null)
   const verificationCtaRef = useRef<HTMLAnchorElement>(null)
   const verificationPreviousFocusRef = useRef<HTMLElement | null>(null)
@@ -184,10 +185,16 @@ export default function NailistDashboard() {
         setProfile(json.data)
         const profileId = json.data.id
         const preference = getVerificationReminderPreference(profileId)
-        const canShowReminder = !hasContactNumber(json.data)
-          && !preference.dismissed
-          && (!preference.nextPromptAt || preference.nextPromptAt <= Date.now())
-        setShowVerificationReminder(canShowReminder)
+        const readinessRes = await fetch('/api/me/verification-readiness')
+        if (readinessRes.ok) {
+          const readinessJson = await readinessRes.json()
+          const readiness = readinessJson?.data as VerificationReadiness | null
+          setVerificationReadiness(readiness)
+          const canShowReminder = !!readiness && !readiness.isReady && readiness.checks.some((check) => !check.passed)
+            && !preference.dismissed
+            && (!preference.nextPromptAt || preference.nextPromptAt <= Date.now())
+          setShowVerificationReminder(canShowReminder)
+        }
 
         const [portfolioRes, servicesRes, hoursRes, appointmentsRes, nailistRes] = await Promise.all([
           fetch(`/api/portfolio?profileId=${profileId}`),
@@ -385,7 +392,7 @@ export default function NailistDashboard() {
 
   return (
     <div className="p-4 md:p-8">
-      {showVerificationReminder && profile && (
+      {showVerificationReminder && profile && verificationReadiness && (
         <div
           role="dialog"
           aria-modal="true"
@@ -402,19 +409,24 @@ export default function NailistDashboard() {
               עוד צעד קטן לתג אימות
             </h2>
             <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">
-              כדי להיות זכאית לתג אימות, חסר בפרופיל שלך מספר טלפון או WhatsApp.
+              כדי להיות זכאית לבדיקה לתג אימות, השלימי את הפרטים הבאים:
             </p>
+            <ul className="mt-3 list-disc space-y-1 pr-5 text-sm font-medium leading-6 text-muted-foreground">
+              {verificationReadiness.checks.filter((check) => !check.passed).map((check) => (
+                <li key={check.key}>{check.missing}</li>
+              ))}
+            </ul>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              לאחר הוספת פרטי הקשר, הפרופיל ייבדק לתג אימות.
+              השלמת הפרטים אינה מעניקה תג אוטומטית; הפרופיל ייבדק לאחר מכן.
             </p>
             <div className="mt-6 space-y-3">
               <Link
                 href="/dashboard/nailist/settings"
                 ref={verificationCtaRef}
-                onClick={() => postponeVerificationReminder(CONTACT_CTA_COOLDOWN_MS)}
+                onClick={() => postponeVerificationReminder(REMIND_LATER_MS)}
                 className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-black text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                להוספת פרטי קשר
+                להשלמת הפרופיל
               </Link>
               <button
                 type="button"

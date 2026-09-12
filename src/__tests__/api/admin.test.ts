@@ -273,7 +273,7 @@ describe('GET /api/admin/nailists', () => {
     expect(mockGetUsers).toHaveBeenCalledWith([{ uid: 'u1' }])
     expect(readiness).toMatchObject({ passedCount: 9, totalCount: 10, isReady: false })
     expect(readiness.checks).toContainEqual(expect.objectContaining({
-      key: 'portfolio', passed: false, missing: 'לפחות 5 תמונות בתיק העבודות',
+      key: 'portfolio', passed: false, missing: 'הוסיפי עוד 1 תמונה לתיק העבודות',
     }))
   })
 })

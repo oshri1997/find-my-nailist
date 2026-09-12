@@ -23,20 +23,34 @@ type DashboardProfile = typeof fullProfile & {
   whatsappPhone?: string
 }
 
+const readyReadiness = { isReady: true, checks: [] }
+const missingPhoneAndPhotosReadiness = {
+  isReady: false,
+  checks: [
+    { key: 'phone', passed: false, missing: 'טלפון או וואטסאפ' },
+    { key: 'portfolio', passed: false, missing: 'הוסיפי עוד 2 תמונות לתיק העבודות' },
+  ],
+}
+
 function mockFetchResponses({
   profile = fullProfile as DashboardProfile | null,
   hasServices = true,
   hasPhotos = true,
   hasHours = true,
+  readiness = readyReadiness,
 }: {
   profile?: DashboardProfile | null
   hasServices?: boolean
   hasPhotos?: boolean
   hasHours?: boolean
+  readiness?: typeof readyReadiness | typeof missingPhoneAndPhotosReadiness
 } = {}) {
   global.fetch = jest.fn().mockImplementation((url: string) => {
     if (url.includes('/api/me/nailist-profile')) {
       return Promise.resolve({ ok: true, json: async () => ({ data: profile }) } as Response)
+    }
+    if (url.includes('/api/me/verification-readiness')) {
+      return Promise.resolve({ ok: true, json: async () => ({ data: readiness }) } as Response)
     }
     if (url.includes('/api/portfolio')) {
       return Promise.resolve({ ok: true, json: async () => ({ data: hasPhotos ? [{ id: 'p1' }] : [] }) } as Response)
@@ -99,22 +113,21 @@ describe('NailistDashboard — profile completion card', () => {
   })
 })
 
-describe('NailistDashboard — verification contact reminder', () => {
+describe('NailistDashboard — verification readiness reminder', () => {
   const reminderKey = 'nailist-verification-contact-reminder:nailist-1'
 
-  it('shows only when both phone and WhatsApp are missing', async () => {
-    mockFetchResponses({ profile: { ...fullProfile, phoneNumber: '', whatsappPhone: '   ' } })
+  it('lists every canonical missing verification requirement', async () => {
+    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
     render(<NailistDashboard />)
 
     expect(await screen.findByRole('dialog', { name: 'עוד צעד קטן לתג אימות' })).toBeInTheDocument()
-    expect(screen.getByText('כדי להיות זכאית לתג אימות, חסר בפרופיל שלך מספר טלפון או WhatsApp.')).toBeInTheDocument()
+    expect(screen.getByText('טלפון או וואטסאפ')).toBeInTheDocument()
+    expect(screen.getByText('הוסיפי עוד 2 תמונות לתיק העבודות')).toBeInTheDocument()
+    expect(screen.getByText(/אינה מעניקה תג אוטומטית/)).toBeInTheDocument()
   })
 
-  it.each([
-    ['phone number', { phoneNumber: '0501234567' }],
-    ['WhatsApp number', { whatsappPhone: '0501234567' }],
-  ])('does not show when profile has a %s', async (_, contact) => {
-    mockFetchResponses({ profile: { ...fullProfile, ...contact } })
+  it('does not show when canonical readiness is complete', async () => {
+    mockFetchResponses({ readiness: readyReadiness })
     render(<NailistDashboard />)
 
     await waitFor(() => expect(screen.getByText('הנה סקירה של העסק שלך')).toBeInTheDocument())
@@ -122,7 +135,7 @@ describe('NailistDashboard — verification contact reminder', () => {
   })
 
   it('saves a seven-day reminder when asked later', async () => {
-    mockFetchResponses()
+    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
     render(<NailistDashboard />)
 
     fireEvent.click(await screen.findByRole('button', { name: 'הזכירי לי מאוחר יותר' }))
@@ -133,7 +146,7 @@ describe('NailistDashboard — verification contact reminder', () => {
   })
 
   it('does not show again after permanent dismissal', async () => {
-    mockFetchResponses()
+    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
     const { unmount } = render(<NailistDashboard />)
     fireEvent.click(await screen.findByRole('button', { name: 'לא להציג שוב' }))
     unmount()
@@ -145,7 +158,7 @@ describe('NailistDashboard — verification contact reminder', () => {
 
   it('shows again after reminder expiry', async () => {
     window.localStorage.setItem(reminderKey, JSON.stringify({ nextPromptAt: Date.now() - 1 }))
-    mockFetchResponses()
+    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
     render(<NailistDashboard />)
 
     expect(await screen.findByRole('dialog', { name: 'עוד צעד קטן לתג אימות' })).toBeInTheDocument()
@@ -153,7 +166,7 @@ describe('NailistDashboard — verification contact reminder', () => {
 
   it.each(['null', '"not an object"', '{broken json'])('ignores invalid stored preference: %s', async (stored) => {
     window.localStorage.setItem(reminderKey, stored)
-    mockFetchResponses()
+    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
     render(<NailistDashboard />)
 
     expect(await screen.findByRole('dialog', { name: 'עוד צעד קטן לתג אימות' })).toBeInTheDocument()
@@ -163,10 +176,10 @@ describe('NailistDashboard — verification contact reminder', () => {
     const previousFocus = document.createElement('button')
     document.body.appendChild(previousFocus)
     previousFocus.focus()
-    mockFetchResponses()
+    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
     render(<NailistDashboard />)
 
-    const cta = await screen.findByRole('link', { name: 'להוספת פרטי קשר' })
+    const cta = await screen.findByRole('link', { name: 'להשלמת הפרופיל' })
     const dismiss = screen.getByRole('button', { name: 'לא להציג שוב' })
     expect(document.activeElement).toBe(cta)
 
@@ -182,11 +195,11 @@ describe('NailistDashboard — verification contact reminder', () => {
     previousFocus.remove()
   })
 
-  it('links to contact settings and records a short CTA cooldown', async () => {
-    mockFetchResponses()
+  it('links to profile settings and records a reminder cooldown', async () => {
+    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
     render(<NailistDashboard />)
 
-    const link = await screen.findByRole('link', { name: 'להוספת פרטי קשר' })
+    const link = await screen.findByRole('link', { name: 'להשלמת הפרופיל' })
     expect(link).toHaveAttribute('href', '/dashboard/nailist/settings')
     fireEvent.click(link)
 
