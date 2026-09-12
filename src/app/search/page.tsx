@@ -145,11 +145,9 @@ export default function SearchPage() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [togglingFav, setTogglingFav] = useState<string | null>(null)
   const [imagesReady, setImagesReady] = useState(false)
-  // Skeleton count: remembered across fetches so the count matches reality
-  const [skeletonCount, setSkeletonCount] = useState(() => {
-    try { return Math.max(1, parseInt(localStorage.getItem('nailists-count') ?? '3', 10)) }
-    catch { return 3 }
-  })
+  // Start with a deterministic value so server and first client render match.
+  // Restore the remembered count after hydration.
+  const [skeletonCount, setSkeletonCount] = useState(3)
   const [locating, setLocating] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [locationLabel, setLocationLabel] = useState('')
@@ -181,6 +179,13 @@ export default function SearchPage() {
   // than whatever's in the location input right now, so it can't silently
   // switch search context mid-scroll.
   const activeCoordsRef = useRef<{ lat?: number; lng?: number }>({})
+
+  useEffect(() => {
+    try {
+      const savedCount = parseInt(localStorage.getItem('nailists-count') ?? '', 10)
+      if (Number.isFinite(savedCount)) setSkeletonCount(Math.max(1, savedCount))
+    } catch {}
+  }, [])
 
   const fetchNailists = useCallback(async (
     lat?: number,
