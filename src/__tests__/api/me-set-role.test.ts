@@ -8,6 +8,7 @@ const mockDocUpdate = jest.fn().mockResolvedValue(undefined)
 const mockAdd = jest.fn().mockResolvedValue({ id: 'new-profile-id' })
 const mockProfileUpdate = jest.fn().mockResolvedValue(undefined)
 const mockSendRoleAwareVerificationEmail = jest.fn().mockResolvedValue({ ok: true })
+const mockSendWelcomeEmail = jest.fn().mockResolvedValue(undefined)
 
 const docStore: Record<string, Record<string, unknown> | null> = {}
 const collectionStore: Record<string, (Record<string, unknown> & { __id: string })[]> = {}
@@ -46,7 +47,14 @@ function makeCollectionRef(name: string) {
   }
 }
 
-const mockDb = { collection: jest.fn((n: string) => makeCollectionRef(n)) }
+const mockTransactionSet = jest.fn()
+const mockDb = {
+  collection: jest.fn((n: string) => makeCollectionRef(n)),
+  runTransaction: jest.fn(async (callback) => callback({
+    get: (ref: { get: () => unknown }) => ref.get(),
+    set: mockTransactionSet,
+  })),
+}
 
 jest.mock('@/lib/firebase/admin', () => ({
   adminAuth: jest.fn(() => ({ verifyIdToken: mockVerifyIdToken })),
@@ -59,6 +67,10 @@ jest.mock('firebase-admin/firestore', () => ({
 
 jest.mock('@/lib/verification-email', () => ({
   sendRoleAwareVerificationEmail: (...args: unknown[]) => mockSendRoleAwareVerificationEmail(...args),
+}))
+
+jest.mock('@/lib/email', () => ({
+  sendWelcomeEmail: (...args: unknown[]) => mockSendWelcomeEmail(...args),
 }))
 
 import { PATCH } from '@/app/api/me/set-role/route'
@@ -215,6 +227,33 @@ describe('PATCH /api/me/set-role', () => {
     expect(mockSendRoleAwareVerificationEmail).toHaveBeenCalledWith('user-123', 'user@test.com', 'CLIENT')
   })
 
+  it('sends one role-specific welcome email after selecting either role, including Google accounts', async () => {
+    mockVerifyIdToken.mockResolvedValueOnce({ uid: 'user-123', email: 'user@test.com', name: 'Test User', email_verified: true })
+    const req = makeRequest({ role: 'CLIENT' })
+    const res = await PATCH(req)
+
+    expect(res.status).toBe(200)
+    expect(mockSendWelcomeEmail).toHaveBeenCalledWith({
+      email: 'user@test.com',
+      name: 'Test User',
+      role: 'CLIENT',
+    })
+    expect(mockTransactionSet).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ welcomeEmailSentAt: 'SERVER_TIMESTAMP' }),
+      { merge: true },
+    )
+  })
+
+  it('does not resend a welcome email when a prior selection already claimed it', async () => {
+    docStore['users/user-123'] = { displayName: 'Test User', welcomeEmailSentAt: 'already-sent' }
+    const req = makeRequest({ role: 'CLIENT' })
+    const res = await PATCH(req)
+
+    expect(res.status).toBe(200)
+    expect(mockSendWelcomeEmail).not.toHaveBeenCalled()
+  })
+
   it('does not send a verification email when the account is already verified (e.g. Google sign-in)', async () => {
     mockVerifyIdToken.mockResolvedValueOnce({ uid: 'user-123', email: 'user@test.com', name: 'Test User', email_verified: true })
     const req = makeRequest({ role: 'NAILIST' })
@@ -229,6 +268,15 @@ describe('PATCH /api/me/set-role', () => {
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(json.data.role).toBe('NAILIST')
+  })
+
+  it('still succeeds and sets the role when the welcome email send fails', async () => {
+    mockSendWelcomeEmail.mockRejectedValueOnce(new Error('provider outage'))
+    const req = makeRequest({ role: 'NAILIST' })
+    const res = await PATCH(req)
+
+    expect(res.status).toBe(200)
+    expect((await res.json()).data.role).toBe('NAILIST')
   })
 
   it('still succeeds and sets the role when the verification email is skipped due to an active cooldown', async () => {

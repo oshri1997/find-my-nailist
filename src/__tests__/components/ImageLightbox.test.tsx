@@ -39,4 +39,29 @@ describe('ImageLightbox', () => {
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(onClose).toHaveBeenCalled()
   })
+
+  it('shows navigation only when both gallery callbacks exist, and disables endpoint controls', () => {
+    const onPrevious = jest.fn()
+    const onNext = jest.fn()
+    const { rerender } = render(
+      <ImageLightbox
+        src="https://example.com/first.jpg"
+        onClose={jest.fn()}
+        onPrevious={onPrevious}
+        onNext={onNext}
+        canGoPrevious={false}
+        canGoNext
+      />
+    )
+
+    expect(screen.getByLabelText('תמונה קודמת')).toBeDisabled()
+    fireEvent.click(screen.getByLabelText('תמונה הבאה'))
+    fireEvent.keyDown(document, { key: 'ArrowRight' })
+    expect(onNext).toHaveBeenCalledTimes(2)
+    expect(onPrevious).not.toHaveBeenCalled()
+
+    rerender(<ImageLightbox src="https://example.com/only.jpg" onClose={jest.fn()} />)
+    expect(screen.queryByLabelText('תמונה קודמת')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('תמונה הבאה')).not.toBeInTheDocument()
+  })
 })

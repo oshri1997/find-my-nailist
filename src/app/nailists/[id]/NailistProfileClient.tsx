@@ -631,6 +631,16 @@ export default function NailistProfileClient({ id }: { id: string }) {
           src={lightboxPhoto.url}
           alt={lightboxPhoto.caption ?? ''}
           onClose={() => setLightboxPhoto(null)}
+          onPrevious={() => {
+            const index = profile.portfolio.findIndex((photo) => photo.id === lightboxPhoto.id)
+            if (index > 0) setLightboxPhoto(profile.portfolio[index - 1])
+          }}
+          onNext={() => {
+            const index = profile.portfolio.findIndex((photo) => photo.id === lightboxPhoto.id)
+            if (index >= 0 && index < profile.portfolio.length - 1) setLightboxPhoto(profile.portfolio[index + 1])
+          }}
+          canGoPrevious={profile.portfolio.findIndex((photo) => photo.id === lightboxPhoto.id) > 0}
+          canGoNext={profile.portfolio.findIndex((photo) => photo.id === lightboxPhoto.id) < profile.portfolio.length - 1}
         />
       )}
     </div>

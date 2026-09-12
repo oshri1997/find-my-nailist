@@ -291,6 +291,31 @@ describe('NailistProfileClient — portfolio lightbox', () => {
     expect(trigger).toContainElement(screen.getByAltText('עבודה יפה'))
   })
 
+  it('moves through portfolio photos in order and disables navigation at each endpoint', async () => {
+    mockUseAuth.mockReturnValue({ user: null, role: null })
+    const profileWithPhotos = {
+      ...baseProfile,
+      portfolio: [
+        { id: 'photo-1', url: 'https://example.com/first.jpg', caption: 'ראשונה' },
+        { id: 'photo-2', url: 'https://example.com/second.jpg', caption: 'שנייה' },
+      ],
+    }
+    mockProfileFetch(profileWithPhotos)
+    render(<NailistProfileClient id="nailist-1" />)
+
+    fireEvent.click(await screen.findByAltText('ראשונה'))
+    expect(screen.getByLabelText('תמונה קודמת')).toBeDisabled()
+    expect(screen.getByLabelText('תמונה הבאה')).not.toBeDisabled()
+
+    fireEvent.click(screen.getByLabelText('תמונה הבאה'))
+    expect(screen.getAllByAltText('שנייה')).toHaveLength(2)
+    expect(screen.getByLabelText('תמונה הבאה')).toBeDisabled()
+    expect(screen.getByLabelText('תמונה קודמת')).not.toBeDisabled()
+
+    fireEvent.keyDown(document, { key: 'ArrowLeft' })
+    expect(screen.getAllByAltText('ראשונה')).toHaveLength(2)
+  })
+
   it('lays out the portfolio grid at 2 columns on mobile, 3 on desktop', async () => {
     mockUseAuth.mockReturnValue({ user: null, role: null })
     const profileWithPhotos = {

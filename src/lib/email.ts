@@ -362,3 +362,51 @@ export async function sendVerificationEmail(p: {
     `אימות כתובת מייל — נייליסטיות\n\n${copy.intro}\n\nלחצי על הקישור הבא:\n${p.verifyLink}\n\nאם לא נרשמת לאתר, אפשר להתעלם ממייל זה.\n\nצוות נייליסטיות`
   )
 }
+
+export async function sendWelcomeEmail(p: {
+  email: string
+  name?: string
+  role: 'NAILIST' | 'CLIENT'
+}): Promise<void> {
+  const name = escapeHtml(p.name?.trim() || (p.role === 'NAILIST' ? 'נייליסטית' : 'לקוחה'))
+  const copy = p.role === 'NAILIST'
+    ? {
+        subject: 'ברוכה הבאה לנייליסטיות!',
+        heading: 'ברוכה הבאה לנייליסטיות!',
+        intro: 'הצטרפת לפלטפורמה שמחברת בין נייליסטיות מקצועיות ללקוחות חדשות.',
+        detail: 'השלימי את הפרופיל העסקי, הוסיפי עבודות ושירותים, ותוכלי להתחיל לקבל הזמנות לתורים.',
+        cta: 'להגדרת הפרופיל',
+        url: `${APP_URL}/dashboard/nailist`,
+      }
+    : {
+        subject: 'ברוכה הבאה לנייליסטיות!',
+        heading: 'ברוכה הבאה לנייליסטיות!',
+        intro: 'שמחות שהצטרפת אלינו.',
+        detail: 'כאן אפשר למצוא נייליסטיות מקצועיות, לצפות בעבודות שלהן ולקבוע תור בקלות.',
+        cta: 'לחיפוש נייליסטית',
+        url: `${APP_URL}/search`,
+      }
+  const safeUrl = escapeHtml(copy.url)
+
+  await sendResend(
+    p.email,
+    copy.subject,
+    `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+      <div style="background:${BRAND_GRADIENT};border-radius:16px 16px 0 0;padding:28px 32px;text-align:center">
+        <h1 style="color:white;margin:0;font-size:22px;font-weight:900">נייליסטיות</h1>
+      </div>
+      <div style="background:#fff;border:1px solid #f3e8ff;border-top:none;border-radius:0 0 16px 16px;padding:32px">
+        <h2 style="font-size:20px;font-weight:900;margin:0 0 16px">${copy.heading}</h2>
+        <p>שלום ${name},</p>
+        <p style="color:#666">${copy.intro}</p>
+        <p style="color:#666">${copy.detail}</p>
+        <div style="text-align:center;margin:28px 0">
+          <a href="${safeUrl}" style="background:${BRAND_GRADIENT};color:white;text-decoration:none;border-radius:12px;padding:14px 32px;font-weight:900;font-size:16px;display:inline-block">
+            ${copy.cta}
+          </a>
+        </div>
+      </div>
+    </div>`,
+    `שלום ${p.name?.trim() || ''},\n\n${copy.heading}\n\n${copy.intro}\n${copy.detail}\n\n${copy.cta}: ${copy.url}\n\nצוות נייליסטיות`
+  )
+}

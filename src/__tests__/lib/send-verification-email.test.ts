@@ -3,7 +3,7 @@ jest.mock('@/lib/cost-quota', () => ({
   normalizeRecipient: (email: string) => email.trim().toLowerCase(),
 }))
 
-import { sendVerificationEmail } from '@/lib/email'
+import { sendVerificationEmail, sendWelcomeEmail } from '@/lib/email'
 
 function mockResendFetch() {
   const calls: unknown[] = []
@@ -50,5 +50,38 @@ describe('sendVerificationEmail — role-aware copy', () => {
 
     const body = calls[0] as { html: string }
     expect(body.html).toContain('להזמין תורים')
+  })
+})
+
+describe('sendWelcomeEmail', () => {
+  const OLD_ENV = process.env.RESEND_API_KEY
+
+  beforeAll(() => {
+    process.env.RESEND_API_KEY = 'test-key'
+  })
+
+  afterAll(() => {
+    process.env.RESEND_API_KEY = OLD_ENV
+  })
+
+  it('sends client-specific welcome copy from the transactional sender', async () => {
+    const calls = mockResendFetch()
+    await sendWelcomeEmail({ email: 'client@test.com', name: 'נועה', role: 'CLIENT' })
+
+    const body = calls[0] as { from: string; subject: string; html: string; text: string }
+    expect(body.from).toBe('נייליסטיות <noreply@nailistiot.fun>')
+    expect(body.subject).toBe('ברוכה הבאה לנייליסטיות!')
+    expect(body.html).toContain('למצוא נייליסטיות מקצועיות')
+    expect(body.html).toContain('נועה')
+    expect(body.text).toContain('https://nailistiot.fun/search')
+  })
+
+  it('sends nailist-specific welcome copy with a profile setup link', async () => {
+    const calls = mockResendFetch()
+    await sendWelcomeEmail({ email: 'nailist@test.com', role: 'NAILIST' })
+
+    const body = calls[0] as { html: string; text: string }
+    expect(body.html).toContain('השלימי את הפרופיל העסקי')
+    expect(body.text).toContain('https://nailistiot.fun/dashboard/nailist')
   })
 })

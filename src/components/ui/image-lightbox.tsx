@@ -3,24 +3,40 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 
 interface ImageLightboxProps {
   src: string
   alt?: string
   onClose: () => void
+  onPrevious?: () => void
+  onNext?: () => void
+  canGoPrevious?: boolean
+  canGoNext?: boolean
 }
 
 // Facebook-style photo viewer: click a thumbnail to open it full-size,
 // click the backdrop or the X (or press Escape) to close.
-export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
+export function ImageLightbox({
+  src,
+  alt,
+  onClose,
+  onPrevious,
+  onNext,
+  canGoPrevious = false,
+  canGoNext = false,
+}: ImageLightboxProps) {
+  const showNavigation = Boolean(onPrevious && onNext)
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft' && canGoPrevious) onPrevious?.()
+      if (e.key === 'ArrowRight' && canGoNext) onNext?.()
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+  }, [canGoNext, canGoPrevious, onClose, onNext, onPrevious])
 
   return createPortal(
     <AnimatePresence>
@@ -30,8 +46,31 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
         exit={{ opacity: 0 }}
         onClick={onClose}
         className="fixed inset-0 z-[300] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out"
-      >
+        >
+        {showNavigation && (
+          <>
+            <button
+              type="button"
+              onClick={(event) => { event.stopPropagation(); onPrevious?.() }}
+              disabled={!canGoPrevious}
+              aria-label="תמונה קודמת"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-white transition-colors"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button
+              type="button"
+              onClick={(event) => { event.stopPropagation(); onNext?.() }}
+              disabled={!canGoNext}
+              aria-label="תמונה הבאה"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-white transition-colors"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          </>
+        )}
         <button
+          type="button"
           onClick={onClose}
           aria-label="סגירה"
           className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"

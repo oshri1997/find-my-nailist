@@ -4,6 +4,7 @@ import { COLLECTIONS } from '@/lib/firebase/collections'
 import { FieldValue } from 'firebase-admin/firestore'
 import { z } from 'zod'
 import { sendRoleAwareVerificationEmail } from '@/lib/verification-email'
+import { sendWelcomeEmail } from '@/lib/email'
 
 const schema = z.object({
   role: z.enum(['NAILIST', 'CLIENT']),
@@ -102,6 +103,31 @@ export async function PATCH(request: NextRequest) {
         }
       } catch (err) {
         console.error('[set-role] verification email send failed:', err)
+      }
+    }
+
+    // Claim the welcome email inside a Firestore transaction before sending.
+    // This makes duplicate role-selection requests at-most-once without making
+    // mail-provider latency or failure affect a completed role update.
+    if (decoded.email) {
+      try {
+        const userRef = db.collection(COLLECTIONS.USERS).doc(uid)
+        const shouldSendWelcome = await db.runTransaction(async (transaction) => {
+          const userSnap = await transaction.get(userRef)
+          if (userSnap.data()?.welcomeEmailSentAt) return false
+          transaction.set(userRef, { welcomeEmailSentAt: FieldValue.serverTimestamp() }, { merge: true })
+          return true
+        })
+
+        if (shouldSendWelcome) {
+          await sendWelcomeEmail({
+            email: decoded.email,
+            name: decoded.name,
+            role,
+          })
+        }
+      } catch (err) {
+        console.error('[set-role] welcome email send failed:', err)
       }
     }
 
