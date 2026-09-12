@@ -104,6 +104,7 @@ export function ImageLightbox({
         {totalImages > 1 && (
           <div
             aria-hidden="true"
+            dir="ltr"
             data-testid="lightbox-pagination"
             className="pointer-events-none absolute bottom-7 left-1/2 -translate-x-1/2 flex items-center gap-1.5 md:hidden"
           >

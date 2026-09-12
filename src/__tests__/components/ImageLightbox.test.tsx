@@ -79,6 +79,9 @@ describe('ImageLightbox', () => {
 
     const pagination = screen.getByTestId('lightbox-pagination')
     expect(pagination).toHaveClass('md:hidden')
+    expect(pagination).toHaveAttribute('dir', 'ltr')
+    expect(Array.from(pagination.children).map((dot) => dot.getAttribute('data-testid')))
+      .toEqual(['lightbox-dot-0', 'lightbox-dot-1', 'lightbox-dot-2'])
     expect(pagination.querySelectorAll('button')).toHaveLength(0)
     expect(screen.getByTestId('lightbox-dot-1')).toHaveClass('bg-white')
     expect(screen.getByTestId('lightbox-dot-0')).toHaveClass('bg-white/55')
