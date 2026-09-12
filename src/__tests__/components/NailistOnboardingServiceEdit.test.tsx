@@ -35,6 +35,7 @@ jest.mock('@/lib/firebase/storage', () => ({
 
 const mockPatch = jest.fn()
 const mockDelete = jest.fn()
+const mockPost = jest.fn()
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -42,6 +43,10 @@ beforeEach(() => {
   let photosAdded = 0
   mockPatch.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) })
   mockDelete.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) })
+  mockPost.mockImplementation((_: string, opts?: RequestInit) => {
+    const body = JSON.parse(String(opts?.body))
+    return Promise.resolve({ ok: true, json: async () => ({ data: { id: 'service-1', ...body } }) } as Response)
+  })
 
   global.fetch = jest.fn().mockImplementation((url: string, opts?: RequestInit) => {
     if (url.includes('/api/me/nailist-profile')) {
@@ -52,7 +57,7 @@ beforeEach(() => {
       return Promise.resolve({ ok: true, json: async () => ({ data: { id: `photo-${photosAdded}`, url: 'https://example.com/x.jpg' } }) } as Response)
     }
     if (url === '/api/services' && opts?.method === 'POST') {
-      return Promise.resolve({ ok: true, json: async () => ({ data: { id: 'service-1', name: 'פדיקור קוסמטי', durationMinutes: 60, price: 100 } }) } as Response)
+      return mockPost(url, opts)
     }
     if (url === '/api/services/service-1' && opts?.method === 'PATCH') {
       return mockPatch(url, opts)
@@ -70,6 +75,9 @@ async function advanceToServicesStep() {
   fireEvent.click(screen.getByText('mock-select-address'))
   await waitFor(() => expect(screen.getByText('המשיכי')).toBeInTheDocument())
   fireEvent.click(screen.getByText('המשיכי'))
+
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'מספר טלפון' })).toBeInTheDocument())
+  fireEvent.click(screen.getByText('דלגי לעת עתה'))
 
   await waitFor(() => expect(screen.getByText('דלגי לעת עתה')).toBeInTheDocument())
   fireEvent.click(screen.getByText('דלגי לעת עתה'))
@@ -105,7 +113,7 @@ describe('Nailist onboarding — editing/deleting an already-added service', () 
     expect(screen.getByText('60 דק׳ · ₪100')).toBeInTheDocument()
   })
 
-  it('offers only the fixed, curated list of service names — no free text', async () => {
+  it('puts an "add your own service" option last in curated service list', async () => {
     await advanceToServicesStep()
     const select = screen.getByLabelText('שם השירות') as HTMLSelectElement
     expect(select.tagName).toBe('SELECT')
@@ -117,7 +125,64 @@ describe('Nailist onboarding — editing/deleting an already-added service', () 
       "פדיקור מלא ג'ל",
       'פדיקור קוסמטי',
       'בנייה חדשה',
+      '__custom_service__',
     ])
+  })
+
+  it('reveals and focuses a free-text field when custom service is selected', async () => {
+    await advanceToServicesStep()
+    fireEvent.change(screen.getByLabelText('שם השירות'), { target: { value: '__custom_service__' } })
+
+    const nameInput = screen.getByRole('textbox', { name: 'שם השירות' })
+    expect(nameInput).toHaveFocus()
+    expect(nameInput).toHaveAttribute('placeholder', 'לדוגמה: מניקור רוסי')
+    expect(screen.getByText('בחירה מהרשימה')).toBeInTheDocument()
+  })
+
+  it('trims and collapses whitespace before saving a custom service', async () => {
+    await advanceToServicesStep()
+    fireEvent.change(screen.getByLabelText('שם השירות'), { target: { value: '__custom_service__' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'שם השירות' }), { target: { value: '  מניקור   רוסי  ' } })
+    fireEvent.change(screen.getByPlaceholderText('150'), { target: { value: '100' } })
+    fireEvent.click(screen.getByText('הוסיפי שירות'))
+
+    await waitFor(() => expect(mockPost).toHaveBeenCalled())
+    expect(JSON.parse(mockPost.mock.calls[0][1].body)).toEqual(expect.objectContaining({ name: 'מניקור רוסי' }))
+  })
+
+  it('does not POST an empty custom name', async () => {
+    await advanceToServicesStep()
+    fireEvent.change(screen.getByLabelText('שם השירות'), { target: { value: '__custom_service__' } })
+    fireEvent.change(screen.getByPlaceholderText('150'), { target: { value: '100' } })
+    const addButton = screen.getByText('הוסיפי שירות')
+    expect(addButton).toBeDisabled()
+    fireEvent.click(addButton)
+    expect(mockPost).not.toHaveBeenCalled()
+  })
+
+  it('does not POST a duplicate normalized custom name', async () => {
+    await advanceToServicesStep()
+    await addService()
+    fireEvent.change(screen.getByLabelText('שם השירות'), { target: { value: '__custom_service__' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'שם השירות' }), { target: { value: '  פדיקור   קוסמטי ' } })
+    fireEvent.change(screen.getByPlaceholderText('150'), { target: { value: '120' } })
+    fireEvent.click(screen.getByText('הוסיפי שירות'))
+
+    expect(screen.getByText('כבר הוספת שירות בשם זה')).toBeInTheDocument()
+    expect(mockPost).toHaveBeenCalledTimes(1)
+  })
+
+  it('edits a custom saved service in free text mode', async () => {
+    await advanceToServicesStep()
+    fireEvent.change(screen.getByLabelText('שם השירות'), { target: { value: '__custom_service__' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'שם השירות' }), { target: { value: 'מניקור רוסי' } })
+    fireEvent.change(screen.getByPlaceholderText('150'), { target: { value: '100' } })
+    fireEvent.click(screen.getByText('הוסיפי שירות'))
+    await waitFor(() => expect(serviceNameText('מניקור רוסי')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByTitle('עריכה'))
+    expect(screen.getByRole('textbox', { name: 'שם השירות' })).toHaveValue('מניקור רוסי')
+    expect(screen.getByText('בחירה מהרשימה')).toBeInTheDocument()
   })
 
   it('clicking edit pre-fills the form and switches the button to "עדכני שירות"', async () => {

@@ -70,11 +70,15 @@ it('calls refreshRole before navigating to the dashboard when the wizard finishe
   await waitFor(() => expect(screen.getByText('המשיכי')).toBeInTheDocument())
   fireEvent.click(screen.getByText('המשיכי'))
 
-  // Step 1 — profile photo, skip
+  // Step 1 — phone, skip
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'מספר טלפון' })).toBeInTheDocument())
+  fireEvent.click(screen.getByText('דלגי לעת עתה'))
+
+  // Step 2 — profile photo, skip
   await waitFor(() => expect(screen.getByText('דלגי לעת עתה')).toBeInTheDocument())
   fireEvent.click(screen.getByText('דלגי לעת עתה'))
 
-  // Step 2 — portfolio photos, upload 3
+  // Step 3 — portfolio photos, upload 3
   await waitFor(() => expect(screen.getByText('תמונות של העבודות שלך')).toBeInTheDocument())
   const fileInput = document.querySelector('input[type="file"][multiple]') as HTMLInputElement
   const files = [1, 2, 3].map(n => new File(['bytes'], `p${n}.jpg`, { type: 'image/jpeg' }))
@@ -82,7 +86,7 @@ it('calls refreshRole before navigating to the dashboard when the wizard finishe
   await waitFor(() => expect(screen.getByText('המשיכי')).not.toBeDisabled())
   fireEvent.click(screen.getByText('המשיכי'))
 
-  // Step 3 — services, add one
+  // Step 4 — services, add one
   await waitFor(() => expect(screen.getByText('מה השירותים שלך?')).toBeInTheDocument())
   fireEvent.change(screen.getByLabelText('שם השירות'), { target: { value: 'פדיקור קוסמטי' } })
   fireEvent.change(screen.getByPlaceholderText('150'), { target: { value: '100' } })
@@ -90,11 +94,11 @@ it('calls refreshRole before navigating to the dashboard when the wizard finishe
   await waitFor(() => expect(screen.getByText('המשיכי')).not.toBeDisabled())
   fireEvent.click(screen.getByText('המשיכי'))
 
-  // Step 4 — social links, skip
+  // Step 5 — social links, skip
   await waitFor(() => expect(screen.getByText('רשתות חברתיות')).toBeInTheDocument())
   fireEvent.click(screen.getByText('המשיכי'))
 
-  // Step 5 — working hours, finish
+  // Step 6 — working hours, finish
   await waitFor(() => expect(screen.getByText('סיימתי!')).toBeInTheDocument())
   fireEvent.click(screen.getByText('סיימתי!'))
 

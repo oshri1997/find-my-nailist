@@ -1,6 +1,6 @@
 /**
  * Covers the new "profile picture" step inserted into the nailist onboarding
- * wizard (between address and portfolio photos). The main regression risk
+ * wizard (between phone and portfolio photos). The main regression risk
  * here is the step-index renumbering that came with the insertion.
  */
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
@@ -54,10 +54,12 @@ async function advanceToPhotoStep() {
   fireEvent.click(screen.getByText('mock-select-address'))
   await waitFor(() => expect(screen.getByText('המשיכי')).toBeInTheDocument())
   fireEvent.click(screen.getByText('המשיכי'))
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'מספר טלפון' })).toBeInTheDocument())
+  fireEvent.click(screen.getByText('דלגי לעת עתה'))
 }
 
 describe('Nailist onboarding — profile picture step', () => {
-  it('renders the profile picture step right after the address step, before portfolio photos', async () => {
+  it('renders the profile picture step after the optional phone step, before portfolio photos', async () => {
     await advanceToPhotoStep()
     await waitFor(() => {
       expect(screen.getByText('תמונת פרופיל')).toBeInTheDocument()
@@ -167,13 +169,15 @@ describe('Nailist onboarding — profile picture step', () => {
     expect(freshPreview.style.objectPosition).toBe('50% 20%')
   })
 
-  it('going back from the photo step returns to the address step', async () => {
+  it('going back from the photo step returns to the phone step, then address step', async () => {
     await advanceToPhotoStep()
     await waitFor(() => expect(screen.getByText('חזרה')).toBeInTheDocument())
     fireEvent.click(screen.getByText('חזרה'))
 
     await waitFor(() => {
-      expect(screen.getByText('איפה העסק שלך?')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'מספר טלפון' })).toBeInTheDocument()
     })
+    fireEvent.click(screen.getByText('חזרה'))
+    await waitFor(() => expect(screen.getByText('איפה העסק שלך?')).toBeInTheDocument())
   })
 })

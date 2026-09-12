@@ -4,15 +4,17 @@ import { useState, useEffect, useRef } from 'react'
 import { flushSync } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, ArrowRight, ImagePlus, Plus, X, Loader2, MapPin, Check, Camera, Pencil, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ImagePlus, Plus, X, Loader2, MapPin, Check, Camera, Pencil, Trash2, Phone } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
 import { useAuth } from '@/components/auth/auth-provider'
+import { isValidIsraeliPhone, PHONE_INVALID_MESSAGE } from '@/lib/phone'
 
 const STEPS = [
   { label: 'כתובת העסק' },
+  { label: 'מספר טלפון' },
   { label: 'תמונת פרופיל' },
   { label: 'תמונות עבודות' },
   { label: 'שירותים' },
@@ -28,8 +30,8 @@ for (let h = 7; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
 }
 
-// Fixed, curated list — nailists pick from these instead of free-typing a
-// service name, so search filters/categories stay consistent across profiles.
+// Curated names make search filters/categories consistent. A custom option
+// still lets a nailist list a service that is not yet in this catalogue.
 const SERVICE_NAME_OPTIONS = [
   "לק ג'ל מבנה אנטומי לציפורניים טבעיות",
   "מילוי בג'ל / בטיפסים הפוכים",
@@ -38,6 +40,11 @@ const SERVICE_NAME_OPTIONS = [
   'פדיקור קוסמטי',
   'בנייה חדשה',
 ]
+const CUSTOM_SERVICE_VALUE = '__custom_service__'
+
+function normalizeServiceName(name: string) {
+  return name.trim().replace(/\s+/g, ' ')
+}
 
 interface Photo { id: string; url: string }
 interface Service { id: string; name: string; durationMinutes: number; price: number }
@@ -66,7 +73,10 @@ export default function OnboardingPage() {
   const [lat, setLat] = useState<number | undefined>()
   const [lng, setLng] = useState<number | undefined>()
 
-  // Step 2 — profile picture (optional)
+  // Step 2 — phone number (optional, supports verification-badge eligibility)
+  const [phoneNumber, setPhoneNumber] = useState('')
+
+  // Step 3 — profile picture (optional)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoUploading, setPhotoUploading] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
@@ -89,27 +99,29 @@ export default function OnboardingPage() {
     }
   }, [pendingPhotoUrl])
 
-  // Step 3 — photos
+  // Step 4 — photos
   const [photos, setPhotos] = useState<Photo[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadStatus, setUploadStatus] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Step 3 — services
+  // Step 5 — services
   const [services, setServices] = useState<Service[]>([])
   const [svcName, setSvcName] = useState('')
+  const [isCustomServiceName, setIsCustomServiceName] = useState(false)
+  const customServiceNameInputRef = useRef<HTMLInputElement>(null)
   const [svcDuration, setSvcDuration] = useState(60)
   const [isCustomDuration, setIsCustomDuration] = useState(false)
   const [svcPrice, setSvcPrice] = useState('')
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
   const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null)
 
-  // Step 4 — social links (optional)
+  // Step 6 — social links (optional)
   const [instagramUrl, setInstagramUrl] = useState('')
   const [tiktokUrl, setTiktokUrl] = useState('')
 
-  // Step 5 — working hours
+  // Step 7 — working hours
   const [workingHours, setWorkingHours] = useState<DayHours[]>(defaultHours)
 
   useEffect(() => {
@@ -156,6 +168,37 @@ export default function OnboardingPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  async function savePhoneNumber() {
+    const trimmedPhoneNumber = phoneNumber.trim()
+    if (!trimmedPhoneNumber) {
+      setError('')
+      setStep(2)
+      return
+    }
+    if (!profileId || !isValidIsraeliPhone(trimmedPhoneNumber)) return
+
+    setSaving(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/nailists/${profileId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber: trimmedPhoneNumber }),
+      })
+      if (!res.ok) throw new Error()
+      setStep(2)
+    } catch {
+      setError('שגיאה בשמירת מספר הטלפון — נסי שוב')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function skipPhoneNumber() {
+    setError('')
+    setStep(2)
   }
 
   function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -288,6 +331,7 @@ export default function OnboardingPage() {
 
   function resetServiceForm() {
     setSvcName('')
+    setIsCustomServiceName(false)
     setSvcPrice('')
     setSvcDuration(60)
     setIsCustomDuration(false)
@@ -297,6 +341,7 @@ export default function OnboardingPage() {
   function startEditService(s: Service) {
     setEditingServiceId(s.id)
     setSvcName(s.name)
+    setIsCustomServiceName(!SERVICE_NAME_OPTIONS.includes(s.name))
     setSvcPrice(String(s.price))
     const isStandard = [30, 45, 60, 75, 90, 120].includes(s.durationMinutes)
     setSvcDuration(s.durationMinutes)
@@ -304,8 +349,23 @@ export default function OnboardingPage() {
     setError('')
   }
 
+  useEffect(() => {
+    if (isCustomServiceName) customServiceNameInputRef.current?.focus()
+  }, [isCustomServiceName])
+
   async function saveService() {
-    if (!svcName.trim() || !svcPrice || !profileId) return
+    const normalizedName = normalizeServiceName(svcName)
+    if (!normalizedName || !svcPrice || !profileId) {
+      if (!normalizedName) setError('יש להזין שם שירות')
+      return
+    }
+    const hasDuplicateName = services.some(service =>
+      service.id !== editingServiceId && normalizeServiceName(service.name).toLocaleLowerCase('he-IL') === normalizedName.toLocaleLowerCase('he-IL')
+    )
+    if (hasDuplicateName) {
+      setError('כבר הוספת שירות בשם זה')
+      return
+    }
     setSaving(true)
     setError('')
     try {
@@ -314,7 +374,7 @@ export default function OnboardingPage() {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: svcName.trim(),
+            name: normalizedName,
             durationMinutes: svcDuration,
             price: parseFloat(svcPrice),
           }),
@@ -322,7 +382,7 @@ export default function OnboardingPage() {
         if (res.ok) {
           const editedId = editingServiceId
           setServices(prev => prev.map(s => s.id === editedId
-            ? { ...s, name: svcName.trim(), durationMinutes: svcDuration, price: parseFloat(svcPrice) }
+            ? { ...s, name: normalizedName, durationMinutes: svcDuration, price: parseFloat(svcPrice) }
             : s))
           resetServiceForm()
         } else {
@@ -334,7 +394,7 @@ export default function OnboardingPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             nailistProfileId: profileId,
-            name: svcName.trim(),
+            name: normalizedName,
             durationMinutes: svcDuration,
             price: parseFloat(svcPrice),
             currency: 'ILS',
@@ -404,7 +464,7 @@ export default function OnboardingPage() {
           }),
         })
       }
-      setStep(5)
+      setStep(6)
     } catch {
       setError('שגיאה בשמירת הקישורים — נסי שוב')
     } finally {
@@ -528,6 +588,54 @@ export default function OnboardingPage() {
             {step === 1 && (
               <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                 <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-xl font-black text-foreground">מספר טלפון</h2>
+                  <span className="text-xs font-bold bg-muted text-muted-foreground rounded-full px-2.5 py-0.5">אופציונלי</span>
+                </div>
+                <p className="text-muted-foreground text-sm mb-6">מספר טלפון נדרש כדי להיות זכאית לתג אימות. אפשר לדלג ולהוסיף אותו מאוחר יותר.</p>
+
+                <div className="space-y-2 mb-6">
+                  <label className="text-sm font-bold text-foreground" htmlFor="phoneNumber">מספר טלפון</label>
+                  <div className="relative">
+                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+                    <Input
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={e => setPhoneNumber(e.target.value)}
+                      placeholder="050-1234567"
+                      dir="ltr"
+                      className={`pr-10 rounded-xl h-12 bg-card text-left ${
+                        phoneNumber.trim() && !isValidIsraeliPhone(phoneNumber) ? 'border-red-400 focus:border-red-400' : 'border-border focus:border-primary'
+                      }`}
+                    />
+                  </div>
+                  {phoneNumber.trim() && !isValidIsraeliPhone(phoneNumber) && (
+                    <p className="text-xs text-red-500 font-semibold">{PHONE_INVALID_MESSAGE}</p>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => { setError(''); setStep(0) }} disabled={saving} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
+                    <ArrowRight className="h-4 w-4" /> חזרה
+                  </Button>
+                  <Button
+                    onClick={savePhoneNumber}
+                    disabled={saving || !phoneNumber.trim() || !isValidIsraeliPhone(phoneNumber)}
+                    className="flex-1 bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>המשיכי <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /></>}
+                  </Button>
+                </div>
+                <button type="button" onClick={skipPhoneNumber} disabled={saving} className="w-full mt-4 text-sm font-bold text-muted-foreground hover:text-foreground disabled:opacity-50">
+                  דלגי לעת עתה
+                </button>
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                <div className="flex items-center gap-2 mb-1">
                   <h2 className="text-xl font-black text-foreground">תמונת פרופיל</h2>
                   <span className="text-xs font-bold bg-muted text-muted-foreground rounded-full px-2.5 py-0.5">אופציונלי</span>
                 </div>
@@ -596,11 +704,11 @@ export default function OnboardingPage() {
                 )}
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(0)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
+                  <Button variant="outline" onClick={() => setStep(1)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
                     <ArrowRight className="h-4 w-4" /> חזרה
                   </Button>
                   <Button
-                    onClick={() => setStep(2)}
+                    onClick={() => setStep(3)}
                     disabled={photoUploading || !!pendingPhotoUrl}
                     className="flex-1 bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
@@ -610,8 +718,8 @@ export default function OnboardingPage() {
               </motion.div>
             )}
 
-            {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+            {step === 3 && (
+              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                 <h2 className="text-xl font-black text-foreground mb-1">תמונות של העבודות שלך</h2>
                 <p className="text-muted-foreground text-sm mb-5">
                   העלי לפחות 3 תמונות כדי להמשיך
@@ -656,11 +764,11 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(1)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
+                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
                     <ArrowRight className="h-4 w-4" /> חזרה
                   </Button>
                   <Button
-                    onClick={() => setStep(3)}
+                    onClick={() => setStep(4)}
                     disabled={photos.length < 3}
                     className="flex-1 bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
@@ -670,8 +778,8 @@ export default function OnboardingPage() {
               </motion.div>
             )}
 
-            {step === 3 && (
-              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+            {step === 4 && (
+              <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                 <h2 className="text-xl font-black text-foreground mb-1">מה השירותים שלך?</h2>
                 <p className="text-muted-foreground text-sm mb-5">הוסיפי לפחות שירות אחד כדי שלקוחות יוכלו להזמין</p>
 
@@ -723,17 +831,49 @@ export default function OnboardingPage() {
                   </div>
                   <div>
                     <label className="text-xs font-bold text-muted-foreground block mb-1" htmlFor="svcName">שם השירות</label>
-                    <select
-                      id="svcName"
-                      value={svcName}
-                      onChange={e => setSvcName(e.target.value)}
-                      className="w-full h-11 rounded-xl border border-border bg-card px-3 text-sm font-semibold focus:outline-none focus:border-primary"
-                    >
-                      <option value="" disabled>בחרי שירות מהרשימה</option>
-                      {SERVICE_NAME_OPTIONS.map(name => (
-                        <option key={name} value={name}>{name}</option>
-                      ))}
-                    </select>
+                    {isCustomServiceName ? (
+                      <>
+                        <Input
+                          ref={customServiceNameInputRef}
+                          id="svcName"
+                          value={svcName}
+                          onChange={e => setSvcName(e.target.value)}
+                          placeholder="לדוגמה: מניקור רוסי"
+                          className="rounded-xl border-border focus:border-primary h-11 bg-card"
+                        />
+                        <div className="flex items-center justify-between gap-3 mt-2">
+                          <p className="text-xs text-muted-foreground">לדוגמה: מניקור רוסי</p>
+                          <button
+                            type="button"
+                            onClick={() => { setSvcName(''); setIsCustomServiceName(false); setError('') }}
+                            className="shrink-0 text-xs font-bold text-primary hover:underline"
+                          >
+                            בחירה מהרשימה
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <select
+                        id="svcName"
+                        value={svcName}
+                        onChange={e => {
+                          if (e.target.value === CUSTOM_SERVICE_VALUE) {
+                            setSvcName('')
+                            setIsCustomServiceName(true)
+                          } else {
+                            setSvcName(e.target.value)
+                          }
+                          setError('')
+                        }}
+                        className="w-full h-11 rounded-xl border border-border bg-card px-3 text-sm font-semibold focus:outline-none focus:border-primary"
+                      >
+                        <option value="" disabled>בחרי שירות מהרשימה</option>
+                        {SERVICE_NAME_OPTIONS.map(name => (
+                          <option key={name} value={name}>{name}</option>
+                        ))}
+                        <option value={CUSTOM_SERVICE_VALUE}>אחר — הוסיפי שירות משלך</option>
+                      </select>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <div className="flex-1">
@@ -798,11 +938,11 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="flex gap-3 mt-5">
-                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
+                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
                     <ArrowRight className="h-4 w-4" /> חזרה
                   </Button>
                   <Button
-                    onClick={() => { setError(''); setStep(4) }}
+                    onClick={() => { setError(''); setStep(5) }}
                     disabled={services.length === 0}
                     className="flex-1 bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
@@ -812,8 +952,8 @@ export default function OnboardingPage() {
               </motion.div>
             )}
 
-            {step === 4 && (
-              <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+            {step === 5 && (
+              <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                 <div className="flex items-center gap-2 mb-1">
                   <h2 className="text-xl font-black text-foreground">רשתות חברתיות</h2>
                   <span className="text-xs font-bold bg-muted text-muted-foreground rounded-full px-2.5 py-0.5">אופציונלי</span>
@@ -859,7 +999,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
+                  <Button variant="outline" onClick={() => setStep(4)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
                     <ArrowRight className="h-4 w-4" /> חזרה
                   </Button>
                   <Button
@@ -873,8 +1013,8 @@ export default function OnboardingPage() {
               </motion.div>
             )}
 
-            {step === 5 && (
-              <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+            {step === 6 && (
+              <motion.div key="step6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                 <h2 className="text-xl font-black text-foreground mb-1">שעות פעילות</h2>
                 <p className="text-muted-foreground text-sm mb-5">הגדירי באילו ימים ושעות את זמינה ללקוחות</p>
 
@@ -923,7 +1063,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(4)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
+                  <Button variant="outline" onClick={() => setStep(5)} className="flex-1 rounded-xl h-12 font-bold gap-2 border-border">
                     <ArrowRight className="h-4 w-4" /> חזרה
                   </Button>
                   <Button

@@ -88,6 +88,8 @@ function formatAppointmentTime(iso: string) {
 interface NailistProfile {
   id?: string
   businessName?: string
+  phoneNumber?: string
+  whatsappPhone?: string
   city?: string
   address?: string
   bio?: string
@@ -96,6 +98,49 @@ interface NailistProfile {
   isActive?: boolean
   avgRating?: number
   reviewCount?: number
+}
+
+const VERIFICATION_REMINDER_KEY_PREFIX = 'nailist-verification-contact-reminder'
+const REMIND_LATER_MS = 7 * 24 * 60 * 60 * 1000
+const CONTACT_CTA_COOLDOWN_MS = 5 * 60 * 1000
+
+interface VerificationReminderPreference {
+  dismissed?: boolean
+  nextPromptAt?: number
+}
+
+function hasContactNumber(profile: NailistProfile) {
+  return Boolean(profile.phoneNumber?.trim() || profile.whatsappPhone?.trim())
+}
+
+function verificationReminderKey(profileId: string) {
+  return `${VERIFICATION_REMINDER_KEY_PREFIX}:${profileId}`
+}
+
+function getVerificationReminderPreference(profileId: string): VerificationReminderPreference {
+  try {
+    const stored = window.localStorage.getItem(verificationReminderKey(profileId))
+    if (!stored) return {}
+    const parsed: unknown = JSON.parse(stored)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
+    const preference = parsed as Record<string, unknown>
+    return {
+      dismissed: preference.dismissed === true,
+      nextPromptAt: typeof preference.nextPromptAt === 'number' && Number.isFinite(preference.nextPromptAt)
+        ? preference.nextPromptAt
+        : undefined,
+    }
+  } catch {
+    return {}
+  }
+}
+
+function saveVerificationReminderPreference(profileId: string, preference: VerificationReminderPreference) {
+  try {
+    window.localStorage.setItem(verificationReminderKey(profileId), JSON.stringify(preference))
+  } catch {
+    // A blocked localStorage must not prevent dashboard use.
+  }
 }
 
 function formatGapDate(dateStr: string) {
@@ -126,6 +171,10 @@ export default function NailistDashboard() {
   const [activating, setActivating] = useState(false)
   const [workingHoursFull, setWorkingHoursFull] = useState<DayWorkingHours[]>([])
   const [minServiceDuration, setMinServiceDuration] = useState<number | null>(null)
+  const [showVerificationReminder, setShowVerificationReminder] = useState(false)
+  const verificationDialogRef = useRef<HTMLDivElement>(null)
+  const verificationCtaRef = useRef<HTMLAnchorElement>(null)
+  const verificationPreviousFocusRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     fetch('/api/me/nailist-profile')
@@ -134,6 +183,11 @@ export default function NailistDashboard() {
         if (!json?.data) return
         setProfile(json.data)
         const profileId = json.data.id
+        const preference = getVerificationReminderPreference(profileId)
+        const canShowReminder = !hasContactNumber(json.data)
+          && !preference.dismissed
+          && (!preference.nextPromptAt || preference.nextPromptAt <= Date.now())
+        setShowVerificationReminder(canShowReminder)
 
         const [portfolioRes, servicesRes, hoursRes, appointmentsRes, nailistRes] = await Promise.all([
           fetch(`/api/portfolio?profileId=${profileId}`),
@@ -197,6 +251,57 @@ export default function NailistDashboard() {
       setActivating(false)
     }
   }
+
+  function postponeVerificationReminder(duration: number) {
+    if (!profile?.id) return
+    saveVerificationReminderPreference(profile.id, { nextPromptAt: Date.now() + duration })
+    setShowVerificationReminder(false)
+  }
+
+  function dismissVerificationReminder() {
+    if (!profile?.id) return
+    saveVerificationReminderPreference(profile.id, { dismissed: true })
+    setShowVerificationReminder(false)
+  }
+
+  useEffect(() => {
+    if (!showVerificationReminder) return
+
+    verificationPreviousFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+    verificationCtaRef.current?.focus()
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        postponeVerificationReminder(REMIND_LATER_MS)
+        return
+      }
+      if (event.key !== 'Tab') return
+
+      const focusable = verificationDialogRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+      if (!focusable?.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      verificationPreviousFocusRef.current?.focus()
+    }
+  }, [showVerificationReminder])
 
   const checklist = [
     { label: 'פרטי עסק (שם + כתובת)', done: !!(profile?.businessName && (profile?.city || profile?.address)) },
@@ -280,6 +385,55 @@ export default function NailistDashboard() {
 
   return (
     <div className="p-4 md:p-8">
+      {showVerificationReminder && profile && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="verification-reminder-title"
+          dir="rtl"
+          ref={verificationDialogRef}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        >
+          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 text-right shadow-2xl">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+              <CheckCircle2 className="h-6 w-6 text-primary" aria-hidden="true" />
+            </div>
+            <h2 id="verification-reminder-title" className="text-xl font-black text-foreground">
+              עוד צעד קטן לתג אימות
+            </h2>
+            <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">
+              כדי להיות זכאית לתג אימות, חסר בפרופיל שלך מספר טלפון או WhatsApp.
+            </p>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              לאחר הוספת פרטי הקשר, הפרופיל ייבדק לתג אימות.
+            </p>
+            <div className="mt-6 space-y-3">
+              <Link
+                href="/dashboard/nailist/settings"
+                ref={verificationCtaRef}
+                onClick={() => postponeVerificationReminder(CONTACT_CTA_COOLDOWN_MS)}
+                className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-black text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                להוספת פרטי קשר
+              </Link>
+              <button
+                type="button"
+                onClick={() => postponeVerificationReminder(REMIND_LATER_MS)}
+                className="w-full rounded-xl border border-border px-4 py-3 text-sm font-bold text-foreground transition-colors hover:bg-muted"
+              >
+                הזכירי לי מאוחר יותר
+              </button>
+              <button
+                type="button"
+                onClick={dismissVerificationReminder}
+                className="w-full px-4 py-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:underline"
+              >
+                לא להציג שוב
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-black text-foreground">שלום, {firstName}</h1>
         <p className="text-muted-foreground font-medium">הנה סקירה של העסק שלך</p>
