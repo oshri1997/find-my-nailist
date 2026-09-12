@@ -105,11 +105,11 @@ export default function AdminNailistsPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/40">
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">שם עסק</th>
+                  <th className="text-right px-5 py-3 font-semibold text-muted-foreground">מוכנות לאימות</th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">עיר</th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">דירוג</th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">הצטרפה</th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">סטטוס</th>
-                  <th className="text-right px-5 py-3 font-semibold text-muted-foreground">מוכנות לאימות</th>
                   <th className="px-5 py-3" />
                 </tr>
               </thead>

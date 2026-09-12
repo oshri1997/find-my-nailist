@@ -131,4 +131,17 @@ describe('AdminNailistsPage — verify toggle', () => {
     expect(screen.getByText('✕ חסר: לפחות 5 תמונות בתיק העבודות')).toBeInTheDocument()
     expect(screen.getByTitle('אמת נייליסטית')).toBeEnabled()
   })
+
+  it('aligns readiness heading with its table cell', async () => {
+    mockFetch()
+    const { container } = render(<AdminNailistsPage />)
+    await screen.findByText('סטודיו יופי')
+
+    const headers = Array.from(container.querySelectorAll('thead th')).map((header) => header.textContent)
+    const cells = Array.from(container.querySelectorAll('tbody tr:first-child td')).map((cell) => cell.textContent)
+
+    expect(headers.slice(0, 2)).toEqual(['שם עסק', 'מוכנות לאימות'])
+    expect(cells[0]).toContain('סטודיו יופי')
+    expect(cells[1]).toContain('חסרים קריטריונים')
+  })
 })
