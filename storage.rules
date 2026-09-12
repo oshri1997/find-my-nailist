@@ -1,34 +1,11 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Portfolio photos: authenticated users can upload to their own folder
-    match /portfolio/{nailistId}/{fileName} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid != null
-        && request.resource.size < 5 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
-    }
-    // Profile avatars: authenticated users can upload their own avatar
-    match /avatars/{userId}/{fileName} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId
-        && request.resource.size < 5 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
-    }
-    // Search-card cover photos: authenticated users can upload to their own folder
-    match /covers/{nailistId}/{fileName} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid != null
-        && request.resource.size < 5 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
-    }
-    // Report attachments remain private. The submitting user can write and
-    // later remove their own image; reads are intentionally server-only.
-    match /feedback/{userId}/{fileName} {
-      allow create: if request.auth != null && request.auth.uid == userId
-        && request.resource.size <= 5 * 1024 * 1024
-        && request.resource.contentType.matches('image/(png|jpeg|webp)');
-      allow delete: if request.auth != null && request.auth.uid == userId;
-    }
+    // Uploads and deletes pass through the authenticated, quota-enforcing API.
+    match /portfolio/{nailistId}/{fileName} { allow read: if true; }
+    match /avatars/{userId}/{fileName} { allow read: if true; }
+    match /covers/{nailistId}/{fileName} { allow read: if true; }
+    // Feedback attachments are private; only the admin server can read them.
+    match /{allPaths=**} { allow write: if false; }
   }
 }

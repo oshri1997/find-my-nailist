@@ -1,3 +1,5 @@
+import { reserveEmailQuota, normalizeRecipient } from '@/lib/cost-quota'
+
 const FROM = 'נייליסטיות <noreply@nailistiot.fun>'
 const REPLY_TO = 'noreply@nailistiot.fun'
 const APP_URL = 'https://nailistiot.fun'
@@ -24,7 +26,9 @@ async function sendResend(to: string, subject: string, html: string, text: strin
     return
   }
 
+  await reserveEmailQuota(to)
   const res = await fetch('https://api.resend.com/emails', {
+    signal: AbortSignal.timeout(10000),
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -32,7 +36,7 @@ async function sendResend(to: string, subject: string, html: string, text: strin
     },
     body: JSON.stringify({
       from: FROM,
-      to: [to],
+      to: [normalizeRecipient(to)],
       subject,
       html,
       text,

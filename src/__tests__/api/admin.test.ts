@@ -77,7 +77,7 @@ function seedCallerUser(uid: string, role: string, isAdmin: boolean) {
 }
 
 function adminRequest(path = '/api/admin/stats') {
-  mockVerifyIdToken.mockResolvedValue({ uid: 'admin-uid', email: 'oshri19970@gmail.com' })
+  mockVerifyIdToken.mockResolvedValue({ uid: 'admin-uid', email: 'nailistiotil@gmail.com' })
   seedCallerUser('admin-uid', 'NAILIST', true)
   const req = new NextRequest(`http://localhost${path}`)
   Object.defineProperty(req, 'cookies', {

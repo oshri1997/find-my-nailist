@@ -12,7 +12,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen flex flex-col bg-background" dir="rtl">
       <main className="flex-1 container mx-auto max-w-3xl px-6 py-16">
         <h1 className="text-3xl font-black text-foreground mb-2">מדיניות פרטיות</h1>
-        <p className="text-muted-foreground mb-10 text-sm">עודכן לאחרונה: יוני 2026</p>
+        <p className="text-muted-foreground mb-10 text-sm">עודכן לאחרונה: ספטמבר 2026</p>
 
         <div className="prose prose-neutral dark:prose-invert max-w-none space-y-8 text-foreground">
 
@@ -96,6 +96,9 @@ export default function PrivacyPage() {
             <p className="text-muted-foreground leading-relaxed">
               אנו נוקטים באמצעי אבטחה סבירים להגנה על המידע שלך, לרבות הצפנת תעבורה (HTTPS), אימות מבוסס Firebase Authentication וגישה מוגבלת למסד הנתונים. יחד עם זאת, אין מערכת מאובטחת לחלוטין ואיננו יכולים להבטיח אבטחה מלאה.
             </p>
+            <p className="text-muted-foreground leading-relaxed">
+              כדי למנוע הצפת בקשות, אחסון ושליחת דואר, אנו מגבילים את תדירות הפעולות ואת היקפן. לצורך כך נשמרים מוני שימוש המשויכים לחשבון או לערך גיבוב של כתובת הדואר, וכן נתוני מכסת קבצים. מגבלות רשת זמניות מסייעות לחסום בקשות חוזרות. בהגעה למכסה, פעולות מסוימות עשויות להיחסם זמנית.
+            </p>
           </section>
 
           <section className="space-y-3">
@@ -116,7 +119,7 @@ export default function PrivacyPage() {
             </ul>
             <p className="text-muted-foreground leading-relaxed">
               לממש את זכויותיך, פנה אלינו בדוא&quot;ל:{' '}
-              <a href="mailto:oshri19970@gmail.com" className="text-primary hover:underline">oshri19970@gmail.com</a>
+              <a href="mailto:nailistiotil@gmail.com" className="text-primary hover:underline">nailistiotil@gmail.com</a>
             </p>
           </section>
 
@@ -147,8 +150,8 @@ export default function PrivacyPage() {
               <p><span className="font-semibold text-foreground">ממונה על הפרטיות:</span> אושרי מועלם</p>
               <p>
                 <span className="font-semibold text-foreground">דוא&quot;ל: </span>
-                <a href="mailto:oshri19970@gmail.com" className="text-primary hover:underline">
-                  oshri19970@gmail.com
+                <a href="mailto:nailistiotil@gmail.com" className="text-primary hover:underline">
+                  nailistiotil@gmail.com
                 </a>
               </p>
               <p><span className="font-semibold text-foreground">זמן תגובה:</span> עד 30 ימים מקבלת הפנייה</p>

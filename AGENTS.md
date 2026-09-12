@@ -10,6 +10,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Testing Rules
 
+# Caveman Workflow
+
+- Use the `caveman:caveman` skill in `full` mode by default for every task in this project.
+- Keep user-facing product copy, source code, comments, documentation, and commits in their normal professional style.
+- Switch out of Caveman only when clarity or a safety warning requires it, or when the user asks for normal mode.
+
 - **Every feature must include unit tests.** When implementing any new feature or fixing a bug, write unit tests covering the core logic and edge cases.
 - **Run the full test suite after every change** (`npm test`) and confirm all tests pass before pushing.
 - Test files go in `__tests__/` next to the code they test, or in a top-level `__tests__/` directory — follow the existing pattern in the repo.

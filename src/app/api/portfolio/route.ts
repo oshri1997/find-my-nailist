@@ -3,6 +3,26 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { FieldValue } from 'firebase-admin/firestore'
 import { MAX_PORTFOLIO_PHOTOS } from '@/lib/portfolio'
+import { assertCompletedUpload, UploadError } from '@/lib/upload-guard'
+
+function isOwnedPortfolioKey(key: unknown, profileId: string): key is string {
+  if (typeof key !== 'string') return false
+  const escapedProfileId = profileId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`^portfolio/${escapedProfileId}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(png|jpg|webp)$`, 'i').test(key)
+}
+
+function isPortfolioUploadUrl(value: unknown, storageKey: string): value is string {
+  if (typeof value !== 'string') return false
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:' || url.hostname !== 'firebasestorage.googleapis.com') return false
+    const match = /^\/v0\/b\/[^/]+\/o\/(.+)$/.exec(url.pathname)
+    return !!match
+      && decodeURIComponent(match[1]) === storageKey
+      && url.searchParams.get('alt') === 'media'
+      && /^[0-9a-f-]{36}$/i.test(url.searchParams.get('token') ?? '')
+  } catch { return false }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,7 +58,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const { nailistProfileId, url, storageKey, caption, displayOrder } = await request.json()
-    if (!nailistProfileId || !url) {
+    if (!nailistProfileId || !url || !storageKey) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -55,26 +75,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Authoritative check — the upload UI already stops at the limit, but
-    // that's only a courtesy; a direct API call must not be able to bypass it.
-    const existingSnap = await db
-      .collection(COLLECTIONS.PORTFOLIO_PHOTOS)
-      .where('nailistProfileId', '==', nailistProfileId)
-      .get()
-    if (existingSnap.docs.length >= MAX_PORTFOLIO_PHOTOS) {
-      return NextResponse.json({ error: 'Portfolio photo limit reached' }, { status: 409 })
+    if (!isOwnedPortfolioKey(storageKey, nailistProfileId) || !isPortfolioUploadUrl(url, storageKey)) {
+      return NextResponse.json({ error: 'Invalid portfolio upload' }, { status: 400 })
     }
 
-    const ref = await db.collection(COLLECTIONS.PORTFOLIO_PHOTOS).add({
+    try {
+      await assertCompletedUpload(decoded.uid, storageKey)
+    } catch (error) {
+      if (error instanceof UploadError) return NextResponse.json({ error: error.message }, { status: error.status })
+      throw error
+    }
+
+    const photos = db.collection(COLLECTIONS.PORTFOLIO_PHOTOS)
+    const photoRef = photos.doc()
+    const photo = {
       nailistProfileId,
       url,
-      storageKey: storageKey ?? null,
+      storageKey,
       caption: caption ?? null,
       displayOrder: displayOrder ?? 0,
       createdAt: FieldValue.serverTimestamp(),
-    })
+    }
 
-    return NextResponse.json({ data: { id: ref.id, nailistProfileId, url, storageKey, caption, displayOrder } }, { status: 201 })
+    // Transaction reads the full profile query before creating a new photo.
+    // Firestore retries conflicting requests, so parallel requests cannot both
+    // pass the 20-photo check. A counter would require a migration/backfill;
+    // this query is already canonical for legacy and current profiles.
+    try {
+      await db.runTransaction(async transaction => {
+        const existingSnap = await transaction.get(photos.where('nailistProfileId', '==', nailistProfileId))
+        if (existingSnap.docs.length >= MAX_PORTFOLIO_PHOTOS) throw new UploadError('Portfolio photo limit reached', 409)
+        if (existingSnap.docs.some(doc => doc.data().storageKey === storageKey)) throw new UploadError('Portfolio upload already used', 409)
+        transaction.create(photoRef, photo)
+      })
+    } catch (error) {
+      if (error instanceof UploadError) return NextResponse.json({ error: error.message }, { status: error.status })
+      throw error
+    }
+
+    return NextResponse.json({ data: { id: photoRef.id, nailistProfileId, url, storageKey, caption, displayOrder } }, { status: 201 })
   } catch (error) {
     console.error(error)
     return NextResponse.json({ error: 'Failed to save photo' }, { status: 500 })

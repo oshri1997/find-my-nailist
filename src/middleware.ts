@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { buildHomepageMarkdown, prefersMarkdown } from '@/lib/markdown-negotiation'
+import { checkApiBurst } from '@/lib/api-burst-limit'
 
 const PROTECTED_PREFIXES = ['/dashboard', '/my-appointments', '/admin']
 const AUTH_PATHS = ['/login']
@@ -11,6 +12,13 @@ const MARKDOWN_NEGOTIABLE_PATHS = ['/']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  if (pathname.startsWith('/api/') && pathname !== '/api/health') {
+    const retryAfter = checkApiBurst(request.headers, request.method)
+    if (retryAfter) return NextResponse.json(
+      { error: 'יותר מדי בקשות. נסו שוב בעוד דקה.' },
+      { status: 429, headers: { 'Retry-After': String(retryAfter), 'Cache-Control': 'no-store' } }
+    )
+  }
   const token = request.cookies.get('auth-token')?.value
 
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))
@@ -57,5 +65,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }

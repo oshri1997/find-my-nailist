@@ -1,123 +1,44 @@
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject, type FirebaseStorage } from 'firebase/storage'
-import { initFirebase } from './client'
 import { validateFeedbackScreenshot } from '@/lib/feedback-screenshot'
-
 export { FEEDBACK_SCREENSHOT_MAX_BYTES, validateFeedbackScreenshot } from '@/lib/feedback-screenshot'
+type UploadedPhoto = { url: string; storageKey: string }
 
-async function getStorage(): Promise<FirebaseStorage> {
-  const clients = await initFirebase()
-  if (!clients?.storage) throw new Error('Firebase Storage is not initialized. Check your Firebase env vars.')
-  return clients.storage
+async function upload(kind: string, ownerId: string, file: File, onProgress?: (percent: number) => void): Promise<UploadedPhoto> {
+  const error = validateFeedbackScreenshot(file)
+  if (error) throw new Error(error)
+  if (!file.size) throw new Error('התמונה ריקה.')
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `/api/uploads?kind=${encodeURIComponent(kind)}&ownerId=${encodeURIComponent(ownerId)}`)
+    xhr.setRequestHeader('Content-Type', file.type)
+    xhr.upload.onprogress = event => {
+      if (event.lengthComputable) onProgress?.(Math.min(99, Math.round(event.loaded / event.total * 100)))
+    }
+    xhr.onerror = () => reject(new Error('העלאת התמונה נכשלה. נסו שוב.'))
+    xhr.onload = () => {
+      try {
+        const result = JSON.parse(xhr.responseText)
+        if (xhr.status < 200 || xhr.status >= 300) throw new Error(result.error || 'העלאת התמונה נכשלה.')
+        onProgress?.(100)
+        resolve(result.data)
+      } catch (cause) { reject(cause) }
+    }
+    xhr.send(file)
+  })
 }
-
-/**
- * Uploads an optional report screenshot to a private, UID-scoped path.
- * Deliberately return only the storage key: download tokens/URLs must never
- * become permanent feedback-document data.
- */
-export async function uploadFeedbackScreenshot(
-  userId: string,
-  file: File,
-  onProgress?: (percent: number) => void
-): Promise<{ storageKey: string }> {
-  const validationError = validateFeedbackScreenshot(file)
-  if (validationError) throw new Error(validationError)
-  const storage = await getStorage()
-  const extension = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
-  const nonce = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`
-  const storageKey = `feedback/${userId}/${nonce}.${extension}`
-  const task = uploadBytesResumable(ref(storage, storageKey), file, { contentType: file.type })
-  await new Promise<void>((resolve, reject) => task.on('state_changed', snapshot => {
-    onProgress?.(Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100))
-  }, reject, () => resolve()))
+export async function uploadFeedbackScreenshot(userId: string, file: File, onProgress?: (percent: number) => void): Promise<{ storageKey: string }> {
+  const { storageKey } = await upload('feedback', userId, file, onProgress)
   return { storageKey }
 }
-
-export async function uploadPortfolioPhoto(
-  nailistId: string,
-  file: File,
-  onProgress?: (percent: number) => void
-): Promise<{ url: string; storageKey: string }> {
-  const storage = await getStorage()
-  const ext = file.name.split('.').pop() ?? 'jpg'
-  const storageKey = `portfolio/${nailistId}/${Date.now()}.${ext}`
-  const storageRef = ref(storage, storageKey)
-
-  return new Promise((resolve, reject) => {
-    const task = uploadBytesResumable(storageRef, file, { contentType: file.type })
-    task.on(
-      'state_changed',
-      (snapshot) => {
-        const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-        onProgress?.(Math.round(percent))
-      },
-      reject,
-      async () => {
-        const url = await getDownloadURL(task.snapshot.ref)
-        resolve({ url, storageKey })
-      }
-    )
-  })
+export async function uploadPortfolioPhoto(nailistId: string, file: File, onProgress?: (percent: number) => void): Promise<UploadedPhoto> {
+  return upload('portfolio', nailistId, file, onProgress)
 }
-
-export async function uploadProfilePhoto(
-  userId: string,
-  file: File,
-  onProgress?: (percent: number) => void
-): Promise<{ url: string; storageKey: string }> {
-  const storage = await getStorage()
-  const ext = file.name.split('.').pop() ?? 'jpg'
-  // Timestamped like portfolio/cover photos — a fixed filename would keep the
-  // same Firebase Storage download URL across re-uploads (same path, same
-  // token), so browsers serve the old cached image instead of the new one.
-  const storageKey = `avatars/${userId}/profile-${Date.now()}.${ext}`
-  const storageRef = ref(storage, storageKey)
-
-  return new Promise((resolve, reject) => {
-    const task = uploadBytesResumable(storageRef, file, { contentType: file.type })
-    task.on(
-      'state_changed',
-      (snapshot) => {
-        const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-        onProgress?.(Math.round(percent))
-      },
-      reject,
-      async () => {
-        const url = await getDownloadURL(task.snapshot.ref)
-        resolve({ url, storageKey })
-      }
-    )
-  })
+export async function uploadProfilePhoto(userId: string, file: File, onProgress?: (percent: number) => void): Promise<UploadedPhoto> {
+  return upload('avatars', userId, file, onProgress)
 }
-
-export async function uploadCoverPhoto(
-  nailistId: string,
-  file: File,
-  onProgress?: (percent: number) => void
-): Promise<{ url: string; storageKey: string }> {
-  const storage = await getStorage()
-  const ext = file.name.split('.').pop() ?? 'jpg'
-  const storageKey = `covers/${nailistId}/cover.${ext}`
-  const storageRef = ref(storage, storageKey)
-
-  return new Promise((resolve, reject) => {
-    const task = uploadBytesResumable(storageRef, file, { contentType: file.type })
-    task.on(
-      'state_changed',
-      (snapshot) => {
-        const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-        onProgress?.(Math.round(percent))
-      },
-      reject,
-      async () => {
-        const url = await getDownloadURL(task.snapshot.ref)
-        resolve({ url, storageKey })
-      }
-    )
-  })
+export async function uploadCoverPhoto(nailistId: string, file: File, onProgress?: (percent: number) => void): Promise<UploadedPhoto> {
+  return upload('covers', nailistId, file, onProgress)
 }
-
 export async function deleteStorageFile(storageKey: string) {
-  const storage = await getStorage()
-  await deleteObject(ref(storage, storageKey))
+  const response = await fetch(`/api/uploads?storageKey=${encodeURIComponent(storageKey)}`, { method: 'DELETE' })
+  if (!response.ok) throw new Error((await response.json()).error || 'מחיקת התמונה נכשלה.')
 }

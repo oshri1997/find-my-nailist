@@ -136,8 +136,8 @@ export default function TermsPage() {
               <p><span className="font-semibold text-foreground">מפעיל האתר:</span> אושרי מועלם</p>
               <p>
                 <span className="font-semibold text-foreground">דוא&quot;ל: </span>
-                <a href="mailto:oshri19970@gmail.com" className="text-primary hover:underline">
-                  oshri19970@gmail.com
+                <a href="mailto:nailistiotil@gmail.com" className="text-primary hover:underline">
+                  nailistiotil@gmail.com
                 </a>
               </p>
             </div>

@@ -1,87 +1,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isAuthed() {
-      return request.auth != null;
+    // Application data is served by limited API routes using the Admin SDK.
+    // Direct SDK/REST reads would bypass those request limits.
+    // Firebase Authentication is independent of these database rules.
+    match /{document=**} {
+      allow read, write: if false;
     }
-
-    // ── users ──────────────────────────────────────────────────────────
-    // Only the owner can read their own document.
-    // All writes go through the Admin SDK (API routes) — blocked here.
-    match /users/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if false;
-    }
-
-    // ── nailistProfiles ────────────────────────────────────────────────
-    // No direct client reads — the app serves search/profile pages exclusively
-    // through Admin SDK API routes, which gate contact fields (whatsappPhone/
-    // instagramUrl/tiktokUrl/phoneNumber/email/address) behind login. A public
-    // read rule here would let anyone bypass that gate via the Firestore SDK
-    // or REST API directly. Requiring auth still permits nothing today (no
-    // client code reads this collection directly) but keeps the door closed.
-    // avgRating / reviewCount are computed server-side — never written by clients.
-    match /nailistProfiles/{profileId} {
-      allow read: if isAuthed();
-      allow write: if false;
-    }
-
-    // ── clientProfiles ─────────────────────────────────────────────────
-    // Only the owner can read their own profile.
-    match /clientProfiles/{profileId} {
-      allow read: if isAuthed() && resource.data.userId == request.auth.uid;
-      allow write: if false;
-    }
-
-    // ── services ───────────────────────────────────────────────────────
-    // Publicly readable (shown on nailist profile pages).
-    match /services/{serviceId} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // ── portfolioPhotos ────────────────────────────────────────────────
-    match /portfolioPhotos/{photoId} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // ── workingHours ───────────────────────────────────────────────────
-    match /workingHours/{hoursId} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // ── appointments ───────────────────────────────────────────────────
-    // Sensitive — served only via Admin SDK API routes.
-    match /appointments/{appointmentId} {
-      allow read: if false;
-      allow write: if false;
-    }
-
-    // ── reviews ────────────────────────────────────────────────────────
-    // Publicly readable. Written server-side only (requires COMPLETED appointment check).
-    match /reviews/{reviewId} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // ── searchEvents ───────────────────────────────────────────────────
-    // Anonymous search-analytics for the admin dashboard. Written via the
-    // Admin SDK only (POST /api/analytics/search) — never readable or
-    // writable directly by clients.
-    match /searchEvents/{eventId} {
-      allow read: if false;
-      allow write: if false;
-    }
-
-    // Anonymous visit-source analytics. Written through the Admin SDK only;
-    // visitors never receive read access to the event stream.
-    match /visitEvents/{eventId} {
-      allow read: if false;
-      allow write: if false;
-    }
-
   }
 }

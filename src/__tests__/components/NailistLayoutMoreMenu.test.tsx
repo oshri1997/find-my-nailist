@@ -112,7 +112,7 @@ describe('Dashboard layout — admin panel entry point', () => {
   // to role) had no way to reach /admin on mobile — the main site Navbar's dropdown
   // link isn't rendered inside the dashboard shell.
   it('shows a "פאנל ניהול" link for the admin account', async () => {
-    mockUseAuth.mockReturnValue({ user: { uid: 'admin-uid', displayName: 'Admin', email: 'oshri19970@gmail.com' }, role: 'NAILIST', isAdmin: true, signOut: jest.fn() })
+    mockUseAuth.mockReturnValue({ user: { uid: 'admin-uid', displayName: 'Admin', email: 'nailistiotil@gmail.com' }, role: 'NAILIST', isAdmin: true, signOut: jest.fn() })
     mockFetch('nailist-42')
     await openMoreMenu()
 

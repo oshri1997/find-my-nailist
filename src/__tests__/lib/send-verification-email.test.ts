@@ -1,3 +1,8 @@
+jest.mock('@/lib/cost-quota', () => ({
+  reserveEmailQuota: jest.fn().mockResolvedValue(undefined),
+  normalizeRecipient: (email: string) => email.trim().toLowerCase(),
+}))
+
 import { sendVerificationEmail } from '@/lib/email'
 
 function mockResendFetch() {

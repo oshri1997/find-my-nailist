@@ -9,11 +9,12 @@ type DocData = Record<string, unknown>
 const docStore: Record<string, DocData> = {}
 const collectionStore: Record<string, (DocData & { __id: string })[]> = {}
 
-const mockPhotoAdd = jest.fn().mockResolvedValue({ id: 'new-photo-id' })
+const mockPhotoCreate = jest.fn()
 const mockDeleteFn = jest.fn().mockResolvedValue(undefined)
 
 function makeDocRef(collection: string, id: string) {
   return {
+    id,
     get: jest.fn().mockImplementation(() =>
       Promise.resolve({
         exists: !!docStore[`${collection}/${id}`],
@@ -23,13 +24,13 @@ function makeDocRef(collection: string, id: string) {
     ),
     delete: mockDeleteFn,
     update: jest.fn().mockResolvedValue(undefined),
+    set: jest.fn().mockResolvedValue(undefined),
   }
 }
 
 function makeCollectionRef(name: string) {
   return {
-    doc: (id?: string) => (id === undefined ? { id: 'new-doc', set: jest.fn() } : makeDocRef(name, id)),
-    add: name === 'portfolioPhotos' ? mockPhotoAdd : jest.fn().mockResolvedValue({ id: 'x' }),
+    doc: (id?: string) => makeDocRef(name, id ?? (name === 'portfolioPhotos' ? 'new-photo-id' : 'new-doc')),
     where: jest.fn().mockImplementation((field: string, _op: string, value: unknown) => {
       const filtered = (collectionStore[name] ?? []).filter((d) => d[field] === value)
       return {
@@ -43,7 +44,12 @@ function makeCollectionRef(name: string) {
   }
 }
 
-const mockDb = { collection: jest.fn((name: string) => makeCollectionRef(name)) }
+const mockDb = {
+  collection: jest.fn((name: string) => makeCollectionRef(name)),
+  runTransaction: jest.fn(async (callback: (transaction: { get: (ref: { get: () => Promise<unknown> }) => Promise<unknown>; create: typeof mockPhotoCreate }) => Promise<void>) => {
+    await callback({ get: (ref) => ref.get(), create: mockPhotoCreate })
+  }),
+}
 
 jest.mock('@/lib/firebase/admin', () => ({
   adminAuth: jest.fn(() => ({
@@ -73,6 +79,13 @@ function makePostRequest(body: unknown, cookie?: string): NextRequest {
   return req
 }
 
+const storageKey = 'portfolio/nailist-profile-1/123e4567-e89b-12d3-a456-426614174000.jpg'
+const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/test-bucket/o/${encodeURIComponent(storageKey)}?alt=media&token=123e4567-e89b-12d3-a456-426614174000`
+
+function validPhotoBody(overrides: Record<string, unknown> = {}) {
+  return { nailistProfileId: 'nailist-profile-1', url: uploadUrl, storageKey, ...overrides }
+}
+
 function makeDeleteRequest(cookie?: string): NextRequest {
   const req = new NextRequest('http://localhost/api/portfolio/photo-1', { method: 'DELETE' })
   if (cookie) {
@@ -91,16 +104,17 @@ describe('POST /api/portfolio', () => {
     collectionStore['nailistProfiles'] = [
       { __id: 'nailist-profile-1', userId: 'nailist-user-1' },
     ]
+    docStore['uploadQuotas/user-nailist-user-1'] = { entries: [{ key: storageKey, bytes: 123, ready: true }] }
   })
 
   it('returns 401 when no auth token', async () => {
-    const res = await POST(makePostRequest({ nailistProfileId: 'nailist-profile-1', url: 'https://ex.com/img.jpg' }))
+    const res = await POST(makePostRequest(validPhotoBody()))
     expect(res.status).toBe(401)
   })
 
   it('returns 403 when caller does not own the nailist profile', async () => {
     collectionStore['nailistProfiles'] = [{ __id: 'other-profile', userId: 'nailist-user-1' }]
-    const res = await POST(makePostRequest({ nailistProfileId: 'nailist-profile-1', url: 'https://ex.com/img.jpg' }, 'token'))
+    const res = await POST(makePostRequest(validPhotoBody(), 'token'))
     expect(res.status).toBe(403)
   })
 
@@ -110,12 +124,13 @@ describe('POST /api/portfolio', () => {
   })
 
   it('returns 201 and creates photo when caller owns the profile', async () => {
-    const res = await POST(makePostRequest({ nailistProfileId: 'nailist-profile-1', url: 'https://ex.com/img.jpg' }, 'token'))
+    const res = await POST(makePostRequest(validPhotoBody(), 'token'))
     expect(res.status).toBe(201)
     const json = await res.json()
     expect(json.data.id).toBe('new-photo-id')
-    expect(mockPhotoAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ nailistProfileId: 'nailist-profile-1', url: 'https://ex.com/img.jpg' })
+    expect(mockPhotoCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'new-photo-id' }),
+      expect.objectContaining({ nailistProfileId: 'nailist-profile-1', url: uploadUrl, storageKey })
     )
   })
 
@@ -123,26 +138,48 @@ describe('POST /api/portfolio', () => {
     collectionStore['portfolioPhotos'] = Array.from({ length: 20 }, (_, i) => ({
       __id: `photo-${i}`, nailistProfileId: 'nailist-profile-1', url: `https://ex.com/${i}.jpg`,
     }))
-    const res = await POST(makePostRequest({ nailistProfileId: 'nailist-profile-1', url: 'https://ex.com/one-too-many.jpg' }, 'token'))
+    const res = await POST(makePostRequest(validPhotoBody(), 'token'))
     expect(res.status).toBe(409)
-    expect(mockPhotoAdd).not.toHaveBeenCalled()
+    expect(mockPhotoCreate).not.toHaveBeenCalled()
   })
 
   it('still allows the 20th photo when the nailist has 19 already', async () => {
     collectionStore['portfolioPhotos'] = Array.from({ length: 19 }, (_, i) => ({
       __id: `photo-${i}`, nailistProfileId: 'nailist-profile-1', url: `https://ex.com/${i}.jpg`,
     }))
-    const res = await POST(makePostRequest({ nailistProfileId: 'nailist-profile-1', url: 'https://ex.com/20th.jpg' }, 'token'))
+    const res = await POST(makePostRequest(validPhotoBody(), 'token'))
     expect(res.status).toBe(201)
-    expect(mockPhotoAdd).toHaveBeenCalled()
+    expect(mockPhotoCreate).toHaveBeenCalled()
   })
 
   it('does not count another nailist\'s photos toward this nailist\'s limit', async () => {
     collectionStore['portfolioPhotos'] = Array.from({ length: 20 }, (_, i) => ({
       __id: `other-photo-${i}`, nailistProfileId: 'some-other-profile', url: `https://ex.com/${i}.jpg`,
     }))
-    const res = await POST(makePostRequest({ nailistProfileId: 'nailist-profile-1', url: 'https://ex.com/img.jpg' }, 'token'))
+    const res = await POST(makePostRequest(validPhotoBody(), 'token'))
     expect(res.status).toBe(201)
+  })
+
+  it('rejects reuse of a completed upload', async () => {
+    collectionStore['portfolioPhotos'] = [{
+      __id: 'photo-1', nailistProfileId: 'nailist-profile-1', url: uploadUrl, storageKey,
+    }]
+    const res = await POST(makePostRequest(validPhotoBody(), 'token'))
+    expect(res.status).toBe(409)
+    expect(mockPhotoCreate).not.toHaveBeenCalled()
+  })
+
+  it('rejects a URL that does not refer to the completed upload key', async () => {
+    const res = await POST(makePostRequest(validPhotoBody({ url: 'https://example.com/image.jpg' }), 'token'))
+    expect(res.status).toBe(400)
+    expect(mockPhotoCreate).not.toHaveBeenCalled()
+  })
+
+  it('rejects an unrecorded or unfinished upload', async () => {
+    docStore['uploadQuotas/user-nailist-user-1'] = { entries: [{ key: storageKey, bytes: 123, ready: false }] }
+    const res = await POST(makePostRequest(validPhotoBody(), 'token'))
+    expect(res.status).toBe(400)
+    expect(mockPhotoCreate).not.toHaveBeenCalled()
   })
 })
 
