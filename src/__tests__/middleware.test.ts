@@ -4,10 +4,11 @@
 import { NextRequest } from 'next/server'
 import { middleware } from '@/middleware'
 
-function makeRequest(url: string, opts: { accept?: string; cookie?: string } = {}): NextRequest {
+function makeRequest(url: string, opts: { accept?: string; cookie?: string; forwardedFor?: string; method?: string } = {}): NextRequest {
   const headers: Record<string, string> = {}
   if (opts.accept) headers['accept'] = opts.accept
-  const req = new NextRequest(url, { headers })
+  if (opts.forwardedFor) headers['x-forwarded-for'] = opts.forwardedFor
+  const req = new NextRequest(url, { headers, method: opts.method })
   if (opts.cookie) {
     Object.defineProperty(req, 'cookies', {
       get: () => ({ get: (name: string) => (name === 'auth-token' ? { value: opts.cookie } : undefined) }),
@@ -44,6 +45,37 @@ describe('middleware — markdown content negotiation on /', () => {
   it('does not negotiate markdown for a plain Accept header with no markdown preference', () => {
     const res = middleware(makeRequest('http://localhost/', { accept: 'text/html' }))
     expect(res.headers.get('content-type')).not.toBe('text/markdown; charset=utf-8')
+  })
+})
+
+describe('middleware — API burst limiting', () => {
+  const originalRailwayEnvironmentName = process.env.RAILWAY_ENVIRONMENT_NAME
+
+  afterEach(() => {
+    if (originalRailwayEnvironmentName === undefined) delete process.env.RAILWAY_ENVIRONMENT_NAME
+    else process.env.RAILWAY_ENVIRONMENT_NAME = originalRailwayEnvironmentName
+  })
+
+  it('returns 429 with Retry-After on the 31st production API write', () => {
+    process.env.RAILWAY_ENVIRONMENT_NAME = 'production'
+    const forwardedFor = `middleware-test-${Date.now()}`
+
+    for (let attempt = 0; attempt < 30; attempt++) {
+      expect(middleware(makeRequest('http://localhost/api/appointments', { method: 'POST', forwardedFor })).status).not.toBe(429)
+    }
+
+    const response = middleware(makeRequest('http://localhost/api/appointments', { method: 'POST', forwardedFor }))
+    expect(response.status).toBe(429)
+    expect(response.headers.get('retry-after')).toMatch(/^[1-9]\d*$/)
+  })
+
+  it('bypasses burst limiting outside production', () => {
+    process.env.RAILWAY_ENVIRONMENT_NAME = 'staging'
+    const forwardedFor = `middleware-test-${Date.now()}`
+
+    for (let attempt = 0; attempt < 31; attempt++) {
+      expect(middleware(makeRequest('http://localhost/api/appointments', { method: 'POST', forwardedFor })).status).not.toBe(429)
+    }
   })
 })
 

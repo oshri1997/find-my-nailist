@@ -12,7 +12,11 @@ const MARKDOWN_NEGOTIABLE_PATHS = ['/']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  if (pathname.startsWith('/api/') && pathname !== '/api/health') {
+  if (
+    process.env.RAILWAY_ENVIRONMENT_NAME === 'production' &&
+    pathname.startsWith('/api/') &&
+    pathname !== '/api/health'
+  ) {
     const retryAfter = checkApiBurst(request.headers, request.method)
     if (retryAfter) return NextResponse.json(
       { error: 'יותר מדי בקשות. נסו שוב בעוד דקה.' },

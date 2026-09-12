@@ -275,7 +275,7 @@ test.describe.serial('Nailist appointments dashboard', () => {
     )
 
     await page.goto('/dashboard/nailist/appointments')
-    await page.waitForLoadState('networkidle')
+    await expect(page.getByRole('heading', { name: 'התורים שלי' })).toBeVisible({ timeout: 10_000 })
 
     const critical = errors.filter(e =>
       !e.includes('favicon') && !e.includes('NEXT_PUBLIC') && !e.includes('maps.googleapis') && !e.includes('userway') && !e.includes('ERR_TUNNEL_CONNECTION_FAILED')
