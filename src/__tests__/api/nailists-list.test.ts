@@ -362,12 +362,14 @@ describe('GET /api/nailists — availableOnDate (date filter param)', () => {
   it('uses holiday policy and each nailist date override in search availability', async () => {
     collectionStore['nailistProfiles'] = [
       { __id: 'auto-close', businessName: 'סגור', isActive: true, autoCloseHolidays: true },
+      { __id: 'legacy', businessName: 'ותיקה', isActive: true },
       { __id: 'opened', businessName: 'פתוח', isActive: true, autoCloseHolidays: true },
       { __id: 'manual-close', businessName: 'חריג סגור', isActive: true, autoCloseHolidays: false },
     ]
     collectionStore['services'] = []
     collectionStore['workingHours'] = [
       { __id: 'h1', nailistProfileId: 'auto-close', dayOfWeek: 1, startTime: '09:00', endTime: '18:00', isActive: true },
+      { __id: 'h-legacy', nailistProfileId: 'legacy', dayOfWeek: 1, startTime: '09:00', endTime: '18:00', isActive: true },
       { __id: 'h2', nailistProfileId: 'opened', dayOfWeek: 1, startTime: '09:00', endTime: '18:00', isActive: true },
       { __id: 'h3', nailistProfileId: 'manual-close', dayOfWeek: 1, startTime: '09:00', endTime: '18:00', isActive: true },
     ]
@@ -379,7 +381,7 @@ describe('GET /api/nailists — availableOnDate (date filter param)', () => {
 
     const json = await (await GET(makeRequest(undefined, 'date=2026-09-21'))).json()
     const availability = Object.fromEntries(json.data.map((item: { id: string; availableOnDate: boolean }) => [item.id, item.availableOnDate]))
-    expect(availability).toEqual({ 'auto-close': false, opened: true, 'manual-close': false })
+    expect(availability).toEqual({ 'auto-close': false, legacy: false, opened: true, 'manual-close': false })
   })
 
   it('marks a nailist unavailable when the whole day is fully booked', async () => {

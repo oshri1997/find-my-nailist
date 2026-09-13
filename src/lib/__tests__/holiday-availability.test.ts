@@ -27,8 +27,12 @@ describe('holiday availability policy', () => {
     expect(resolveAvailabilityHours('2026-09-21', weekly, true)).toBeUndefined()
   })
 
-  it('keeps existing profiles open when the preference is missing', () => {
-    expect(resolveAvailabilityHours('2026-09-21', weekly, undefined)).toEqual(weekly)
+  it('closes legacy profiles whose preference is missing', () => {
+    expect(resolveAvailabilityHours('2026-09-21', weekly, undefined)).toBeUndefined()
+  })
+
+  it('keeps a holiday working day only when the nailist explicitly opts out', () => {
+    expect(resolveAvailabilityHours('2026-09-21', weekly, false)).toEqual(weekly)
   })
 
   it('gives a date opening precedence over holiday closure and weekly hours', () => {

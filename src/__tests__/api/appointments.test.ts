@@ -220,10 +220,7 @@ describe('POST /api/appointments', () => {
     expect(res.status).toBe(404)
   })
 
-  it('rejects a direct booking request on an automatically closed holiday', async () => {
-    docStore['nailistProfiles/nailist-profile-1'] = {
-      ...docStore['nailistProfiles/nailist-profile-1'], autoCloseHolidays: true,
-    }
+  it('rejects a direct booking request on a holiday when the legacy profile preference is missing', async () => {
     collectionStore['workingHours'] = [
       { __id: 'hours-1', nailistProfileId: 'nailist-profile-1', dayOfWeek: 1, startTime: '08:00', endTime: '18:00', isActive: true },
     ]

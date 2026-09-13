@@ -135,6 +135,16 @@ describe('GET /api/nailists/[id]/availability/batch', () => {
     expect(json.data['2026-07-06'].workingDay).toBe(false)
   })
 
+  it('closes a Yom Kippur working day for a legacy profile without a holiday preference', async () => {
+    collectionStore['workingHours'] = [
+      { __id: 'wh-1', nailistProfileId: 'nailist-1', dayOfWeek: 1, isActive: true, startTime: '09:00', endTime: '18:00' },
+    ]
+    collectionStore['nailistProfiles'] = [{ __id: 'nailist-1' }]
+    const [req, ctx] = makeRequest('nailist-1', { from: '2026-09-21', days: '1' })
+    const json = await (await GET(req, ctx)).json()
+    expect(json.data['2026-09-21']).toEqual({ workingDay: false, fullyBooked: false })
+  })
+
   it('applies holiday closure and OPEN/CLOSED date overrides across a range', async () => {
     collectionStore['workingHours'] = [
       { __id: 'mon', nailistProfileId: 'nailist-1', dayOfWeek: 1, isActive: true, startTime: '09:00', endTime: '18:00' },

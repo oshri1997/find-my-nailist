@@ -103,9 +103,9 @@ describe('GET /api/nailists/[id]/availability', () => {
     expect(json.data.workingDay).toBe(false)
   })
 
-  it('closes a recurring workday when the nailist enabled Israeli holiday closure', async () => {
+  it('closes a recurring workday for a legacy profile missing the holiday preference', async () => {
     collectionStore['workingHours'] = [{ __id: 'wh-1', nailistProfileId: 'nailist-1', dayOfWeek: 1, isActive: true, startTime: '09:00', endTime: '18:00' }]
-    collectionStore['nailistProfiles'] = [{ __id: 'nailist-1', autoCloseHolidays: true }]
+    collectionStore['nailistProfiles'] = [{ __id: 'nailist-1' }]
     const [req, ctx] = makeRequest('nailist-1', '2026-09-21')
     const json = await (await GET(req, ctx)).json()
     expect(json.data).toEqual({ workingDay: false, bookedSlots: [] })

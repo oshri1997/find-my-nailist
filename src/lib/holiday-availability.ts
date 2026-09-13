@@ -73,6 +73,8 @@ export function resolveAvailabilityHours(
       ? { isActive: true, startTime: override.startTime, endTime: override.endTime }
       : undefined
   }
-  if (autoCloseHolidays === true && isIsraeliChag(date)) return undefined
+  // Profiles created before this preference existed must follow the Israel
+  // holiday policy too. Only an explicit false opts a nailist out.
+  if (autoCloseHolidays !== false && isIsraeliChag(date)) return undefined
   return weeklyHours?.isActive ? weeklyHours : undefined
 }

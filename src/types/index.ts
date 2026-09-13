@@ -58,8 +58,8 @@ export interface NailistProfileDoc {
   isVerified: boolean
   isActive: boolean
   onboardingCompleted?: boolean   // false right after signup; true once the onboarding wizard's last step (working hours) is saved
-  // New profiles opt in during onboarding. Missing values deliberately remain
-  // false so existing calendars are never closed without the nailist choosing it.
+  // Israel holiday closure is on unless the nailist explicitly opts out.
+  // Missing values occur on legacy profiles and are treated as enabled.
   autoCloseHolidays?: boolean
   avgRating: number
   reviewCount: number

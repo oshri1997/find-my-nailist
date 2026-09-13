@@ -122,7 +122,7 @@ async function attachAvailability(
     const appointments = appointmentsMap[id] ?? []
     const overrides = overridesMap[id] ?? new Map()
     const resolveHours = (dateStr: string, weeklyHours: WorkingHours | undefined) => resolveAvailabilityHours(
-      dateStr, weeklyHours, n.autoCloseHolidays === true, overrides.get(dateStr),
+      dateStr, weeklyHours, n.autoCloseHolidays as boolean | undefined, overrides.get(dateStr),
     )
     n.nextAvailableSlot = findNextAvailableSlot(workingHours, appointments, DEFAULT_SLOT_DURATION_MINUTES, 14, resolveHours)
     if (date) {

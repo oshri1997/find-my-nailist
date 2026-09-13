@@ -75,7 +75,7 @@ export default function WorkingHoursPage() {
   const [bulkStart, setBulkStart] = useState('09:00')
   const [bulkEnd, setBulkEnd] = useState('19:00')
   const [profileId, setProfileId] = useState<string | null>(null)
-  const [autoCloseHolidays, setAutoCloseHolidays] = useState(false)
+  const [autoCloseHolidays, setAutoCloseHolidays] = useState(true)
   const [overrides, setOverrides] = useState<Record<string, DateOverride>>({})
   const [savingHoliday, setSavingHoliday] = useState<string | null>(null)
 
@@ -97,7 +97,7 @@ export default function WorkingHoursPage() {
       if (profileRes.ok) {
         const { data } = await profileRes.json()
         setProfileId(data?.id ?? null)
-        setAutoCloseHolidays(data?.autoCloseHolidays === true)
+        setAutoCloseHolidays(data?.autoCloseHolidays !== false)
       }
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])

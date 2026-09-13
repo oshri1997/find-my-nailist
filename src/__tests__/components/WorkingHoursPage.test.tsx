@@ -95,11 +95,11 @@ describe('Working hours page — active days indicator', () => {
 })
 
 describe('Working hours page — holiday controls', () => {
-  it('loads and saves the automatic Israeli holiday closure preference', async () => {
+  it('treats a missing automatic Israeli holiday closure preference as enabled and saves opt-out', async () => {
     global.fetch = jest.fn().mockImplementation((url: string) => {
       if (url === '/api/working-hours') return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
       if (url === '/api/availability-overrides') return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
-      if (url === '/api/me/nailist-profile') return Promise.resolve({ ok: true, json: async () => ({ data: { id: 'profile-1', autoCloseHolidays: true } }) } as Response)
+      if (url === '/api/me/nailist-profile') return Promise.resolve({ ok: true, json: async () => ({ data: { id: 'profile-1' } }) } as Response)
       return Promise.resolve({ ok: true, json: async () => ({ message: 'ok' }) } as Response)
     })
     render(<WorkingHoursPage />)
