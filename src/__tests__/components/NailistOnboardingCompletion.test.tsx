@@ -28,6 +28,7 @@ jest.mock('@/components/ui/places-input', () => ({
 }))
 
 let photoCounter = 0
+let profilePatchOk = true
 jest.mock('@/lib/firebase/storage', () => ({
   uploadProfilePhoto: jest.fn(),
   uploadPortfolioPhoto: jest.fn().mockImplementation(() => {
@@ -39,6 +40,7 @@ jest.mock('@/lib/firebase/storage', () => ({
 beforeEach(() => {
   jest.clearAllMocks()
   photoCounter = 0
+  profilePatchOk = true
   let servicesAdded = 0
   global.fetch = jest.fn().mockImplementation((url: string, opts?: RequestInit) => {
     if (url.includes('/api/me/nailist-profile')) {
@@ -52,7 +54,7 @@ beforeEach(() => {
       return Promise.resolve({ ok: true, json: async () => ({ data: { id: 'service-1', name: 'פדיקור קוסמטי', durationMinutes: 60, price: 100 } }) } as Response)
     }
     if (url.includes('/api/nailists/') && opts?.method === 'PATCH') {
-      return Promise.resolve({ ok: true, json: async () => ({ message: 'ok' }) } as Response)
+      return Promise.resolve({ ok: profilePatchOk, json: async () => ({ message: 'ok' }) } as Response)
     }
     if (url === '/api/working-hours' && opts?.method === 'PUT') {
       return Promise.resolve({ ok: true, json: async () => ({ message: 'ok' }) } as Response)
@@ -61,7 +63,7 @@ beforeEach(() => {
   })
 })
 
-it('calls refreshRole before navigating to the dashboard when the wizard finishes', async () => {
+async function advanceToSocialLinksStep() {
   render(<OnboardingPage />)
 
   // Step 0 — address
@@ -94,21 +96,76 @@ it('calls refreshRole before navigating to the dashboard when the wizard finishe
   await waitFor(() => expect(screen.getByText('המשיכי')).not.toBeDisabled())
   fireEvent.click(screen.getByText('המשיכי'))
 
-  // Step 5 — social links, skip
+  // Step 5 — social links
   await waitFor(() => expect(screen.getByText('רשתות חברתיות')).toBeInTheDocument())
+}
+
+function profilePatchRequests() {
+  return (global.fetch as jest.Mock).mock.calls.filter(([url, options]) =>
+    url === '/api/nailists/nailist-1' && (options as RequestInit | undefined)?.method === 'PATCH'
+  )
+}
+
+function socialPatchRequests() {
+  return profilePatchRequests().filter(([, options]) => {
+    const body = JSON.parse((options as RequestInit).body as string) as Record<string, unknown>
+    return 'instagramUrl' in body || 'tiktokUrl' in body
+  })
+}
+
+it('skips blank social links without a PATCH and saves the default holiday setting on completion', async () => {
+  await advanceToSocialLinksStep()
   expect(screen.getByText('אופציונלי, אך מומלץ כדי לעמוד בתנאים לבדיקת תג אימות. תג אימות ניתן רק לאחר בדיקה.')).toBeInTheDocument()
-  fireEvent.click(screen.getByText('המשיכי'))
+  expect(screen.getByRole('button', { name: 'דלגי לעת עתה' })).toBeInTheDocument()
+  expect(socialPatchRequests()).toHaveLength(0)
+  fireEvent.click(screen.getByRole('button', { name: 'דלגי לעת עתה' }))
 
   // Step 6 — working hours, finish
   await waitFor(() => expect(screen.getByText('סיימתי!')).toBeInTheDocument())
+  expect(socialPatchRequests()).toHaveLength(0)
   fireEvent.click(screen.getByText('סיימתי!'))
 
   await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard/nailist'))
   expect(mockRefreshRole).toHaveBeenCalled()
+  expect(profilePatchRequests()).toContainEqual([
+    '/api/nailists/nailist-1',
+    expect.objectContaining({
+      body: JSON.stringify({ isActive: true, onboardingCompleted: true, autoCloseHolidays: true }),
+    }),
+  ])
 
   const refreshOrder = mockRefreshRole.mock.invocationCallOrder[0]
   const replaceOrder = mockReplace.mock.invocationCallOrder[
     mockReplace.mock.calls.findIndex(c => c[0] === '/dashboard/nailist')
   ]
   expect(refreshOrder).toBeLessThan(replaceOrder)
+})
+
+it('changes the social CTA to continue and persists a filled social link', async () => {
+  await advanceToSocialLinksStep()
+
+  fireEvent.change(screen.getByPlaceholderText('https://instagram.com/youraccount'), {
+    target: { value: ' https://instagram.com/nailist ' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'המשיכי' }))
+
+  await waitFor(() => expect(screen.getByText('סיימתי!')).toBeInTheDocument())
+  expect(socialPatchRequests()).toContainEqual([
+    '/api/nailists/nailist-1',
+    expect.objectContaining({ body: JSON.stringify({ instagramUrl: 'https://instagram.com/nailist' }) }),
+  ])
+})
+
+it('keeps onboarding open when the profile completion PATCH fails', async () => {
+  await advanceToSocialLinksStep()
+  fireEvent.click(screen.getByRole('button', { name: 'דלגי לעת עתה' }))
+  await waitFor(() => expect(screen.getByText('סיימתי!')).toBeInTheDocument())
+
+  profilePatchOk = false
+  fireEvent.click(screen.getByText('סיימתי!'))
+
+  await waitFor(() => expect(screen.getByText('שגיאה בשמירת שעות עבודה — נסי שוב')).toBeInTheDocument())
+  expect(screen.getByText('סיימתי!')).toBeInTheDocument()
+  expect(mockRefreshRole).not.toHaveBeenCalled()
+  expect(mockReplace).not.toHaveBeenCalled()
 })

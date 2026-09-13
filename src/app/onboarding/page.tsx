@@ -477,7 +477,7 @@ export default function OnboardingPage() {
     setSaving(true)
     setError('')
     try {
-      const [hoursRes] = await Promise.all([
+      const [hoursRes, profileRes] = await Promise.all([
         fetch('/api/working-hours', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -489,9 +489,9 @@ export default function OnboardingPage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ isActive: true, onboardingCompleted: true, autoCloseHolidays }),
             })
-          : Promise.resolve(),
+          : Promise.resolve(null),
       ])
-      if (!hoursRes.ok) throw new Error()
+      if (!hoursRes.ok || (profileRes && !profileRes.ok)) throw new Error()
       // The nailist-profile PATCH above just flipped onboardingCompleted to
       // true, but AuthProvider's context still holds the stale pre-onboarding
       // value — without this, OnboardingGuard bounces the dashboard load
@@ -1008,7 +1008,7 @@ export default function OnboardingPage() {
                     disabled={saving}
                     className="flex-1 bg-gradient-to-r from-primary to-primary/70 hover:from-primary hover:to-primary/80 border-0 rounded-xl h-12 font-black gap-2 group shadow-lg shadow-primary/40 disabled:opacity-50"
                   >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>המשיכי <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /></>}
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>{instagramUrl.trim() || tiktokUrl.trim() ? 'המשיכי' : 'דלגי לעת עתה'} <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /></>}
                   </Button>
                 </div>
               </motion.div>
