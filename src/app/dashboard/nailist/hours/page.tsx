@@ -50,6 +50,11 @@ const DEFAULT_HOURS: DayHours[] = DAYS.map(({ day }) => ({
   endTime: '19:00',
 }))
 
+function formatHolidayDate(date: string): string {
+  const [year, month, day] = date.split('-')
+  return `${day}/${month}/${year}`
+}
+
 function TimeSelect({ value, onChange, min, max, label }: { value: string; onChange: (v: string) => void; min?: string; max?: string; label?: string }) {
   let options = TIME_OPTIONS
   if (min) options = options.filter(t => t > min)
@@ -242,14 +247,15 @@ export default function WorkingHoursPage() {
           {upcomingHolidays.map((holiday) => {
             const override = overrides[holiday.date]
             const open = override?.mode === 'OPEN'
+            const displayDate = formatHolidayDate(holiday.date)
             return <div key={holiday.date} className="rounded-xl bg-card border border-border p-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-bold">{holiday.name} · {holiday.date}</span>
+                <span className="text-sm font-bold">{holiday.name} · {displayDate}</span>
                 <span className="text-xs text-muted-foreground">{override?.mode === 'CLOSED' ? 'סגור ידנית' : open ? 'פתוח בחריגה' : autoCloseHolidays ? 'סגור אוטומטית' : 'לפי שעות שבועיות'}</span>
               </div>
               {open && <div className="flex gap-2 mt-2">
-                <TimeSelect value={override.startTime ?? '09:00'} onChange={v => setOverrideStart(holiday.date, override, v)} max="23:00" label={`שעת פתיחה חריגה ${holiday.date}`} />
-                <TimeSelect value={override.endTime ?? '19:00'} onChange={v => setOverrides(prev => ({ ...prev, [holiday.date]: { ...override, date: holiday.date, mode: 'OPEN', startTime: override.startTime ?? '09:00', endTime: v } }))} min={override.startTime ?? '09:00'} label={`שעת סיום חריגה ${holiday.date}`} />
+                <TimeSelect value={override.startTime ?? '09:00'} onChange={v => setOverrideStart(holiday.date, override, v)} max="23:00" label={`שעת פתיחה חריגה ${displayDate}`} />
+                <TimeSelect value={override.endTime ?? '19:00'} onChange={v => setOverrides(prev => ({ ...prev, [holiday.date]: { ...override, date: holiday.date, mode: 'OPEN', startTime: override.startTime ?? '09:00', endTime: v } }))} min={override.startTime ?? '09:00'} label={`שעת סיום חריגה ${displayDate}`} />
               </div>}
               <div className="flex gap-2 mt-2 flex-wrap">
                 {open ? <Button type="button" size="sm" disabled={savingHoliday === holiday.date} onClick={() => saveOverride(overrides[holiday.date], holiday.date)}>שמרי שעות</Button> : <Button type="button" size="sm" variant="outline" disabled={savingHoliday === holiday.date} onClick={() => saveOverride({ date: holiday.date, mode: 'OPEN', startTime: '09:00', endTime: '19:00' }, holiday.date)}>פתיחה ביום הזה</Button>}

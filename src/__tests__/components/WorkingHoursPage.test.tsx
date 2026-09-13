@@ -6,8 +6,13 @@
  * reject on save. The start select should never even offer a value with no
  * valid end-time afterward, and changing start past end should auto-bump end.
  */
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import WorkingHoursPage from '@/app/dashboard/nailist/hours/page'
+
+jest.mock('@/lib/booking-utils', () => ({
+  ...jest.requireActual('@/lib/booking-utils'),
+  todayInIsrael: () => '2026-09-13',
+}))
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -122,5 +127,31 @@ describe('Working hours page — holiday controls', () => {
     const end = screen.getByLabelText(/שעת סיום חריגה/)
     fireEvent.change(start, { target: { value: '20:00' } })
     await waitFor(() => expect(end).toHaveDisplayValue('20:30'))
+  })
+
+  it('displays holiday dates as DD/MM/YYYY while preserving the ISO date in an override request', async () => {
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      if (url === '/api/working-hours') return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
+      if (url === '/api/availability-overrides') return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
+      if (url === '/api/me/nailist-profile') return Promise.resolve({ ok: true, json: async () => ({ data: { id: 'profile-1', autoCloseHolidays: true } }) } as Response)
+      return Promise.resolve({ ok: true, json: async () => ({ message: 'ok' }) } as Response)
+    })
+    render(<WorkingHoursPage />)
+
+    const title = await screen.findByText('חג ישראלי · 21/09/2026')
+    expect(title).toBeInTheDocument()
+    const holidayCard = title.closest('.rounded-xl.bg-card') as HTMLElement
+    fireEvent.click(within(holidayCard).getByRole('button', { name: 'פתיחה ביום הזה' }))
+    expect(await screen.findByLabelText('שעת פתיחה חריגה 21/09/2026')).toBeInTheDocument()
+    expect(screen.getByLabelText('שעת סיום חריגה 21/09/2026')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'שמרי שעות' }))
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(
+      '/api/availability-overrides',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ date: '2026-09-21', mode: 'OPEN', startTime: '09:00', endTime: '19:00' }),
+      }),
+    ))
   })
 })
