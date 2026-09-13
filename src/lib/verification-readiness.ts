@@ -8,7 +8,6 @@ export type VerificationReadinessCheckKey =
   | 'activeService'
   | 'activeWorkingHours'
   | 'portfolio'
-  | 'socialProfile'
 
 export interface VerificationReadinessCheck {
   key: VerificationReadinessCheckKey
@@ -34,8 +33,6 @@ export interface VerificationReadinessInput {
   whatsappPhone?: unknown
   photoUrl?: unknown
   coverPhotoUrl?: unknown
-  instagramUrl?: unknown
-  tiktokUrl?: unknown
   activeServiceCount: number
   activeWorkingHoursCount: number
   portfolioPhotoCount: number
@@ -78,10 +75,6 @@ export function evaluateVerificationReadiness(input: VerificationReadinessInput)
       key: 'portfolio', label: 'לפחות 5 תמונות בתיק העבודות',
       passed: input.portfolioPhotoCount >= 5,
       missing: `הוסיפי עוד ${Math.max(0, 5 - input.portfolioPhotoCount)} ${Math.max(0, 5 - input.portfolioPhotoCount) === 1 ? 'תמונה' : 'תמונות'} לתיק העבודות`,
-    },
-    {
-      key: 'socialProfile', label: 'אינסטגרם או טיקטוק',
-      passed: hasText(input.instagramUrl) || hasText(input.tiktokUrl), missing: 'קישור לאינסטגרם או טיקטוק',
     },
   ]
 

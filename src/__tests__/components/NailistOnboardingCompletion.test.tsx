@@ -115,7 +115,7 @@ function socialPatchRequests() {
 
 it('skips blank social links without a PATCH and saves the default holiday setting on completion', async () => {
   await advanceToSocialLinksStep()
-  expect(screen.getByText('אופציונלי, אך מומלץ כדי לעמוד בתנאים לבדיקת תג אימות. תג אימות ניתן רק לאחר בדיקה.')).toBeInTheDocument()
+  expect(screen.getByText('אופציונלי — הוסיפי קישורים כדי שלקוחות יוכלו למצוא אותך גם ברשתות החברתיות.')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'דלגי לעת עתה' })).toBeInTheDocument()
   expect(socialPatchRequests()).toHaveLength(0)
   fireEvent.click(screen.getByRole('button', { name: 'דלגי לעת עתה' }))

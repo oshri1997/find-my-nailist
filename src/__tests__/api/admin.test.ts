@@ -252,13 +252,13 @@ describe('GET /api/admin/nailists', () => {
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(Array.isArray(json.data)).toBe(true)
-    expect(json.data[0].verificationReadiness).toMatchObject({ totalCount: 10, isReady: false })
+    expect(json.data[0].verificationReadiness).toMatchObject({ totalCount: 9, isReady: false })
   })
 
   it('returns factual readiness checks with exact missing criteria', async () => {
     collectionStore.nailistProfiles = [{
       __id: 'n1', userId: 'u1', businessName: 'Test Nails', city: 'Tel Aviv', address: 'Main 1',
-      phoneNumber: '0501234567', photoUrl: 'https://example.com/photo.jpg', instagramUrl: 'https://instagram.com/test',
+      phoneNumber: '0501234567', photoUrl: 'https://example.com/photo.jpg',
       onboardingCompleted: true, createdAt: { toDate: () => new Date() },
     }]
     collectionStore.services = [{ __id: 's1', nailistProfileId: 'n1', isActive: true }]
@@ -271,7 +271,7 @@ describe('GET /api/admin/nailists', () => {
     const readiness = json.data[0].verificationReadiness
 
     expect(mockGetUsers).toHaveBeenCalledWith([{ uid: 'u1' }])
-    expect(readiness).toMatchObject({ passedCount: 9, totalCount: 10, isReady: false })
+    expect(readiness).toMatchObject({ passedCount: 8, totalCount: 9, isReady: false })
     expect(readiness.checks).toContainEqual(expect.objectContaining({
       key: 'portfolio', passed: false, missing: 'הוסיפי עוד 1 תמונה לתיק העבודות',
     }))

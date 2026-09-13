@@ -959,7 +959,7 @@ export default function OnboardingPage() {
                   <h2 className="text-xl font-black text-foreground">רשתות חברתיות</h2>
                   <span className="text-xs font-bold bg-muted text-muted-foreground rounded-full px-2.5 py-0.5">אופציונלי</span>
                 </div>
-                <p className="text-muted-foreground text-sm mb-6">אופציונלי, אך מומלץ כדי לעמוד בתנאים לבדיקת תג אימות. תג אימות ניתן רק לאחר בדיקה.</p>
+                <p className="text-muted-foreground text-sm mb-6">אופציונלי — הוסיפי קישורים כדי שלקוחות יוכלו למצוא אותך גם ברשתות החברתיות.</p>
 
                 <div className="space-y-3 mb-6">
                   {/* Instagram */}

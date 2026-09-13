@@ -51,7 +51,7 @@ describe('GET /api/me/verification-readiness', () => {
     mockGetUser.mockResolvedValue({ emailVerified: true })
     collectionStore.nailistProfiles = [{
       __id: 'owner-profile', userId: 'owner-1', onboardingCompleted: true, businessName: 'Studio', city: 'Tel Aviv',
-      address: '1 Main St', phoneNumber: '', photoUrl: 'photo.jpg', instagramUrl: 'https://instagram.com/studio',
+      address: '1 Main St', phoneNumber: '', photoUrl: 'photo.jpg',
     }]
     collectionStore.services = [{ __id: 'service-1', nailistProfileId: 'owner-profile', isActive: true }]
     collectionStore.workingHours = [{ __id: 'hours-1', nailistProfileId: 'owner-profile', isActive: true }]
@@ -74,6 +74,7 @@ describe('GET /api/me/verification-readiness', () => {
     expect(whereCalls).toHaveBeenCalledWith('nailistProfiles', 'userId', 'owner-1')
     expect(json.data.checks.filter((check: { passed: boolean }) => !check.passed).map((check: { missing: string }) => check.missing))
       .toEqual(['טלפון או וואטסאפ', 'הוסיפי עוד 2 תמונות לתיק העבודות'])
+    expect(json.data).toMatchObject({ totalCount: 9, passedCount: 7, isReady: false })
     expect(mockGetUser).toHaveBeenCalledWith('owner-1')
   })
 

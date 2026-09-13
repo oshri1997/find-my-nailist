@@ -15,7 +15,6 @@ const fullProfile = {
   id: 'nailist-1',
   businessName: 'סטודיו יופי',
   city: 'תל אביב',
-  instagramUrl: 'https://instagram.com/studio',
 }
 
 type DashboardProfile = typeof fullProfile & {
@@ -78,7 +77,7 @@ beforeEach(() => {
 
 describe('NailistDashboard — profile completion card', () => {
   it('hides the profile completion card once all checklist items are done', async () => {
-    mockFetchResponses() // businessName+city+instagram+services+photos+hours -> 100%
+    mockFetchResponses() // businessName+city+services+photos+hours -> 100%
     render(<NailistDashboard />)
 
     await waitFor(() => {
@@ -95,7 +94,7 @@ describe('NailistDashboard — profile completion card', () => {
     // JSX splits `{completionPct}% הושלם` into sibling text nodes — match on the <p>'s own text.
     await waitFor(() => {
       expect(
-        screen.getByText((_, node) => node?.tagName === 'P' && node?.textContent === '80% הושלם')
+        screen.getByText((_, node) => node?.tagName === 'P' && node?.textContent === '75% הושלם')
       ).toBeInTheDocument()
     })
     expect(screen.getByText('השלמת פרופיל')).toBeInTheDocument()
