@@ -32,6 +32,7 @@ const patchSchema = z.object({
   coverPhotoUrl: z.string().nullable().optional(),
   isActive: z.boolean().optional(),
   onboardingCompleted: z.boolean().optional(),
+  autoCloseHolidays: z.boolean().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   depositEnabled: z.boolean().optional(),

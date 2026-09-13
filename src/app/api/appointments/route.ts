@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { FieldValue, Timestamp, type Firestore, type DocumentReference } from 'firebase-admin/firestore'
 import { sendAppointmentRequest, sendReviewRequestEmail, sendCancellationEmail } from '@/lib/email'
 import { addDays, generateSlots, getDayOfWeek, israelDateTimeParts, israelWallClockToUtc, todayInIsrael } from '@/lib/booking-utils'
+import { availabilityOverrideDocumentId, resolveAvailabilityHours, type AvailabilityOverride } from '@/lib/holiday-availability'
 import { randomUUID } from 'crypto'
 
 // Firestore batched writes cap at 500 operations — split larger update sets into chunks.
@@ -84,13 +85,29 @@ export async function POST(request: NextRequest) {
 
     // The client UI shows only valid slots, but it is not an authority. A
     // direct request must obey the same Israel-time working-hours rules.
-    const hoursSnap = await db
+    const [hoursSnap, overrideSnap, nailistSnap, clientProfileSnap, clientUserSnap] = await Promise.all([
+      db
       .collection(COLLECTIONS.WORKING_HOURS)
       .where('nailistProfileId', '==', data.nailistProfileId)
-      .get()
-    const hours = hoursSnap.docs
+      .get(),
+      db.collection(COLLECTIONS.AVAILABILITY_OVERRIDES)
+        .doc(availabilityOverrideDocumentId(data.nailistProfileId, bookingDate))
+        .get(),
+      db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).get(),
+      db.collection(COLLECTIONS.CLIENT_PROFILES).doc(data.clientProfileId).get(),
+      db.collection(COLLECTIONS.USERS).doc(decoded.uid).get(),
+    ])
+    const weeklyHours = hoursSnap.docs
       .map((doc) => doc.data())
-      .find((item) => item.dayOfWeek === getDayOfWeek(bookingDate) && item.isActive)
+      .find((item) => item.dayOfWeek === getDayOfWeek(bookingDate) && item.isActive) as
+      | { startTime: string; endTime: string; isActive: boolean }
+      | undefined
+    const hours = resolveAvailabilityHours(
+      bookingDate,
+      weeklyHours,
+      nailistSnap.data()?.autoCloseHolidays,
+      overrideSnap.exists ? overrideSnap.data() as AvailabilityOverride : undefined,
+    )
     const expectedStart = israelWallClockToUtc(bookingDate, bookingTime)
     if (
       !hours ||
@@ -104,12 +121,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Time slot not available' }, { status: 409 })
     }
 
-    // Fetch nailist + client profiles (needed for denormalized fields + email)
-    const [nailistSnap, clientProfileSnap, clientUserSnap] = await Promise.all([
-      db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId).get(),
-      db.collection(COLLECTIONS.CLIENT_PROFILES).doc(data.clientProfileId).get(),
-      db.collection(COLLECTIONS.USERS).doc(decoded.uid).get(),
-    ])
+    // These were fetched alongside availability so a direct booking request
+    // cannot bypass holiday closure or a date-specific override.
     const nailist = nailistSnap.data()
     const clientProfile = clientProfileSnap.data()
 
@@ -171,10 +184,39 @@ export async function POST(request: NextRequest) {
     const newDocRef = db.collection(COLLECTIONS.APPOINTMENTS).doc()
     try {
       await db.runTransaction(async (tx) => {
-        const conflictSnap = await tx.get(
-          db.collection(COLLECTIONS.APPOINTMENTS)
-            .where('nailistProfileId', '==', data.nailistProfileId)
+        // Availability can change after the request-level preview check. Read
+        // the deterministic override, profile, and weekly hours in this same
+        // transaction immediately before writing, so a new CLOSED override
+        // cannot race an already-started booking into the calendar.
+        const [conflictSnap, transactionOverrideSnap, transactionHoursSnap, transactionNailistSnap] = await Promise.all([
+          tx.get(db.collection(COLLECTIONS.APPOINTMENTS)
+            .where('nailistProfileId', '==', data.nailistProfileId)),
+          tx.get(db.collection(COLLECTIONS.AVAILABILITY_OVERRIDES)
+            .doc(availabilityOverrideDocumentId(data.nailistProfileId, bookingDate))),
+          tx.get(db.collection(COLLECTIONS.WORKING_HOURS)
+            .where('nailistProfileId', '==', data.nailistProfileId)),
+          tx.get(db.collection(COLLECTIONS.NAILIST_PROFILES).doc(data.nailistProfileId)),
+        ])
+        const transactionWeeklyHours = transactionHoursSnap.docs
+          .map((doc) => doc.data())
+          .find((item) => item.dayOfWeek === getDayOfWeek(bookingDate) && item.isActive) as
+          | { startTime: string; endTime: string; isActive: boolean }
+          | undefined
+        const transactionHours = resolveAvailabilityHours(
+          bookingDate,
+          transactionWeeklyHours,
+          transactionNailistSnap.data()?.autoCloseHolidays,
+          transactionOverrideSnap.exists ? transactionOverrideSnap.data() as AvailabilityOverride : undefined,
         )
+        if (
+          !transactionNailistSnap.exists ||
+          transactionNailistSnap.data()?.isActive === false ||
+          !transactionHours ||
+          !generateSlots(transactionHours.startTime, transactionHours.endTime).includes(bookingTime) ||
+          endTime > israelWallClockToUtc(bookingDate, transactionHours.endTime)
+        ) {
+          throw new Error('UNAVAILABLE')
+        }
         const hasConflict = conflictSnap.docs.some((doc) => {
           const apt = doc.data()
           if (!['PENDING', 'CONFIRMED'].includes(apt.status)) return false
@@ -186,7 +228,7 @@ export async function POST(request: NextRequest) {
         tx.set(newDocRef, appointmentData)
       })
     } catch (txErr) {
-      if (txErr instanceof Error && txErr.message === 'CONFLICT') {
+      if (txErr instanceof Error && ['CONFLICT', 'UNAVAILABLE'].includes(txErr.message)) {
         return NextResponse.json({ error: 'Time slot not available' }, { status: 409 })
       }
       throw txErr

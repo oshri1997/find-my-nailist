@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { computeDateAvailability, getDayOfWeek, addDays, israelNow } from '@/lib/booking-utils'
+import { resolveAvailabilityHours, type AvailabilityOverride } from '@/lib/holiday-availability'
 
 export async function GET(
   request: NextRequest,
@@ -21,10 +22,16 @@ export async function GET(
     const db = adminDb()
     const dates = Array.from({ length: days }, (_, i) => addDays(from, i))
 
-    const hoursSnap = await db
+    const [hoursSnap, profileSnap, overridesSnap] = await Promise.all([
+      db
       .collection(COLLECTIONS.WORKING_HOURS)
       .where('nailistProfileId', '==', nailistProfileId)
-      .get()
+      .get(),
+      db.collection(COLLECTIONS.NAILIST_PROFILES).doc(nailistProfileId).get(),
+      db.collection(COLLECTIONS.AVAILABILITY_OVERRIDES)
+        .where('nailistProfileId', '==', nailistProfileId)
+        .get(),
+    ])
 
     const workingHoursByDay = new Map<number, { startTime: string; endTime: string; isActive: boolean }>()
     hoursSnap.docs.forEach((doc) => {
@@ -34,6 +41,11 @@ export async function GET(
         endTime: data.endTime,
         isActive: data.isActive,
       })
+    })
+    const overridesByDate = new Map<string, AvailabilityOverride>()
+    overridesSnap.docs.forEach((doc) => {
+      const override = doc.data() as AvailabilityOverride
+      overridesByDate.set(override.date, override)
     })
 
     const endDateStr = addDays(from, days)
@@ -62,7 +74,12 @@ export async function GET(
     for (const date of dates) {
       result[date] = computeDateAvailability(
         date,
-        workingHoursByDay.get(getDayOfWeek(date)),
+        resolveAvailabilityHours(
+          date,
+          workingHoursByDay.get(getDayOfWeek(date)),
+          profileSnap.data()?.autoCloseHolidays,
+          overridesByDate.get(date),
+        ),
         durationMinutes,
         rangeAppointments,
         date === todayStr ? todayNowMinutes : undefined

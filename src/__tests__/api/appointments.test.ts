@@ -140,6 +140,8 @@ describe('POST /api/appointments', () => {
   beforeEach(() => {
     jest.useFakeTimers().setSystemTime(new Date('2026-06-01T00:00:00.000Z'))
     jest.clearAllMocks()
+    delete docStore['availabilityOverrides/nailist-profile-1_2026-09-21']
+    delete docStore['availabilityOverrides/nailist-profile-1_2026-07-01']
 
     // Seed service doc
     docStore['services/service-1'] = {
@@ -216,6 +218,64 @@ describe('POST /api/appointments', () => {
     const req = makeRequest('POST', validBody, 'valid-token')
     const res = await POST(req)
     expect(res.status).toBe(404)
+  })
+
+  it('rejects a direct booking request on an automatically closed holiday', async () => {
+    docStore['nailistProfiles/nailist-profile-1'] = {
+      ...docStore['nailistProfiles/nailist-profile-1'], autoCloseHolidays: true,
+    }
+    collectionStore['workingHours'] = [
+      { __id: 'hours-1', nailistProfileId: 'nailist-profile-1', dayOfWeek: 1, startTime: '08:00', endTime: '18:00', isActive: true },
+    ]
+    const req = makeRequest('POST', {
+      ...validBody, startTime: new Date('2026-09-21T10:00:00.000Z').toISOString(),
+    }, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(409)
+    expect(mockAppointmentAdd).not.toHaveBeenCalled()
+  })
+
+  it('allows a direct booking only inside an OPEN date override', async () => {
+    docStore['nailistProfiles/nailist-profile-1'] = {
+      ...docStore['nailistProfiles/nailist-profile-1'], autoCloseHolidays: true,
+    }
+    collectionStore['workingHours'] = []
+    docStore['availabilityOverrides/nailist-profile-1_2026-09-21'] = {
+      nailistProfileId: 'nailist-profile-1', date: '2026-09-21', mode: 'OPEN', startTime: '10:00', endTime: '14:00',
+    }
+    const allowed = await POST(makeRequest('POST', {
+      ...validBody, startTime: new Date('2026-09-21T10:00:00.000Z').toISOString(),
+    }, 'valid-token'))
+    expect(allowed.status).toBe(201)
+
+    const outsideOverride = await POST(makeRequest('POST', {
+      ...validBody, startTime: new Date('2026-09-21T14:00:00.000Z').toISOString(),
+    }, 'valid-token'))
+    expect(outsideOverride.status).toBe(409)
+  })
+
+  it('rejects a direct booking when a regular working day has a CLOSED override', async () => {
+    docStore['availabilityOverrides/nailist-profile-1_2026-07-01'] = {
+      nailistProfileId: 'nailist-profile-1', date: '2026-07-01', mode: 'CLOSED',
+    }
+    const res = await POST(makeRequest('POST', validBody, 'valid-token'))
+    expect(res.status).toBe(409)
+  })
+
+  it('rejects booking when a CLOSED override is committed after the preview read but before transaction write', async () => {
+    mockDb.runTransaction.mockImplementationOnce(async (callback: (tx: unknown) => Promise<unknown>) => {
+      docStore['availabilityOverrides/nailist-profile-1_2026-07-01'] = {
+        nailistProfileId: 'nailist-profile-1', date: '2026-07-01', mode: 'CLOSED',
+      }
+      const tx = {
+        get: (queryOrRef: { get: () => Promise<unknown> }) => queryOrRef.get(),
+        set: jest.fn((ref: { set: (data: unknown) => unknown }, data: unknown) => ref.set(data)),
+      }
+      return callback(tx)
+    })
+    const res = await POST(makeRequest('POST', validBody, 'valid-token'))
+    expect(res.status).toBe(409)
+    expect(mockAppointmentAdd).not.toHaveBeenCalled()
   })
 
   it('returns 404 when the service belongs to a different nailist', async () => {

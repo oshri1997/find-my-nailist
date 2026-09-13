@@ -6,6 +6,7 @@ export const COLLECTIONS = {
   SERVICES: 'services',
   PORTFOLIO_PHOTOS: 'portfolioPhotos',
   WORKING_HOURS: 'workingHours',
+  AVAILABILITY_OVERRIDES: 'availabilityOverrides',
   APPOINTMENTS: 'appointments',
   REVIEWS: 'reviews',
   FAVORITES: 'favorites',

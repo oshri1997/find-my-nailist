@@ -93,3 +93,34 @@ describe('Working hours page — active days indicator', () => {
     await waitFor(() => expect(screen.getByText('5 ימים פעילים מתוך 7')).toBeInTheDocument())
   })
 })
+
+describe('Working hours page — holiday controls', () => {
+  it('loads and saves the automatic Israeli holiday closure preference', async () => {
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      if (url === '/api/working-hours') return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
+      if (url === '/api/availability-overrides') return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
+      if (url === '/api/me/nailist-profile') return Promise.resolve({ ok: true, json: async () => ({ data: { id: 'profile-1', autoCloseHolidays: true } }) } as Response)
+      return Promise.resolve({ ok: true, json: async () => ({ message: 'ok' }) } as Response)
+    })
+    render(<WorkingHoursPage />)
+    const checkbox = await screen.findByRole('checkbox', { name: /סגירה אוטומטית בחגים/ })
+    expect(checkbox).toBeChecked()
+    fireEvent.click(checkbox)
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledWith('/api/nailists/profile-1', expect.objectContaining({ method: 'PATCH' })))
+  })
+
+  it('bumps an override end time when its start time reaches it', async () => {
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      if (url === '/api/working-hours') return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
+      if (url === '/api/availability-overrides') return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
+      if (url === '/api/me/nailist-profile') return Promise.resolve({ ok: true, json: async () => ({ data: { id: 'profile-1', autoCloseHolidays: true } }) } as Response)
+      return Promise.resolve({ ok: true, json: async () => ({ message: 'ok' }) } as Response)
+    })
+    render(<WorkingHoursPage />)
+    fireEvent.click((await screen.findAllByRole('button', { name: 'פתיחה ביום הזה' }))[0])
+    const start = await screen.findByLabelText(/שעת פתיחה חריגה/)
+    const end = screen.getByLabelText(/שעת סיום חריגה/)
+    fireEvent.change(start, { target: { value: '20:00' } })
+    await waitFor(() => expect(end).toHaveDisplayValue('20:30'))
+  })
+})

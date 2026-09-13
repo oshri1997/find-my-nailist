@@ -123,6 +123,7 @@ export default function OnboardingPage() {
 
   // Step 7 — working hours
   const [workingHours, setWorkingHours] = useState<DayHours[]>(defaultHours)
+  const [autoCloseHolidays, setAutoCloseHolidays] = useState(true)
 
   useEffect(() => {
     if (authLoading) return
@@ -486,7 +487,7 @@ export default function OnboardingPage() {
           ? fetch(`/api/nailists/${profileId}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ isActive: true, onboardingCompleted: true }),
+              body: JSON.stringify({ isActive: true, onboardingCompleted: true, autoCloseHolidays }),
             })
           : Promise.resolve(),
       ])
@@ -1017,6 +1018,19 @@ export default function OnboardingPage() {
               <motion.div key="step6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                 <h2 className="text-xl font-black text-foreground mb-1">שעות פעילות</h2>
                 <p className="text-muted-foreground text-sm mb-5">הגדירי באילו ימים ושעות את זמינה ללקוחות</p>
+
+                <label className="flex gap-3 rounded-xl border border-primary/25 bg-primary/10 px-4 py-3 mb-5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoCloseHolidays}
+                    onChange={e => setAutoCloseHolidays(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-primary"
+                  />
+                  <span>
+                    <span className="block text-sm font-bold text-foreground">לסגור יומן אוטומטית בחגים וביום העצמאות</span>
+                    <span className="block text-xs text-muted-foreground mt-0.5">אפשר לפתוח חג מסוים או לשנות את שעותיו בהמשך.</span>
+                  </span>
+                </label>
 
                 <div className="space-y-2 mb-5">
                   {workingHours.map((day, i) => (

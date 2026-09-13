@@ -25,6 +25,10 @@ function makeChainableWhere(name: string) {
     }
   }
   return {
+    doc: jest.fn((id: string) => ({ get: jest.fn().mockResolvedValue({
+      exists: (collectionStore[name] ?? []).some((item) => item.__id === id),
+      data: () => (collectionStore[name] ?? []).find((item) => item.__id === id),
+    }) })),
     where: jest.fn().mockImplementation((field: string, _op: string, value: unknown) => {
       const filtered = (collectionStore[name] ?? []).filter(d => d[field] === value)
       return makeWhere(filtered)
@@ -54,6 +58,8 @@ describe('GET /api/nailists/[id]/availability', () => {
     jest.clearAllMocks()
     collectionStore['workingHours'] = []
     collectionStore['appointments'] = []
+    collectionStore['nailistProfiles'] = []
+    collectionStore['availabilityOverrides'] = []
   })
 
   it('returns 400 when date param is missing', async () => {
@@ -95,6 +101,30 @@ describe('GET /api/nailists/[id]/availability', () => {
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(json.data.workingDay).toBe(false)
+  })
+
+  it('closes a recurring workday when the nailist enabled Israeli holiday closure', async () => {
+    collectionStore['workingHours'] = [{ __id: 'wh-1', nailistProfileId: 'nailist-1', dayOfWeek: 1, isActive: true, startTime: '09:00', endTime: '18:00' }]
+    collectionStore['nailistProfiles'] = [{ __id: 'nailist-1', autoCloseHolidays: true }]
+    const [req, ctx] = makeRequest('nailist-1', '2026-09-21')
+    const json = await (await GET(req, ctx)).json()
+    expect(json.data).toEqual({ workingDay: false, bookedSlots: [] })
+  })
+
+  it('opens a closed holiday with only its explicit override hours', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'nailist-1', autoCloseHolidays: true }]
+    collectionStore['availabilityOverrides'] = [{ __id: 'nailist-1_2026-09-21', nailistProfileId: 'nailist-1', date: '2026-09-21', mode: 'OPEN', startTime: '10:00', endTime: '14:00' }]
+    const [req, ctx] = makeRequest('nailist-1', '2026-09-21')
+    const json = await (await GET(req, ctx)).json()
+    expect(json.data).toMatchObject({ workingDay: true, startTime: '10:00', endTime: '14:00' })
+  })
+
+  it('closes a normally active date when its explicit override is CLOSED', async () => {
+    collectionStore['workingHours'] = [{ __id: 'wh-1', nailistProfileId: 'nailist-1', dayOfWeek: 2, isActive: true, startTime: '09:00', endTime: '18:00' }]
+    collectionStore['availabilityOverrides'] = [{ __id: 'nailist-1_2026-09-22', nailistProfileId: 'nailist-1', date: '2026-09-22', mode: 'CLOSED' }]
+    const [req, ctx] = makeRequest('nailist-1', '2026-09-22')
+    const json = await (await GET(req, ctx)).json()
+    expect(json.data).toEqual({ workingDay: false, bookedSlots: [] })
   })
 
   it('returns working day info with empty bookedSlots when no appointments', async () => {

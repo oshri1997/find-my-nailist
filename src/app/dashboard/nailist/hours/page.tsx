@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { CheckCircle2, Loader2, AlertCircle, Clock, CopyCheck } from 'lucide-react'
+import { addDays, todayInIsrael } from '@/lib/booking-utils'
+import { getIsraeliChag } from '@/lib/holiday-availability'
 
 const DAYS = [
   { day: 0, label: 'ראשון', short: 'א׳', weekend: false },
@@ -32,6 +34,13 @@ interface DayHours {
   isActive: boolean
   startTime: string
   endTime: string
+}
+
+interface DateOverride {
+  date: string
+  mode: 'OPEN' | 'CLOSED'
+  startTime?: string
+  endTime?: string
 }
 
 const DEFAULT_HOURS: DayHours[] = DAYS.map(({ day }) => ({
@@ -65,23 +74,76 @@ export default function WorkingHoursPage() {
   const [error, setError] = useState('')
   const [bulkStart, setBulkStart] = useState('09:00')
   const [bulkEnd, setBulkEnd] = useState('19:00')
+  const [profileId, setProfileId] = useState<string | null>(null)
+  const [autoCloseHolidays, setAutoCloseHolidays] = useState(false)
+  const [overrides, setOverrides] = useState<Record<string, DateOverride>>({})
+  const [savingHoliday, setSavingHoliday] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/working-hours')
-      .then(async (r) => {
-        if (!r.ok) return
-        const { data } = await r.json()
-        if (!data?.length) return
-        setHours((prev) =>
-          prev.map((def) => {
-            const fetched = (data as DayHours[]).find((d) => d.dayOfWeek === def.dayOfWeek)
-            return fetched ? { ...def, ...fetched } : def
-          })
-        )
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch('/api/working-hours'), fetch('/api/availability-overrides'), fetch('/api/me/nailist-profile'),
+    ]).then(async ([hoursRes, overridesRes, profileRes]) => {
+      if (hoursRes.ok) {
+        const { data } = await hoursRes.json()
+        if (data?.length) setHours((prev) => prev.map((def) => {
+          const fetched = (data as DayHours[]).find((d) => d.dayOfWeek === def.dayOfWeek)
+          return fetched ? { ...def, ...fetched } : def
+        }))
+      }
+      if (overridesRes.ok) {
+        const { data } = await overridesRes.json()
+        setOverrides(Object.fromEntries((data as DateOverride[]).map((item) => [item.date, item])))
+      }
+      if (profileRes.ok) {
+        const { data } = await profileRes.json()
+        setProfileId(data?.id ?? null)
+        setAutoCloseHolidays(data?.autoCloseHolidays === true)
+      }
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [])
+
+  async function saveHolidayPreference(value: boolean) {
+    if (!profileId) return
+    setSavingHoliday('preference')
+    try {
+      const res = await fetch(`/api/nailists/${profileId}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ autoCloseHolidays: value }),
+      })
+      if (!res.ok) throw new Error()
+      setAutoCloseHolidays(value)
+    } catch {
+      setError('שגיאה בשמירת הגדרת החגים — נסי שוב')
+    } finally { setSavingHoliday(null) }
+  }
+
+  async function saveOverride(override: DateOverride | null, date: string) {
+    setSavingHoliday(date)
+    try {
+      const res = await fetch(override ? '/api/availability-overrides' : `/api/availability-overrides?date=${date}`, {
+        method: override ? 'PUT' : 'DELETE',
+        headers: override ? { 'Content-Type': 'application/json' } : undefined,
+        body: override ? JSON.stringify(override) : undefined,
+      })
+      if (!res.ok) throw new Error()
+      setOverrides(prev => {
+        const next = { ...prev }
+        if (override) next[date] = override
+        else delete next[date]
+        return next
+      })
+    } catch {
+      setError('שגיאה בשמירת החריגה — נסי שוב')
+    } finally { setSavingHoliday(null) }
+  }
+
+  function setOverrideStart(date: string, override: DateOverride, startTime: string) {
+    const currentEnd = override.endTime ?? '19:00'
+    const endTime = startTime >= currentEnd
+      ? TIME_OPTIONS.find((time) => time > startTime) ?? currentEnd
+      : currentEnd
+    setOverrides(prev => ({ ...prev, [date]: { ...override, date, mode: 'OPEN', startTime, endTime } }))
+  }
 
   function toggle(day: number) {
     setHours(prev => prev.map(h => h.dayOfWeek === day ? { ...h, isActive: !h.isActive } : h))
@@ -154,6 +216,10 @@ export default function WorkingHoursPage() {
   }
 
   const activeDays = hours.filter(h => h.isActive).length
+  const upcomingHolidays = Array.from({ length: 370 }, (_, index) => {
+    const date = addDays(todayInIsrael(), index)
+    return getIsraeliChag(date)
+  }).filter((holiday): holiday is NonNullable<typeof holiday> => holiday !== null).slice(0, 8)
 
   return (
     <div className="p-4 md:p-8 max-w-2xl">
@@ -161,6 +227,39 @@ export default function WorkingHoursPage() {
         <h1 className="text-2xl md:text-3xl font-black text-foreground mb-1">שעות עבודה</h1>
         <p className="text-muted-foreground font-medium">הגדירי את הימים והשעות שאת זמינה ללקוחות</p>
       </motion.div>
+
+      <section className="rounded-2xl border border-primary/20 bg-primary/5 p-4 mb-5 space-y-4">
+        <label className="flex gap-3 cursor-pointer">
+          <input type="checkbox" checked={autoCloseHolidays} disabled={!profileId || savingHoliday === 'preference'}
+            onChange={e => saveHolidayPreference(e.target.checked)} className="mt-0.5 h-4 w-4 accent-primary" />
+          <span>
+            <span className="block text-sm font-black text-foreground">סגירה אוטומטית בחגים וביום העצמאות</span>
+            <span className="block text-xs text-muted-foreground mt-0.5">חגים מלאים בישראל ויום העצמאות ייסגרו בכל שנה. ערב חג וחול המועד נשארים לפי השעות השבועיות.</span>
+          </span>
+        </label>
+        <div className="border-t border-primary/15 pt-3 space-y-2">
+          <p className="text-xs font-black text-muted-foreground">חגים וימים לאומיים קרובים</p>
+          {upcomingHolidays.map((holiday) => {
+            const override = overrides[holiday.date]
+            const open = override?.mode === 'OPEN'
+            return <div key={holiday.date} className="rounded-xl bg-card border border-border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-bold">{holiday.name} · {holiday.date}</span>
+                <span className="text-xs text-muted-foreground">{override?.mode === 'CLOSED' ? 'סגור ידנית' : open ? 'פתוח בחריגה' : autoCloseHolidays ? 'סגור אוטומטית' : 'לפי שעות שבועיות'}</span>
+              </div>
+              {open && <div className="flex gap-2 mt-2">
+                <TimeSelect value={override.startTime ?? '09:00'} onChange={v => setOverrideStart(holiday.date, override, v)} max="23:00" label={`שעת פתיחה חריגה ${holiday.date}`} />
+                <TimeSelect value={override.endTime ?? '19:00'} onChange={v => setOverrides(prev => ({ ...prev, [holiday.date]: { ...override, date: holiday.date, mode: 'OPEN', startTime: override.startTime ?? '09:00', endTime: v } }))} min={override.startTime ?? '09:00'} label={`שעת סיום חריגה ${holiday.date}`} />
+              </div>}
+              <div className="flex gap-2 mt-2 flex-wrap">
+                {open ? <Button type="button" size="sm" disabled={savingHoliday === holiday.date} onClick={() => saveOverride(overrides[holiday.date], holiday.date)}>שמרי שעות</Button> : <Button type="button" size="sm" variant="outline" disabled={savingHoliday === holiday.date} onClick={() => saveOverride({ date: holiday.date, mode: 'OPEN', startTime: '09:00', endTime: '19:00' }, holiday.date)}>פתיחה ביום הזה</Button>}
+                <Button type="button" size="sm" variant="outline" disabled={savingHoliday === holiday.date} onClick={() => saveOverride({ date: holiday.date, mode: 'CLOSED' }, holiday.date)}>סגירה ביום הזה</Button>
+                {override && <Button type="button" size="sm" variant="ghost" disabled={savingHoliday === holiday.date} onClick={() => saveOverride(null, holiday.date)}>החזרה לכלל הרגיל</Button>}
+              </div>
+            </div>
+          })}
+        </div>
+      </section>
 
       {/* Quick presets */}
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}

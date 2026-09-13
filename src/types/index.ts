@@ -58,6 +58,9 @@ export interface NailistProfileDoc {
   isVerified: boolean
   isActive: boolean
   onboardingCompleted?: boolean   // false right after signup; true once the onboarding wizard's last step (working hours) is saved
+  // New profiles opt in during onboarding. Missing values deliberately remain
+  // false so existing calendars are never closed without the nailist choosing it.
+  autoCloseHolidays?: boolean
   avgRating: number
   reviewCount: number
   createdAt: Timestamp
@@ -168,6 +171,18 @@ export interface AuditLogDoc {
   createdAt: Timestamp
 }
 
+export type AvailabilityOverrideMode = 'OPEN' | 'CLOSED'
+
+export interface AvailabilityOverrideDoc {
+  nailistProfileId: string
+  date: string // YYYY-MM-DD, Israel calendar date
+  mode: AvailabilityOverrideMode
+  startTime?: string
+  endTime?: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
 // Support/feedback reports are always attributed on the server from the
 // authenticated Firebase session. Reporter fields are snapshots so the admin
 // can understand an older report even if a user later changes their profile.
@@ -260,6 +275,12 @@ export interface Review extends Omit<ReviewDoc, 'createdAt' | 'updatedAt'> {
 export interface AuditLog extends Omit<AuditLogDoc, 'createdAt'> {
   id: string
   createdAt: string
+}
+
+export interface AvailabilityOverride extends Omit<AvailabilityOverrideDoc, 'createdAt' | 'updatedAt'> {
+  id: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Feedback extends Omit<FeedbackDoc, 'createdAt' | 'updatedAt'> {

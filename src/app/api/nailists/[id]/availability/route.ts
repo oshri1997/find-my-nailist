@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { israelWallClockToUtc } from '@/lib/booking-utils'
+import { availabilityOverrideDocumentId, resolveAvailabilityHours, type AvailabilityOverride } from '@/lib/holiday-availability'
 
 // Maps JS getDay() (0=Sun) to our dayOfWeek field (0=Sun)
 function getDayOfWeek(dateStr: string): number {
@@ -27,19 +28,27 @@ export async function GET(
     const dayOfWeek = getDayOfWeek(date)
 
     // Fetch working hours for this day
-    const hoursSnap = await db
+    const [hoursSnap, profileSnap, overridesSnap] = await Promise.all([
+      db
       .collection(COLLECTIONS.WORKING_HOURS)
       .where('nailistProfileId', '==', nailistProfileId)
       .where('dayOfWeek', '==', dayOfWeek)
       .limit(1)
-      .get()
+      .get(),
+      db.collection(COLLECTIONS.NAILIST_PROFILES).doc(nailistProfileId).get(),
+      db.collection(COLLECTIONS.AVAILABILITY_OVERRIDES)
+        .doc(availabilityOverrideDocumentId(nailistProfileId, date))
+        .get(),
+    ])
 
-    if (hoursSnap.empty) {
-      return NextResponse.json({ data: { workingDay: false, bookedSlots: [] } })
-    }
-
-    const hoursDoc = hoursSnap.docs[0].data()
-    if (!hoursDoc.isActive) {
+    const override = overridesSnap.exists ? overridesSnap.data() as AvailabilityOverride : undefined
+    const hoursDoc = resolveAvailabilityHours(
+      date,
+      hoursSnap.empty ? undefined : hoursSnap.docs[0].data() as { startTime: string; endTime: string; isActive: boolean },
+      profileSnap.data()?.autoCloseHolidays,
+      override,
+    )
+    if (!hoursDoc) {
       return NextResponse.json({ data: { workingDay: false, bookedSlots: [] } })
     }
 

@@ -7,6 +7,10 @@ const collectionStore: Record<string, (Record<string, unknown> & { __id: string 
 
 function makeChainableWhere(name: string) {
   return {
+    doc: jest.fn((id: string) => ({ get: jest.fn().mockResolvedValue({
+      exists: (collectionStore[name] ?? []).some((item) => item.__id === id),
+      data: () => (collectionStore[name] ?? []).find((item) => item.__id === id),
+    }) })),
     where: jest.fn().mockImplementation((field: string, _op: string, value: unknown) => {
       const filtered = (collectionStore[name] ?? []).filter(d => d[field] === value)
       return {
@@ -61,6 +65,8 @@ describe('GET /api/nailists/[id]/availability/batch', () => {
     jest.clearAllMocks()
     collectionStore['workingHours'] = []
     collectionStore['appointments'] = []
+    collectionStore['nailistProfiles'] = []
+    collectionStore['availabilityOverrides'] = []
   })
 
   it('returns 400 when from param is missing', async () => {
@@ -127,6 +133,22 @@ describe('GET /api/nailists/[id]/availability/batch', () => {
     const res = await GET(req, ctx)
     const json = await res.json()
     expect(json.data['2026-07-06'].workingDay).toBe(false)
+  })
+
+  it('applies holiday closure and OPEN/CLOSED date overrides across a range', async () => {
+    collectionStore['workingHours'] = [
+      { __id: 'mon', nailistProfileId: 'nailist-1', dayOfWeek: 1, isActive: true, startTime: '09:00', endTime: '18:00' },
+      { __id: 'tue', nailistProfileId: 'nailist-1', dayOfWeek: 2, isActive: true, startTime: '09:00', endTime: '18:00' },
+    ]
+    collectionStore['nailistProfiles'] = [{ __id: 'nailist-1', autoCloseHolidays: true }]
+    collectionStore['availabilityOverrides'] = [
+      { __id: 'nailist-1_2026-09-21', nailistProfileId: 'nailist-1', date: '2026-09-21', mode: 'OPEN', startTime: '10:00', endTime: '14:00' },
+      { __id: 'nailist-1_2026-09-22', nailistProfileId: 'nailist-1', date: '2026-09-22', mode: 'CLOSED' },
+    ]
+    const [req, ctx] = makeRequest('nailist-1', { from: '2026-09-21', days: '2' })
+    const json = await (await GET(req, ctx)).json()
+    expect(json.data['2026-09-21'].workingDay).toBe(true)
+    expect(json.data['2026-09-22']).toEqual({ workingDay: false, fullyBooked: false })
   })
 
   it('marks fullyBooked: true when all slots on a working day are taken', async () => {

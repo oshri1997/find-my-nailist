@@ -101,6 +101,12 @@ describe('PATCH /api/nailists/[id]', () => {
     )
   })
 
+  it('persists the holiday auto-closure preference', async () => {
+    const res = await PATCH(makeRequest({ autoCloseHolidays: true }, 'token'), mockParams)
+    expect(res.status).toBe(200)
+    expect(mockUpdateFn).toHaveBeenCalledWith(expect.objectContaining({ autoCloseHolidays: true }))
+  })
+
   it('rejects mass-assignment of trust fields (isVerified, avgRating, reviewCount, userId)', async () => {
     const res = await PATCH(
       makeRequest({ businessName: 'Updated Studio', isVerified: true, avgRating: 5, reviewCount: 9999, userId: 'attacker-uid' }, 'token'),

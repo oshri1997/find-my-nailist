@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { isAuthenticatedRequest, computeHasContactInfo, stripNailistContactFields } from '@/lib/nailist-contact'
 import { findNextAvailableSlot, computeDateAvailability, getDayOfWeek, israelNow, type WorkingHours, type BookedSlot } from '@/lib/booking-utils'
+import { resolveAvailabilityHours, type AvailabilityOverride } from '@/lib/holiday-availability'
 
 import { geohashQueryBounds, distanceBetween } from 'geofire-common'
 import { FieldPath, type Firestore } from 'firebase-admin/firestore'
@@ -71,6 +72,7 @@ async function attachAvailability(
 
   const workingHoursMap: Record<string, Map<number, WorkingHours>> = {}
   const appointmentsMap: Record<string, BookedSlot[]> = {}
+  const overridesMap: Record<string, Map<string, AvailabilityOverride>> = {}
 
   // Firestore 'in' supports max 30 items per query
   const chunks: string[][] = []
@@ -78,9 +80,10 @@ async function attachAvailability(
 
   await Promise.all(
     chunks.map(async (chunk) => {
-      const [hoursSnap, appointmentsSnap] = await Promise.all([
+      const [hoursSnap, appointmentsSnap, overridesSnap] = await Promise.all([
         db.collection(COLLECTIONS.WORKING_HOURS).where('nailistProfileId', 'in', chunk).get(),
         db.collection(COLLECTIONS.APPOINTMENTS).where('nailistProfileId', 'in', chunk).get(),
+        db.collection(COLLECTIONS.AVAILABILITY_OVERRIDES).where('nailistProfileId', 'in', chunk).get(),
       ])
 
       hoursSnap.docs.forEach((doc) => {
@@ -103,6 +106,11 @@ async function attachAvailability(
         const end: Date = d.endTime?.toDate?.() ?? new Date(d.endTime)
         appointmentsMap[nailistProfileId].push({ startTime: start.toISOString(), endTime: end.toISOString() })
       })
+      overridesSnap.docs.forEach((doc) => {
+        const override = doc.data() as AvailabilityOverride & { nailistProfileId: string }
+        if (!overridesMap[override.nailistProfileId]) overridesMap[override.nailistProfileId] = new Map()
+        overridesMap[override.nailistProfileId].set(override.date, override)
+      })
     }),
   )
 
@@ -112,12 +120,16 @@ async function attachAvailability(
     const id = n.id as string
     const workingHours = workingHoursMap[id] ?? new Map()
     const appointments = appointmentsMap[id] ?? []
-    n.nextAvailableSlot = findNextAvailableSlot(workingHours, appointments, DEFAULT_SLOT_DURATION_MINUTES)
+    const overrides = overridesMap[id] ?? new Map()
+    const resolveHours = (dateStr: string, weeklyHours: WorkingHours | undefined) => resolveAvailabilityHours(
+      dateStr, weeklyHours, n.autoCloseHolidays === true, overrides.get(dateStr),
+    )
+    n.nextAvailableSlot = findNextAvailableSlot(workingHours, appointments, DEFAULT_SLOT_DURATION_MINUTES, 14, resolveHours)
     if (date) {
       const nowMinutes = today && date === today.dateStr ? today.minutesSinceMidnight : undefined
       const { workingDay, fullyBooked } = computeDateAvailability(
         date,
-        workingHours.get(getDayOfWeek(date)),
+        resolveHours(date, workingHours.get(getDayOfWeek(date))),
         DEFAULT_SLOT_DURATION_MINUTES,
         appointments,
         nowMinutes,

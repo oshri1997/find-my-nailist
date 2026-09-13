@@ -229,14 +229,17 @@ export function findNextAvailableSlot(
   workingHoursByDay: Map<number, WorkingHours>,
   appointments: BookedSlot[],
   durationMinutes: number,
-  daysToSearch = 14
+  daysToSearch = 14,
+  resolveHours?: (date: string, weeklyHours: WorkingHours | undefined) => WorkingHours | undefined,
 ): NextAvailableSlot | null {
   const { dateStr: todayStr, minutesSinceMidnight: todayNowMinutes } = israelNow()
   let dateStr = todayStr
   for (let i = 0; i < daysToSearch; i++) {
     const slot = findFirstAvailableSlot(
       dateStr,
-      workingHoursByDay.get(getDayOfWeek(dateStr)),
+      resolveHours
+        ? resolveHours(dateStr, workingHoursByDay.get(getDayOfWeek(dateStr)))
+        : workingHoursByDay.get(getDayOfWeek(dateStr)),
       durationMinutes,
       appointments,
       i === 0 ? todayNowMinutes : undefined
