@@ -7,7 +7,7 @@ jest.mock('@/components/auth/auth-provider', () => ({
 
 const baseUsers = [
   { id: 'u1', email: 'alice@test.com', displayName: 'Alice', photoUrl: null, role: 'CLIENT', isAdmin: false, suspended: false, createdAt: null, onboardingCompleted: true },
-  { id: 'u2', email: 'bob@test.com', displayName: 'Bob', photoUrl: null, role: 'NAILIST', isAdmin: false, suspended: true, createdAt: null, onboardingCompleted: false },
+  { id: 'u2', email: 'bob@test.com', displayName: 'Bob', photoUrl: null, role: 'NAILIST', isAdmin: false, suspended: true, emailDeliveryStatus: 'BOUNCED', createdAt: null, onboardingCompleted: false },
   { id: 'admin-1', email: 'admin@test.com', displayName: 'Admin', photoUrl: null, role: 'NAILIST', isAdmin: true, suspended: false, createdAt: null, onboardingCompleted: true },
 ]
 
@@ -62,6 +62,17 @@ describe('AdminUsersPage — filters', () => {
     await waitFor(() => {
       expect(lastUsersUrl).toContain('role=NAILIST')
     })
+  })
+
+  it('shows bounced email status and filters for it', async () => {
+    render(<AdminUsersPage />)
+    await waitFor(() => expect(screen.getByText('bob@test.com')).toBeInTheDocument())
+    expect(screen.getByText('מייל חזר')).toBeInTheDocument()
+
+    const emailStatusSelect = screen.getAllByRole('combobox').at(-1)!
+    fireEvent.change(emailStatusSelect, { target: { value: 'BOUNCED' } })
+
+    await waitFor(() => expect(lastUsersUrl).toContain('emailStatus=BOUNCED'))
   })
 })
 

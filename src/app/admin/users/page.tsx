@@ -14,6 +14,7 @@ interface AdminUser {
   suspended: boolean
   createdAt: string | null
   onboardingCompleted: boolean | null
+  emailDeliveryStatus: string | null
 }
 
 const ROLE_COLORS: Record<string, string> = {
@@ -34,6 +35,7 @@ export default function AdminUsersPage() {
   const [createdFrom, setCreatedFrom] = useState('')
   const [createdTo, setCreatedTo] = useState('')
   const [onboardingFilter, setOnboardingFilter] = useState('')
+  const [emailStatusFilter, setEmailStatusFilter] = useState('')
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<AdminUser | null>(null)
   const [changingRole, setChangingRole] = useState<string | null>(null)
@@ -46,7 +48,7 @@ export default function AdminUsersPage() {
   const [bulkRunning, setBulkRunning] = useState(false)
   const [bulkFailures, setBulkFailures] = useState<{ email: string; error: string }[]>([])
 
-  const hasFilters = !!(search || roleFilter || createdFrom || createdTo || onboardingFilter)
+  const hasFilters = !!(search || roleFilter || createdFrom || createdTo || onboardingFilter || emailStatusFilter)
 
   const fetchUsers = useCallback(() => {
     setLoading(true)
@@ -56,12 +58,13 @@ export default function AdminUsersPage() {
     if (createdFrom) params.set('createdFrom', createdFrom)
     if (createdTo) params.set('createdTo', createdTo)
     if (onboardingFilter) params.set('onboardingStatus', onboardingFilter)
+    if (emailStatusFilter) params.set('emailStatus', emailStatusFilter)
     const q = params.toString() ? `?${params.toString()}` : ''
     fetch(`/api/admin/users${q}`)
       .then(r => r.json())
       .then(j => { setUsers(j.data ?? []); setSelected(new Set()); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [search, roleFilter, createdFrom, createdTo, onboardingFilter])
+  }, [search, roleFilter, createdFrom, createdTo, onboardingFilter, emailStatusFilter])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -263,6 +266,17 @@ export default function AdminUsersPage() {
             <option value="incomplete">לא הושלם</option>
           </select>
         </div>
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1">מסירת מייל</label>
+          <select
+            value={emailStatusFilter}
+            onChange={e => setEmailStatusFilter(e.target.value)}
+            className="px-3 py-2.5 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">הכל</option>
+            <option value="BOUNCED">לא נמסר</option>
+          </select>
+        </div>
       </div>
 
       {/* Bulk action bar */}
@@ -345,6 +359,7 @@ export default function AdminUsersPage() {
                   </th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">משתמש</th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">אימייל</th>
+                  <th className="text-right px-5 py-3 font-semibold text-muted-foreground">מסירה</th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">תפקיד</th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">סטטוס</th>
                   <th className="text-right px-5 py-3 font-semibold text-muted-foreground">הצטרף</th>
@@ -377,6 +392,15 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">{u.email}</td>
+                    <td className="px-5 py-3">
+                      {u.emailDeliveryStatus === 'BOUNCED' ? (
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-destructive/10 text-destructive border-destructive/20">
+                          מייל חזר
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">נמסר / ממתין</span>
+                      )}
+                    </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {u.isAdmin && u.role !== 'ADMIN' && (
@@ -480,7 +504,7 @@ export default function AdminUsersPage() {
                 ))}
                 {users.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">אין תוצאות</td>
+                    <td colSpan={8} className="px-5 py-12 text-center text-muted-foreground">אין תוצאות</td>
                   </tr>
                 )}
               </tbody>

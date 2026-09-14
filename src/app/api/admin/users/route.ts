@@ -40,8 +40,9 @@ export async function GET(request: NextRequest) {
   const createdFrom = searchParams.get('createdFrom')
   const createdTo = searchParams.get('createdTo')
   const onboardingStatus = searchParams.get('onboardingStatus')
+  const emailStatus = searchParams.get('emailStatus')
 
-  const hasFilter = !!search || !!role || !!createdFrom || !!createdTo || !!onboardingStatus
+  const hasFilter = !!search || !!role || !!createdFrom || !!createdTo || !!onboardingStatus || !!emailStatus
 
   // Any filter must scan the full collection — capping at 200 before
   // filtering would silently miss any match outside the most-recent window.
@@ -60,6 +61,7 @@ export async function GET(request: NextRequest) {
       role: data.role ?? 'CLIENT',
       isAdmin: data.isAdmin === true,
       suspended: data.suspended === true,
+      emailDeliveryStatus: data.emailDeliveryStatus ?? null,
       createdAt: data.createdAt?.toDate?.() ?? null,
     }
   })
@@ -69,6 +71,9 @@ export async function GET(request: NextRequest) {
   }
   if (role === 'CLIENT' || role === 'NAILIST' || role === 'ADMIN') {
     users = users.filter(u => u.role === role)
+  }
+  if (emailStatus === 'BOUNCED') {
+    users = users.filter(u => u.emailDeliveryStatus === 'BOUNCED')
   }
   // The date-filter inputs are Israel wall-clock calendar days (the admin
   // picking a date has no idea the server runs in UTC) — a plain

@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Users, Scissors, Calendar, Star, TrendingUp, CheckCircle2, UserPlus, Sunrise, XCircle } from 'lucide-react'
+import { Users, Scissors, Calendar, Star, TrendingUp, CheckCircle2, UserPlus, Sunrise, XCircle, MailX } from 'lucide-react'
 import { APPOINTMENT_STATUS_COLORS } from '@/lib/status-styles'
 
 interface Stats {
   totalUsers: number
   totalNailists: number
   totalClients: number
+  bouncedEmailUsers: number
   activeNailists: number
   totalAppointments: number
   appointmentsByStatus: Record<string, number>
@@ -109,6 +110,7 @@ export default function AdminDashboard() {
         <StatCard label="לקוחות" value={stats.totalClients.toLocaleString()} icon={UserPlus} />
         <StatCard label="נייליסטיות" value={stats.totalNailists.toLocaleString()} icon={Scissors} />
         <StatCard label="נייליסטיות פעילות" value={stats.activeNailists.toLocaleString()} icon={CheckCircle2} sub={`מתוך ${stats.totalNailists}`} />
+        <StatCard label="מיילים שלא נמסרו" value={stats.bouncedEmailUsers.toLocaleString()} icon={MailX} color="text-destructive" />
         <StatCard label="סה״כ הזמנות" value={stats.totalAppointments.toLocaleString()} icon={Calendar} />
         <StatCard label="ביקורות" value={stats.totalReviews.toLocaleString()} icon={Star} sub={`דירוג ממוצע: ★ ${stats.avgRating}`} />
         <StatCard label="הצטרפו השבוע" value={stats.newUsersThisWeek} icon={TrendingUp} />

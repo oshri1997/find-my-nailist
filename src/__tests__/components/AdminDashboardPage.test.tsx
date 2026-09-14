@@ -11,6 +11,7 @@ const stats = {
   totalUsers: 10,
   totalNailists: 4,
   totalClients: 6,
+  bouncedEmailUsers: 1,
   activeNailists: 3,
   totalAppointments: 20,
   appointmentsByStatus: { PENDING: 2, CONFIRMED: 5, COMPLETED: 12, CANCELLED: 1 },
@@ -49,6 +50,7 @@ describe('AdminDashboard — quick nav grid removed', () => {
       expect(screen.getByText('סה״כ משתמשים')).toBeInTheDocument()
     })
     expect(screen.getByText('הזמנות לפי סטטוס')).toBeInTheDocument()
+    expect(screen.getByText('מיילים שלא נמסרו')).toBeInTheDocument()
   })
 
   it('renders the "today at a glance" section from stats.today', async () => {

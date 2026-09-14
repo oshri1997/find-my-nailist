@@ -56,7 +56,7 @@ describe('GET /api/admin/users — filters', () => {
     collectionStore.users = [
       { __id: 'u1', email: 'alice@test.com', displayName: 'Alice', role: 'CLIENT', createdAt: { toDate: () => new Date('2026-01-10') } },
       { __id: 'u2', email: 'bob@test.com', displayName: 'Bob', role: 'NAILIST', createdAt: { toDate: () => new Date('2026-02-15') } },
-      { __id: 'u3', email: 'carol@test.com', displayName: 'Carol', role: 'NAILIST', createdAt: { toDate: () => new Date('2026-03-20') } },
+      { __id: 'u3', email: 'carol@test.com', displayName: 'Carol', role: 'NAILIST', emailDeliveryStatus: 'BOUNCED', createdAt: { toDate: () => new Date('2026-03-20') } },
     ]
     collectionStore.nailistProfiles = [
       { __id: 'np-u2', userId: 'u2', onboardingCompleted: true },
@@ -115,6 +115,13 @@ describe('GET /api/admin/users — filters', () => {
     const res = await GET(makeRequest('onboardingStatus=incomplete'))
     const json = await res.json()
     expect(json.data.map((u: { id: string }) => u.id)).toEqual(['u3'])
+  })
+
+  it('filters users whose email bounced', async () => {
+    const res = await GET(makeRequest('emailStatus=BOUNCED'))
+    const json = await res.json()
+    expect(json.data.map((u: { id: string }) => u.id)).toEqual(['u3'])
+    expect(json.data[0].emailDeliveryStatus).toBe('BOUNCED')
   })
 
   it('combines role and onboardingStatus filters', async () => {
