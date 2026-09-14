@@ -64,6 +64,18 @@ describe('sendRoleAwareVerificationEmail', () => {
     )
   })
 
+  it('uses the branded Firebase action domain in sent verification links', async () => {
+    mockGenerateEmailVerificationLink.mockResolvedValueOnce(
+      'https://find-my-nailist.firebaseapp.com/__/auth/action?mode=verifyEmail&oobCode=code'
+    )
+
+    await sendRoleAwareVerificationEmail('uid-1', 'a@test.com', 'CLIENT')
+
+    expect(mockSendVerificationEmail).toHaveBeenCalledWith(expect.objectContaining({
+      verifyLink: 'https://auth.nailistiot.fun/__/auth/action?mode=verifyEmail&oobCode=code',
+    }))
+  })
+
   it('rejects a second call within the 10-minute cooldown without sending again', async () => {
     // Regression (Fix #2): before centralizing this check, calling
     // sendRoleAwareVerificationEmail a second time in quick succession (e.g.

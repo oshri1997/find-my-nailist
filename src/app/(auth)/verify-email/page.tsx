@@ -114,6 +114,7 @@ export default function VerifyEmailPage() {
       await verifyBeforeUpdateEmail(user, candidate, {
         url: `${window.location.origin}/verify-email`,
         handleCodeInApp: false,
+        linkDomain: 'auth.nailistiot.fun',
       })
       setChanging(false)
       setMessage(`שלחנו קישור אימות אל ${candidate}. הכתובת תוחלף רק לאחר לחיצה עליו.`)

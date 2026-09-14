@@ -4,6 +4,15 @@ import { sendVerificationEmail } from '@/lib/email'
 import { FieldValue } from 'firebase-admin/firestore'
 
 const RESEND_COOLDOWN_MS = 10 * 60 * 1000
+const FIREBASE_ACTION_DOMAIN = 'auth.nailistiot.fun'
+
+function withBrandedActionDomain(link: string): string {
+  const url = new URL(link)
+  if (url.hostname === 'find-my-nailist.firebaseapp.com' || url.hostname === 'find-my-nailist.web.app') {
+    url.hostname = FIREBASE_ACTION_DOMAIN
+  }
+  return url.toString()
+}
 
 export type SendVerificationEmailResult =
   | { ok: true }
@@ -36,7 +45,8 @@ export async function sendRoleAwareVerificationEmail(
   // (e.g. a provider-side outage) can't be retried in a tight loop either.
   await userRef.set({ lastVerificationEmailSentAt: FieldValue.serverTimestamp() }, { merge: true })
 
-  const link = await adminAuth().generateEmailVerificationLink(email)
+  const generatedLink = await adminAuth().generateEmailVerificationLink(email)
+  const link = withBrandedActionDomain(generatedLink)
   await sendVerificationEmail({ email, verifyLink: link, role })
   return { ok: true }
 }
