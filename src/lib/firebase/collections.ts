@@ -15,4 +15,5 @@ export const COLLECTIONS = {
   AUDIT_LOGS: 'auditLogs',
   FEEDBACK: 'feedback',
   FEEDBACK_RATE_LIMITS: 'feedbackRateLimits',
+  ADMIN_EMAIL_CHALLENGES: 'adminEmailChallenges',
 } as const

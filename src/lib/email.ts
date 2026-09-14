@@ -325,6 +325,43 @@ export async function sendPasswordResetEmail(p: {
   )
 }
 
+// Second factor for a sensitive admin action: the code goes to a fixed
+// guard address, never to an address supplied in the request, so obtaining
+// admin panel access alone is not enough to complete the action.
+export async function sendAdminActionCodeEmail(p: {
+  email: string
+  code: string
+  action: string
+  details: string[]
+}): Promise<void> {
+  const details = p.details
+    .map((line) => `<p style="margin:4px 0;color:#666">${escapeHtml(line)}</p>`)
+    .join('')
+
+  await sendResend(
+    p.email,
+    `קוד אישור לפעולת אדמין — ${p.action}`,
+    `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+      <div style="background:${BRAND_GRADIENT};border-radius:16px 16px 0 0;padding:28px 32px;text-align:center">
+        <h1 style="color:white;margin:0;font-size:22px;font-weight:900">נייליסטיות</h1>
+      </div>
+      <div style="background:#fff;border:1px solid #f3e8ff;border-top:none;border-radius:0 0 16px 16px;padding:32px">
+        <h2 style="font-size:20px;font-weight:900;margin:0 0 8px">אישור פעולת אדמין</h2>
+        <p style="color:#666;margin:0 0 20px">התבקשה הפעולה הבאה: <strong>${escapeHtml(p.action)}</strong></p>
+        <div style="background:#fdf4ff;border-radius:12px;padding:16px;margin:0 0 24px">${details}</div>
+        <div style="text-align:center;margin:28px 0">
+          <div style="display:inline-block;background:#fdf4ff;border:2px dashed ${BRAND_PRIMARY};border-radius:12px;padding:16px 32px;font-size:32px;font-weight:900;letter-spacing:8px;color:${BRAND_PRIMARY}">
+            ${escapeHtml(p.code)}
+          </div>
+        </div>
+        <p style="color:#666;margin:0">הקוד תקף ל-10 דקות ולשימוש חד-פעמי.</p>
+        <p style="color:#999;font-size:12px;margin:24px 0 0">אם לא ביקשת את הפעולה הזו — אל תמסרי את הקוד לאף אחד, ובדקי מי מחובר לפאנל הניהול.</p>
+      </div>
+    </div>`,
+    `אישור פעולת אדמין — ${p.action}\n\n${p.details.join('\n')}\n\nהקוד שלך: ${p.code}\nתקף ל-10 דקות, לשימוש חד-פעמי.\n\nאם לא ביקשת את הפעולה הזו — אל תמסרי את הקוד לאף אחד.\n\nצוות נייליסטיות`
+  )
+}
+
 // An admin-composed message, sent from the admin panel to hand-picked
 // recipients. The body is plain text typed by an admin — escaped, then
 // split into paragraphs so line breaks survive the HTML rendering.

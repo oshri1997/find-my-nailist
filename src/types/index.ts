@@ -161,6 +161,7 @@ export type AuditAction =
   | 'NAILIST_TOGGLE_VERIFIED'
   | 'FEEDBACK_UPDATE'
   | 'EMAIL_SEND'
+  | 'USER_EMAIL_CHANGE'
 
 export interface AuditLogDoc {
   actorUid: string
