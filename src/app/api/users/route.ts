@@ -3,6 +3,7 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue } from 'firebase-admin/firestore'
+import { validateEmailDomain } from '@/lib/email-domain'
 
 const createUserSchema = z.object({
   uid: z.string(),
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let decoded: { uid: string }
+  let decoded: { uid: string; email?: string }
   try {
     decoded = await adminAuth().verifyIdToken(token)
   } catch {
@@ -42,6 +43,17 @@ export async function POST(request: NextRequest) {
 
     if (data.uid !== decoded.uid) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    if (!decoded.email || data.email.trim().toLowerCase() !== decoded.email.toLowerCase()) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const domain = await validateEmailDomain(decoded.email)
+    if (domain.status === 'unavailable') {
+      return NextResponse.json({ error: 'לא הצלחנו לבדוק את כתובת המייל — נסי שוב בעוד רגע' }, { status: 503 })
+    }
+    if (domain.status === 'invalid') {
+      return NextResponse.json({ error: 'הדומיין בכתובת המייל אינו יכול לקבל הודעות' }, { status: 400 })
     }
 
     const db = adminDb()
@@ -59,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     const now = FieldValue.serverTimestamp()
-    await userRef.set({ ...data, createdAt: now, updatedAt: now })
+    await userRef.set({ ...data, roleChosen: false, createdAt: now, updatedAt: now })
 
     if (data.role === 'NAILIST') {
       const profileData: Record<string, unknown> = {

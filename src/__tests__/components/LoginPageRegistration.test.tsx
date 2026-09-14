@@ -33,7 +33,12 @@ jest.mock('@/components/auth/LegalModal', () => {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ data: null }) } as Response)
+  global.fetch = jest.fn().mockImplementation((url: string) => {
+    if (url === '/api/auth/validate-email-domain') {
+      return Promise.resolve({ ok: true, json: async () => ({ valid: true }) } as Response)
+    }
+    return Promise.resolve({ ok: true, json: async () => ({ data: null }) } as Response)
+  })
   mockSignUpWithEmail.mockResolvedValue({
     user: { uid: 'new-uid', getIdToken: () => Promise.resolve('fake-token') },
   })
@@ -109,7 +114,7 @@ describe('Registration form — no role picker', () => {
     })
   })
 
-  it('redirects to /onboarding/welcome after successful registration, not a role-specific page', async () => {
+  it('redirects to email verification after successful registration', async () => {
     render(<LoginPage />)
     fireEvent.change(document.getElementById('firstName')!, { target: { value: 'שרה' } })
     fireEvent.change(document.getElementById('lastName')!, { target: { value: 'לוי' } })
@@ -119,7 +124,7 @@ describe('Registration form — no role picker', () => {
     fireEvent.click(screen.getByRole('button', { name: 'צרי חשבון' }))
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/onboarding/welcome')
+      expect(mockPush).toHaveBeenCalledWith('/verify-email')
     })
   })
 })

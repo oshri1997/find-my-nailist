@@ -25,7 +25,7 @@ export async function PATCH(request: NextRequest) {
     const now = FieldValue.serverTimestamp()
     const uid = decoded.uid
 
-    await db.collection(COLLECTIONS.USERS).doc(uid).update({ role, updatedAt: now })
+    await db.collection(COLLECTIONS.USERS).doc(uid).update({ role, roleChosen: true, updatedAt: now })
 
     if (role === 'NAILIST') {
       const existing = await db

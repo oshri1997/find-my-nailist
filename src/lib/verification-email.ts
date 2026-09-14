@@ -17,7 +17,7 @@ export type SendVerificationEmailResult =
 export async function sendRoleAwareVerificationEmail(
   uid: string,
   email: string,
-  role: 'NAILIST' | 'CLIENT'
+  role?: 'NAILIST' | 'CLIENT'
 ): Promise<SendVerificationEmailResult> {
   const db = adminDb()
   const userRef = db.collection(COLLECTIONS.USERS).doc(uid)

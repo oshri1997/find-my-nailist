@@ -14,6 +14,7 @@ import LegalModal from '@/components/auth/LegalModal'
 import { sanitizeRedirect } from '@/lib/sanitize-redirect'
 import { NailLoader } from '@/components/ui/nail-loader'
 import { AUTH_TAB_TRANSITION, getAuthContentVariants } from '@/lib/auth-motion'
+import { suggestEmailCorrection } from '@/lib/email-suggestion'
 
 type Mode = 'login' | 'register'
 
@@ -52,6 +53,7 @@ export default function AuthPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [legalModal, setLegalModal] = useState(false)
   const handlingFormRef = useRef(false)
+  const emailSuggestion = mode === 'register' ? suggestEmailCorrection(email) : null
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -62,6 +64,10 @@ export default function AuthPage() {
   // Auth-state redirect (handles Google OAuth callback + email login)
   useEffect(() => {
     if (authLoading || !user || handlingFormRef.current) return
+    if (!user.emailVerified) {
+      router.replace('/verify-email')
+      return
+    }
     const pendingMode = (sessionStorage.getItem('pendingMode') as Mode | null) ?? mode
     sessionStorage.removeItem('pendingMode')
 
@@ -139,13 +145,14 @@ export default function AuthPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    const submittedEmail = email.trim().toLowerCase()
 
     // Manual Hebrew validation (avoids English browser messages)
     if (mode === 'register' && (!firstName.trim() || !lastName.trim())) {
       setError('יש להזין שם פרטי ושם משפחה')
       return
     }
-    if (!email.trim() || !email.includes('@')) {
+    if (!submittedEmail || !submittedEmail.includes('@')) {
       setError('יש להזין כתובת אימייל תקינה')
       return
     }
@@ -158,16 +165,38 @@ export default function AuthPage() {
       return
     }
 
+    if (mode === 'register') {
+      try {
+        const domainRes = await fetch('/api/auth/validate-email-domain', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: submittedEmail }),
+        })
+        const domainData = await domainRes.json().catch(() => ({}))
+        if (!domainRes.ok || domainData.valid !== true) {
+          setError(
+            domainData.reason === 'unavailable'
+              ? 'לא הצלחנו לבדוק את כתובת המייל — נסי שוב בעוד רגע'
+              : 'הדומיין בכתובת המייל אינו קיים או אינו יכול לקבל הודעות'
+          )
+          return
+        }
+      } catch {
+        setError('לא הצלחנו לבדוק את כתובת המייל — נסי שוב בעוד רגע')
+        return
+      }
+    }
+
     setLoading(true)
     handlingFormRef.current = true
     try {
       if (mode === 'login') {
-        await signInWithEmail(email, password)
+        await signInWithEmail(submittedEmail, password)
         // Allow useEffect to run and redirect based on actual DB role
         handlingFormRef.current = false
       } else {
         const fullName = `${firstName} ${lastName}`.trim()
-        const cred = await signUpWithEmail(email, password, fullName)
+        const cred = await signUpWithEmail(submittedEmail, password, fullName)
 
         // /api/users below requires the session cookie, which AuthProvider's
         // own onIdTokenChanged listener sets asynchronously in the
@@ -180,15 +209,15 @@ export default function AuthPage() {
           body: JSON.stringify({ token: idToken }),
         })
 
-        // The verification email itself is sent later, once the role is
-        // chosen (/api/me/set-role) — its copy is role-aware (nailist vs
-        // client), which isn't possible yet at this point in the flow.
+        // Email verification is required before role selection and the
+        // role-specific onboarding wizard, so the first message is sent
+        // after this profile record exists and the session is established.
         const createUserProfile = () => fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             uid: cred.user.uid,
-            email,
+            email: submittedEmail,
             displayName: fullName,
             firstName: firstName.trim(),
             lastName: lastName.trim(),
@@ -207,9 +236,15 @@ export default function AuthPage() {
         }
         if (!createRes.ok) throw new Error('Failed to create user profile')
 
-        // Role isn't chosen at registration anymore — /onboarding/welcome
-        // decides nailist vs client next, same as Google sign-up.
-        router.push('/onboarding/welcome')
+        // Send the first verification email before any role-specific
+        // onboarding begins. The signed-in user owns this session, and the
+        // shared endpoint applies the same resend cooldown as later retries.
+        const verificationRes = await fetch('/api/auth/verify-email', { method: 'POST' })
+        if (!verificationRes.ok && verificationRes.status !== 429) {
+          throw new Error('Failed to send verification email')
+        }
+
+        router.push('/verify-email')
         handlingFormRef.current = false
         setLoading(false)
       }
@@ -362,6 +397,15 @@ export default function AuthPage() {
                       className="pr-10 rounded-xl border-border focus:border-primary h-12 bg-card"
                     />
                   </div>
+                  {emailSuggestion && (
+                    <button
+                      type="button"
+                      onClick={() => setEmail(emailSuggestion)}
+                      className="w-full rounded-lg bg-amber-500/10 px-3 py-2 text-right text-sm font-semibold text-amber-700 hover:bg-amber-500/15 dark:text-amber-300"
+                    >
+                      האם התכוונת ל־<span dir="ltr">{emailSuggestion}</span>?
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-2">

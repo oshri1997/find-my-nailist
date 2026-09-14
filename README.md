@@ -81,6 +81,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `FIREBASE_ADMIN_CLIENT_EMAIL` | ✅ | Service-account email |
 | `FIREBASE_ADMIN_PRIVATE_KEY` | ✅ | Service-account private key (include `"` quotes) |
 | `RESEND_API_KEY` | ✅ | Resend API key for email delivery |
+| `RESEND_WEBHOOK_SECRET` | Recommended | Signing secret for the Resend bounce webhook |
 | `NEXT_PUBLIC_APP_URL` | ✅ | Full public URL (e.g. `https://nailistiot.fun`) |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | ❌ | Google Maps key (client-side map view) |
 | `GOOGLE_MAPS_API_KEY` | ❌ | Google Maps key (server-side place details) |

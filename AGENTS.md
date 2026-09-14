@@ -8,32 +8,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Testing Rules
+# Project rules
 
-# Caveman Workflow
-
-- Use the `caveman:caveman` skill in `full` mode by default for every task in this project.
-- Keep user-facing product copy, source code, comments, documentation, and commits in their normal professional style.
-- Switch out of Caveman only when clarity or a safety warning requires it, or when the user asks for normal mode.
-
-- **Every feature must include unit tests.** When implementing any new feature or fixing a bug, write unit tests covering the core logic and edge cases.
-- **Run the full test suite after every change** (`npm test`) and confirm all tests pass before pushing.
-- Test files go in `__tests__/` next to the code they test, or in a top-level `__tests__/` directory — follow the existing pattern in the repo.
-- Use Jest + `@testing-library/react` for React components, and plain Jest for utility/API logic.
-
-# Required Multi-Agent Delivery Flow
-
-For every implementation, bug fix, refactor, or other code change, use this flow before pushing:
-
-1. **Planner** — inspect the relevant code and produce a scoped implementation plan, including affected files, risks, and tests.
-2. **Implementer** — make only the approved, scoped code and test changes. Preserve any unrelated user changes.
-3. **Independent verifier** — review the resulting diff and run the focused checks plus the full `npm test` suite. The verifier must confirm the change meets the request and has not introduced a regression.
-4. **Push gate** — commit and push to `main` only after the verifier approves and all required checks pass. If the verifier finds an issue or a check fails, return to implementation and repeat verification.
-
-The coordinating agent must keep the roles independent: the verifier does not author the implementation it approves. For read-only questions, explanations, and status updates, use this workflow only when code changes are requested.
-
-# Release Rules
-
-- **Before creating any git tag / release**, update `package.json` `"version"` to match the tag version.
-- The footer shows `NEXT_PUBLIC_APP_VERSION` which is baked in at build time from `package.json`. Railway production deploys only on tag pushes — a plain push to `main` does NOT update the production footer.
-- Flow: update `package.json` version → commit → push → then create the tag.
+- Understand the relevant code before editing. Preserve unrelated user changes.
+- Add meaningful unit tests for product behavior and run the relevant checks before committing or pushing. Run `npm test` before a push unless the user explicitly asks to skip it.
+- Use Jest and Testing Library for React components; use Jest for utilities and API logic.
+- Do not create a git tag or release unless the user explicitly asks. When creating one, first align `package.json` version with the tag, commit and push, then create the tag.
+- Keep user-facing text in Hebrew when the feature is in Hebrew; keep code and comments clear and professional.

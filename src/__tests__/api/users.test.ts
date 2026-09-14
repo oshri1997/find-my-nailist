@@ -29,7 +29,7 @@ const mockDb = { collection: jest.fn((n: string) => makeCollectionRef(n)) }
 jest.mock('@/lib/firebase/admin', () => ({
   adminAuth: jest.fn(() => ({
     verifyIdToken: jest.fn().mockImplementation((token: string) => {
-      if (token === 'valid-token') return Promise.resolve({ uid: 'user-123' })
+      if (token === 'valid-token') return Promise.resolve({ uid: 'user-123', email: 'sarah@test.com' })
       if (token === 'other-users-token') return Promise.resolve({ uid: 'someone-else' })
       return Promise.reject(new Error('invalid token'))
     }),
@@ -39,6 +39,10 @@ jest.mock('@/lib/firebase/admin', () => ({
 
 jest.mock('firebase-admin/firestore', () => ({
   FieldValue: { serverTimestamp: jest.fn(() => 'SERVER_TIMESTAMP') },
+}))
+
+jest.mock('@/lib/email-domain', () => ({
+  validateEmailDomain: jest.fn().mockResolvedValue({ status: 'valid' }),
 }))
 
 import { POST } from '@/app/api/users/route'

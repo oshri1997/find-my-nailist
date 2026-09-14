@@ -44,12 +44,14 @@ describe('sendVerificationEmail — role-aware copy', () => {
     expect(body.html).not.toContain('כנייליסטית')
   })
 
-  it('falls back to client-specific copy when no role is provided', async () => {
+  it('uses neutral copy before a role is selected', async () => {
     const calls = mockResendFetch()
     await sendVerificationEmail({ email: 'someone@test.com', verifyLink: 'https://x/y' })
 
     const body = calls[0] as { html: string }
-    expect(body.html).toContain('להזמין תורים')
+    expect(body.html).toContain('להמשיך בתהליך ההרשמה')
+    expect(body.html).not.toContain('להזמין תורים')
+    expect(body.html).not.toContain('כנייליסטית')
   })
 })
 

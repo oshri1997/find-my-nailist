@@ -11,18 +11,24 @@ import { useAuth } from '@/components/auth/auth-provider'
 // since an incomplete profile just renders with missing data (for a client,
 // that means no real name: appointments/reviews fall back to a generic
 // "לקוחה" instead of showing "First L.").
-const ALLOWED_PREFIXES = ['/onboarding', '/login', '/terms', '/privacy', '/accessibility', '/how-it-works']
+const ALLOWED_PREFIXES = ['/onboarding', '/login', '/verify-email', '/terms', '/privacy', '/accessibility', '/how-it-works']
 
 export function OnboardingGuard() {
-  const { role, onboardingCompleted, loading } = useAuth()
+  const { user, role, onboardingCompleted, loading } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
 
   useEffect(() => {
-    if (loading || !role || role === 'ADMIN' || onboardingCompleted) return
+    if (loading || !user) return
+    if (role === 'ADMIN') return
+    if (!user.emailVerified) {
+      if (!pathname.startsWith('/verify-email') && !pathname.startsWith('/login')) router.replace('/verify-email')
+      return
+    }
+    if (!role || onboardingCompleted) return
     const allowed = ALLOWED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))
     if (!allowed) router.replace(role === 'NAILIST' ? '/onboarding' : '/onboarding/client')
-  }, [loading, role, onboardingCompleted, pathname, router])
+  }, [user, loading, role, onboardingCompleted, pathname, router])
 
   return null
 }

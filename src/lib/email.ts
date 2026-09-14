@@ -330,7 +330,12 @@ export async function sendVerificationEmail(p: {
   verifyLink: string
   role?: 'NAILIST' | 'CLIENT'
 }): Promise<void> {
-  const copy = p.role === 'NAILIST'
+  const copy = p.role === undefined
+    ? {
+        intro: 'תודה שנרשמת! כדי להמשיך בתהליך ההרשמה, יש לאמת קודם את כתובת המייל שלך.',
+        cta: 'אימות והמשך הרשמה',
+      }
+    : p.role === 'NAILIST'
     ? {
         intro: 'תודה שנרשמת כנייליסטית! כדי להתחיל להגדיר את הפרופיל העסקי שלך ולקבל לקוחות חדשות, יש לאמת קודם את כתובת המייל שלך.',
         cta: 'אימות והתחלת ההגדרה',

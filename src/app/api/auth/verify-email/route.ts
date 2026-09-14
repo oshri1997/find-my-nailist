@@ -28,9 +28,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const db = adminDb()
   const userSnap = await db.collection(COLLECTIONS.USERS).doc(decoded.uid).get()
 
-  // Role-aware wording — falls back to the client copy for a not-yet-chosen
-  // role (missing field defaults to 'CLIENT' throughout this app).
-  const role = userSnap.data()?.role === 'NAILIST' ? 'NAILIST' : 'CLIENT'
+  // Before role selection, use neutral wording. Once a role exists, retain
+  // the role-specific wording used by verification retries.
+  const role = userSnap.data()?.roleChosen === false
+    ? undefined
+    : userSnap.data()?.role === 'NAILIST' ? 'NAILIST' : 'CLIENT'
 
   try {
     // The 10-minute cooldown check itself now lives inside
