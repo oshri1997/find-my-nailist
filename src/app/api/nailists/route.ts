@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebase/admin'
+import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { isAuthenticatedRequest, computeHasContactInfo, stripNailistContactFields } from '@/lib/nailist-contact'
 import { findNextAvailableSlot, computeDateAvailability, getDayOfWeek, israelNow, type WorkingHours, type BookedSlot } from '@/lib/booking-utils'
@@ -13,6 +13,20 @@ import { filterNailists } from '@/lib/search-filters'
 // against this representative duration — long enough to cover most services,
 // short enough not to under-report availability for quick ones.
 const DEFAULT_SLOT_DURATION_MINUTES = 60
+
+async function filterVerifiedNailists<T extends Record<string, unknown>>(nailists: T[]): Promise<T[]> {
+  const userIds = [...new Set(nailists.map((n) => n.userId).filter((id): id is string => typeof id === 'string' && id.length > 0))]
+  if (userIds.length === 0) return []
+
+  const verifiedIds = new Set<string>()
+  for (let i = 0; i < userIds.length; i += 100) {
+    const result = await adminAuth().getUsers(userIds.slice(i, i + 100).map((uid) => ({ uid })))
+    result.users.forEach((user) => {
+      if (user.emailVerified) verifiedIds.add(user.uid)
+    })
+  }
+  return nailists.filter((n) => typeof n.userId === 'string' && verifiedIds.has(n.userId))
+}
 
 function sanitizeNailists(nailists: Array<Record<string, unknown>>, isAuthenticated: boolean): void {
   nailists.forEach((n) => {
@@ -191,8 +205,9 @@ export async function GET(request: NextRequest) {
       }
 
       nailists.sort((a, b) => (a.distanceKm as number) - (b.distanceKm as number))
-      await Promise.all([attachServiceNames(db, nailists), attachAvailability(db, nailists, date)])
-      const filtered = filterNailists(nailists, service, maxPrice)
+      const verifiedNailists = await filterVerifiedNailists(nailists)
+      await Promise.all([attachServiceNames(db, verifiedNailists), attachAvailability(db, verifiedNailists, date)])
+      const filtered = filterNailists(verifiedNailists, service, maxPrice)
       const page = filtered.slice(offset, offset + pageSize)
       sanitizeNailists(page, isAuthenticated)
 
@@ -225,8 +240,9 @@ export async function GET(request: NextRequest) {
         })
         .sort((a, b) => a.id.localeCompare(b.id))
 
-      await Promise.all([attachServiceNames(db, nailists), attachAvailability(db, nailists, date)])
-      const filtered = filterNailists(nailists, service, maxPrice)
+      const verifiedNailists = await filterVerifiedNailists(nailists)
+      await Promise.all([attachServiceNames(db, verifiedNailists), attachAvailability(db, verifiedNailists, date)])
+      const filtered = filterNailists(verifiedNailists, service, maxPrice)
       const page = filtered.slice(offset, offset + pageSize)
       sanitizeNailists(page, isAuthenticated)
 
@@ -243,21 +259,24 @@ export async function GET(request: NextRequest) {
     // "load more" click could return page 2 with duplicates of or gaps from
     // page 1. orderBy(documentId()) needs no composite index (unlike
     // createdAt, which isn't indexed for this collection) while still being
-    // deterministic. Fetch one extra doc beyond the requested page to detect
-    // hasMore without a separate count query (Firestore has no cheap COUNT).
+    // deterministic. Fetch the active set before paginating so profiles whose
+    // owners have not verified their email cannot leave gaps in result pages.
     const baseQuery = db
       .collection(COLLECTIONS.NAILIST_PROFILES)
       .where('isActive', '==', true)
       .orderBy(FieldPath.documentId())
-    const snap = service || maxPrice != null || date
-      ? await baseQuery.get()
-      : await baseQuery.limit(offset + pageSize + 1).get()
+    const snap = await baseQuery.get()
 
     const nailists = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-    await Promise.all([attachServiceNames(db, nailists), attachAvailability(db, nailists, date)])
-    const filtered = filterNailists(nailists, service, maxPrice)
+    const verifiedNailists = await filterVerifiedNailists(nailists)
+    if (service || maxPrice != null) await attachServiceNames(db, verifiedNailists)
+    const filtered = filterNailists(verifiedNailists, service, maxPrice)
     const hasMore = filtered.length > offset + pageSize
     const page = filtered.slice(offset, offset + pageSize)
+    await Promise.all([
+      service || maxPrice != null ? Promise.resolve() : attachServiceNames(db, page),
+      attachAvailability(db, page, date),
+    ])
     sanitizeNailists(page, isAuthenticated)
 
     return NextResponse.json({

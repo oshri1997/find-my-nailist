@@ -17,16 +17,23 @@ function makeCollectionRef(name: string) {
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     get: jest.fn().mockResolvedValue({
-      docs: (collectionStore[name] ?? []).map((d) => ({ id: d.__id, data: () => d })),
+      docs: (collectionStore[name] ?? []).map((d) => ({
+        id: d.__id,
+        data: () => name === 'nailistProfiles' ? { userId: d.userId ?? d.__id, ...d } : d,
+      })),
     }),
   }
 }
 
 const mockDb = { collection: jest.fn((name: string) => makeCollectionRef(name)) }
 const verifyIdTokenMock = jest.fn()
+const getUsersMock = jest.fn()
 
 jest.mock('@/lib/firebase/admin', () => ({
-  adminAuth: jest.fn(() => ({ verifyIdToken: (...args: unknown[]) => verifyIdTokenMock(...args) })),
+  adminAuth: jest.fn(() => ({
+    verifyIdToken: (...args: unknown[]) => verifyIdTokenMock(...args),
+    getUsers: (...args: unknown[]) => getUsersMock(...args),
+  })),
   adminDb: jest.fn(() => mockDb),
 }))
 
@@ -42,6 +49,12 @@ function makeRequest(cookie?: string, searchParams?: string): NextRequest {
   }
   return req
 }
+
+beforeEach(() => {
+  getUsersMock.mockImplementation(async (identifiers: Array<{ uid: string }>) => ({
+    users: identifiers.map(({ uid }) => ({ uid, emailVerified: true })),
+  }))
+})
 
 describe('GET /api/nailists — contact info gating on list results', () => {
   beforeEach(() => {
@@ -154,6 +167,62 @@ describe('GET /api/nailists — pagination (no location)', () => {
     expect(json.data[0].id).toBe('nailist-3')
     expect(json.total).toBe(1)
     expect(json.hasMore).toBe(false)
+  })
+
+  it('hides unverified owners before counting and paginating results', async () => {
+    collectionStore['nailistProfiles'] = [
+      { __id: 'nailist-1', userId: 'unverified-owner', businessName: 'סטודיו א', isActive: true },
+      { __id: 'nailist-2', userId: 'verified-owner', businessName: 'סטודיו ב', isActive: true },
+    ]
+    getUsersMock.mockImplementation(async () => ({
+      users: [
+        { uid: 'unverified-owner', emailVerified: false },
+        { uid: 'verified-owner', emailVerified: true },
+      ],
+    }))
+
+    const res = await GET(makeRequest(undefined, 'pageSize=1'))
+    const json = await res.json()
+    expect(json.data.map((n: { id: string }) => n.id)).toEqual(['nailist-2'])
+    expect(json.total).toBe(1)
+    expect(json.hasMore).toBe(false)
+  })
+
+  it('hides unverified owners from text search and fails closed for missing Auth users', async () => {
+    collectionStore['nailistProfiles'] = [
+      { __id: 'nailist-1', userId: 'unverified-owner', businessName: 'סטודיו יופי', isActive: true },
+      { __id: 'nailist-2', userId: 'verified-owner', businessName: 'סטודיו יופי', isActive: true },
+      { __id: 'nailist-3', userId: 'deleted-owner', businessName: 'סטודיו יופי', isActive: true },
+    ]
+    getUsersMock.mockImplementation(async () => ({
+      users: [
+        { uid: 'unverified-owner', emailVerified: false },
+        { uid: 'verified-owner', emailVerified: true },
+      ],
+    }))
+
+    const res = await GET(makeRequest(undefined, 'query=יופי'))
+    const json = await res.json()
+    expect(json.data.map((n: { id: string }) => n.id)).toEqual(['nailist-2'])
+    expect(json.total).toBe(1)
+  })
+
+  it('hides unverified owners from nearby results', async () => {
+    collectionStore['nailistProfiles'] = [
+      { __id: 'nailist-1', userId: 'unverified-owner', latitude: 32.0853, longitude: 34.7818, isActive: true },
+      { __id: 'nailist-2', userId: 'verified-owner', latitude: 32.0853, longitude: 34.7818, isActive: true },
+    ]
+    getUsersMock.mockImplementation(async () => ({
+      users: [
+        { uid: 'unverified-owner', emailVerified: false },
+        { uid: 'verified-owner', emailVerified: true },
+      ],
+    }))
+
+    const res = await GET(makeRequest(undefined, 'lat=32.0853&lng=34.7818'))
+    const json = await res.json()
+    expect(json.data.map((n: { id: string }) => n.id)).toEqual(['nailist-2'])
+    expect(json.total).toBe(1)
   })
 })
 
