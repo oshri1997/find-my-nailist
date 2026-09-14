@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Search, Trash2, Loader2, User, Scissors, Ban, CheckCircle2, ShieldCheck, AlertCircle, X } from 'lucide-react'
+import { Search, Trash2, Loader2, User, Scissors, Ban, CheckCircle2, ShieldCheck, AlertCircle, X, MailCheck } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 interface AdminUser {
@@ -47,6 +47,8 @@ export default function AdminUsersPage() {
   const [confirmBulk, setConfirmBulk] = useState<BulkAction | null>(null)
   const [bulkRunning, setBulkRunning] = useState(false)
   const [bulkFailures, setBulkFailures] = useState<{ email: string; error: string }[]>([])
+  const [resendingVerification, setResendingVerification] = useState<string | null>(null)
+  const [verificationNotice, setVerificationNotice] = useState<{ text: string; ok: boolean } | null>(null)
 
   const hasFilters = !!(search || roleFilter || createdFrom || createdTo || onboardingFilter || emailStatusFilter)
 
@@ -144,6 +146,33 @@ export default function AdminUsersPage() {
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, suspended: !u.suspended } : u))
     }
     setTogglingSuspend(null)
+  }
+
+  async function handleResendVerification(user: AdminUser) {
+    setResendingVerification(user.id)
+    setVerificationNotice(null)
+    const res = await fetch('/api/admin/emails', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ template: 'VERIFICATION', userIds: [user.id] }),
+    })
+    const json = await res.json().catch(() => null)
+    if (res.ok) {
+      const { sent = [], skipped = [], failed = [] } = json?.data ?? {}
+      if (sent.length > 0) {
+        setVerificationNotice({ text: `מייל אימות נשלח אל ${sent[0].email}`, ok: true })
+        // The send syncs an address the admin corrected in Firebase Auth back
+        // onto the user doc, so the row's email/bounce badge may now be stale.
+        fetchUsers()
+      } else if (skipped.length > 0) {
+        setVerificationNotice({ text: `${skipped[0].email || user.email}: ${skipped[0].reason}`, ok: false })
+      } else {
+        setVerificationNotice({ text: `${user.email}: ${failed[0]?.error ?? 'שליחת המייל נכשלה'}`, ok: false })
+      }
+    } else {
+      setVerificationNotice({ text: json?.error ?? 'שליחת המייל נכשלה', ok: false })
+    }
+    setResendingVerification(null)
   }
 
   function toggleSelected(id: string) {
@@ -308,6 +337,28 @@ export default function AdminUsersPage() {
             מחק
           </button>
           {bulkRunning && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+        </div>
+      )}
+
+      {verificationNotice && (
+        <div className={`flex items-start gap-3 border rounded-xl px-4 py-3 ${
+          verificationNotice.ok
+            ? 'bg-success/5 border-success/20'
+            : 'bg-destructive/5 border-destructive/20'
+        }`}>
+          {verificationNotice.ok
+            ? <CheckCircle2 className="w-4 h-4 text-success shrink-0 mt-0.5" />
+            : <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />}
+          <p className={`text-sm flex-1 font-medium ${verificationNotice.ok ? 'text-success' : 'text-destructive'}`}>
+            {verificationNotice.text}
+          </p>
+          <button
+            onClick={() => setVerificationNotice(null)}
+            aria-label="סגירה"
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
@@ -476,6 +527,17 @@ export default function AdminUsersPage() {
                     <td className="px-5 py-3">
                       {!u.isAdmin && (
                         <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleResendVerification(u)}
+                            disabled={resendingVerification === u.id}
+                            title="שלח מייל אימות נוסף"
+                            className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
+                          >
+                            {resendingVerification === u.id
+                              ? <Loader2 className="w-4 h-4 animate-spin" />
+                              : <MailCheck className="w-4 h-4" />
+                            }
+                          </button>
                           <button
                             onClick={() => handleToggleSuspend(u)}
                             disabled={togglingSuspend === u.id}

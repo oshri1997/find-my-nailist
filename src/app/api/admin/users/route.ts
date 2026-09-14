@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebase/admin'
+import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { verifyAdmin, adminUnauthorized } from '@/lib/admin-auth'
 import { israelWallClockToUtc } from '@/lib/booking-utils'
@@ -27,6 +27,23 @@ async function resolveOnboardingStatus(userIds: string[]): Promise<Map<string, b
       })
     )
   )
+  return result
+}
+
+// Whether an address is verified lives in Firebase Auth, not Firestore, so
+// it costs a separate lookup (100 uids per call) — only the email-sending
+// screen needs it, and it asks for it explicitly. Capped so a wide filtered
+// scan can't fan out into dozens of Auth round-trips.
+const EMAIL_VERIFIED_LOOKUP_CAP = 300
+
+async function resolveEmailVerified(userIds: string[]): Promise<Map<string, boolean>> {
+  const result = new Map<string, boolean>()
+  for (let i = 0; i < userIds.length; i += 100) {
+    const { users } = await adminAuth().getUsers(
+      userIds.slice(i, i + 100).map((uid) => ({ uid }))
+    )
+    users.forEach((u) => result.set(u.uid, u.emailVerified))
+  }
   return result
 }
 
@@ -97,11 +114,16 @@ export async function GET(request: NextRequest) {
     users = users.filter(u => (onboardingByUserId!.get(u.id) ?? true) === wantCompleted)
   }
 
+  const emailVerifiedByUserId = searchParams.get('withEmailVerified') === '1'
+    ? await resolveEmailVerified(users.slice(0, EMAIL_VERIFIED_LOOKUP_CAP).map(u => u.id))
+    : null
+
   return NextResponse.json({
     data: users.map(u => ({
       ...u,
       createdAt: u.createdAt?.toISOString() ?? null,
       onboardingCompleted: onboardingByUserId?.get(u.id) ?? null,
+      emailVerified: emailVerifiedByUserId?.get(u.id) ?? null,
     })),
   })
 }

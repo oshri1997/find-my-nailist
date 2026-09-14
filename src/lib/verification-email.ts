@@ -26,14 +26,18 @@ export type SendVerificationEmailResult =
 export async function sendRoleAwareVerificationEmail(
   uid: string,
   email: string,
-  role?: 'NAILIST' | 'CLIENT'
+  role?: 'NAILIST' | 'CLIENT',
+  // Admin-initiated sends skip the cooldown: an admin who just corrected a
+  // typo'd address needs the mail to go out now, not in ten minutes. The
+  // per-recipient daily quota in sendResend still applies.
+  options: { skipCooldown?: boolean } = {}
 ): Promise<SendVerificationEmailResult> {
   const db = adminDb()
   const userRef = db.collection(COLLECTIONS.USERS).doc(uid)
 
   const userSnap = await userRef.get()
   const lastSentAt = userSnap.data()?.lastVerificationEmailSentAt?.toDate?.() as Date | undefined
-  if (lastSentAt) {
+  if (lastSentAt && !options.skipCooldown) {
     const elapsedMs = Date.now() - lastSentAt.getTime()
     if (elapsedMs < RESEND_COOLDOWN_MS) {
       return { ok: false, rateLimited: true, retryAfterSeconds: Math.ceil((RESEND_COOLDOWN_MS - elapsedMs) / 1000) }

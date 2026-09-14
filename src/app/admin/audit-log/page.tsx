@@ -21,6 +21,7 @@ const ACTION_LABELS: Record<string, string> = {
   REVIEW_DELETE: 'מחיקת ביקורת',
   NAILIST_TOGGLE_ACTIVE: 'שינוי סטטוס נייליסטית',
   NAILIST_TOGGLE_VERIFIED: 'שינוי אימות נייליסטית',
+  EMAIL_SEND: 'שליחת מייל',
 }
 
 function describe(entry: AuditLogEntry): string {
@@ -39,6 +40,8 @@ function describe(entry: AuditLogEntry): string {
       return m.isActive ? 'הופעלה' : 'הושבתה'
     case 'NAILIST_TOGGLE_VERIFIED':
       return m.isVerified ? 'אומתה' : 'בוטל אימות'
+    case 'EMAIL_SEND':
+      return `${m.recipientEmail ?? entry.targetId} — ${m.template === 'VERIFICATION' ? 'מייל אימות' : `הודעה: ${m.subject ?? ''}`}`
     default:
       return entry.targetId
   }

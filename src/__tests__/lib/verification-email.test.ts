@@ -107,6 +107,19 @@ describe('sendRoleAwareVerificationEmail', () => {
     )
   })
 
+  it('bypasses the cooldown for an admin-initiated send, and still re-stamps it', async () => {
+    docStore['users/uid-1'] = {
+      lastVerificationEmailSentAt: { toDate: () => new Date(Date.now() - 60 * 1000) }, // 1 min ago
+    }
+    const result = await sendRoleAwareVerificationEmail('uid-1', 'a@test.com', 'CLIENT', { skipCooldown: true })
+    expect(result).toEqual({ ok: true })
+    expect(mockSendVerificationEmail).toHaveBeenCalled()
+    expect(mockDocSet).toHaveBeenCalledWith(
+      { lastVerificationEmailSentAt: 'SERVER_TIMESTAMP' },
+      { merge: true }
+    )
+  })
+
   it('stamps the cooldown before sending, so a failing send still counts against the cooldown', async () => {
     mockSendVerificationEmail.mockRejectedValueOnce(new Error('provider outage'))
     await expect(sendRoleAwareVerificationEmail('uid-1', 'a@test.com', 'CLIENT')).rejects.toThrow('provider outage')

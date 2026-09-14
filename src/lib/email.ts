@@ -325,6 +325,41 @@ export async function sendPasswordResetEmail(p: {
   )
 }
 
+// An admin-composed message, sent from the admin panel to hand-picked
+// recipients. The body is plain text typed by an admin — escaped, then
+// split into paragraphs so line breaks survive the HTML rendering.
+export async function sendAdminMessageEmail(p: {
+  email: string
+  subject: string
+  message: string
+  name?: string
+}): Promise<void> {
+  const greeting = p.name?.trim() ? `שלום ${escapeHtml(p.name.trim())},` : 'שלום,'
+  const paragraphs = p.message
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => `<p style="color:#666;margin:0 0 16px;white-space:pre-line">${escapeHtml(block)}</p>`)
+    .join('')
+
+  await sendResend(
+    p.email,
+    p.subject,
+    `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+      <div style="background:${BRAND_GRADIENT};border-radius:16px 16px 0 0;padding:28px 32px;text-align:center">
+        <h1 style="color:white;margin:0;font-size:22px;font-weight:900">נייליסטיות</h1>
+      </div>
+      <div style="background:#fff;border:1px solid #f3e8ff;border-top:none;border-radius:0 0 16px 16px;padding:32px">
+        <h2 style="font-size:20px;font-weight:900;margin:0 0 16px">${escapeHtml(p.subject)}</h2>
+        <p style="margin:0 0 16px">${greeting}</p>
+        ${paragraphs}
+        <p style="color:#999;font-size:12px;margin:24px 0 0">הודעה זו נשלחה מצוות נייליסטיות. אפשר להשיב למייל זה.</p>
+      </div>
+    </div>`,
+    `${p.subject}\n\n${p.name?.trim() ? `שלום ${p.name.trim()},` : 'שלום,'}\n\n${p.message.trim()}\n\nצוות נייליסטיות`
+  )
+}
+
 export async function sendVerificationEmail(p: {
   email: string
   verifyLink: string
