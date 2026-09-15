@@ -192,6 +192,24 @@ describe('GET /api/admin/stats', () => {
       })
     )
   })
+
+  it('combines bounced and suppressed recipients into one delivery-risk count', async () => {
+    collectionStore.users = [
+      { __id: 'u1', role: 'CLIENT', emailDeliveryStatus: 'BOUNCED' },
+      { __id: 'u2', role: 'CLIENT', emailDeliveryStatus: 'SUPPRESSED' },
+      { __id: 'u3', role: 'CLIENT' },
+    ]
+
+    const { GET } = await import('@/app/api/admin/stats/route')
+    const res = await GET(adminRequest())
+    const json = await res.json()
+
+    expect(json.data).toMatchObject({
+      bouncedEmailUsers: 1,
+      suppressedEmailUsers: 1,
+      emailDeliveryIssueUsers: 2,
+    })
+  })
 })
 
 describe('GET /api/admin/users', () => {

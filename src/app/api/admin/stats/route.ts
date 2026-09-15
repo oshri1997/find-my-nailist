@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
   const totalNailistUsers = usersSnap.docs.filter(d => d.data().role === 'NAILIST').length
   const totalClientUsers = usersSnap.docs.filter(d => d.data().role === 'CLIENT').length
   const bouncedEmailUsers = usersSnap.docs.filter(d => d.data().emailDeliveryStatus === 'BOUNCED').length
+  const suppressedEmailUsers = usersSnap.docs.filter(d => d.data().emailDeliveryStatus === 'SUPPRESSED').length
   const activeNailists = nailistsSnap.docs.filter(d => d.data().isActive === true).length
 
   let totalRevenue = 0
@@ -77,6 +78,8 @@ export async function GET(request: NextRequest) {
       totalNailistProfiles: nailistsSnap.size,
       totalClients: totalClientUsers,
       bouncedEmailUsers,
+      suppressedEmailUsers,
+      emailDeliveryIssueUsers: bouncedEmailUsers + suppressedEmailUsers,
       activeNailists,
       totalAppointments: appointmentsSnap.size,
       appointmentsByStatus,
