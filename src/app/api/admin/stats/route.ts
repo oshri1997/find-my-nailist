@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebase/admin'
+import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { verifyAdmin, adminUnauthorized } from '@/lib/admin-auth'
 import { israelWallClockToUtc, todayInIsrael } from '@/lib/booking-utils'
@@ -36,7 +36,24 @@ export async function GET(request: NextRequest) {
   const totalClientUsers = usersSnap.docs.filter(d => d.data().role === 'CLIENT').length
   const bouncedEmailUsers = usersSnap.docs.filter(d => d.data().emailDeliveryStatus === 'BOUNCED').length
   const suppressedEmailUsers = usersSnap.docs.filter(d => d.data().emailDeliveryStatus === 'SUPPRESSED').length
-  const activeNailists = nailistsSnap.docs.filter(d => d.data().isActive === true).length
+
+  // "Active" mirrors what actually makes a nailist bookable — the isActive
+  // flag she controls herself, plus a verified email — the same pair of
+  // conditions client search already filters on (filterVerifiedNailists in
+  // src/app/api/nailists/route.ts). Counting isActive alone overstates how
+  // many nailists clients can actually find and book.
+  const activeFlagProfiles = nailistsSnap.docs.filter(d => d.data().isActive === true)
+  const activeFlagUserIds = [...new Set(
+    activeFlagProfiles
+      .map(d => d.data().userId)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0)
+  )]
+  const verifiedUserIds = new Set<string>()
+  for (let i = 0; i < activeFlagUserIds.length; i += 100) {
+    const result = await adminAuth().getUsers(activeFlagUserIds.slice(i, i + 100).map(uid => ({ uid })))
+    result.users.forEach(user => { if (user.emailVerified) verifiedUserIds.add(user.uid) })
+  }
+  const activeNailists = activeFlagProfiles.filter(d => verifiedUserIds.has(d.data().userId)).length
 
   let totalRevenue = 0
   appointmentsSnap.docs.forEach(d => {

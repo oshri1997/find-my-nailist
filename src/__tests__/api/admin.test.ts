@@ -210,6 +210,27 @@ describe('GET /api/admin/stats', () => {
       emailDeliveryIssueUsers: 2,
     })
   })
+
+  it('only counts a nailist as active when isActive is true and the owner verified their email', async () => {
+    collectionStore.nailistProfiles = [
+      { __id: 'n1', userId: 'u1', isActive: true },
+      { __id: 'n2', userId: 'u2', isActive: true },
+      { __id: 'n3', userId: 'u3', isActive: false },
+    ]
+    mockGetUsers.mockResolvedValue({
+      users: [
+        { uid: 'u1', emailVerified: true },
+        { uid: 'u2', emailVerified: false },
+      ],
+    })
+
+    const { GET } = await import('@/app/api/admin/stats/route')
+    const res = await GET(adminRequest())
+    const json = await res.json()
+
+    expect(mockGetUsers).toHaveBeenCalledWith([{ uid: 'u1' }, { uid: 'u2' }])
+    expect(json.data.activeNailists).toBe(1)
+  })
 })
 
 describe('GET /api/admin/users', () => {

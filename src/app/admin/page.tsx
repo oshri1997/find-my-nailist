@@ -422,7 +422,7 @@ export default function AdminDashboard() {
                   נייליסטיות פעילות
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  מתוך {stats.totalNailists} חשבונות נייליסטית
+                  מתוך {stats.totalNailists} חשבונות, פעילות ומאומתות במייל
                 </p>
               </div>
               <p className="text-2xl font-black text-success">
