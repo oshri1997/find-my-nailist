@@ -1,4 +1,4 @@
-import { reserveEmailQuota, normalizeRecipient } from '@/lib/cost-quota'
+import { reserveAdminActionEmailQuota, reserveEmailQuota, normalizeRecipient } from '@/lib/cost-quota'
 
 const FROM = 'נייליסטיות <noreply@nailistiot.fun>'
 const REPLY_TO = 'noreply@nailistiot.fun'
@@ -19,20 +19,32 @@ export function escapeHtml(value: unknown): string {
   })[character]!)
 }
 
-async function sendResend(to: string, subject: string, html: string, text: string): Promise<void> {
+type SendResendOptions = {
+  idempotencyKey?: string
+  quota?: 'standard' | 'admin-action'
+}
+
+async function sendResend(
+  to: string,
+  subject: string,
+  html: string,
+  text: string,
+  options: SendResendOptions = {}
+): Promise<{ id: string }> {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
-    console.warn('RESEND_API_KEY not set — skipping email')
-    return
+    throw new Error('שליחת מיילים אינה מוגדרת כרגע')
   }
 
-  await reserveEmailQuota(to)
+  if (options.quota === 'admin-action') await reserveAdminActionEmailQuota(to)
+  else await reserveEmailQuota(to)
   const res = await fetch('https://api.resend.com/emails', {
     signal: AbortSignal.timeout(10000),
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
+      ...(options.idempotencyKey ? { 'Idempotency-Key': options.idempotencyKey } : {}),
     },
     body: JSON.stringify({
       from: FROM,
@@ -41,10 +53,6 @@ async function sendResend(to: string, subject: string, html: string, text: strin
       html,
       text,
       reply_to: REPLY_TO,
-      headers: {
-        'List-Unsubscribe': `<mailto:noreply@nailistiot.fun?subject=unsubscribe>, <${APP_URL}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
     }),
   })
 
@@ -54,7 +62,9 @@ async function sendResend(to: string, subject: string, html: string, text: strin
   }
 
   const data = await res.json() as { id?: string }
+  if (!data.id) throw new Error('שירות המייל לא החזיר מזהה שליחה')
   console.log('[email] sent | id:', data.id)
+  return { id: data.id }
 }
 
 export function formatDate(d: Date) {
@@ -358,7 +368,8 @@ export async function sendAdminActionCodeEmail(p: {
         <p style="color:#999;font-size:12px;margin:24px 0 0">אם לא ביקשת את הפעולה הזו — אל תמסרי את הקוד לאף אחד, ובדקי מי מחובר לפאנל הניהול.</p>
       </div>
     </div>`,
-    `אישור פעולת אדמין — ${p.action}\n\n${p.details.join('\n')}\n\nהקוד שלך: ${p.code}\nתקף ל-10 דקות, לשימוש חד-פעמי.\n\nאם לא ביקשת את הפעולה הזו — אל תמסרי את הקוד לאף אחד.\n\nצוות נייליסטיות`
+    `אישור פעולת אדמין — ${p.action}\n\n${p.details.join('\n')}\n\nהקוד שלך: ${p.code}\nתקף ל-10 דקות, לשימוש חד-פעמי.\n\nאם לא ביקשת את הפעולה הזו — אל תמסרי את הקוד לאף אחד.\n\nצוות נייליסטיות`,
+    { quota: 'admin-action' }
   )
 }
 
@@ -370,7 +381,8 @@ export async function sendAdminMessageEmail(p: {
   subject: string
   message: string
   name?: string
-}): Promise<void> {
+  idempotencyKey?: string
+}): Promise<{ id: string }> {
   const greeting = p.name?.trim() ? `שלום ${escapeHtml(p.name.trim())},` : 'שלום,'
   const paragraphs = p.message
     .split(/\n{2,}/)
@@ -379,7 +391,7 @@ export async function sendAdminMessageEmail(p: {
     .map((block) => `<p style="color:#666;margin:0 0 16px;white-space:pre-line">${escapeHtml(block)}</p>`)
     .join('')
 
-  await sendResend(
+  return sendResend(
     p.email,
     p.subject,
     `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
@@ -390,10 +402,11 @@ export async function sendAdminMessageEmail(p: {
         <h2 style="font-size:20px;font-weight:900;margin:0 0 16px">${escapeHtml(p.subject)}</h2>
         <p style="margin:0 0 16px">${greeting}</p>
         ${paragraphs}
-        <p style="color:#999;font-size:12px;margin:24px 0 0">הודעה זו נשלחה מצוות נייליסטיות. אפשר להשיב למייל זה.</p>
+        <p style="color:#999;font-size:12px;margin:24px 0 0">הודעה זו נשלחה מצוות נייליסטיות.</p>
       </div>
     </div>`,
-    `${p.subject}\n\n${p.name?.trim() ? `שלום ${p.name.trim()},` : 'שלום,'}\n\n${p.message.trim()}\n\nצוות נייליסטיות`
+    `${p.subject}\n\n${p.name?.trim() ? `שלום ${p.name.trim()},` : 'שלום,'}\n\n${p.message.trim()}\n\nצוות נייליסטיות`,
+    { idempotencyKey: p.idempotencyKey }
   )
 }
 

@@ -9,6 +9,7 @@ import {
 
 const MAX_SUBJECT_LENGTH = 150
 const MAX_MESSAGE_LENGTH = 5000
+const OPERATION_ID_PATTERN = /^[A-Za-z0-9_-]{8,128}$/
 
 export async function POST(request: NextRequest) {
   const admin = await verifyAdmin(request)
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null)
   const template: string = body?.template
   const userIds: unknown = body?.userIds
+  const operationId = typeof body?.operationId === 'string' ? body.operationId : undefined
 
   if (!EMAIL_TEMPLATES.includes(template as EmailTemplate)) {
     return NextResponse.json({ error: 'סוג מייל לא תקין' }, { status: 400 })
@@ -29,6 +31,9 @@ export async function POST(request: NextRequest) {
       { error: `ניתן לשלוח עד ${MAX_RECIPIENTS} נמענים בפעולה אחת` },
       { status: 400 }
     )
+  }
+  if (operationId && !OPERATION_ID_PATTERN.test(operationId)) {
+    return NextResponse.json({ error: 'מזהה פעולה לא תקין' }, { status: 400 })
   }
 
   const subject = typeof body?.subject === 'string' ? body.subject.trim() : ''
@@ -48,6 +53,7 @@ export async function POST(request: NextRequest) {
     userIds: [...new Set(userIds as string[])],
     subject,
     message,
+    operationId,
     admin,
   })
 

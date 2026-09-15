@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Search, Trash2, Loader2, User, Scissors, Ban, CheckCircle2, ShieldCheck, AlertCircle, X, MailCheck, Pencil } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
+import { suggestEmailCorrection } from '@/lib/email-suggestion'
 
 interface AdminUser {
   id: string
@@ -52,7 +53,6 @@ export default function AdminUsersPage() {
   const [emailChange, setEmailChange] = useState<AdminUser | null>(null)
   const [newEmail, setNewEmail] = useState('')
   const [challengeId, setChallengeId] = useState<string | null>(null)
-  const [codeSentTo, setCodeSentTo] = useState('')
   const [confirmCode, setConfirmCode] = useState('')
   const [emailChangeBusy, setEmailChangeBusy] = useState(false)
   const [emailChangeError, setEmailChangeError] = useState<string | null>(null)
@@ -186,7 +186,6 @@ export default function AdminUsersPage() {
     setEmailChange(user)
     setNewEmail(user.email)
     setChallengeId(null)
-    setCodeSentTo('')
     setConfirmCode('')
     setEmailChangeError(null)
   }
@@ -194,25 +193,30 @@ export default function AdminUsersPage() {
   async function postEmailChange(body: Record<string, string>) {
     setEmailChangeBusy(true)
     setEmailChangeError(null)
-    const res = await fetch(`/api/admin/users/${emailChange!.id}/email`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    const json = await res.json().catch(() => null)
-    setEmailChangeBusy(false)
-    if (!res.ok) {
-      setEmailChangeError(json?.error ?? 'הפעולה נכשלה')
+    try {
+      const res = await fetch(`/api/admin/users/${emailChange!.id}/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const json = await res.json().catch(() => null)
+      if (!res.ok) {
+        setEmailChangeError(json?.error ?? 'הפעולה נכשלה')
+        return null
+      }
+      return json?.data ?? {}
+    } catch {
+      setEmailChangeError('לא ניתן להשלים את הפעולה כרגע. נסי שוב.')
       return null
+    } finally {
+      setEmailChangeBusy(false)
     }
-    return json?.data ?? {}
   }
 
   async function handleRequestEmailChange() {
     const data = await postEmailChange({ step: 'request', email: newEmail })
     if (!data) return
     setChallengeId(data.challengeId)
-    setCodeSentTo(data.sentTo)
   }
 
   async function handleConfirmEmailChange() {
@@ -222,7 +226,13 @@ export default function AdminUsersPage() {
       ? { ...u, email: data.newEmail, emailDeliveryStatus: null }
       : u
     ))
-    setVerificationNotice({ text: `כתובת המייל עודכנה ל-${data.newEmail}. שלחי עכשיו מייל אימות לכתובת החדשה.`, ok: true })
+    const verificationFailed = data.verification?.failed?.[0]
+    setVerificationNotice({
+      text: verificationFailed
+        ? `כתובת המייל עודכנה ל-${data.newEmail}, אבל קישור האימות לא הועבר לשליחה: ${verificationFailed.error}`
+        : `כתובת המייל עודכנה ל-${data.newEmail} וקישור אימות הועבר לשליחה.`,
+      ok: !verificationFailed,
+    })
     setEmailChange(null)
   }
 
@@ -354,7 +364,8 @@ export default function AdminUsersPage() {
             className="px-3 py-2.5 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             <option value="">הכל</option>
-            <option value="BOUNCED">לא נמסר</option>
+                <option value="BOUNCED">כתובות שמייל אליהן חזר</option>
+                <option value="SUPPRESSED">כתובות חסומות לשליחה</option>
           </select>
         </div>
       </div>
@@ -500,6 +511,7 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => openEmailChange(u)}
                             title="שנה כתובת מייל"
+                            aria-label={`שינוי כתובת המייל של ${u.email}`}
                             className="p-1 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                           >
                             <Pencil className="w-3.5 h-3.5" />
@@ -512,8 +524,12 @@ export default function AdminUsersPage() {
                         <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-destructive/10 text-destructive border-destructive/20">
                           מייל חזר
                         </span>
+                      ) : u.emailDeliveryStatus === 'SUPPRESSED' ? (
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-warning/10 text-warning border-warning/20">
+                          חסום לשליחה
+                        </span>
                       ) : (
-                        <span className="text-xs text-muted-foreground">נמסר / ממתין</span>
+                        <span className="text-xs text-muted-foreground">לא ידוע על כשל</span>
                       )}
                     </td>
                     <td className="px-5 py-3">
@@ -595,6 +611,7 @@ export default function AdminUsersPage() {
                             onClick={() => handleResendVerification(u)}
                             disabled={resendingVerification === u.id}
                             title="שלח מייל אימות נוסף"
+                            aria-label={`שליחת מייל אימות נוסף אל ${u.email}`}
                             className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
                           >
                             {resendingVerification === u.id
@@ -606,6 +623,7 @@ export default function AdminUsersPage() {
                             onClick={() => handleToggleSuspend(u)}
                             disabled={togglingSuspend === u.id}
                             title={u.suspended ? 'בטל השעיה' : 'השעה'}
+                            aria-label={`${u.suspended ? 'ביטול השעיה' : 'השעיה'} של ${u.email}`}
                             className="p-2 rounded-lg text-muted-foreground hover:text-warning hover:bg-warning/10 transition-colors disabled:opacity-40"
                           >
                             {togglingSuspend === u.id
@@ -616,6 +634,7 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => setConfirmDelete(u)}
                             disabled={deleting === u.id}
+                            aria-label={`מחיקת ${u.email}`}
                             className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
                           >
                             {deleting === u.id
@@ -642,9 +661,10 @@ export default function AdminUsersPage() {
       {/* Change email — two steps, guarded by a code mailed to the fixed
           owner address so panel access alone can't repoint an account. */}
       {emailChange && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full space-y-4">
-            <h3 className="font-black text-foreground">שינוי כתובת מייל</h3>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="change-email-title">
+          <button onClick={() => !emailChangeBusy && setEmailChange(null)} aria-label="סגירת שינוי כתובת מייל" className="absolute inset-0 bg-black/50" />
+          <div className="relative bg-card border border-border rounded-2xl p-6 max-w-sm w-full space-y-4">
+            <h3 id="change-email-title" className="font-black text-foreground">שינוי כתובת מייל</h3>
 
             {challengeId === null ? (
               <>
@@ -660,14 +680,23 @@ export default function AdminUsersPage() {
                     dir="ltr"
                     value={newEmail}
                     onChange={e => setNewEmail(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-background border border-border rounded-xl text-sm text-right focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full px-4 py-2.5 bg-background border border-border rounded-xl text-sm text-left focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
+                  {suggestEmailCorrection(newEmail) && (
+                    <button
+                      type="button"
+                      onClick={() => setNewEmail(suggestEmailCorrection(newEmail)!)}
+                      className="mt-2 text-xs font-semibold text-primary hover:underline"
+                    >
+                      התכוונת ל־{suggestEmailCorrection(newEmail)}?
+                    </button>
+                  )}
                 </div>
               </>
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">
-                  קוד בן 6 ספרות נשלח אל <strong>{codeSentTo}</strong>. הקוד תקף ל-10 דקות.
+                  קוד בן 6 ספרות נשלח לכתובת האישור. הקוד תקף ל-10 דקות.
                   אחרי האישור הכתובת תשתנה ל-<strong>{newEmail}</strong> ותסומן כלא מאומתת.
                 </p>
                 <div>
@@ -676,6 +705,8 @@ export default function AdminUsersPage() {
                     id="confirm-code"
                     inputMode="numeric"
                     dir="ltr"
+                    autoComplete="one-time-code"
+                    pattern="[0-9]*"
                     maxLength={6}
                     value={confirmCode}
                     onChange={e => setConfirmCode(e.target.value.replace(/\D/g, ''))}
@@ -700,8 +731,18 @@ export default function AdminUsersPage() {
               >
                 {emailChangeBusy
                   ? <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                  : challengeId === null ? 'שלח קוד אישור' : 'אישור השינוי'}
+                  : challengeId === null ? 'שלח קוד אישור' : 'אישור ושליחת אימות'}
               </button>
+              {challengeId !== null && (
+                <button
+                  type="button"
+                  onClick={() => { setChallengeId(null); setConfirmCode(''); setEmailChangeError(null) }}
+                  disabled={emailChangeBusy}
+                  className="text-xs font-bold text-primary hover:underline disabled:opacity-40"
+                >
+                  שינוי הכתובת
+                </button>
+              )}
               <button
                 onClick={() => setEmailChange(null)}
                 className="flex-1 bg-muted text-foreground rounded-xl py-2.5 text-sm font-bold hover:bg-muted/70 transition-colors"

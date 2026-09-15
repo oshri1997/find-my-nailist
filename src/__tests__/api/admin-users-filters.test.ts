@@ -124,6 +124,17 @@ describe('GET /api/admin/users — filters', () => {
     expect(json.data[0].emailDeliveryStatus).toBe('BOUNCED')
   })
 
+  it('filters users whose email was suppressed', async () => {
+    collectionStore.users.push({
+      __id: 'u4', email: 'dana@test.com', displayName: 'Dana', role: 'CLIENT',
+      emailDeliveryStatus: 'SUPPRESSED', createdAt: { toDate: () => new Date('2026-03-21') },
+    })
+    const res = await GET(makeRequest('emailStatus=SUPPRESSED'))
+    const json = await res.json()
+    expect(json.data.map((u: { id: string }) => u.id)).toEqual(['u4'])
+    expect(json.data[0].emailDeliveryStatus).toBe('SUPPRESSED')
+  })
+
   it('combines role and onboardingStatus filters', async () => {
     const res = await GET(makeRequest('role=NAILIST&onboardingStatus=completed'))
     const json = await res.json()

@@ -4,10 +4,11 @@ import AdminEmailsPage from '@/app/admin/emails/page'
 const users = [
   { id: 'u1', email: 'alice@test.com', displayName: 'Alice', role: 'CLIENT', emailVerified: false, emailDeliveryStatus: 'BOUNCED' },
   { id: 'u2', email: 'bob@test.com', displayName: 'Bob', role: 'NAILIST', emailVerified: true, emailDeliveryStatus: null },
+  { id: 'u3', email: 'dana@test.com', displayName: 'Dana', role: 'CLIENT', emailVerified: false, emailDeliveryStatus: null },
 ]
 
 let lastUsersUrl = ''
-let lastSendBody: { template?: string; userIds?: string[]; subject?: string; message?: string } | null = null
+let lastSendBody: { template?: string; userIds?: string[]; subject?: string; message?: string; operationId?: string } | null = null
 let sendResponse: { ok: boolean; json: unknown }
 
 function mockFetch() {
@@ -25,11 +26,16 @@ async function selectRecipient(email: string) {
   fireEvent.click(await screen.findByLabelText(`בחר את ${email}`))
 }
 
+async function confirmSend() {
+  fireEvent.click(screen.getByRole('button', { name: /מעבר לאישור שליחה/ }))
+  fireEvent.click(await screen.findByRole('button', { name: 'העבירי לשליחה' }))
+}
+
 describe('AdminEmailsPage', () => {
   beforeEach(() => {
     lastUsersUrl = ''
     lastSendBody = null
-    sendResponse = { ok: true, json: { data: { sent: [{ id: 'u1', email: 'alice@test.com' }], skipped: [], failed: [] } } }
+    sendResponse = { ok: true, json: { data: { sent: [{ id: 'u3', email: 'dana@test.com' }], skipped: [], failed: [] } } }
     mockFetch()
   })
 
@@ -40,7 +46,7 @@ describe('AdminEmailsPage', () => {
 
   it('marks unverified and bounced recipients in the list', async () => {
     render(<AdminEmailsPage />)
-    expect(await screen.findByText('לא אומת')).toBeInTheDocument()
+    expect((await screen.findAllByText('לא אומת')).length).toBeGreaterThan(0)
     expect(screen.getByText('מייל חזר')).toBeInTheDocument()
   })
 
@@ -55,26 +61,40 @@ describe('AdminEmailsPage', () => {
 
   it('keeps the send button disabled until a recipient is chosen', async () => {
     render(<AdminEmailsPage />)
-    await screen.findByText('alice@test.com')
+    await screen.findByText('dana@test.com')
     const button = screen.getByRole('button', { name: /שליחה ל-0 נמענים/ })
     expect(button).toBeDisabled()
 
-    await selectRecipient('alice@test.com')
+    await selectRecipient('dana@test.com')
     expect(screen.getByRole('button', { name: /שליחה ל-1 נמענים/ })).toBeEnabled()
+  })
+
+  it('does not allow a bounced recipient to be selected', async () => {
+    render(<AdminEmailsPage />)
+    expect(await screen.findByLabelText('בחר את alice@test.com')).toBeDisabled()
+  })
+
+  it('does not include blocked addresses when selecting all visible recipients', async () => {
+    render(<AdminEmailsPage />)
+    await screen.findByText('dana@test.com')
+    fireEvent.click(screen.getByRole('button', { name: 'בחר הכל' }))
+
+    expect(screen.getByRole('button', { name: /שליחה ל-2 נמענים/ })).toBeEnabled()
+    expect(screen.getByLabelText('בחר את alice@test.com')).not.toBeChecked()
   })
 
   it('sends a verification email to the selected recipients', async () => {
     render(<AdminEmailsPage />)
-    await selectRecipient('alice@test.com')
-    fireEvent.click(screen.getByRole('button', { name: /שליחה ל-1 נמענים/ }))
+    await selectRecipient('dana@test.com')
+    await confirmSend()
 
-    await waitFor(() => expect(lastSendBody).toEqual({ template: 'VERIFICATION', userIds: ['u1'] }))
-    expect(await screen.findByText('נשלחו 1 מיילים')).toBeInTheDocument()
+    await waitFor(() => expect(lastSendBody).toEqual(expect.objectContaining({ template: 'VERIFICATION', userIds: ['u3'] })))
+    expect(await screen.findByText('הועברו לשליחה 1 מיילים')).toBeInTheDocument()
   })
 
   it('requires a subject and body before a custom message can be sent', async () => {
     render(<AdminEmailsPage />)
-    await selectRecipient('alice@test.com')
+    await selectRecipient('dana@test.com')
     fireEvent.click(screen.getByRole('button', { name: /הודעה מותאמת/ }))
 
     expect(screen.getByRole('button', { name: /שליחה ל-1 נמענים/ })).toBeDisabled()
@@ -83,11 +103,11 @@ describe('AdminEmailsPage', () => {
     expect(screen.getByRole('button', { name: /שליחה ל-1 נמענים/ })).toBeDisabled()
 
     fireEvent.change(screen.getByLabelText('תוכן ההודעה'), { target: { value: 'שלום' } })
-    fireEvent.click(screen.getByRole('button', { name: /שליחה ל-1 נמענים/ }))
+    await confirmSend()
 
-    await waitFor(() => expect(lastSendBody).toEqual({
-      template: 'CUSTOM', userIds: ['u1'], subject: 'עדכון', message: 'שלום',
-    }))
+    await waitFor(() => expect(lastSendBody).toEqual(expect.objectContaining({
+      template: 'CUSTOM', userIds: ['u3'], subject: 'עדכון', message: 'שלום',
+    })))
   })
 
   it('lists skipped and failed recipients from the send report', async () => {
@@ -97,25 +117,25 @@ describe('AdminEmailsPage', () => {
         data: {
           sent: [],
           skipped: [{ id: 'u2', email: 'bob@test.com', reason: 'המייל כבר מאומת' }],
-          failed: [{ id: 'u1', email: 'alice@test.com', error: 'Resend error 429' }],
+          failed: [{ id: 'u3', email: 'dana@test.com', error: 'Resend error 429' }],
         },
       },
     }
     render(<AdminEmailsPage />)
-    await selectRecipient('alice@test.com')
-    fireEvent.click(screen.getByRole('button', { name: /שליחה ל-1 נמענים/ }))
+    await selectRecipient('dana@test.com')
+    await confirmSend()
 
     expect(await screen.findByText(/bob@test.com: המייל כבר מאומת/)).toBeInTheDocument()
-    expect(screen.getByText(/alice@test.com: Resend error 429/)).toBeInTheDocument()
+    expect(screen.getByText(/dana@test.com: Resend error 429/)).toBeInTheDocument()
   })
 
   it('surfaces a rejected request instead of reporting a successful send', async () => {
     sendResponse = { ok: false, json: { error: 'אין הרשאה' } }
     render(<AdminEmailsPage />)
-    await selectRecipient('alice@test.com')
-    fireEvent.click(screen.getByRole('button', { name: /שליחה ל-1 נמענים/ }))
+    await selectRecipient('dana@test.com')
+    await confirmSend()
 
     expect(await screen.findByText('אין הרשאה')).toBeInTheDocument()
-    expect(screen.queryByText(/נשלחו/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/הועברו לשליחה/)).not.toBeInTheDocument()
   })
 })

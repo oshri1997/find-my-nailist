@@ -4,9 +4,13 @@ import { COLLECTIONS } from '@/lib/firebase/collections'
 import { sendAdminActionCodeEmail } from '@/lib/email'
 import { writeAuditLog } from '@/lib/audit-log'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
+import { CostQuotaExceeded, reserveCostQuota } from '@/lib/cost-quota'
+import { validateEmailDomain } from '@/lib/email-domain'
 
 const CODE_TTL_MS = 10 * 60 * 1000
 const MAX_ATTEMPTS = 5
+const REQUEST_COOLDOWN_MS = 60 * 1000
+const PROCESSING_LEASE_MS = 60 * 1000
 // A second factor is only a second factor if it lands somewhere the admin
 // panel cannot reach. This address is fixed server-side and is never taken
 // from the request.
@@ -60,6 +64,22 @@ export async function requestEmailChange(params: {
     return { ok: false, error: 'זו כבר הכתובת הרשומה למשתמש', status: 400 }
   }
 
+  const domain = await validateEmailDomain(newEmail)
+  if (domain.status === 'invalid') {
+    return { ok: false, error: 'הדומיין של כתובת המייל אינו יכול לקבל מיילים', status: 400 }
+  }
+
+  try {
+    await reserveCostQuota([
+      { key: `admin-email-change:${params.admin.uid}:${params.targetUid}`, limit: 1, cooldownMs: REQUEST_COOLDOWN_MS },
+    ])
+  } catch (error) {
+    if (error instanceof CostQuotaExceeded) {
+      return { ok: false, error: 'קוד כבר נשלח לאחרונה — נסי שוב בעוד דקה', status: 429 }
+    }
+    throw error
+  }
+
   const code = String(randomInt(0, 1_000_000)).padStart(6, '0')
   const challengeRef = db.collection(COLLECTIONS.ADMIN_EMAIL_CHALLENGES).doc()
 
@@ -92,8 +112,12 @@ export async function requestEmailChange(params: {
 export async function confirmEmailChange(params: {
   challengeId: string
   code: string
+  targetUid: string
   admin: { uid: string; email: string }
 }): Promise<AdminEmailChangeResult<{ targetUid: string; newEmail: string }>> {
+  if (!/^\d{6}$/.test(params.code)) {
+    return { ok: false, error: 'קוד אישור לא תקין', status: 400 }
+  }
   const db = adminDb()
   const challengeRef = db.collection(COLLECTIONS.ADMIN_EMAIL_CHALLENGES).doc(params.challengeId)
 
@@ -122,9 +146,18 @@ export async function confirmEmailChange(params: {
       return { ok: false as const, error: `קוד שגוי — נותרו ${left} ניסיונות`, status: 400 }
     }
 
-    // Consumed inside the transaction, so a replay of the same code loses
-    // the race instead of applying the change twice.
-    tx.update(challengeRef, { consumedAt: FieldValue.serverTimestamp() })
+    if (data.targetUid !== params.targetUid) {
+      return { ok: false as const, error: 'הקוד אינו שייך למשתמש הזה', status: 400 }
+    }
+
+    const processingAt = data.processingAt?.toMillis?.()
+    if (processingAt && Date.now() - processingAt < PROCESSING_LEASE_MS) {
+      return { ok: false as const, error: 'השינוי כבר מעובד — נסי שוב בעוד רגע', status: 409 }
+    }
+
+    // Claim the challenge before calling Auth. It becomes consumed only after
+    // the Auth update succeeds, so a provider failure can be retried safely.
+    tx.update(challengeRef, { processingAt: FieldValue.serverTimestamp() })
     return {
       ok: true as const,
       targetUid: data.targetUid as string,
@@ -135,14 +168,51 @@ export async function confirmEmailChange(params: {
 
   if (!verdict.ok) return { ok: false, error: verdict.error, status: verdict.status }
 
-  try {
-    await adminAuth().updateUser(verdict.targetUid, {
-      email: verdict.newEmail,
-      // The new address is unproven until its owner clicks the link, and the
-      // account must not inherit the old address's verified state.
-      emailVerified: false,
+  const releaseChallenge = async () => {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(challengeRef)
+      if (snap.exists && !snap.data()?.consumedAt) {
+        tx.update(challengeRef, { processingAt: FieldValue.delete() })
+      }
     })
+  }
+
+  // Re-check the target after the code was issued: a concurrent role or email
+  // change must not let an old challenge overwrite newer account data.
+  const [targetSnap, authUser] = await Promise.all([
+    db.collection(COLLECTIONS.USERS).doc(verdict.targetUid).get(),
+    adminAuth().getUser(verdict.targetUid),
+  ]).catch(async () => {
+    await releaseChallenge()
+    return [null, null] as const
+  })
+
+  if (!targetSnap || !authUser) {
+    return { ok: false, error: 'לא ניתן לאמת את מצב המשתמש — נסי שוב', status: 503 }
+  }
+  if (targetSnap.data()?.isAdmin === true) {
+    await releaseChallenge()
+    return { ok: false, error: 'לא ניתן לשנות כתובת מייל של חשבון אדמין', status: 403 }
+  }
+
+  const authEmail = authUser.email ? normalizeEmail(authUser.email) : null
+  const expectedEmail = verdict.currentEmail ? normalizeEmail(verdict.currentEmail) : null
+  if (authEmail !== expectedEmail && authEmail !== verdict.newEmail) {
+    await releaseChallenge()
+    return { ok: false, error: 'כתובת המייל השתנתה מאז בקשת הקוד — התחילי מחדש', status: 409 }
+  }
+
+  try {
+    if (authEmail !== verdict.newEmail) {
+      await adminAuth().updateUser(verdict.targetUid, {
+        email: verdict.newEmail,
+        // The new address is unproven until its owner clicks the link, and the
+        // account must not inherit the old address's verified state.
+        emailVerified: false,
+      })
+    }
   } catch (error) {
+    await releaseChallenge()
     const code = (error as { code?: string }).code
     if (code === 'auth/email-already-exists') {
       return { ok: false, error: 'הכתובת כבר רשומה לחשבון אחר', status: 409 }
@@ -151,20 +221,36 @@ export async function confirmEmailChange(params: {
     return { ok: false, error: 'עדכון כתובת המייל נכשל', status: 500 }
   }
 
-  await db.collection(COLLECTIONS.USERS).doc(verdict.targetUid).set(
-    {
-      email: verdict.newEmail,
-      pendingEmail: FieldValue.delete(),
-      emailDeliveryStatus: FieldValue.delete(),
-      emailDeliveryBouncedAt: FieldValue.delete(),
-      emailDeliveryEventId: FieldValue.delete(),
-      // Lets the follow-up verification email go out immediately rather than
-      // inheriting the cooldown stamped against the old address.
-      lastVerificationEmailSentAt: FieldValue.delete(),
-      updatedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true }
-  )
+  try {
+    await db.collection(COLLECTIONS.USERS).doc(verdict.targetUid).set(
+      {
+        email: verdict.newEmail,
+        pendingEmail: FieldValue.delete(),
+        emailDeliveryStatus: FieldValue.delete(),
+        emailDeliveryBouncedAt: FieldValue.delete(),
+        emailDeliveryEventId: FieldValue.delete(),
+        // Lets the follow-up verification email go out immediately rather than
+        // inheriting the cooldown stamped against the old address.
+        lastVerificationEmailSentAt: FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    )
+  } catch (error) {
+    // Firebase Auth is authoritative. Do not report failure after its update;
+    // the ordinary Auth-to-Firestore sync can repair this mirror later.
+    console.error('[admin-email-change] Firestore mirror update failed:', error)
+  }
+
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(challengeRef)
+    if (snap.exists && !snap.data()?.consumedAt) {
+      tx.update(challengeRef, {
+        consumedAt: FieldValue.serverTimestamp(),
+        processingAt: FieldValue.delete(),
+      })
+    }
+  })
 
   await writeAuditLog({
     actorUid: params.admin.uid,

@@ -68,6 +68,15 @@ jest.mock('@/lib/audit-log', () => ({
   writeAuditLog: (...args: unknown[]) => mockWriteAuditLog(...args),
 }))
 
+jest.mock('@/lib/cost-quota', () => ({
+  CostQuotaExceeded: class CostQuotaExceeded extends Error {},
+  reserveCostQuota: jest.fn().mockResolvedValue(undefined),
+}))
+
+jest.mock('@/lib/email-domain', () => ({
+  validateEmailDomain: jest.fn().mockResolvedValue({ status: 'valid' }),
+}))
+
 jest.mock('firebase-admin/firestore', () => ({
   FieldValue: {
     delete: () => '__deleted__',
@@ -129,6 +138,16 @@ describe('admin email change — request step', () => {
     expect(mockSendAdminActionCodeEmail).not.toHaveBeenCalled()
   })
 
+  it('rejects an address whose domain cannot receive email', async () => {
+    const { validateEmailDomain } = jest.requireMock('@/lib/email-domain') as { validateEmailDomain: jest.Mock }
+    validateEmailDomain.mockResolvedValueOnce({ status: 'invalid' })
+
+    const result = await requestEmailChange({ targetUid: 'u1', newEmail: 'fixed@example.com', admin })
+
+    expect(result).toMatchObject({ ok: false, status: 400 })
+    expect(mockSendAdminActionCodeEmail).not.toHaveBeenCalled()
+  })
+
   it('refuses to repoint an admin account', async () => {
     users['u1'] = { email: 'a@b.com', isAdmin: true }
     const result = await requestEmailChange({ targetUid: 'u1', newEmail: 'fixed@gmail.com', admin })
@@ -159,7 +178,7 @@ describe('admin email change — confirm step', () => {
 
   it('applies the change in Firebase Auth and marks the new address unverified', async () => {
     const { challengeId, code } = await startChange()
-    const result = await confirmEmailChange({ challengeId, code, admin })
+    const result = await confirmEmailChange({ challengeId, code, targetUid: 'u1', admin })
 
     expect(result.ok).toBe(true)
     expect(mockUpdateUser).toHaveBeenCalledWith('u1', { email: 'fixed@gmail.com', emailVerified: false })
@@ -167,7 +186,7 @@ describe('admin email change — confirm step', () => {
 
   it('mirrors the new address onto the user doc and clears the stale bounce flag', async () => {
     const { challengeId, code } = await startChange()
-    await confirmEmailChange({ challengeId, code, admin })
+    await confirmEmailChange({ challengeId, code, targetUid: 'u1', admin })
 
     expect(userWrites.at(-1)!.data).toMatchObject({
       email: 'fixed@gmail.com',
@@ -180,7 +199,7 @@ describe('admin email change — confirm step', () => {
     const { challengeId, code } = await startChange()
     const wrong = code === '000000' ? '111111' : '000000'
 
-    const result = await confirmEmailChange({ challengeId, code: wrong, admin })
+    const result = await confirmEmailChange({ challengeId, code: wrong, targetUid: 'u1', admin })
     expect(result).toMatchObject({ ok: false, status: 400 })
     expect(challenges[challengeId].attempts).toBe(1)
     expect(mockUpdateUser).not.toHaveBeenCalled()
@@ -189,19 +208,19 @@ describe('admin email change — confirm step', () => {
   it('locks the challenge after 5 wrong codes', async () => {
     const { challengeId, code } = await startChange()
     const wrong = code === '000000' ? '111111' : '000000'
-    for (let i = 0; i < 5; i++) await confirmEmailChange({ challengeId, code: wrong, admin })
+    for (let i = 0; i < 5; i++) await confirmEmailChange({ challengeId, code: wrong, targetUid: 'u1', admin })
 
-    const result = await confirmEmailChange({ challengeId, code, admin })
+    const result = await confirmEmailChange({ challengeId, code, targetUid: 'u1', admin })
     expect(result).toMatchObject({ ok: false, status: 429 })
     expect(mockUpdateUser).not.toHaveBeenCalled()
   })
 
   it('refuses a code that has already been used', async () => {
     const { challengeId, code } = await startChange()
-    await confirmEmailChange({ challengeId, code, admin })
+    await confirmEmailChange({ challengeId, code, targetUid: 'u1', admin })
     mockUpdateUser.mockClear()
 
-    const replay = await confirmEmailChange({ challengeId, code, admin })
+    const replay = await confirmEmailChange({ challengeId, code, targetUid: 'u1', admin })
     expect(replay).toMatchObject({ ok: false, status: 400 })
     expect(mockUpdateUser).not.toHaveBeenCalled()
   })
@@ -210,7 +229,7 @@ describe('admin email change — confirm step', () => {
     const { challengeId, code } = await startChange()
     challenges[challengeId].expiresAt = { toMillis: () => Date.now() - 1000 }
 
-    const result = await confirmEmailChange({ challengeId, code, admin })
+    const result = await confirmEmailChange({ challengeId, code, targetUid: 'u1', admin })
     expect(result).toMatchObject({ ok: false, status: 400 })
     expect(mockUpdateUser).not.toHaveBeenCalled()
   })
@@ -218,14 +237,22 @@ describe('admin email change — confirm step', () => {
   it('refuses a code issued to a different admin', async () => {
     const { challengeId, code } = await startChange()
     const result = await confirmEmailChange({
-      challengeId, code, admin: { uid: 'admin-2', email: 'other@example.com' },
+      challengeId, code, targetUid: 'u1', admin: { uid: 'admin-2', email: 'other@example.com' },
     })
     expect(result).toMatchObject({ ok: false, status: 403 })
     expect(mockUpdateUser).not.toHaveBeenCalled()
   })
 
+  it('refuses to apply a challenge to a different user', async () => {
+    const { challengeId, code } = await startChange()
+    const result = await confirmEmailChange({ challengeId, code, targetUid: 'u2', admin })
+
+    expect(result).toMatchObject({ ok: false, status: 400 })
+    expect(mockUpdateUser).not.toHaveBeenCalled()
+  })
+
   it('refuses an unknown challenge id', async () => {
-    const result = await confirmEmailChange({ challengeId: 'nope', code: '123456', admin })
+    const result = await confirmEmailChange({ challengeId: 'nope', code: '123456', targetUid: 'u1', admin })
     expect(result).toMatchObject({ ok: false, status: 400 })
   })
 
@@ -233,14 +260,26 @@ describe('admin email change — confirm step', () => {
     const { challengeId, code } = await startChange()
     mockUpdateUser.mockRejectedValueOnce(Object.assign(new Error('taken'), { code: 'auth/email-already-exists' }))
 
-    const result = await confirmEmailChange({ challengeId, code, admin })
+    const result = await confirmEmailChange({ challengeId, code, targetUid: 'u1', admin })
     expect(result).toMatchObject({ ok: false, status: 409 })
     expect(userWrites).toHaveLength(0)
   })
 
+  it('keeps the code usable when Firebase Auth rejects the first update', async () => {
+    const { challengeId, code } = await startChange()
+    mockUpdateUser.mockRejectedValueOnce(new Error('temporary provider failure'))
+
+    const failed = await confirmEmailChange({ challengeId, code, targetUid: 'u1', admin })
+    const retry = await confirmEmailChange({ challengeId, code, targetUid: 'u1', admin })
+
+    expect(failed).toMatchObject({ ok: false, status: 500 })
+    expect(retry).toMatchObject({ ok: true })
+    expect(mockUpdateUser).toHaveBeenCalledTimes(2)
+  })
+
   it('records the change in the audit log', async () => {
     const { challengeId, code } = await startChange()
-    await confirmEmailChange({ challengeId, code, admin })
+    await confirmEmailChange({ challengeId, code, targetUid: 'u1', admin })
 
     expect(mockWriteAuditLog).toHaveBeenCalledWith(expect.objectContaining({
       action: 'USER_EMAIL_CHANGE',

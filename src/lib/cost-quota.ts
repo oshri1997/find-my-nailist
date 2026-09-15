@@ -49,3 +49,12 @@ export async function reserveEmailQuota(email: string): Promise<void> {
     { key: `mail:recipient:${normalizeRecipient(email)}`, limit: positiveLimit('EMAIL_RECIPIENT_DAILY_LIMIT', 20, 1000) },
   ])
 }
+
+// Admin confirmation codes all reach the same guarded inbox. They need their
+// own budget so routine email limits cannot silently block a sensitive action.
+export async function reserveAdminActionEmailQuota(email: string): Promise<void> {
+  await reserveCostQuota([
+    { key: 'admin-action-mail:global', limit: positiveLimit('ADMIN_ACTION_EMAIL_DAILY_LIMIT', 100) },
+    { key: `admin-action-mail:recipient:${normalizeRecipient(email)}`, limit: positiveLimit('ADMIN_ACTION_RECIPIENT_DAILY_LIMIT', 100, 1000) },
+  ])
+}

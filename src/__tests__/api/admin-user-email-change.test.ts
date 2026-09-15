@@ -6,6 +6,7 @@ import { NextRequest } from 'next/server'
 const mockVerifyAdmin = jest.fn()
 const mockRequestEmailChange = jest.fn()
 const mockConfirmEmailChange = jest.fn()
+const mockSendAdminEmails = jest.fn()
 
 jest.mock('@/lib/admin-auth', () => ({
   verifyAdmin: (...args: unknown[]) => mockVerifyAdmin(...args),
@@ -15,6 +16,10 @@ jest.mock('@/lib/admin-auth', () => ({
 jest.mock('@/lib/admin-email-change', () => ({
   requestEmailChange: (...args: unknown[]) => mockRequestEmailChange(...args),
   confirmEmailChange: (...args: unknown[]) => mockConfirmEmailChange(...args),
+}))
+
+jest.mock('@/lib/admin-email', () => ({
+  sendAdminEmails: (...args: unknown[]) => mockSendAdminEmails(...args),
 }))
 
 import { POST } from '@/app/api/admin/users/[id]/email/route'
@@ -36,6 +41,7 @@ describe('POST /api/admin/users/[id]/email', () => {
     mockVerifyAdmin.mockResolvedValue(adminCtx)
     mockRequestEmailChange.mockResolvedValue({ ok: true, data: { challengeId: 'c1', sentTo: 'guard@example.com' } })
     mockConfirmEmailChange.mockResolvedValue({ ok: true, data: { targetUid: 'u1', newEmail: 'fixed@gmail.com' } })
+    mockSendAdminEmails.mockResolvedValue({ sent: [{ id: 'u1', email: 'fixed@gmail.com' }], skipped: [], failed: [] })
   })
 
   it('rejects a non-admin caller before any step runs', async () => {
@@ -80,9 +86,10 @@ describe('POST /api/admin/users/[id]/email', () => {
     const json = await res.json()
 
     expect(mockConfirmEmailChange).toHaveBeenCalledWith({
-      challengeId: 'c1', code: '123456', admin: adminCtx,
+      challengeId: 'c1', code: '123456', targetUid: 'u1', admin: adminCtx,
     })
     expect(json.data.newEmail).toBe('fixed@gmail.com')
+    expect(mockSendAdminEmails).toHaveBeenCalledWith({ template: 'VERIFICATION', userIds: ['u1'], admin: adminCtx })
   })
 
   it('passes the underlying failure status through', async () => {

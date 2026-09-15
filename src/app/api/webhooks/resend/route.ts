@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       const batch = db.batch()
       for (const user of users.docs) {
         batch.set(user.ref, {
-          emailDeliveryStatus: 'BOUNCED',
+          emailDeliveryStatus: event.type === 'email.suppressed' ? 'SUPPRESSED' : 'BOUNCED',
           emailDeliveryBouncedAt: FieldValue.serverTimestamp(),
           emailDeliveryEventId: event.data.email_id,
         }, { merge: true })

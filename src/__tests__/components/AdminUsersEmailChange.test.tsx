@@ -56,7 +56,7 @@ describe('AdminUsersPage — guarded email change', () => {
 
     await waitFor(() => expect(bodies[0]).toEqual({ step: 'request', email: 'fixed@gmail.com' }))
     expect(bodies).toHaveLength(1)
-    expect(await screen.findByText(/nailistiotil@gmail.com/)).toBeInTheDocument()
+    expect(await screen.findByText(/קוד בן 6 ספרות נשלח לכתובת האישור/)).toBeInTheDocument()
   })
 
   it('only applies the change after the code is entered', async () => {
@@ -66,7 +66,7 @@ describe('AdminUsersPage — guarded email change', () => {
 
     const codeInput = await screen.findByLabelText('קוד אישור')
     fireEvent.change(codeInput, { target: { value: '123456' } })
-    fireEvent.click(screen.getByRole('button', { name: 'אישור השינוי' }))
+    fireEvent.click(screen.getByRole('button', { name: 'אישור ושליחת אימות' }))
 
     await waitFor(() => expect(bodies[1]).toEqual({ step: 'confirm', challengeId: 'c1', code: '123456' }))
     expect(await screen.findByText(/כתובת המייל עודכנה ל-fixed@gmail.com/)).toBeInTheDocument()
@@ -78,13 +78,13 @@ describe('AdminUsersPage — guarded email change', () => {
     await requestCode()
 
     const codeInput = await screen.findByLabelText('קוד אישור')
-    expect(screen.getByRole('button', { name: 'אישור השינוי' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'אישור ושליחת אימות' })).toBeDisabled()
 
     fireEvent.change(codeInput, { target: { value: '12345' } })
-    expect(screen.getByRole('button', { name: 'אישור השינוי' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'אישור ושליחת אימות' })).toBeDisabled()
 
     fireEvent.change(codeInput, { target: { value: '123456' } })
-    expect(screen.getByRole('button', { name: 'אישור השינוי' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'אישור ושליחת אימות' })).toBeEnabled()
   })
 
   it('strips non-digits from the typed code', async () => {
@@ -102,7 +102,7 @@ describe('AdminUsersPage — guarded email change', () => {
     await requestCode()
 
     fireEvent.change(await screen.findByLabelText('קוד אישור'), { target: { value: '000000' } })
-    fireEvent.click(screen.getByRole('button', { name: 'אישור השינוי' }))
+    fireEvent.click(screen.getByRole('button', { name: 'אישור ושליחת אימות' }))
 
     expect(await screen.findByText('קוד שגוי — נותרו 4 ניסיונות')).toBeInTheDocument()
     expect(screen.getByLabelText('קוד אישור')).toBeInTheDocument()

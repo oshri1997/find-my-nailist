@@ -58,6 +58,19 @@ describe('Resend bounce webhook', () => {
     expect(mockCommit).toHaveBeenCalled()
   })
 
+  it('records a suppressed recipient as unavailable for new sends', async () => {
+    mockVerify.mockReturnValue({
+      type: 'email.suppressed',
+      data: { to: ['Sarah@Test.com'], email_id: 'email_456' },
+    })
+    mockGet.mockResolvedValue({ empty: false, docs: [{ ref: 'user-ref' }] })
+
+    const res = await POST(request())
+
+    expect(res.status).toBe(200)
+    expect(mockSet).toHaveBeenCalledWith('user-ref', expect.objectContaining({ emailDeliveryStatus: 'SUPPRESSED', emailDeliveryEventId: 'email_456' }), { merge: true })
+  })
+
   it('rejects an unverified webhook payload', async () => {
     mockVerify.mockImplementation(() => { throw new Error('bad signature') })
 

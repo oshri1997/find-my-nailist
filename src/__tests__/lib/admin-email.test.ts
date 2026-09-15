@@ -116,6 +116,28 @@ describe('sendAdminEmails', () => {
     expect(mockSendRoleAwareVerificationEmail).not.toHaveBeenCalled()
   })
 
+  it.each([
+    ['BOUNCED', 'המייל חזר בעבר'],
+    ['SUPPRESSED', 'הכתובת חסומה לשליחה'],
+  ])('does not send to a %s address', async (emailDeliveryStatus, reason) => {
+    docStore['u1'] = { email: 'blocked@example.com', emailDeliveryStatus, role: 'CLIENT' }
+    mockGetUsers.mockResolvedValue({ users: [{ uid: 'u1', email: 'blocked@example.com', emailVerified: false }] })
+
+    const result = await sendAdminEmails({ template: 'CUSTOM', userIds: ['u1'], subject: 'נושא', message: 'תוכן', admin })
+
+    expect(result.skipped).toEqual([{ id: 'u1', email: 'blocked@example.com', reason }])
+    expect(mockSendAdminMessageEmail).not.toHaveBeenCalled()
+  })
+
+  it('never falls back to a Firestore-only email address', async () => {
+    docStore['u1'] = { email: 'stale@example.com', role: 'CLIENT' }
+
+    const result = await sendAdminEmails({ template: 'CUSTOM', userIds: ['u1'], subject: 'נושא', message: 'תוכן', admin })
+
+    expect(result.skipped[0]).toMatchObject({ id: 'u1', reason: 'למשתמש אין חשבון מייל פעיל' })
+    expect(mockSendAdminMessageEmail).not.toHaveBeenCalled()
+  })
+
   it('sends a custom message to every recipient regardless of verification state', async () => {
     docStore['u1'] = { email: 'a@example.com', displayName: 'דנה', role: 'NAILIST' }
     docStore['u2'] = { email: 'b@example.com', displayName: 'נועה', role: 'CLIENT' }
@@ -134,6 +156,19 @@ describe('sendAdminEmails', () => {
     expect(mockSendAdminMessageEmail).toHaveBeenCalledWith({
       email: 'a@example.com', subject: 'נושא', message: 'תוכן', name: 'דנה',
     })
+  })
+
+  it('uses the operation id to make a custom send retry-safe', async () => {
+    docStore['u1'] = { email: 'a@example.com', displayName: 'דנה', role: 'CLIENT' }
+    mockGetUsers.mockResolvedValue({ users: [{ uid: 'u1', email: 'a@example.com', emailVerified: false }] })
+
+    await sendAdminEmails({
+      template: 'CUSTOM', userIds: ['u1'], subject: 'נושא', message: 'תוכן', operationId: 'send_123456', admin,
+    })
+
+    expect(mockSendAdminMessageEmail).toHaveBeenCalledWith(expect.objectContaining({
+      idempotencyKey: 'admin-email:send_123456:u1',
+    }))
   })
 
   it('reports a per-recipient failure without aborting the rest of the batch', async () => {

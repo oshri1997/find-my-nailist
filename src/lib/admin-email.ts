@@ -16,6 +16,7 @@ export interface AdminEmailRecipient {
   displayName: string
   role: 'NAILIST' | 'CLIENT'
   emailVerified: boolean
+  emailDeliveryStatus: 'BOUNCED' | 'SUPPRESSED' | null
 }
 
 export type AdminEmailSendResult = {
@@ -50,14 +51,21 @@ export async function resolveRecipients(userIds: string[]): Promise<Map<string, 
     if (!doc.exists) return
     const data = doc.data()!
     const auth = authRecords.get(doc.id)
-    const email = auth?.email ?? (data.email as string | undefined)
+    // Auth is the delivery source of truth. A Firestore-only record is a
+    // deleted or incomplete account and must never receive an admin email.
+    const email = auth?.email
     if (!email) return
+    const storedEmail = typeof data.email === 'string' ? data.email.trim().toLowerCase() : ''
+    const hasCorrectedAddress = storedEmail !== email.trim().toLowerCase()
     result.set(doc.id, {
       id: doc.id,
       email,
       displayName: (data.displayName as string | undefined) ?? '',
       role: data.role === 'NAILIST' ? 'NAILIST' : 'CLIENT',
       emailVerified: auth?.emailVerified ?? false,
+      emailDeliveryStatus: hasCorrectedAddress ? null : data.emailDeliveryStatus === 'SUPPRESSED'
+        ? 'SUPPRESSED'
+        : data.emailDeliveryStatus === 'BOUNCED' ? 'BOUNCED' : null,
     })
   })
 
@@ -91,23 +99,44 @@ export interface SendAdminEmailsParams {
   userIds: string[]
   subject?: string
   message?: string
+  operationId?: string
   admin: { uid: string; email: string }
+}
+
+const SEND_CONCURRENCY = 5
+
+async function mapWithConcurrency<T, R>(items: T[], limit: number, mapper: (item: T) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length)
+  let nextIndex = 0
+  const worker = async () => {
+    while (nextIndex < items.length) {
+      const index = nextIndex++
+      results[index] = await mapper(items[index])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+  return results
 }
 
 export async function sendAdminEmails(params: SendAdminEmailsParams): Promise<AdminEmailSendResult> {
   const recipients = await resolveRecipients(params.userIds)
-  const result: AdminEmailSendResult = { sent: [], skipped: [], failed: [] }
-
-  for (const id of params.userIds) {
+  const sendOne = async (id: string) => {
     const recipient = recipients.get(id)
     if (!recipient) {
-      result.skipped.push({ id, email: '', reason: 'למשתמש אין כתובת מייל או שהחשבון נמחק' })
-      continue
+      return { kind: 'skipped' as const, id, email: '', reason: 'למשתמש אין חשבון מייל פעיל' }
+    }
+
+    if (recipient.emailDeliveryStatus === 'SUPPRESSED' || recipient.emailDeliveryStatus === 'BOUNCED') {
+      return {
+        kind: 'skipped' as const,
+        id,
+        email: recipient.email,
+        reason: recipient.emailDeliveryStatus === 'SUPPRESSED' ? 'הכתובת חסומה לשליחה' : 'המייל חזר בעבר',
+      }
     }
 
     if (params.template === 'VERIFICATION' && recipient.emailVerified) {
-      result.skipped.push({ id, email: recipient.email, reason: 'המייל כבר מאומת' })
-      continue
+      return { kind: 'skipped' as const, id, email: recipient.email, reason: 'המייל כבר מאומת' }
     }
 
     try {
@@ -120,9 +149,9 @@ export async function sendAdminEmails(params: SendAdminEmailsParams): Promise<Ad
           subject: params.subject!,
           message: params.message!,
           name: recipient.displayName,
+          ...(params.operationId ? { idempotencyKey: `admin-email:${params.operationId}:${id}` } : {}),
         })
       }
-      result.sent.push({ id, email: recipient.email })
 
       await writeAuditLog({
         actorUid: params.admin.uid,
@@ -132,15 +161,25 @@ export async function sendAdminEmails(params: SendAdminEmailsParams): Promise<Ad
         targetId: id,
         metadata: { template: params.template, recipientEmail: recipient.email, subject: params.subject },
       })
+      return { kind: 'sent' as const, id, email: recipient.email }
     } catch (error) {
       console.error('[admin-email] send failed for', id, error)
-      result.failed.push({
+      return {
+        kind: 'failed' as const,
         id,
         email: recipient.email,
         error: error instanceof Error ? error.message : 'שליחת המייל נכשלה',
-      })
+      }
     }
   }
+  const outcomes = await mapWithConcurrency(params.userIds, SEND_CONCURRENCY, sendOne)
+
+  const result: AdminEmailSendResult = { sent: [], skipped: [], failed: [] }
+  outcomes.forEach((outcome) => {
+    if (outcome.kind === 'sent') result.sent.push({ id: outcome.id, email: outcome.email })
+    if (outcome.kind === 'skipped') result.skipped.push({ id: outcome.id, email: outcome.email, reason: outcome.reason })
+    if (outcome.kind === 'failed') result.failed.push({ id: outcome.id, email: outcome.email, error: outcome.error })
+  })
 
   return result
 }

@@ -89,8 +89,8 @@ export async function GET(request: NextRequest) {
   if (role === 'CLIENT' || role === 'NAILIST' || role === 'ADMIN') {
     users = users.filter(u => u.role === role)
   }
-  if (emailStatus === 'BOUNCED') {
-    users = users.filter(u => u.emailDeliveryStatus === 'BOUNCED')
+  if (emailStatus === 'BOUNCED' || emailStatus === 'SUPPRESSED') {
+    users = users.filter(u => u.emailDeliveryStatus === emailStatus)
   }
   // The date-filter inputs are Israel wall-clock calendar days (the admin
   // picking a date has no idea the server runs in UTC) — a plain
