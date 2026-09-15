@@ -31,9 +31,9 @@ async function resolveOnboardingStatus(userIds: string[]): Promise<Map<string, b
 }
 
 // Whether an address is verified lives in Firebase Auth, not Firestore, so
-// it costs a separate lookup (100 uids per call) — only the email-sending
-// screen needs it, and it asks for it explicitly. Capped so a wide filtered
-// scan can't fan out into dozens of Auth round-trips.
+// it costs a separate lookup (100 uids per call). The normal user list is
+// capped at 200; a deliberate lifecycle filter scans the full list because
+// silently omitting an old unverified account would make cleanup unsafe.
 const EMAIL_VERIFIED_LOOKUP_CAP = 300
 
 async function resolveEmailVerified(userIds: string[]): Promise<Map<string, boolean>> {
@@ -58,8 +58,12 @@ export async function GET(request: NextRequest) {
   const createdTo = searchParams.get('createdTo')
   const onboardingStatus = searchParams.get('onboardingStatus')
   const emailStatus = searchParams.get('emailStatus')
+  const unverifiedAge = searchParams.get('unverifiedAge')
+  const minimumUnverifiedAgeDays = unverifiedAge === 'OVER_7_DAYS' ? 7
+    : unverifiedAge === 'OVER_30_DAYS' ? 30
+      : unverifiedAge === 'OVER_90_DAYS' ? 90 : null
 
-  const hasFilter = !!search || !!role || !!createdFrom || !!createdTo || !!onboardingStatus || !!emailStatus
+  const hasFilter = !!search || !!role || !!createdFrom || !!createdTo || !!onboardingStatus || !!emailStatus || minimumUnverifiedAgeDays !== null
 
   // Any filter must scan the full collection — capping at 200 before
   // filtering would silently miss any match outside the most-recent window.
@@ -114,9 +118,20 @@ export async function GET(request: NextRequest) {
     users = users.filter(u => (onboardingByUserId!.get(u.id) ?? true) === wantCompleted)
   }
 
-  const emailVerifiedByUserId = searchParams.get('withEmailVerified') === '1'
-    ? await resolveEmailVerified(users.slice(0, EMAIL_VERIFIED_LOOKUP_CAP).map(u => u.id))
+  const shouldResolveEmailVerified = searchParams.get('withEmailVerified') === '1' || minimumUnverifiedAgeDays !== null
+  const emailVerifiedByUserId = shouldResolveEmailVerified
+    ? await resolveEmailVerified(users.slice(0, minimumUnverifiedAgeDays === null ? EMAIL_VERIFIED_LOOKUP_CAP : users.length).map(u => u.id))
     : null
+
+  if (minimumUnverifiedAgeDays !== null) {
+    const oldestEligibleDate = Date.now() - minimumUnverifiedAgeDays * 24 * 60 * 60 * 1000
+    users = users.filter(u =>
+      !u.isAdmin &&
+      emailVerifiedByUserId?.get(u.id) === false &&
+      u.createdAt !== null &&
+      u.createdAt.getTime() <= oldestEligibleDate
+    )
+  }
 
   return NextResponse.json({
     data: users.map(u => ({

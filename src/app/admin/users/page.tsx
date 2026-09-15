@@ -16,6 +16,7 @@ interface AdminUser {
   createdAt: string | null
   onboardingCompleted: boolean | null
   emailDeliveryStatus: string | null
+  emailVerified: boolean | null
 }
 
 const ROLE_COLORS: Record<string, string> = {
@@ -24,7 +25,7 @@ const ROLE_COLORS: Record<string, string> = {
   ADMIN: 'bg-warning/10 text-warning border-warning/20',
 }
 
-type BulkAction = 'suspend' | 'unsuspend' | 'delete'
+type BulkAction = 'suspend' | 'unsuspend' | 'delete' | 'send_verification'
 
 export default function AdminUsersPage() {
   const { user: adminUser, refreshRole } = useAuth()
@@ -37,6 +38,7 @@ export default function AdminUsersPage() {
   const [createdTo, setCreatedTo] = useState('')
   const [onboardingFilter, setOnboardingFilter] = useState('')
   const [emailStatusFilter, setEmailStatusFilter] = useState('')
+  const [unverifiedAgeFilter, setUnverifiedAgeFilter] = useState('')
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<AdminUser | null>(null)
   const [changingRole, setChangingRole] = useState<string | null>(null)
@@ -48,6 +50,7 @@ export default function AdminUsersPage() {
   const [confirmBulk, setConfirmBulk] = useState<BulkAction | null>(null)
   const [bulkRunning, setBulkRunning] = useState(false)
   const [bulkFailures, setBulkFailures] = useState<{ email: string; error: string }[]>([])
+  const [bulkSkipped, setBulkSkipped] = useState<{ email: string; reason: string }[]>([])
   const [resendingVerification, setResendingVerification] = useState<string | null>(null)
   const [verificationNotice, setVerificationNotice] = useState<{ text: string; ok: boolean } | null>(null)
   const [emailChange, setEmailChange] = useState<AdminUser | null>(null)
@@ -57,7 +60,7 @@ export default function AdminUsersPage() {
   const [emailChangeBusy, setEmailChangeBusy] = useState(false)
   const [emailChangeError, setEmailChangeError] = useState<string | null>(null)
 
-  const hasFilters = !!(search || roleFilter || createdFrom || createdTo || onboardingFilter || emailStatusFilter)
+  const hasFilters = !!(search || roleFilter || createdFrom || createdTo || onboardingFilter || emailStatusFilter || unverifiedAgeFilter)
 
   const fetchUsers = useCallback(() => {
     setLoading(true)
@@ -68,12 +71,14 @@ export default function AdminUsersPage() {
     if (createdTo) params.set('createdTo', createdTo)
     if (onboardingFilter) params.set('onboardingStatus', onboardingFilter)
     if (emailStatusFilter) params.set('emailStatus', emailStatusFilter)
+    if (unverifiedAgeFilter) params.set('unverifiedAge', unverifiedAgeFilter)
+    params.set('withEmailVerified', '1')
     const q = params.toString() ? `?${params.toString()}` : ''
     fetch(`/api/admin/users${q}`)
       .then(r => r.json())
       .then(j => { setUsers(j.data ?? []); setSelected(new Set()); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [search, roleFilter, createdFrom, createdTo, onboardingFilter, emailStatusFilter])
+  }, [search, roleFilter, createdFrom, createdTo, onboardingFilter, emailStatusFilter, unverifiedAgeFilter])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -256,6 +261,7 @@ export default function AdminUsersPage() {
     setBulkRunning(true)
     setConfirmBulk(null)
     setBulkFailures([])
+    setBulkSkipped([])
     const targetIds = Array.from(selected)
     const res = await fetch('/api/admin/users/bulk', {
       method: 'POST',
@@ -266,9 +272,10 @@ export default function AdminUsersPage() {
       const { data } = await res.json()
       const succeededIds: string[] = data?.succeeded ?? []
       const failedItems: { id: string; error: string }[] = data?.failed ?? []
+      const skippedItems: { id: string; reason: string }[] = data?.skipped ?? []
       if (action === 'delete') {
         setUsers(prev => prev.filter(u => !succeededIds.includes(u.id)))
-      } else {
+      } else if (action === 'suspend' || action === 'unsuspend') {
         setUsers(prev => prev.map(u => succeededIds.includes(u.id) ? { ...u, suspended: action === 'suspend' } : u))
       }
       if (failedItems.length > 0) {
@@ -278,6 +285,15 @@ export default function AdminUsersPage() {
           email: users.find(u => u.id === f.id)?.email ?? f.id,
           error: f.error,
         })))
+      }
+      if (skippedItems.length > 0) {
+        setBulkSkipped(skippedItems.map(item => ({
+          email: users.find(u => u.id === item.id)?.email ?? item.id,
+          reason: item.reason,
+        })))
+      }
+      if (action === 'send_verification' && succeededIds.length > 0) {
+        setVerificationNotice({ text: `קישור אימות הועבר לשליחה עבור ${succeededIds.length} משתמשים.`, ok: true })
       }
     } else {
       setBulkFailures(targetIds.map(id => ({
@@ -361,11 +377,26 @@ export default function AdminUsersPage() {
           <select
             value={emailStatusFilter}
             onChange={e => setEmailStatusFilter(e.target.value)}
+            aria-label="מסירת מייל"
             className="px-3 py-2.5 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             <option value="">הכל</option>
                 <option value="BOUNCED">כתובות שמייל אליהן חזר</option>
                 <option value="SUPPRESSED">כתובות חסומות לשליחה</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1">אימות אימייל</label>
+          <select
+            value={unverifiedAgeFilter}
+            onChange={e => setUnverifiedAgeFilter(e.target.value)}
+            aria-label="אימות אימייל"
+            className="px-3 py-2.5 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">הכל</option>
+            <option value="OVER_7_DAYS">לא אומת מעל שבוע — לתזכורת</option>
+            <option value="OVER_30_DAYS">לא אומת מעל חודש — לבחינת השעיה</option>
+            <option value="OVER_90_DAYS">לא אומת מעל 90 יום — לבחינת מחיקה</option>
           </select>
         </div>
       </div>
@@ -374,6 +405,14 @@ export default function AdminUsersPage() {
       {selected.size > 0 && (
         <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
           <span className="text-sm font-semibold text-foreground">{selected.size} נבחרו</span>
+          <button
+            onClick={() => setConfirmBulk('send_verification')}
+            disabled={bulkRunning}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-40"
+          >
+            <MailCheck className="w-3.5 h-3.5" />
+            שלח אימות
+          </button>
           <button
             onClick={() => setConfirmBulk('suspend')}
             disabled={bulkRunning}
@@ -450,6 +489,21 @@ export default function AdminUsersPage() {
         </div>
       )}
 
+      {bulkSkipped.length > 0 && (
+        <div className="flex items-start gap-3 bg-warning/5 border border-warning/20 rounded-xl px-4 py-3">
+          <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+          <div className="flex-1 space-y-1">
+            <p className="text-sm font-semibold text-warning">לא נשלח עבור {bulkSkipped.length} משתמשים:</p>
+            <ul className="text-xs text-warning/80 space-y-0.5">
+              {bulkSkipped.map((item, i) => <li key={i}>{item.email} — {item.reason}</li>)}
+            </ul>
+          </div>
+          <button onClick={() => setBulkSkipped([])} aria-label="סגירה" className="text-warning/60 hover:text-warning transition-colors shrink-0">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
         {loading ? (
@@ -507,6 +561,11 @@ export default function AdminUsersPage() {
                     <td className="px-5 py-3 text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <span>{u.email}</span>
+                        {u.emailVerified === false && (
+                          <span className="px-2 py-0.5 rounded-lg text-[11px] font-semibold border bg-warning/10 text-warning border-warning/20">
+                            לא אומת
+                          </span>
+                        )}
                         {!u.isAdmin && (
                           <button
                             onClick={() => openEmailChange(u)}
@@ -847,13 +906,15 @@ export default function AdminUsersPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full space-y-4">
             <h3 className="font-black text-foreground">
-              {confirmBulk === 'delete' ? 'מחיקת משתמשים' : confirmBulk === 'suspend' ? 'השעיית משתמשים' : 'ביטול השעיה'}
+              {confirmBulk === 'delete' ? 'מחיקת משתמשים' : confirmBulk === 'suspend' ? 'השעיית משתמשים' : confirmBulk === 'send_verification' ? 'שליחת קישור אימות' : 'ביטול השעיה'}
             </h3>
             <p className="text-sm text-muted-foreground">
               {confirmBulk === 'delete'
                 ? `בטוח למחוק ${selected.size} משתמשים? פעולה זו תמחק את כל הנתונים הקשורים ואינה הפיכה.`
                 : confirmBulk === 'suspend'
                   ? `להשעות ${selected.size} משתמשים? הם לא יוכלו להתחבר עד שתבטלי את ההשעיה.`
+                  : confirmBulk === 'send_verification'
+                    ? `להעביר קישור אימות לשליחה עבור ${selected.size} משתמשים? כתובות שכבר אומתו או חסומות ידולגו.`
                   : `לבטל השעיה עבור ${selected.size} משתמשים?`}
             </p>
             <div className="flex gap-3">
@@ -865,7 +926,7 @@ export default function AdminUsersPage() {
                     : 'bg-primary text-white hover:bg-primary/90'
                 }`}
               >
-                אישור
+                {confirmBulk === 'send_verification' ? 'העבר לשליחה' : 'אישור'}
               </button>
               <button
                 onClick={() => setConfirmBulk(null)}

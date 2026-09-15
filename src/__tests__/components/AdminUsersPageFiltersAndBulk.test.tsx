@@ -69,10 +69,20 @@ describe('AdminUsersPage — filters', () => {
     await waitFor(() => expect(screen.getByText('bob@test.com')).toBeInTheDocument())
     expect(screen.getByText('מייל חזר')).toBeInTheDocument()
 
-    const emailStatusSelect = screen.getAllByRole('combobox').at(-1)!
+    const emailStatusSelect = screen.getByLabelText('מסירת מייל')
     fireEvent.change(emailStatusSelect, { target: { value: 'BOUNCED' } })
 
     await waitFor(() => expect(lastUsersUrl).toContain('emailStatus=BOUNCED'))
+  })
+
+  it('filters by the unverified-account lifecycle stage', async () => {
+    render(<AdminUsersPage />)
+    await waitFor(() => expect(screen.getByText('alice@test.com')).toBeInTheDocument())
+
+    fireEvent.change(screen.getByLabelText('אימות אימייל'), { target: { value: 'OVER_30_DAYS' } })
+
+    await waitFor(() => expect(lastUsersUrl).toContain('unverifiedAge=OVER_30_DAYS'))
+    expect(lastUsersUrl).toContain('withEmailVerified=1')
   })
 })
 
@@ -117,6 +127,23 @@ describe('AdminUsersPage — bulk actions', () => {
 
     fireEvent.click(screen.getByLabelText('בחר הכל'))
     expect(await screen.findByText('2 נבחרו')).toBeInTheDocument()
+  })
+
+  it('offers a confirmation before sending verification links to selected users', async () => {
+    render(<AdminUsersPage />)
+    await waitFor(() => expect(screen.getByText('alice@test.com')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByLabelText('בחר את alice@test.com'))
+    const bulkBar = (await screen.findByText('1 נבחרו')).closest('div') as HTMLElement
+    fireEvent.click(within(bulkBar).getByRole('button', { name: 'שלח אימות' }))
+
+    expect(await screen.findByText('שליחת קישור אימות')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'העבר לשליחה' }))
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(
+      '/api/admin/users/bulk',
+      expect.objectContaining({ body: JSON.stringify({ action: 'send_verification', userIds: ['u1'] }) })
+    ))
   })
 
   it('surfaces partial bulk-action failures instead of silently dropping them', async () => {

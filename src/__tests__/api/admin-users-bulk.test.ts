@@ -9,6 +9,7 @@ const addedDocs: Record<string, DocData[]> = {}
 const mockUpdateFn = jest.fn().mockResolvedValue(undefined)
 const mockUpdateUser = jest.fn().mockResolvedValue(undefined)
 const mockDeleteUser = jest.fn().mockResolvedValue(undefined)
+const mockSendAdminEmails = jest.fn()
 
 function makeQuery(name: string, whereField?: string, whereValue?: unknown) {
   const filtered = () => (collectionStore[name] ?? []).filter(
@@ -59,6 +60,10 @@ jest.mock('@/lib/admin-auth', () => ({
   adminUnauthorized: () => new Response(JSON.stringify({ error: 'אין הרשאה' }), { status: 403 }),
 }))
 
+jest.mock('@/lib/admin-email', () => ({
+  sendAdminEmails: (...args: unknown[]) => mockSendAdminEmails(...args),
+}))
+
 jest.mock('firebase-admin/firestore', () => ({
   FieldValue: { serverTimestamp: jest.fn(() => 'SERVER_TIMESTAMP') },
 }))
@@ -81,6 +86,7 @@ describe('POST /api/admin/users/bulk', () => {
     for (const key of Object.keys(collectionStore)) delete collectionStore[key]
     for (const key of Object.keys(addedDocs)) delete addedDocs[key]
     mockVerifyAdmin.mockResolvedValue({ uid: 'admin-1', email: 'admin@test.com' })
+    mockSendAdminEmails.mockResolvedValue({ sent: [], skipped: [], failed: [] })
     collectionStore.users = [
       { __id: 'u1', email: 'u1@test.com', role: 'CLIENT' },
       { __id: 'u2', email: 'u2@test.com', role: 'CLIENT' },
@@ -152,6 +158,24 @@ describe('POST /api/admin/users/bulk', () => {
     expect(json.data.succeeded.sort()).toEqual(['u1', 'u2'])
     expect(mockDeleteUser).toHaveBeenCalledWith('u1')
     expect(mockDeleteUser).toHaveBeenCalledWith('u2')
+  })
+
+  it('sends verification links in a batch and reports skipped recipients separately', async () => {
+    mockSendAdminEmails.mockResolvedValue({
+      sent: [{ id: 'u1', email: 'u1@test.com' }],
+      skipped: [{ id: 'u2', email: 'u2@test.com', reason: 'המייל כבר מאומת' }],
+      failed: [],
+    })
+
+    const res = await POST(makeRequest({ action: 'send_verification', userIds: ['u1', 'u2'] }))
+    const json = await res.json()
+
+    expect(mockSendAdminEmails).toHaveBeenCalledWith(expect.objectContaining({
+      template: 'VERIFICATION', userIds: ['u1', 'u2'], admin: { uid: 'admin-1', email: 'admin@test.com' },
+    }))
+    expect(json.data).toEqual({
+      succeeded: ['u1'], failed: [], skipped: [{ id: 'u2', reason: 'המייל כבר מאומת' }],
+    })
   })
 
   it('reports failure for a nonexistent user id without failing the whole batch', async () => {

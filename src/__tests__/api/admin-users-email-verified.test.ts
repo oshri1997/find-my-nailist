@@ -74,6 +74,28 @@ describe('GET /api/admin/users — email verification status', () => {
     expect(json.data[0].emailVerified).toBeNull()
   })
 
+  it('returns only unverified, non-admin accounts older than the requested lifecycle threshold', async () => {
+    const old = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000)
+    usersStore = [
+      { __id: 'u1', email: 'old-unverified@test.com', role: 'CLIENT', createdAt: { toDate: () => old } },
+      { __id: 'u2', email: 'old-verified@test.com', role: 'CLIENT', createdAt: { toDate: () => old } },
+      { __id: 'u3', email: 'recent-unverified@test.com', role: 'CLIENT', createdAt: { toDate: () => new Date() } },
+      { __id: 'u4', email: 'old-admin@test.com', role: 'ADMIN', isAdmin: true, createdAt: { toDate: () => old } },
+    ]
+    mockGetUsers.mockResolvedValue({ users: [
+      { uid: 'u1', emailVerified: false },
+      { uid: 'u2', emailVerified: true },
+      { uid: 'u3', emailVerified: false },
+      { uid: 'u4', emailVerified: false },
+    ] })
+
+    const res = await GET(makeRequest('unverifiedAge=OVER_90_DAYS'))
+    const json = await res.json()
+
+    expect(json.data.map((u: { id: string }) => u.id)).toEqual(['u1'])
+    expect(json.data[0].emailVerified).toBe(false)
+  })
+
   it('caps the Auth lookup so a wide scan cannot fan out indefinitely', async () => {
     usersStore = Array.from({ length: 450 }, (_, i) => ({
       __id: `u${i}`, email: `u${i}@test.com`, displayName: '', role: 'CLIENT',

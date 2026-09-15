@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdmin, adminUnauthorized } from '@/lib/admin-auth'
 import { deleteUserCascade, setUserSuspended } from '@/lib/admin-user-actions'
+import { sendAdminEmails } from '@/lib/admin-email'
 
-const ACTIONS = ['suspend', 'unsuspend', 'delete'] as const
+const ACTIONS = ['suspend', 'unsuspend', 'delete', 'send_verification'] as const
 type BulkAction = (typeof ACTIONS)[number]
 
 export async function POST(request: NextRequest) {
@@ -21,6 +22,21 @@ export async function POST(request: NextRequest) {
   }
   if (userIds.length > 100) {
     return NextResponse.json({ error: 'ניתן לבחור עד 100 משתמשים בפעולה אחת' }, { status: 400 })
+  }
+
+  if (action === 'send_verification') {
+    const result = await sendAdminEmails({
+      template: 'VERIFICATION',
+      userIds: [...new Set(userIds as string[])],
+      admin,
+    })
+    return NextResponse.json({
+      data: {
+        succeeded: result.sent.map(item => item.id),
+        failed: result.failed.map(item => ({ id: item.id, error: item.error })),
+        skipped: result.skipped.map(item => ({ id: item.id, reason: item.reason })),
+      },
+    })
   }
 
   const succeeded: string[] = []
