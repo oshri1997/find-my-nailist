@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
 import { useAuth } from '@/components/auth/auth-provider'
 import { isValidIsraeliPhone, PHONE_INVALID_MESSAGE } from '@/lib/phone'
+import { useInvalidateNailistProfile, useNailistProfile } from '@/lib/hooks/use-nailist-profile'
 
 const STEPS = [
   { label: 'כתובת העסק' },
@@ -63,7 +64,6 @@ export default function OnboardingPage() {
   const { user, loading: authLoading, refreshRole } = useAuth()
   const router = useRouter()
   const [step, setStep] = useState(0)
-  const [profileId, setProfileId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -125,25 +125,23 @@ export default function OnboardingPage() {
   const [workingHours, setWorkingHours] = useState<DayHours[]>(defaultHours)
   const [autoCloseHolidays, setAutoCloseHolidays] = useState(true)
 
+  const { data: profile, isError: profileError } = useNailistProfile({
+    enabled: !authLoading && !!user,
+  })
+  const invalidateProfile = useInvalidateNailistProfile()
+  const profileId = profile?.id ?? null
+
   useEffect(() => {
     if (authLoading) return
     if (!user) { router.replace('/login'); return }
-    fetch('/api/me/nailist-profile')
-      .then(r => r.json())
-      .then(({ data }) => {
-        // An already-onboarded nailist landing here (e.g. she mistakenly hit
-        // "register" again instead of "login") should go straight to her
-        // dashboard, not restart the wizard from step 0 with blank local
-        // state — that would make her re-upload photos and re-add services,
-        // creating duplicates of what she already has.
-        if (data?.onboardingCompleted === true) {
-          router.replace('/dashboard/nailist')
-          return
-        }
-        setProfileId(data?.id ?? null)
-      })
-      .catch(() => router.replace('/login'))
-  }, [user, authLoading, router])
+    if (profileError) { router.replace('/login'); return }
+    // An already-onboarded nailist landing here (e.g. she mistakenly hit
+    // "register" again instead of "login") should go straight to her
+    // dashboard, not restart the wizard from step 0 with blank local
+    // state — that would make her re-upload photos and re-add services,
+    // creating duplicates of what she already has.
+    if (profile?.onboardingCompleted === true) router.replace('/dashboard/nailist')
+  }, [user, authLoading, router, profile?.onboardingCompleted, profileError])
 
   function handlePlaceSelect(result: PlaceResult) {
     setAddress(result.address)
@@ -492,6 +490,7 @@ export default function OnboardingPage() {
           : Promise.resolve(null),
       ])
       if (!hoursRes.ok || (profileRes && !profileRes.ok)) throw new Error()
+      await invalidateProfile()
       // The nailist-profile PATCH above just flipped onboardingCompleted to
       // true, but AuthProvider's context still holds the stale pre-onboarding
       // value — without this, OnboardingGuard bounces the dashboard load

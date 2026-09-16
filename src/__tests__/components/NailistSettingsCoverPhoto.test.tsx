@@ -4,7 +4,7 @@
  * card directly (uploads to storage, then PATCHes /api/nailists/[id]),
  * as a second path alongside the existing portfolio star-picker.
  */
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@/__tests__/utils/render'
 import NailistSettingsPage from '@/app/dashboard/nailist/settings/page'
 
 jest.mock('@/lib/firebase/storage', () => ({

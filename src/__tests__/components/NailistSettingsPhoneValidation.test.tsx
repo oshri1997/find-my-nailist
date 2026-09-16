@@ -6,7 +6,7 @@
  * which field was actually wrong. Inline validation catches it before the
  * save request is even sent, and points at the specific field.
  */
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@/__tests__/utils/render'
 import NailistSettingsPage from '@/app/dashboard/nailist/settings/page'
 
 jest.mock('@/lib/firebase/storage', () => ({

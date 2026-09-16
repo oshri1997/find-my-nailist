@@ -8,6 +8,7 @@ import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
 import { CheckCircle2, Loader2, AlertCircle, ImagePlus, X, Camera } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { isValidIsraeliPhone, PHONE_INVALID_MESSAGE } from '@/lib/phone'
+import { isUnauthorized, useInvalidateNailistProfile, useNailistProfile } from '@/lib/hooks/use-nailist-profile'
 
 function phoneFieldError(value: string): string {
   return value.trim() && !isValidIsraeliPhone(value) ? PHONE_INVALID_MESSAGE : ''
@@ -36,16 +37,14 @@ function initials(name: string) {
 
 export default function NailistSettingsPage() {
   const { user } = useAuth()
-  const [profileId, setProfileId] = useState<string | null>(null)
   const [form, setForm] = useState<typeof EMPTY_FORM>(EMPTY_FORM)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoUploading, setPhotoUploading] = useState(false)
   const [photoError, setPhotoError] = useState('')
   const photoInputRef = useRef<HTMLInputElement>(null)
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [error, setError] = useState('')
+  const [actionError, setActionError] = useState('')
 
   const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null)
   const [coverUploading, setCoverUploading] = useState(false)
@@ -53,38 +52,42 @@ export default function NailistSettingsPage() {
   const [coverError, setCoverError] = useState('')
   const coverInputRef = useRef<HTMLInputElement>(null)
 
+  const { data: profile, isPending: profilePending, error: profileFetchError } = useNailistProfile()
+  const invalidateProfile = useInvalidateNailistProfile()
+  const profileId = profile?.id ?? null
+
+  const loading = profilePending
+  const profileLoadError = profileFetchError
+    ? (isUnauthorized(profileFetchError) ? 'פג תוקף ההתחברות — אנא התחברי מחדש' : 'שגיאה בטעינת הפרופיל')
+    : ''
+  const error = actionError || profileLoadError
+
+  // Seeded off profileId rather than the profile object so a post-save refetch
+  // cannot overwrite fields the nailist is still editing.
   useEffect(() => {
-    fetch('/api/me/nailist-profile')
-      .then(async (r) => {
-        if (!r.ok) {
-          setError(r.status === 401 ? 'פג תוקף ההתחברות — אנא התחברי מחדש' : 'שגיאה בטעינת הפרופיל')
-          return
-        }
-        const { data } = await r.json()
-        if (!data) return
-        setProfileId(data.id)
-        setPhotoUrl(data.photoUrl ?? null)
-        setCoverPhotoUrl(data.coverPhotoUrl ?? null)
-        setForm({
-          businessName: data.businessName ?? '',
-          bio: data.bio ?? '',
-          city: data.city ?? '',
-          address: data.address ?? '',
-          phoneNumber: data.phoneNumber ?? '',
-          whatsappPhone: data.whatsappPhone ?? '',
-          instagramUrl: data.instagramUrl ?? '',
-          tiktokUrl: data.tiktokUrl ?? '',
-          isActive: data.isActive ?? false,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          depositEnabled: data.depositEnabled ?? false,
-          depositPercentage: data.depositPercentage ?? 20,
-          bitPhone: data.bitPhone ?? '',
-        })
-      })
-      .catch(() => setError('שגיאה בטעינת הפרופיל'))
-      .finally(() => setLoading(false))
-  }, [])
+    if (!profileId || !profile) return
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPhotoUrl(profile.photoUrl ?? null)
+    setCoverPhotoUrl(profile.coverPhotoUrl ?? null)
+    setForm({
+      businessName: profile.businessName ?? '',
+      bio: profile.bio ?? '',
+      city: profile.city ?? '',
+      address: profile.address ?? '',
+      phoneNumber: profile.phoneNumber ?? '',
+      whatsappPhone: profile.whatsappPhone ?? '',
+      instagramUrl: profile.instagramUrl ?? '',
+      tiktokUrl: profile.tiktokUrl ?? '',
+      isActive: profile.isActive ?? false,
+      latitude: profile.latitude,
+      longitude: profile.longitude,
+      depositEnabled: profile.depositEnabled ?? false,
+      depositPercentage: profile.depositPercentage ?? 20,
+      bitPhone: profile.bitPhone ?? '',
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileId])
 
   async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -109,6 +112,7 @@ export default function NailistSettingsPage() {
       })
       if (!res.ok) throw new Error()
       setCoverPhotoUrl(url)
+      await invalidateProfile()
     } catch {
       setCoverError('שגיאה בהעלאה — נסי שוב')
     } finally {
@@ -128,6 +132,7 @@ export default function NailistSettingsPage() {
         body: JSON.stringify({ coverPhotoUrl: null }),
       })
       if (!res.ok) throw new Error()
+      await invalidateProfile()
     } catch {
       setCoverPhotoUrl(previous)
       setCoverError('שגיאה בהסרת התמונה')
@@ -162,6 +167,7 @@ export default function NailistSettingsPage() {
       })
       if (!res.ok) throw new Error()
       setPhotoUrl(url)
+      await invalidateProfile()
     } catch {
       setPhotoError('שגיאה בהעלאת התמונה — נסי שוב')
     } finally {
@@ -183,9 +189,9 @@ export default function NailistSettingsPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!profileId) return
-    setError('')
+    setActionError('')
     if (phoneFieldError(form.phoneNumber) || phoneFieldError(form.whatsappPhone) || phoneFieldError(form.bitPhone)) {
-      setError('אחד ממספרי הטלפון אינו תקין — בדקי ותקני')
+      setActionError('אחד ממספרי הטלפון אינו תקין — בדקי ותקני')
       return
     }
     setSaving(true)
@@ -196,10 +202,11 @@ export default function NailistSettingsPage() {
         body: JSON.stringify(form),
       })
       if (!res.ok) throw new Error()
+      await invalidateProfile()
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch {
-      setError('שגיאה בשמירה — נסי שוב')
+      setActionError('שגיאה בשמירה — נסי שוב')
     } finally {
       setSaving(false)
     }

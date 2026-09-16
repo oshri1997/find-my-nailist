@@ -2,7 +2,7 @@
  * Covers the bugfix where contact buttons (WhatsApp/Instagram/TikTok/Waze/Maps)
  * are gated behind login — anonymous visitors should see a login CTA instead.
  */
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@/__tests__/utils/render'
 import NailistProfileClient from '@/app/nailists/[id]/NailistProfileClient'
 
 const uploadProfilePhotoMock = jest.fn()

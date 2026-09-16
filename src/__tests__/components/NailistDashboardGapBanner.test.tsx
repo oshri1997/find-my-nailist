@@ -6,7 +6,7 @@
  * covered in isolation by gap-detection.test.ts; this file only covers the
  * wiring (fetch -> compute -> render) and the "never blocks" guarantee.
  */
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@/__tests__/utils/render'
 import NailistDashboard from '@/app/dashboard/nailist/page'
 import { israelWallClockToUtc, todayInIsrael } from '@/lib/booking-utils'
 

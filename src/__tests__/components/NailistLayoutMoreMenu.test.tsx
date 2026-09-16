@@ -4,7 +4,7 @@
  * dashboard layout's "עוד" (more) menu (mobile) and sidebar (desktop), with
  * its href resolved dynamically from the caller's own nailist profile id.
  */
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@/__tests__/utils/render'
 import DashboardLayout from '@/app/dashboard/layout'
 
 // jsdom has no matchMedia — the layout renders <ThemeToggle> which reads it on mount.

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ImageLightbox } from '@/components/ui/image-lightbox'
 import { ImagePlus, X, Loader2, AlertCircle, Star } from 'lucide-react'
 import { MAX_PORTFOLIO_PHOTOS } from '@/lib/portfolio'
+import { isUnauthorized, usePatchNailistProfileCache, useNailistProfile } from '@/lib/hooks/use-nailist-profile'
 
 interface Photo {
   id: string
@@ -15,42 +16,41 @@ interface Photo {
 }
 
 export default function PortfolioPage() {
-  const [profileId, setProfileId] = useState<string | null>(null)
   const [photos, setPhotos] = useState<Photo[]>([])
-  const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [photosLoaded, setPhotosLoaded] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
-  const [error, setError] = useState('')
+  const [actionError, setActionError] = useState('')
   const [lightboxPhoto, setLightboxPhoto] = useState<Photo | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const { data: profile, isPending: profilePending, error: profileFetchError } = useNailistProfile()
+  const patchProfileCache = usePatchNailistProfileCache()
+  const profileId = profile?.id ?? null
+  const coverPhotoUrl = profile?.coverPhotoUrl ?? null
+  const loading = profilePending || (!!profileId && !photosLoaded)
+
+  const profileLoadError = profileFetchError
+    ? (isUnauthorized(profileFetchError) ? 'פג תוקף ההתחברות — אנא התחברי מחדש' : 'שגיאה בטעינת הפרופיל')
+    : ''
+  const error = actionError || profileLoadError
+
   useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch('/api/me/nailist-profile')
-        if (!res.ok) {
-          setError(res.status === 401 ? 'פג תוקף ההתחברות — אנא התחברי מחדש' : 'שגיאה בטעינת הפרופיל')
-          return
-        }
-        const { data } = await res.json()
-        setProfileId(data.id)
-        setCoverPhotoUrl(data.coverPhotoUrl ?? null)
-        const photosRes = await fetch(`/api/portfolio?profileId=${data.id}`)
-        if (photosRes.ok) {
-          const { data: photos } = await photosRes.json()
-          setPhotos(photos ?? [])
-        } else {
-          setError('שגיאה בטעינת התמונות')
-        }
-      } catch {
-        setError('שגיאה בטעינת הפרופיל')
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [])
+    if (!profileId) return
+
+    let cancelled = false
+    fetch(`/api/portfolio?profileId=${profileId}`)
+      .then(async (photosRes) => {
+        if (cancelled) return
+        if (!photosRes.ok) { setActionError('שגיאה בטעינת התמונות'); return }
+        const { data: loadedPhotos } = await photosRes.json()
+        setPhotos(loadedPhotos ?? [])
+      })
+      .catch(() => { if (!cancelled) setActionError('שגיאה בטעינת הפרופיל') })
+      .finally(() => { if (!cancelled) setPhotosLoaded(true) })
+
+    return () => { cancelled = true }
+  }, [profileId])
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -60,16 +60,16 @@ export default function PortfolioPage() {
     // limit, but the hidden <input> itself has no disabled state tied to
     // this, so guard here too rather than rely on the UI alone.
     if (photos.length >= MAX_PORTFOLIO_PHOTOS) {
-      setError(`הגעת למגבלת ${MAX_PORTFOLIO_PHOTOS} התמונות בפורטפוליו — מחקי תמונה כדי להוסיף חדשה`)
+      setActionError(`הגעת למגבלת ${MAX_PORTFOLIO_PHOTOS} התמונות בפורטפוליו — מחקי תמונה כדי להוסיף חדשה`)
       return
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError('הקובץ גדול מדי — מקסימום 5MB')
+      setActionError('הקובץ גדול מדי — מקסימום 5MB')
       return
     }
 
-    setError('')
+    setActionError('')
     setUploading(true)
     setProgress(0)
 
@@ -87,12 +87,12 @@ export default function PortfolioPage() {
         const { data } = await res.json()
         setPhotos((prev) => [...prev, data])
       } else if (res.status === 409) {
-        setError(`הגעת למגבלת ${MAX_PORTFOLIO_PHOTOS} התמונות בפורטפוליו — מחקי תמונה כדי להוסיף חדשה`)
+        setActionError(`הגעת למגבלת ${MAX_PORTFOLIO_PHOTOS} התמונות בפורטפוליו — מחקי תמונה כדי להוסיף חדשה`)
       } else {
-        setError('שגיאה בשמירת התמונה — נסי שוב')
+        setActionError('שגיאה בשמירת התמונה — נסי שוב')
       }
     } catch {
-      setError('שגיאה בהעלאה — ודאי ש-Storage מופעל ב-Firebase Console')
+      setActionError('שגיאה בהעלאה — ודאי ש-Storage מופעל ב-Firebase Console')
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -100,7 +100,7 @@ export default function PortfolioPage() {
   }
 
   async function handleDelete(photo: Photo) {
-    setError('')
+    setActionError('')
     try {
       if (photo.storageKey) {
         const { deleteStorageFile } = await import('@/lib/firebase/storage')
@@ -108,19 +108,19 @@ export default function PortfolioPage() {
       }
       const res = await fetch(`/api/portfolio/${photo.id}`, { method: 'DELETE' })
       if (!res.ok) {
-        setError('מחיקת התמונה נכשלה — נסי שוב')
+        setActionError('מחיקת התמונה נכשלה — נסי שוב')
         return
       }
       setPhotos((prev) => prev.filter((p) => p.id !== photo.id))
-      if (coverPhotoUrl === photo.url) setCoverPhotoUrl(null)
+      if (coverPhotoUrl === photo.url) patchProfileCache({ coverPhotoUrl: undefined })
     } catch {
-      setError('שגיאה במחיקה')
+      setActionError('שגיאה במחיקה')
     }
   }
 
   async function handleSetCover(photo: Photo) {
     if (!profileId) return
-    setError('')
+    setActionError('')
     const newUrl = coverPhotoUrl === photo.url ? null : photo.url
     try {
       const res = await fetch(`/api/nailists/${profileId}`, {
@@ -129,12 +129,12 @@ export default function PortfolioPage() {
         body: JSON.stringify({ coverPhotoUrl: newUrl }),
       })
       if (!res.ok) {
-        setError('הגדרת תמונת הכרטיס נכשלה — נסי שוב')
+        setActionError('הגדרת תמונת הכרטיס נכשלה — נסי שוב')
         return
       }
-      setCoverPhotoUrl(newUrl)
+      patchProfileCache({ coverPhotoUrl: newUrl ?? undefined })
     } catch {
-      setError('שגיאה בהגדרת תמונת הכרטיס')
+      setActionError('שגיאה בהגדרת תמונת הכרטיס')
     }
   }
 

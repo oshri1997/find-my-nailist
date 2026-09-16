@@ -6,7 +6,7 @@
  * onboardingCompleted:false, redirected the very next page load back to
  * /onboarding. Fixed by calling refreshRole() before navigating away.
  */
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@/__tests__/utils/render'
 import OnboardingPage from '@/app/onboarding/page'
 
 const mockReplace = jest.fn()

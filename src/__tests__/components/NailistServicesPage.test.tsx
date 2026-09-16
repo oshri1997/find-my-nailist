@@ -3,7 +3,7 @@
  * regardless of whether the DELETE request actually succeeded, silently
  * hiding a service that was never removed server-side on the next reload.
  */
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@/__tests__/utils/render'
 import NailistServicesPage from '@/app/dashboard/nailist/services/page'
 
 const service = {

@@ -4,7 +4,7 @@
  * displayName, which is whatever her sign-in provider has on file — same
  * fix as the navbar (see NavbarDisplayName.test.tsx).
  */
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@/__tests__/utils/render'
 import NailistDashboard from '@/app/dashboard/nailist/page'
 
 const mockUseAuth = jest.fn()

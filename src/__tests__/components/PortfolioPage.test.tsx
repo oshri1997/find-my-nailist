@@ -5,7 +5,7 @@
  * stays a fixed gradient regardless of coverPhotoUrl; it's also a second
  * path to the same field alongside the direct upload in Settings.
  */
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@/__tests__/utils/render'
 import PortfolioPage from '@/app/dashboard/nailist/portfolio/page'
 
 const photos = [

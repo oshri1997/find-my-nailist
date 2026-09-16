@@ -6,7 +6,7 @@
  * reject on save. The start select should never even offer a value with no
  * valid end-time afterward, and changing start past end should auto-bump end.
  */
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@/__tests__/utils/render'
 import WorkingHoursPage from '@/app/dashboard/nailist/hours/page'
 
 jest.mock('@/lib/booking-utils', () => ({

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@/__tests__/utils/render'
 import OnboardingPage from '@/app/onboarding/page'
 
 jest.mock('next/navigation', () => ({

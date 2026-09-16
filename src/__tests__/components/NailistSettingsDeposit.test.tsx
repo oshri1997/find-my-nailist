@@ -1,7 +1,7 @@
 /**
  * Covers the "מקדמה בביט" (Bit deposit) toggle on the nailist settings page.
  */
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@/__tests__/utils/render'
 import NailistSettingsPage from '@/app/dashboard/nailist/settings/page'
 
 jest.mock('@/lib/firebase/storage', () => ({

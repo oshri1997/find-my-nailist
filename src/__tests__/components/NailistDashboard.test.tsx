@@ -4,7 +4,7 @@
  * removed from this page — see NailistLayoutMoreMenu.test.tsx for its
  * replacement in the dashboard layout's "עוד" menu.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@/__tests__/utils/render'
 import NailistDashboard from '@/app/dashboard/nailist/page'
 
 jest.mock('@/components/auth/auth-provider', () => ({

@@ -5,7 +5,7 @@
  * business identity (businessName, services, etc.) separately in
  * /dashboard/nailist/settings — this page is account-level only.
  */
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@/__tests__/utils/render'
 import SettingsPage from '@/app/settings/page'
 
 const mockPush = jest.fn()

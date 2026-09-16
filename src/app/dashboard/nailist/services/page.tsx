@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Loader2, Plus, Trash2, Clock, X, Scissors, Pencil, CheckCircle2 } from 'lucide-react'
+import { useNailistProfile } from '@/lib/hooks/use-nailist-profile'
 
 interface Service {
   id: string
@@ -33,8 +34,7 @@ const DEFAULT_FORM: ServiceForm = {
 
 export default function NailistServicesPage() {
   const [services, setServices] = useState<Service[]>([])
-  const [loading, setLoading] = useState(true)
-  const [profileId, setProfileId] = useState<string | null>(null)
+  const [servicesLoaded, setServicesLoaded] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<ServiceForm>(DEFAULT_FORM)
@@ -44,22 +44,25 @@ export default function NailistServicesPage() {
   const [nameError, setNameError] = useState(false)
   const [success, setSuccess] = useState('')
 
-  useEffect(() => {
-    async function init() {
-      const res = await fetch('/api/me/nailist-profile')
-      if (!res.ok) { setLoading(false); return }
-      const { data } = await res.json()
-      setProfileId(data.id)
+  const { data: profile, isPending: profilePending } = useNailistProfile()
+  const profileId = profile?.id ?? null
+  const loading = profilePending || (!!profileId && !servicesLoaded)
 
-      const svcRes = await fetch(`/api/services?nailistProfileId=${data.id}`)
-      if (svcRes.ok) {
+  useEffect(() => {
+    if (!profileId) return
+
+    let cancelled = false
+    fetch(`/api/services?nailistProfileId=${profileId}`)
+      .then(async (svcRes) => {
+        if (!svcRes.ok || cancelled) return
         const { data: svcs } = await svcRes.json()
         setServices(svcs ?? [])
-      }
-      setLoading(false)
-    }
-    init()
-  }, [])
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setServicesLoaded(true) })
+
+    return () => { cancelled = true }
+  }, [profileId])
 
   function openCreateForm() {
     setEditingId(null)

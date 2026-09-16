@@ -7,6 +7,7 @@ import { TrendingUp, Clock, CheckCircle2, Circle, ChevronLeft, Eye, EyeOff, Star
 import { useAuth } from '@/components/auth/auth-provider'
 import { findUnfillableGaps, type DayWorkingHours } from '@/lib/gap-detection'
 import { APPOINTMENT_STATUS_COLORS } from '@/lib/status-styles'
+import { useInvalidateNailistProfile, useNailistProfile } from '@/lib/hooks/use-nailist-profile'
 
 function CountUp({ to, prefix = '', decimals = 0, duration = 1500 }: {
   to: number
@@ -161,7 +162,22 @@ function formatReviewerName(displayName?: string) {
 export default function NailistDashboard() {
   const { user, displayName } = useAuth()
   const firstName = (displayName || user?.displayName)?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
-  const [profile, setProfile] = useState<NailistProfile | null>(null)
+  const { data: fetchedProfile } = useNailistProfile<NailistProfile>()
+  const invalidateProfile = useInvalidateNailistProfile()
+  // Review aggregates come from /api/nailists/{id}, not the own-profile endpoint,
+  // so they are held separately and layered on rather than written into the cache.
+  const [reviewStats, setReviewStats] = useState<{ avgRating?: number; reviewCount?: number }>({})
+  const profile = useMemo<NailistProfile | null>(
+    () =>
+      fetchedProfile
+        ? {
+            ...fetchedProfile,
+            avgRating: reviewStats.avgRating ?? fetchedProfile.avgRating,
+            reviewCount: reviewStats.reviewCount ?? fetchedProfile.reviewCount,
+          }
+        : null,
+    [fetchedProfile, reviewStats]
+  )
   const [hasPhotos, setHasPhotos] = useState(false)
   const [hasServices, setHasServices] = useState(false)
   const [hasHours, setHasHours] = useState(false)
@@ -178,71 +194,67 @@ export default function NailistDashboard() {
   const verificationPreviousFocusRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
-    fetch('/api/me/nailist-profile')
-      .then(r => r.ok ? r.json() : null)
-      .then(async (json) => {
-        if (!json?.data) return
-        setProfile(json.data)
-        const profileId = json.data.id
-        const preference = getVerificationReminderPreference(profileId)
-        const readinessRes = await fetch('/api/me/verification-readiness')
-        if (readinessRes.ok) {
-          const readinessJson = await readinessRes.json()
-          const readiness = readinessJson?.data as VerificationReadiness | null
-          setVerificationReadiness(readiness)
-          const canShowReminder = !!readiness && !readiness.isReady && readiness.checks.some((check) => !check.passed)
-            && !preference.dismissed
-            && (!preference.nextPromptAt || preference.nextPromptAt <= Date.now())
-          setShowVerificationReminder(canShowReminder)
-        }
+    const profileId = fetchedProfile?.id
+    if (!profileId) return
 
-        const [portfolioRes, servicesRes, hoursRes, appointmentsRes, nailistRes] = await Promise.all([
-          fetch(`/api/portfolio?profileId=${profileId}`),
-          fetch(`/api/services?nailistProfileId=${profileId}`),
-          fetch('/api/working-hours'),
-          fetch('/api/appointments?role=nailist'),
-          fetch(`/api/nailists/${profileId}`),
-        ])
+    void (async () => {
+    const preference = getVerificationReminderPreference(profileId)
+    const readinessRes = await fetch('/api/me/verification-readiness')
+    if (readinessRes.ok) {
+      const readinessJson = await readinessRes.json()
+      const readiness = readinessJson?.data as VerificationReadiness | null
+      setVerificationReadiness(readiness)
+      const canShowReminder = !!readiness && !readiness.isReady && readiness.checks.some((check) => !check.passed)
+        && !preference.dismissed
+        && (!preference.nextPromptAt || preference.nextPromptAt <= Date.now())
+      setShowVerificationReminder(canShowReminder)
+    }
 
-        if (portfolioRes.ok) {
-          const { data } = await portfolioRes.json()
-          setHasPhotos((data ?? []).length > 0)
-        }
-        if (servicesRes.ok) {
-          const { data } = await servicesRes.json()
-          const services: Array<{ durationMinutes: number }> = data ?? []
-          setHasServices(services.length > 0)
-          setMinServiceDuration(services.length > 0 ? Math.min(...services.map((s) => s.durationMinutes)) : null)
-        }
-        if (hoursRes.ok) {
-          const { data } = await hoursRes.json()
-          const hours: DayWorkingHours[] = data ?? []
-          setHasHours(hours.some((h) => h.isActive))
-          setWorkingHoursFull(hours)
-        }
-        if (appointmentsRes.ok) {
-          const { data } = await appointmentsRes.json()
-          const all: Appointment[] = data ?? []
-          setAllAppointments(all)
-          const now = new Date()
-          const upcoming = all
-            .filter(a => ['PENDING', 'CONFIRMED'].includes(a.status) && new Date(a.startTime) >= now)
-            .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-            .slice(0, 4)
-          setUpcomingAppointments(upcoming)
-        }
-        if (nailistRes.ok) {
-          const { data: nailistData } = await nailistRes.json()
-          setRecentReviews((nailistData.reviews ?? []).slice(0, 3))
-          setProfile(prev => prev ? {
-            ...prev,
-            avgRating: nailistData.avgRating ?? prev.avgRating,
-            reviewCount: nailistData.reviewCount ?? prev.reviewCount,
-          } : prev)
-        }
+    const [portfolioRes, servicesRes, hoursRes, appointmentsRes, nailistRes] = await Promise.all([
+      fetch(`/api/portfolio?profileId=${profileId}`),
+      fetch(`/api/services?nailistProfileId=${profileId}`),
+      fetch('/api/working-hours'),
+      fetch('/api/appointments?role=nailist'),
+      fetch(`/api/nailists/${profileId}`),
+    ])
+
+    if (portfolioRes.ok) {
+      const { data } = await portfolioRes.json()
+      setHasPhotos((data ?? []).length > 0)
+    }
+    if (servicesRes.ok) {
+      const { data } = await servicesRes.json()
+      const services: Array<{ durationMinutes: number }> = data ?? []
+      setHasServices(services.length > 0)
+      setMinServiceDuration(services.length > 0 ? Math.min(...services.map((s) => s.durationMinutes)) : null)
+    }
+    if (hoursRes.ok) {
+      const { data } = await hoursRes.json()
+      const hours: DayWorkingHours[] = data ?? []
+      setHasHours(hours.some((h) => h.isActive))
+      setWorkingHoursFull(hours)
+    }
+    if (appointmentsRes.ok) {
+      const { data } = await appointmentsRes.json()
+      const all: Appointment[] = data ?? []
+      setAllAppointments(all)
+      const now = new Date()
+      const upcoming = all
+        .filter(a => ['PENDING', 'CONFIRMED'].includes(a.status) && new Date(a.startTime) >= now)
+        .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+        .slice(0, 4)
+      setUpcomingAppointments(upcoming)
+    }
+    if (nailistRes.ok) {
+      const { data: nailistData } = await nailistRes.json()
+      setRecentReviews((nailistData.reviews ?? []).slice(0, 3))
+      setReviewStats({
+        avgRating: nailistData.avgRating,
+        reviewCount: nailistData.reviewCount,
       })
-      .catch(() => {})
-  }, [])
+    }
+    })().catch(() => {})
+  }, [fetchedProfile?.id])
 
   async function activateProfile() {
     if (!profile?.id) return
@@ -253,7 +265,7 @@ export default function NailistDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: true }),
       })
-      if (res.ok) setProfile(prev => prev ? { ...prev, isActive: true } : prev)
+      if (res.ok) await invalidateProfile()
     } finally {
       setActivating(false)
     }

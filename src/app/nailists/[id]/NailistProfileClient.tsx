@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { useAuth } from '@/components/auth/auth-provider'
 import { VerifyEmailModal } from '@/components/auth/VerifyEmailModal'
 import { ImageLightbox } from '@/components/ui/image-lightbox'
+import { useInvalidateNailistProfile, useNailistProfile } from '@/lib/hooks/use-nailist-profile'
 
 interface Service {
   id: string
@@ -77,6 +78,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
   const [photoUploading, setPhotoUploading] = useState(false)
   const [photoError, setPhotoError] = useState('')
   const photoInputRef = useRef<HTMLInputElement>(null)
+  const invalidateOwnProfile = useInvalidateNailistProfile()
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -101,6 +103,7 @@ export default function NailistProfileClient({ id }: { id: string }) {
       })
       if (!res.ok) throw new Error()
       setProfile((prev) => (prev ? { ...prev, photoUrl: url } : prev))
+      await invalidateOwnProfile()
     } catch {
       setPhotoError('שגיאה בהעלאת התמונה — נסי שוב')
     } finally {
@@ -142,14 +145,16 @@ export default function NailistProfileClient({ id }: { id: string }) {
       .finally(() => setLoading(false))
   }, [id])
 
+  const { data: ownProfile, isPending: ownProfilePending } = useNailistProfile({
+    enabled: !!user && role === 'NAILIST',
+  })
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!user || role !== 'NAILIST') { setIsOwner(false); return }
-    fetch('/api/me/nailist-profile')
-      .then(r => r.ok ? r.json() : null)
-      .then(json => { setIsOwner(json?.data?.id === id) })
-      .catch(() => {})
-  }, [user, id, role])
+    if (ownProfilePending) return
+    setIsOwner(ownProfile?.id === id)
+  }, [user, id, role, ownProfile, ownProfilePending])
 
   useEffect(() => {
     if (!user) return

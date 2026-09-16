@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Loader2, Star, MessageSquare } from 'lucide-react'
+import { useNailistProfile } from '@/lib/hooks/use-nailist-profile'
 
 interface Review {
   id: string
@@ -21,24 +22,29 @@ function formatReviewerName(displayName?: string) {
 
 export default function NailistReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([])
-  const [loading, setLoading] = useState(true)
+  const [reviewsLoaded, setReviewsLoaded] = useState(false)
   const [avgRating, setAvgRating] = useState(0)
 
-  useEffect(() => {
-    async function load() {
-      const meRes = await fetch('/api/me/nailist-profile')
-      if (!meRes.ok) { setLoading(false); return }
-      const { data: profile } = await meRes.json()
+  const { data: profile, isPending: profilePending } = useNailistProfile()
+  const profileId = profile?.id ?? null
+  const loading = profilePending || (!!profileId && !reviewsLoaded)
 
-      const res = await fetch(`/api/nailists/${profile.id}`)
-      if (!res.ok) { setLoading(false); return }
-      const { data } = await res.json()
-      setReviews(data.reviews ?? [])
-      setAvgRating(data.avgRating ?? 0)
-      setLoading(false)
-    }
-    load()
-  }, [])
+  useEffect(() => {
+    if (!profileId) return
+
+    let cancelled = false
+    fetch(`/api/nailists/${profileId}`)
+      .then(async (res) => {
+        if (!res.ok || cancelled) return
+        const { data } = await res.json()
+        setReviews(data.reviews ?? [])
+        setAvgRating(data.avgRating ?? 0)
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setReviewsLoaded(true) })
+
+    return () => { cancelled = true }
+  }, [profileId])
 
   return (
     <div className="p-4 md:p-8" dir="rtl">

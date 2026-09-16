@@ -8,7 +8,7 @@
  * that window too — so the effect must check `loading` itself, or it would
  * bounce a genuinely logged-in nailist to /login on every page load.
  */
-import { render, waitFor } from '@testing-library/react'
+import { render, waitFor } from '@/__tests__/utils/render'
 import DashboardLayout from '@/app/dashboard/layout'
 
 const mockReplace = jest.fn()

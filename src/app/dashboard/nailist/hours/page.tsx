@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { CheckCircle2, Loader2, AlertCircle, Clock, CopyCheck } from 'lucide-react'
 import { addDays, todayInIsrael } from '@/lib/booking-utils'
 import { getIsraeliChag } from '@/lib/holiday-availability'
+import { useInvalidateNailistProfile, useNailistProfile } from '@/lib/hooks/use-nailist-profile'
 
 const DAYS = [
   { day: 0, label: 'ראשון', short: 'א׳', weekend: false },
@@ -79,15 +80,18 @@ export default function WorkingHoursPage() {
   const [error, setError] = useState('')
   const [bulkStart, setBulkStart] = useState('09:00')
   const [bulkEnd, setBulkEnd] = useState('19:00')
-  const [profileId, setProfileId] = useState<string | null>(null)
   const [autoCloseHolidays, setAutoCloseHolidays] = useState(true)
   const [overrides, setOverrides] = useState<Record<string, DateOverride>>({})
   const [savingHoliday, setSavingHoliday] = useState<string | null>(null)
 
+  const { data: profile } = useNailistProfile()
+  const invalidateProfile = useInvalidateNailistProfile()
+  const profileId = profile?.id ?? null
+
   useEffect(() => {
     Promise.all([
-      fetch('/api/working-hours'), fetch('/api/availability-overrides'), fetch('/api/me/nailist-profile'),
-    ]).then(async ([hoursRes, overridesRes, profileRes]) => {
+      fetch('/api/working-hours'), fetch('/api/availability-overrides'),
+    ]).then(async ([hoursRes, overridesRes]) => {
       if (hoursRes.ok) {
         const { data } = await hoursRes.json()
         if (data?.length) setHours((prev) => prev.map((def) => {
@@ -99,13 +103,14 @@ export default function WorkingHoursPage() {
         const { data } = await overridesRes.json()
         setOverrides(Object.fromEntries((data as DateOverride[]).map((item) => [item.date, item])))
       }
-      if (profileRes.ok) {
-        const { data } = await profileRes.json()
-        setProfileId(data?.id ?? null)
-        setAutoCloseHolidays(data?.autoCloseHolidays !== false)
-      }
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    if (!profile) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAutoCloseHolidays(profile.autoCloseHolidays !== false)
+  }, [profile])
 
   async function saveHolidayPreference(value: boolean) {
     if (!profileId) return
@@ -117,6 +122,7 @@ export default function WorkingHoursPage() {
       })
       if (!res.ok) throw new Error()
       setAutoCloseHolidays(value)
+      await invalidateProfile()
     } catch {
       setError('שגיאה בשמירת הגדרת החגים — נסי שוב')
     } finally { setSavingHoliday(null) }

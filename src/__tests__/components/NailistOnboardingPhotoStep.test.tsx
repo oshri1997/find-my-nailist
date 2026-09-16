@@ -3,7 +3,7 @@
  * wizard (between phone and portfolio photos). The main regression risk
  * here is the step-index renumbering that came with the insertion.
  */
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@/__tests__/utils/render'
 import OnboardingPage from '@/app/onboarding/page'
 
 jest.mock('next/navigation', () => ({

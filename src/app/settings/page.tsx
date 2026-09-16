@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/components/auth/auth-provider'
 import { isValidIsraeliPhone, PHONE_INVALID_MESSAGE } from '@/lib/phone'
+import { useInvalidateNailistProfile, useNailistProfile } from '@/lib/hooks/use-nailist-profile'
 
 const MIN_PASSWORD_LENGTH = 8
 
@@ -42,8 +43,7 @@ export default function SettingsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [loading, setLoading] = useState(true)
-  const [profileId, setProfileId] = useState<string | null>(null)
+  const [clientProfileLoading, setClientProfileLoading] = useState(true)
   const [hasPassword, setHasPassword] = useState(false)
 
   // Google Calendar connection
@@ -91,16 +91,7 @@ export default function SettingsPage() {
       setHasPassword(hasPasswordProvider(user))
     })
 
-    if (role === 'NAILIST') {
-      fetch('/api/me/nailist-profile')
-        .then((r) => (r.ok ? r.json() : null))
-        .then((json) => {
-          const data = json?.data
-          if (data) { setProfileId(data.id); setPhotoUrl(data.photoUrl ?? null) }
-        })
-        .catch(() => {})
-        .finally(() => setLoading(false))
-    } else {
+    if (role !== 'NAILIST') {
       fetch('/api/me/client-profile')
         .then((r) => (r.ok ? r.json() : null))
         .then((json) => {
@@ -113,9 +104,22 @@ export default function SettingsPage() {
           }
         })
         .catch(() => {})
-        .finally(() => setLoading(false))
+        .finally(() => setClientProfileLoading(false))
     }
   }, [user, authLoading, role, router])
+
+  const invalidateNailistProfile = useInvalidateNailistProfile()
+  const { data: nailistProfile, isPending: nailistProfilePending } = useNailistProfile({
+    enabled: !authLoading && !!user && role === 'NAILIST',
+  })
+  const profileId = nailistProfile?.id ?? null
+  const loading = role === 'NAILIST' ? nailistProfilePending : clientProfileLoading
+
+  useEffect(() => {
+    if (role !== 'NAILIST' || !nailistProfile) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPhotoUrl(nailistProfile.photoUrl ?? null)
+  }, [role, nailistProfile])
 
   useEffect(() => {
     if (authLoading || !user) return
@@ -192,6 +196,7 @@ export default function SettingsPage() {
       // The new URL is already unique per upload (timestamped) — no cache-bust
       // needed here, that's only for the possibly-stale value from the initial fetch.
       setPhotoUrl(url)
+      if (role === 'NAILIST') await invalidateNailistProfile()
       setPhotoSaved(true)
       setTimeout(() => setPhotoSaved(false), 3000)
     } catch {

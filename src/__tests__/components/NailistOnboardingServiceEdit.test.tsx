@@ -5,7 +5,7 @@
  * or remove one, without finishing onboarding and going to dashboard
  * settings first.
  */
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@/__tests__/utils/render'
 import OnboardingPage from '@/app/onboarding/page'
 
 jest.mock('next/navigation', () => ({

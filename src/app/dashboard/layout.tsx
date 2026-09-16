@@ -10,6 +10,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { EmailVerificationBanner } from '@/components/layout/email-verification-banner'
 import { FeedbackLauncher } from '@/components/feedback/FeedbackLauncher'
+import { useNailistProfile } from '@/lib/hooks/use-nailist-profile'
 
 const primaryNavLinks = [
   { href: '/dashboard/nailist', label: 'סקירה', Icon: LayoutDashboard, dynamic: false },
@@ -34,7 +35,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [showMoreSheet, setShowMoreSheet] = useState(false)
-  const [profileId, setProfileId] = useState<string | null>(null)
+  const { data: nailistProfile } = useNailistProfile({ enabled: authorized === true })
+  const profileId = nailistProfile?.id ?? null
 
   useEffect(() => {
     if (authLoading) return
@@ -60,14 +62,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return () => { clearTimeout(timeout); controller.abort() }
   }, [user, authLoading, router])
-
-  useEffect(() => {
-    if (!authorized) return
-    fetch('/api/me/nailist-profile')
-      .then(r => r.ok ? r.json() : null)
-      .then(json => setProfileId(json?.data?.id ?? null))
-      .catch(() => {})
-  }, [authorized])
 
   // Dynamic entries (public profile link) resolve their href from profileId once it loads.
   function resolveHref(link: { href: string | null; dynamic: boolean }): string | null {
