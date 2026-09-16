@@ -1,10 +1,8 @@
 import { israelWallClockToUtc, todayInIsrael } from './booking-utils'
+import { normalizeDayAvailability, type RawDayAvailability } from './availability-intervals'
 
-export interface DayWorkingHours {
+export interface DayWorkingHours extends RawDayAvailability {
   dayOfWeek: number // 0=Sunday..6=Saturday, matches Date#getUTCDay()
-  isActive: boolean
-  startTime: string // "HH:MM"
-  endTime: string
 }
 
 export interface ActiveAppointment {
@@ -43,7 +41,11 @@ function formatIsraelTime(instant: Date): string {
 // appointment (e.g. shift starts 9:00, first booking is 9:30 for a 60-minute
 // service — the 9:00-9:30 sliver can never be filled). Pure and side-effect
 // free so it can run against data the dashboard already has in memory,
-// without a dedicated API round-trip.
+// without a dedicated API round-trip. Each interval in a split-shift day is
+// scanned independently — the break BETWEEN two intervals (e.g. 13:00-15:00
+// on a 09:00-13:00 / 15:00-19:00 day) is off-hours, not a gap, and is never
+// examined here at all, since it never appears inside any interval's own
+// [shiftStart, shiftEnd) scan.
 export function findUnfillableGaps(params: {
   workingHours: DayWorkingHours[]
   appointments: ActiveAppointment[] // caller filters to PENDING/CONFIRMED only
@@ -62,38 +64,41 @@ export function findUnfillableGaps(params: {
 
   for (let i = 0; i < daysAhead; i++) {
     const date = addDays(startDate, i)
-    const hours = workingHours.find((h) => h.dayOfWeek === dayOfWeekOf(date))
-    if (!hours || !hours.isActive) continue
+    const raw = workingHours.find((h) => h.dayOfWeek === dayOfWeekOf(date))
+    const intervals = normalizeDayAvailability(raw)
+    if (intervals.length === 0) continue
 
-    const shiftStart = israelWallClockToUtc(date, hours.startTime)
-    const shiftEnd = israelWallClockToUtc(date, hours.endTime)
+    for (const interval of intervals) {
+      const shiftStart = israelWallClockToUtc(date, interval.start)
+      const shiftEnd = israelWallClockToUtc(date, interval.end)
 
-    const dayAppointments = appointments
-      .map((a) => ({ start: new Date(a.startTime), end: new Date(a.endTime) }))
-      .filter((a) => a.start < shiftEnd && a.end > shiftStart)
-      .sort((a, b) => a.start.getTime() - b.start.getTime())
+      const dayAppointments = appointments
+        .map((a) => ({ start: new Date(a.startTime), end: new Date(a.endTime) }))
+        .filter((a) => a.start < shiftEnd && a.end > shiftStart)
+        .sort((a, b) => a.start.getTime() - b.start.getTime())
 
-    const freeIntervals: Array<[Date, Date]> = []
-    let cursor = shiftStart
-    for (const apt of dayAppointments) {
-      if (apt.start > cursor) freeIntervals.push([cursor, apt.start])
-      if (apt.end > cursor) cursor = apt.end
-    }
-    if (shiftEnd > cursor) freeIntervals.push([cursor, shiftEnd])
+      const freeIntervals: Array<[Date, Date]> = []
+      let cursor = shiftStart
+      for (const apt of dayAppointments) {
+        if (apt.start > cursor) freeIntervals.push([cursor, apt.start])
+        if (apt.end > cursor) cursor = apt.end
+      }
+      if (shiftEnd > cursor) freeIntervals.push([cursor, shiftEnd])
 
-    for (const [start, end] of freeIntervals) {
-      // Don't flag time that's already elapsed today as "actionable."
-      const effectiveStart = start < now ? now : start
-      if (effectiveStart >= end) continue
+      for (const [start, end] of freeIntervals) {
+        // Don't flag time that's already elapsed today as "actionable."
+        const effectiveStart = start < now ? now : start
+        if (effectiveStart >= end) continue
 
-      const gapMinutes = (end.getTime() - effectiveStart.getTime()) / 60_000
-      if (gapMinutes > 0 && gapMinutes < minServiceDurationMinutes) {
-        gaps.push({
-          date,
-          startTime: formatIsraelTime(effectiveStart),
-          endTime: formatIsraelTime(end),
-          gapMinutes: Math.round(gapMinutes),
-        })
+        const gapMinutes = (end.getTime() - effectiveStart.getTime()) / 60_000
+        if (gapMinutes > 0 && gapMinutes < minServiceDurationMinutes) {
+          gaps.push({
+            date,
+            startTime: formatIsraelTime(effectiveStart),
+            endTime: formatIsraelTime(end),
+            gapMinutes: Math.round(gapMinutes),
+          })
+        }
       }
     }
   }

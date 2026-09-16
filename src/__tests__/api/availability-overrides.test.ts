@@ -42,7 +42,7 @@ jest.mock('@/lib/firebase/admin', () => ({
   adminDb: jest.fn(() => mockDb),
 }))
 jest.mock('firebase-admin/firestore', () => ({
-  FieldValue: { serverTimestamp: jest.fn(() => 'SERVER_TIMESTAMP') },
+  FieldValue: { serverTimestamp: jest.fn(() => 'SERVER_TIMESTAMP'), delete: jest.fn(() => 'FIELD_DELETE') },
 }))
 
 import { DELETE, GET, PUT } from '@/app/api/availability-overrides/route'
@@ -98,5 +98,44 @@ describe('/api/availability-overrides', () => {
     const res = await DELETE(request('DELETE', undefined, true, '2026-09-21'))
     expect(res.status).toBe(200)
     expect(mockDelete).toHaveBeenCalledTimes(1)
+  })
+
+  it('accepts a multi-interval OPEN override', async () => {
+    const res = await PUT(request('PUT', {
+      date: '2026-09-21', mode: 'OPEN', startTime: '10:00', endTime: '18:00',
+      intervals: [{ start: '10:00', end: '12:00' }, { start: '15:00', end: '18:00' }],
+    }))
+    expect(res.status).toBe(200)
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({ intervals: [{ start: '10:00', end: '12:00' }, { start: '15:00', end: '18:00' }] }),
+      { merge: true }
+    )
+  })
+
+  it('rejects overlapping intervals server-side on an OPEN override', async () => {
+    const res = await PUT(request('PUT', {
+      date: '2026-09-21', mode: 'OPEN', startTime: '10:00', endTime: '18:00',
+      intervals: [{ start: '10:00', end: '15:00' }, { start: '14:00', end: '18:00' }],
+    }))
+    expect(res.status).toBe(400)
+    expect(mockSet).not.toHaveBeenCalled()
+  })
+
+  it('clears a stale stored intervals[] when re-saving as a plain single-window OPEN override', async () => {
+    const res = await PUT(request('PUT', { date: '2026-09-21', mode: 'OPEN', startTime: '10:00', endTime: '14:00' }))
+    expect(res.status).toBe(200)
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({ intervals: 'FIELD_DELETE' }),
+      { merge: true }
+    )
+  })
+
+  it('does not touch intervals on a CLOSED override', async () => {
+    const res = await PUT(request('PUT', { date: '2026-09-21', mode: 'CLOSED' }))
+    expect(res.status).toBe(200)
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.not.objectContaining({ intervals: expect.anything() }),
+      { merge: true }
+    )
   })
 })

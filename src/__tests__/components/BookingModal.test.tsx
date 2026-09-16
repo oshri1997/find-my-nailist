@@ -174,7 +174,7 @@ describe('BookingModal — daily availability fetch', () => {
           dailyRequests === 1
             ? ({ ok: false, status: 503, json: async () => ({ error: 'Unavailable' }) } as Response)
             // The fixed clock above keeps this same-day slot bookable.
-            : ({ ok: true, json: async () => ({ data: { workingDay: true, startTime: '23:00', endTime: '23:30', bookedSlots: [] } }) } as Response)
+            : ({ ok: true, json: async () => ({ data: { workingDay: true, intervals: [{ start: '23:00', end: '23:30' }], bookedSlots: [] } }) } as Response)
         )
       }
       return Promise.resolve({ ok: true, json: async () => ({ data: null }) } as Response)

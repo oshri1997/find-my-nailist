@@ -1,3 +1,5 @@
+import { normalizeDayAvailability, type RawDayAvailability, type TimeInterval } from './availability-intervals'
+
 function pad(n: number) {
   return String(n).padStart(2, '0')
 }
@@ -116,22 +118,36 @@ export function generateSlots(startTime: string, endTime: string): string[] {
   return slots
 }
 
+// Slot starts across every interval in the day, generated independently per
+// interval — a service can never be offered a start time that would require
+// it to span the gap between two intervals, because each interval's slots
+// only ever reach up to that interval's own end.
+export function generateSlotsForIntervals(intervals: TimeInterval[]): string[] {
+  return intervals.flatMap((interval) => generateSlots(interval.start, interval.end))
+}
+
 export interface BookedSlot {
   startTime: string
   endTime: string
 }
 
+// A slot is only ever validated against the single interval it starts in —
+// never against the day as a whole — so a service can never be offered a
+// start time whose duration would carry it across a gap into another
+// interval, even if that other interval starts later the same day.
 export function isSlotUnavailable(
   slot: string,
   date: string,
   durationMinutes: number,
-  endTime: string,
+  intervals: TimeInterval[],
   bookedSlots: BookedSlot[]
 ): boolean {
+  const containingInterval = intervals.find((interval) => slot >= interval.start && slot < interval.end)
+  if (!containingInterval) return true
   const slotStart = israelWallClockToUtc(date, slot)
   const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60_000)
-  const workEnd = israelWallClockToUtc(date, endTime)
-  if (slotEnd > workEnd) return true
+  const intervalEnd = israelWallClockToUtc(date, containingInterval.end)
+  if (slotEnd > intervalEnd) return true
   return bookedSlots.some((b) => {
     const bStart = new Date(b.startTime)
     const bEnd = new Date(b.endTime)
@@ -139,45 +155,42 @@ export function isSlotUnavailable(
   })
 }
 
-export interface WorkingHours {
-  startTime: string
-  endTime: string
-  isActive: boolean
-}
-
 // The first bookable slot on `date`, or null if the day is off/fully booked.
 // Shared by computeDateAvailability (just needs to know booked-or-not) and
 // findNextAvailableSlot (needs the actual time), so the slot-filtering logic
-// lives in exactly one place.
+// lives in exactly one place. `intervals` is already the fully normalized/
+// resolved representation for the day (see availability-intervals.ts and
+// holiday-availability.ts's resolveAvailabilityIntervals) — an empty array
+// means the day is off, exactly like the old isActive:false/undefined check.
 export function findFirstAvailableSlot(
   date: string,
-  workingHours: WorkingHours | undefined,
+  intervals: TimeInterval[],
   durationMinutes: number,
   appointments: BookedSlot[],
   nowMinutes?: number
 ): string | null {
-  if (!workingHours || !workingHours.isActive) return null
-  const slots = generateSlots(workingHours.startTime, workingHours.endTime)
+  if (!intervals.length) return null
+  const slots = generateSlotsForIntervals(intervals)
   return slots.find((slot) => {
     if (nowMinutes !== undefined) {
       const [h, m] = slot.split(':').map(Number)
       if (h * 60 + m <= nowMinutes) return false
     }
-    return !isSlotUnavailable(slot, date, durationMinutes, workingHours.endTime, appointments)
+    return !isSlotUnavailable(slot, date, durationMinutes, intervals, appointments)
   }) ?? null
 }
 
 export function computeDateAvailability(
   date: string,
-  workingHours: WorkingHours | undefined,
+  intervals: TimeInterval[],
   durationMinutes: number,
   appointments: BookedSlot[],
   nowMinutes?: number
 ): { workingDay: boolean; fullyBooked: boolean } {
-  if (!workingHours || !workingHours.isActive) {
+  if (!intervals.length) {
     return { workingDay: false, fullyBooked: false }
   }
-  const firstSlot = findFirstAvailableSlot(date, workingHours, durationMinutes, appointments, nowMinutes)
+  const firstSlot = findFirstAvailableSlot(date, intervals, durationMinutes, appointments, nowMinutes)
   return { workingDay: true, fullyBooked: firstSlot === null }
 }
 
@@ -224,22 +237,26 @@ export interface NextAvailableSlot {
 // returns the very first bookable slot found — used to show "next available
 // appointment" on a nailist's search-results card, where we don't yet know
 // which service/duration the visitor wants, so callers pass a representative
-// default duration (see the API route).
+// default duration (see the API route). `workingHoursByDay` holds each
+// weekday's RAW data (legacy startTime/endTime and/or new intervals[]);
+// `resolveHours`, when given, additionally applies date-override/holiday
+// precedence (see resolveAvailabilityIntervals) — without it, the raw day is
+// normalized directly.
 export function findNextAvailableSlot(
-  workingHoursByDay: Map<number, WorkingHours>,
+  workingHoursByDay: Map<number, RawDayAvailability>,
   appointments: BookedSlot[],
   durationMinutes: number,
   daysToSearch = 14,
-  resolveHours?: (date: string, weeklyHours: WorkingHours | undefined) => WorkingHours | undefined,
+  resolveHours?: (date: string, weeklyHours: RawDayAvailability | undefined) => TimeInterval[],
 ): NextAvailableSlot | null {
   const { dateStr: todayStr, minutesSinceMidnight: todayNowMinutes } = israelNow()
   let dateStr = todayStr
   for (let i = 0; i < daysToSearch; i++) {
+    const weeklyRaw = workingHoursByDay.get(getDayOfWeek(dateStr))
+    const intervals = resolveHours ? resolveHours(dateStr, weeklyRaw) : normalizeDayAvailability(weeklyRaw)
     const slot = findFirstAvailableSlot(
       dateStr,
-      resolveHours
-        ? resolveHours(dateStr, workingHoursByDay.get(getDayOfWeek(dateStr)))
-        : workingHoursByDay.get(getDayOfWeek(dateStr)),
+      intervals,
       durationMinutes,
       appointments,
       i === 0 ? todayNowMinutes : undefined

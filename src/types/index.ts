@@ -1,4 +1,5 @@
 import { Timestamp } from 'firebase/firestore'
+import type { TimeInterval } from '@/lib/availability-intervals'
 
 export type UserRole = 'CLIENT' | 'NAILIST' | 'ADMIN'
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'
@@ -104,8 +105,12 @@ export interface PortfolioPhotoDoc {
 export interface WorkingHoursDoc {
   nailistProfileId: string
   dayOfWeek: number // 0 = Sunday, 6 = Saturday
-  startTime: string // "09:00"
-  endTime: string   // "18:00"
+  startTime: string // "09:00" — legacy single window; kept as a best-effort
+  endTime: string   // "18:00"  mirror for old-client/rollback compatibility.
+  // New split-shift model. When present and non-empty (and internally valid),
+  // this is the source of truth and startTime/endTime are ignored by
+  // business logic — see normalizeDayAvailability in availability-intervals.ts.
+  intervals?: TimeInterval[]
   isActive: boolean
 }
 
@@ -179,8 +184,9 @@ export interface AvailabilityOverrideDoc {
   nailistProfileId: string
   date: string // YYYY-MM-DD, Israel calendar date
   mode: AvailabilityOverrideMode
-  startTime?: string
+  startTime?: string // legacy single window for mode:'OPEN'
   endTime?: string
+  intervals?: TimeInterval[] // new split-window model for mode:'OPEN'; source of truth when present
   createdAt: Timestamp
   updatedAt: Timestamp
 }

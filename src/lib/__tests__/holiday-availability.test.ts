@@ -1,4 +1,4 @@
-import { getIsraeliChag, isObservedYomHaAtzmaut, resolveAvailabilityHours } from '@/lib/holiday-availability'
+import { getIsraeliChag, isObservedYomHaAtzmaut, resolveAvailabilityIntervals } from '@/lib/holiday-availability'
 
 const weekly = { isActive: true, startTime: '09:00', endTime: '18:00' }
 
@@ -24,26 +24,48 @@ describe('holiday availability policy', () => {
   })
 
   it('closes a weekly working day when holiday closure is enabled', () => {
-    expect(resolveAvailabilityHours('2026-09-21', weekly, true)).toBeUndefined()
+    expect(resolveAvailabilityIntervals('2026-09-21', weekly, true)).toEqual([])
   })
 
   it('closes legacy profiles whose preference is missing', () => {
-    expect(resolveAvailabilityHours('2026-09-21', weekly, undefined)).toBeUndefined()
+    expect(resolveAvailabilityIntervals('2026-09-21', weekly, undefined)).toEqual([])
   })
 
   it('keeps a holiday working day only when the nailist explicitly opts out', () => {
-    expect(resolveAvailabilityHours('2026-09-21', weekly, false)).toEqual(weekly)
+    expect(resolveAvailabilityIntervals('2026-09-21', weekly, false)).toEqual([{ start: '09:00', end: '18:00' }])
   })
 
   it('gives a date opening precedence over holiday closure and weekly hours', () => {
-    expect(resolveAvailabilityHours('2026-09-21', undefined, true, {
+    expect(resolveAvailabilityIntervals('2026-09-21', undefined, true, {
       date: '2026-09-21', mode: 'OPEN', startTime: '10:00', endTime: '14:00',
-    })).toEqual({ isActive: true, startTime: '10:00', endTime: '14:00' })
+    })).toEqual([{ start: '10:00', end: '14:00' }])
   })
 
   it('gives a manual closure precedence over regular weekly hours', () => {
-    expect(resolveAvailabilityHours('2026-09-22', weekly, false, {
+    expect(resolveAvailabilityIntervals('2026-09-22', weekly, false, {
       date: '2026-09-22', mode: 'CLOSED',
-    })).toBeUndefined()
+    })).toEqual([])
+  })
+
+  it('a date override REPLACES weekly hours rather than adding to them', () => {
+    expect(resolveAvailabilityIntervals('2026-09-20', weekly, false, {
+      date: '2026-09-20', mode: 'OPEN', startTime: '10:00', endTime: '12:00',
+    })).toEqual([{ start: '10:00', end: '12:00' }])
+  })
+
+  it('supports a multi-interval date override', () => {
+    expect(resolveAvailabilityIntervals('2026-09-20', weekly, false, {
+      date: '2026-09-20',
+      mode: 'OPEN',
+      intervals: [{ start: '10:00', end: '12:00' }, { start: '15:00', end: '17:00' }],
+    })).toEqual([{ start: '10:00', end: '12:00' }, { start: '15:00', end: '17:00' }])
+  })
+
+  it('supports multi-interval weekly hours (split shift)', () => {
+    const splitWeekly = { isActive: true, intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }] }
+    expect(resolveAvailabilityIntervals('2026-09-20', splitWeekly, false)).toEqual([
+      { start: '09:00', end: '13:00' },
+      { start: '15:00', end: '19:00' },
+    ])
   })
 })

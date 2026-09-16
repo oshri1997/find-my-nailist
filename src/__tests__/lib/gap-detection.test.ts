@@ -150,6 +150,80 @@ describe('findUnfillableGaps', () => {
     expect(gaps).toEqual([])
   })
 
+  it('never flags the break between two intervals as a gap', () => {
+    // Split shift 09:00-13:00 / 15:00-19:00 — the 13:00-15:00 break is
+    // off-hours, not a gap, and must never be reported.
+    const splitHours: DayWorkingHours[] = [{
+      dayOfWeek: 1, isActive: true,
+      intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }],
+    }]
+    const gaps = findUnfillableGaps({
+      workingHours: splitHours,
+      appointments: [],
+      minServiceDurationMinutes: 60,
+      daysAhead: 1,
+      startDate: '2026-07-13',
+      now: EARLY_NOW,
+    })
+    expect(gaps).toEqual([])
+  })
+
+  it('flags an unfillable gap within one interval of a split shift, independently of the other interval', () => {
+    const splitHours: DayWorkingHours[] = [{
+      dayOfWeek: 1, isActive: true,
+      intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }],
+    }]
+    const appointments: ActiveAppointment[] = [
+      { startTime: '2026-07-13T06:30:00Z', endTime: '2026-07-13T07:30:00Z' }, // 09:30-10:30 Israel
+    ]
+    const gaps = findUnfillableGaps({
+      workingHours: splitHours,
+      appointments,
+      minServiceDurationMinutes: 60,
+      daysAhead: 1,
+      startDate: '2026-07-13',
+      now: EARLY_NOW,
+    })
+    expect(gaps).toEqual([
+      { date: '2026-07-13', startTime: '09:00', endTime: '09:30', gapMinutes: 30 },
+    ])
+  })
+
+  it('flags gaps in both intervals of a split shift when both have unfillable slivers', () => {
+    const splitHours: DayWorkingHours[] = [{
+      dayOfWeek: 1, isActive: true,
+      intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }],
+    }]
+    const appointments: ActiveAppointment[] = [
+      { startTime: '2026-07-13T06:30:00Z', endTime: '2026-07-13T07:30:00Z' }, // 09:30-10:30 Israel
+      { startTime: '2026-07-13T12:30:00Z', endTime: '2026-07-13T13:30:00Z' }, // 15:30-16:30 Israel
+    ]
+    const gaps = findUnfillableGaps({
+      workingHours: splitHours,
+      appointments,
+      minServiceDurationMinutes: 60,
+      daysAhead: 1,
+      startDate: '2026-07-13',
+      now: EARLY_NOW,
+    })
+    expect(gaps).toEqual([
+      { date: '2026-07-13', startTime: '09:00', endTime: '09:30', gapMinutes: 30 },
+      { date: '2026-07-13', startTime: '15:00', endTime: '15:30', gapMinutes: 30 },
+    ])
+  })
+
+  it('reads legacy single-window data through the same normalization as before', () => {
+    const legacyHours: DayWorkingHours[] = [{ dayOfWeek: 1, isActive: true, startTime: '09:00', endTime: '17:00' }]
+    const appointments: ActiveAppointment[] = [
+      { startTime: '2026-07-13T06:30:00Z', endTime: '2026-07-13T07:30:00Z' },
+    ]
+    const gaps = findUnfillableGaps({
+      workingHours: legacyHours, appointments, minServiceDurationMinutes: 60,
+      daysAhead: 1, startDate: '2026-07-13', now: EARLY_NOW,
+    })
+    expect(gaps).toEqual([{ date: '2026-07-13', startTime: '09:00', endTime: '09:30', gapMinutes: 30 }])
+  })
+
   it('only checks the requested horizon (daysAhead)', () => {
     // The stranding appointment falls on day 2 (2026-07-14, also a working
     // Tuesday) — invisible to a 1-day horizon starting on day 1.

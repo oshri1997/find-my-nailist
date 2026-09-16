@@ -53,47 +53,48 @@ describe('generateSlots — edge cases', () => {
 
 describe('isSlotUnavailable — edge cases', () => {
   const date = '2026-07-01'
+  const oneWindow = [{ start: '09:00', end: '18:00' }]
 
   it('unavailable when slot extends past working hours (slotEnd > workEnd)', () => {
     // 17:30 + 60 min = 18:30 > 18:00 end
-    expect(isSlotUnavailable('17:30', date, 60, '18:00', [])).toBe(true)
+    expect(isSlotUnavailable('17:30', date, 60, oneWindow, [])).toBe(true)
   })
 
   it('available when slot ends exactly at working hours end', () => {
     // 17:00 + 60 min = 18:00 = workEnd → NOT past end
-    expect(isSlotUnavailable('17:00', date, 60, '18:00', [])).toBe(false)
+    expect(isSlotUnavailable('17:00', date, 60, oneWindow, [])).toBe(false)
   })
 
   it('unavailable when slot overlaps the start of a booking', () => {
     const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '11:00') }]
     // 09:30 + 60min = 10:30 → overlaps [10:00, 11:00)
-    expect(isSlotUnavailable('09:30', date, 60, '18:00', booked)).toBe(true)
+    expect(isSlotUnavailable('09:30', date, 60, oneWindow, booked)).toBe(true)
   })
 
   it('unavailable when slot is fully inside a booking', () => {
     const booked = [{ startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '12:00') }]
-    expect(isSlotUnavailable('10:00', date, 60, '18:00', booked)).toBe(true)
+    expect(isSlotUnavailable('10:00', date, 60, oneWindow, booked)).toBe(true)
   })
 
   it('available when slot ends exactly when the booking starts (no overlap)', () => {
     const booked = [{ startTime: israelSlot(date, '11:00'), endTime: israelSlot(date, '12:00') }]
     // 10:00 + 60min = 11:00 = bStart → bStart < slotEnd is false (not strict <)
-    expect(isSlotUnavailable('10:00', date, 60, '18:00', booked)).toBe(false)
+    expect(isSlotUnavailable('10:00', date, 60, oneWindow, booked)).toBe(false)
   })
 
   it('available when slot starts exactly when the booking ends (no overlap)', () => {
     const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '11:00') }]
     // bEnd(11:00) > slotStart(11:00) is false → no overlap
-    expect(isSlotUnavailable('11:00', date, 60, '18:00', booked)).toBe(false)
+    expect(isSlotUnavailable('11:00', date, 60, oneWindow, booked)).toBe(false)
   })
 
   it('returns false with empty booked slots', () => {
-    expect(isSlotUnavailable('10:00', date, 60, '18:00', [])).toBe(false)
+    expect(isSlotUnavailable('10:00', date, 60, oneWindow, [])).toBe(false)
   })
 
   it('blocked by a 30-min duration booking (shorter than slot step)', () => {
     const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '10:30') }]
-    expect(isSlotUnavailable('10:00', date, 30, '18:00', booked)).toBe(true)
+    expect(isSlotUnavailable('10:00', date, 30, oneWindow, booked)).toBe(true)
   })
 
   it('handles multiple bookings, only checks overlap not count', () => {
@@ -101,8 +102,21 @@ describe('isSlotUnavailable — edge cases', () => {
       { startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '10:00') },
       { startTime: israelSlot(date, '14:00'), endTime: israelSlot(date, '15:00') },
     ]
-    expect(isSlotUnavailable('12:00', date, 60, '18:00', booked)).toBe(false)
-    expect(isSlotUnavailable('14:30', date, 60, '18:00', booked)).toBe(true)
+    expect(isSlotUnavailable('12:00', date, 60, oneWindow, booked)).toBe(false)
+    expect(isSlotUnavailable('14:30', date, 60, oneWindow, booked)).toBe(true)
+  })
+
+  it('unavailable when the slot falls in the gap between two intervals', () => {
+    const split = [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }]
+    expect(isSlotUnavailable('13:30', date, 30, split, [])).toBe(true)
+  })
+
+  it('boundary: 60-min service starting at 12:00 in a 09:00-13:00 interval is valid', () => {
+    expect(isSlotUnavailable('12:00', date, 60, [{ start: '09:00', end: '13:00' }], [])).toBe(false)
+  })
+
+  it('boundary: 60-min service starting at 12:30 in a 09:00-13:00 interval is invalid', () => {
+    expect(isSlotUnavailable('12:30', date, 60, [{ start: '09:00', end: '13:00' }], [])).toBe(true)
   })
 })
 
@@ -125,8 +139,8 @@ describe('computeDateAvailability — edge cases', () => {
 
   it('fullyBooked is true when duration makes every generated slot extend past workEnd', () => {
     // 09:00–09:30 generates one slot (09:00). 09:00 + 60min = 10:00 > 09:30 → unavailable → fullyBooked
-    const hours = { startTime: '09:00', endTime: '09:30', isActive: true }
-    const result = computeDateAvailability(date, hours, 60, [])
+    const intervals = [{ start: '09:00', end: '09:30' }]
+    const result = computeDateAvailability(date, intervals, 60, [])
     expect(result.workingDay).toBe(true)
     expect(result.fullyBooked).toBe(true)
   })
@@ -134,39 +148,34 @@ describe('computeDateAvailability — edge cases', () => {
   it('uses todayNowMinutes to skip past slots and detect fullyBooked', () => {
     // 09:00–10:00 → slots: 09:00, 09:30
     // nowMinutes = 9*60+31 = 571 → slot 09:00 (540) <= 571 skipped, 09:30 (570) <= 571 skipped → fullyBooked
-    const hours = { startTime: '09:00', endTime: '10:00', isActive: true }
-    const result = computeDateAvailability(date, hours, 30, [], 9 * 60 + 31)
+    const intervals = [{ start: '09:00', end: '10:00' }]
+    const result = computeDateAvailability(date, intervals, 30, [], 9 * 60 + 31)
     expect(result.workingDay).toBe(true)
     expect(result.fullyBooked).toBe(true)
   })
 
   it('does not skip past slots when todayNowMinutes is not provided', () => {
     // Without nowMinutes, early morning slots are not filtered
-    const hours = { startTime: '00:00', endTime: '01:00', isActive: true }
-    const result = computeDateAvailability(date, hours, 30, [], undefined)
+    const intervals = [{ start: '00:00', end: '01:00' }]
+    const result = computeDateAvailability(date, intervals, 30, [], undefined)
     expect(result.fullyBooked).toBe(false)
   })
 
   it('slot at exactly nowMinutes is skipped (≤ not <)', () => {
     // 09:00 → 540 min; nowMinutes=540 → 540 <= 540 → skipped
-    const hours = { startTime: '09:00', endTime: '10:30', isActive: true }
+    const intervals = [{ start: '09:00', end: '10:30' }]
     // slots: 09:00, 09:30, 10:00 → 09:00 skipped (≤540), 09:30 and 10:00 remain → NOT fullyBooked
-    const result = computeDateAvailability(date, hours, 30, [], 9 * 60)
+    const result = computeDateAvailability(date, intervals, 30, [], 9 * 60)
     expect(result.fullyBooked).toBe(false)
   })
 
-  it('returns workingDay: false and fullyBooked: false when isActive is false', () => {
-    const hours = { startTime: '09:00', endTime: '18:00', isActive: false }
-    expect(computeDateAvailability(date, hours, 60, [])).toEqual({ workingDay: false, fullyBooked: false })
-  })
-
-  it('returns workingDay: false when workingHours is undefined', () => {
-    expect(computeDateAvailability(date, undefined, 60, [])).toEqual({ workingDay: false, fullyBooked: false })
+  it('returns workingDay: false when there are no intervals (closed day)', () => {
+    expect(computeDateAvailability(date, [], 60, [])).toEqual({ workingDay: false, fullyBooked: false })
   })
 
   it('workingDay: true, fullyBooked: false when there are available slots and no bookings', () => {
-    const hours = { startTime: '09:00', endTime: '18:00', isActive: true }
-    const result = computeDateAvailability(date, hours, 60, [])
+    const intervals = [{ start: '09:00', end: '18:00' }]
+    const result = computeDateAvailability(date, intervals, 60, [])
     expect(result.workingDay).toBe(true)
     expect(result.fullyBooked).toBe(false)
   })

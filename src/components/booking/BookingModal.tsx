@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare, CalendarOff, Copy, Check, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { generateSlots, isSlotUnavailable, buildMonthCalendarFor, israelNow, israelWallClockToUtc, todayCalendarDateInIsrael, todayInIsrael, toDateStr, type BookedSlot } from '@/lib/booking-utils'
+import { generateSlotsForIntervals, isSlotUnavailable, buildMonthCalendarFor, israelNow, israelWallClockToUtc, todayCalendarDateInIsrael, todayInIsrael, toDateStr, type BookedSlot } from '@/lib/booking-utils'
+import type { TimeInterval } from '@/lib/availability-intervals'
 import { toBitUrl, formatBitPhoneDisplay } from '@/lib/bit'
 import { isMobileDevice } from '@/lib/device'
 import { getRecommendedSlots } from '@/lib/slot-recommendation'
@@ -39,8 +40,7 @@ interface DepositResult {
 
 interface Availability {
   workingDay: boolean
-  startTime?: string
-  endTime?: string
+  intervals?: TimeInterval[]
   bookedSlots: BookedSlot[]
 }
 
@@ -239,8 +239,8 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   const dateStr = selectedDate ? toDateStr(selectedDate) : ''
   const { dateStr: todayStr, minutesSinceMidnight: nowMinutesInIsrael } = israelNow()
   const slots =
-    availability?.workingDay && availability.startTime && availability.endTime
-      ? generateSlots(availability.startTime, availability.endTime).filter((t) => {
+    availability?.workingDay && availability.intervals
+      ? generateSlotsForIntervals(availability.intervals).filter((t) => {
           if (!selectedDate || toDateStr(selectedDate) !== todayStr) return true
           const [h, m] = t.split(':').map(Number)
           return h * 60 + m > nowMinutesInIsrael
@@ -253,14 +253,13 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   // actually still bookable (unavailable ones are never "recommended").
   const minServiceDurationMinutes = services.length > 0 ? Math.min(...services.map((s) => s.durationMinutes)) : 0
   const recommendedSlots =
-    availability?.workingDay && availability.startTime && availability.endTime && selectedService
+    availability?.workingDay && availability.intervals && selectedService
       ? getRecommendedSlots({
           date: dateStr,
-          shiftStartTime: availability.startTime,
-          shiftEndTime: availability.endTime,
+          intervals: availability.intervals,
           bookedSlots: availability.bookedSlots,
           candidateSlots: slots.filter(
-            (t) => !isSlotUnavailable(t, dateStr, selectedService.durationMinutes, availability.endTime!, availability.bookedSlots)
+            (t) => !isSlotUnavailable(t, dateStr, selectedService.durationMinutes, availability.intervals!, availability.bookedSlots)
           ),
           serviceDurationMinutes: selectedService.durationMinutes,
           minServiceDurationMinutes,
@@ -272,7 +271,7 @@ export default function BookingModal({ nailistProfileId, businessName, services,
       t,
       dateStr,
       selectedService?.durationMinutes ?? 60,
-      availability!.endTime!,
+      availability!.intervals!,
       availability!.bookedSlots
     )
     const isSelected = selectedTime === t

@@ -155,3 +155,93 @@ describe('Working hours page — holiday controls', () => {
     ))
   })
 })
+
+describe('Working hours page — multiple intervals per day (split shifts)', () => {
+  it('adds a second interval to a day and saves both in the intervals[] payload', async () => {
+    render(<WorkingHoursPage />)
+    await waitFor(() => expect(dayStartSelects().length).toBeGreaterThan(0))
+
+    // First day's (Sunday) "הוספת שעות" button — day rows render before the
+    // holiday section's own "הוספת שעות" buttons, but this page starts with
+    // no open holiday override, so the day-row buttons are the only ones.
+    const addButtons = screen.getAllByRole('button', { name: /הוספת שעות/ })
+    fireEvent.click(addButtons[0])
+
+    await waitFor(() => expect(dayStartSelects().length).toBe(6)) // 5 active days + 1 new interval
+
+    fireEvent.click(screen.getByRole('button', { name: 'שמרי שעות עבודה' }))
+
+    await waitFor(() => {
+      const call = (global.fetch as jest.Mock).mock.calls.find(([url, init]) => url === '/api/working-hours' && init?.method === 'PUT')
+      expect(call).toBeTruthy()
+      const body = JSON.parse(call![1].body)
+      const sunday = body.hours.find((h: { dayOfWeek: number }) => h.dayOfWeek === 0)
+      expect(sunday.intervals).toHaveLength(2)
+      expect(sunday.intervals[0]).toEqual({ start: '09:00', end: '19:00' })
+      // The new interval starts right where the first one ends (touching,
+      // not overlapping) — a valid default the nailist can then adjust.
+      expect(sunday.intervals[1].start).toBe('19:00')
+    })
+  })
+
+  it('removes an interval and falls back to a single-window payload', async () => {
+    render(<WorkingHoursPage />)
+    await waitFor(() => expect(dayStartSelects().length).toBeGreaterThan(0))
+
+    const addButtons = screen.getAllByRole('button', { name: /הוספת שעות/ })
+    fireEvent.click(addButtons[0])
+    await waitFor(() => expect(dayStartSelects().length).toBe(6))
+
+    const removeButtons = screen.getAllByRole('button', { name: /מחיקת חלון שעות/ })
+    fireEvent.click(removeButtons[0])
+    await waitFor(() => expect(dayStartSelects().length).toBe(5))
+  })
+
+  it('blocks saving and shows a Hebrew error when two intervals overlap', async () => {
+    render(<WorkingHoursPage />)
+    await waitFor(() => expect(dayStartSelects().length).toBeGreaterThan(0))
+
+    const addButtons = screen.getAllByRole('button', { name: /הוספת שעות/ })
+    fireEvent.click(addButtons[0])
+    await waitFor(() => expect(dayStartSelects().length).toBe(6))
+
+    // Force the new (second) interval's start back before the first
+    // interval's end, creating an overlap: 09:00-19:00 and 15:00-...
+    const startSelects = dayStartSelects()
+    fireEvent.change(startSelects[1], { target: { value: '15:00' } })
+
+    const putCallsBefore = (global.fetch as jest.Mock).mock.calls.filter(([url]) => url === '/api/working-hours' ).length
+    fireEvent.click(screen.getByRole('button', { name: 'שמרי שעות עבודה' }))
+
+    await waitFor(() => expect(screen.getByText(/חפיפה/)).toBeInTheDocument())
+    // No new PUT request was sent — client-side validation blocked it.
+    const putCallsAfter = (global.fetch as jest.Mock).mock.calls.filter(([url]) => url === '/api/working-hours').length
+    expect(putCallsAfter).toBe(putCallsBefore)
+  })
+
+  it('loads a previously-saved split-shift day back into two interval rows', async () => {
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      if (url === '/api/working-hours') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            data: [{
+              id: 'wh-0', nailistProfileId: 'p1', dayOfWeek: 0, isActive: true,
+              startTime: '09:00', endTime: '19:00',
+              intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }],
+            }],
+          }),
+        } as Response)
+      }
+      if (url === '/api/availability-overrides') return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
+      return Promise.resolve({ ok: true, json: async () => ({ message: 'ok' }) } as Response)
+    })
+    render(<WorkingHoursPage />)
+
+    await waitFor(() => {
+      const startSelects = dayStartSelects()
+      expect((startSelects[0] as HTMLSelectElement).value).toBe('09:00')
+      expect((startSelects[1] as HTMLSelectElement).value).toBe('15:00')
+    })
+  })
+})

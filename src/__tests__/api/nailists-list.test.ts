@@ -327,6 +327,29 @@ describe('GET /api/nailists — nextAvailableSlot', () => {
     expect(json.data[0].nextAvailableSlot).toEqual({ date: '2026-06-10', time: '10:00' })
   })
 
+  it('finds the afternoon interval when the morning interval is fully booked (split shift)', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'n1', businessName: 'סטודיו א', isActive: true }]
+    collectionStore['services'] = []
+    collectionStore['workingHours'] = [
+      {
+        __id: 'wh1', nailistProfileId: 'n1', dayOfWeek: 3, isActive: true,
+        startTime: '09:00', endTime: '19:00',
+        intervals: [{ start: '09:00', end: '10:00' }, { start: '15:00', end: '19:00' }],
+      },
+    ]
+    collectionStore['appointments'] = [{
+      __id: 'a1',
+      nailistProfileId: 'n1',
+      status: 'CONFIRMED',
+      startTime: '2026-06-10T06:00:00.000Z', // 09:00 Israel
+      endTime: '2026-06-10T07:00:00.000Z',   // 10:00 Israel
+    }]
+
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    expect(json.data[0].nextAvailableSlot).toEqual({ date: '2026-06-10', time: '15:00' })
+  })
+
   it('ignores CANCELLED appointments when computing the next slot', async () => {
     collectionStore['nailistProfiles'] = [{ __id: 'n1', businessName: 'סטודיו א', isActive: true }]
     collectionStore['services'] = []

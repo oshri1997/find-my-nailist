@@ -254,6 +254,78 @@ describe('POST /api/appointments — edge cases', () => {
   })
 })
 
+describe('POST /api/appointments — split-shift (multiple intervals) availability', () => {
+  beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-01T00:00:00.000Z'))
+    jest.clearAllMocks()
+    docStore['services/service-1'] = {
+      name: 'ג׳ל',
+      durationMinutes: 60,
+      price: 130,
+      currency: 'ILS',
+      nailistProfileId: 'nailist-profile-1',
+    }
+    docStore['nailistProfiles/nailist-profile-1'] = { businessName: 'Studio', userId: 'nailist-user' }
+    docStore['clientProfiles/client-profile-1'] = { displayName: 'Client', userId: 'user-123' }
+    collectionStore['clientProfiles'] = [{ __id: 'client-profile-1', userId: 'user-123' }]
+    collectionStore['appointments'] = []
+    // Same Saturday (dayOfWeek 6) as validBody's date, now split into two
+    // intervals with a 13:00-15:00 break in between.
+    collectionStore['workingHours'] = [
+      {
+        __id: 'hours-1',
+        nailistProfileId: 'nailist-profile-1',
+        dayOfWeek: 6,
+        isActive: true,
+        startTime: '09:00',
+        endTime: '19:00',
+        intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }],
+      },
+    ]
+  })
+
+  afterEach(() => jest.useRealTimers())
+
+  it('rejects a booking attempt inside the break between intervals, server-side, even via a direct request', async () => {
+    const req = makeRequest('POST', { ...validBody, startTime: new Date('2026-08-01T10:30:00.000Z').toISOString() }, 'token')
+    // 2026-08-01 10:30 UTC = 13:30 Israel time (DST, UTC+3) — inside the break
+    const res = await POST(req)
+    expect(res.status).toBe(409)
+    expect(mockAppointmentAdd).not.toHaveBeenCalled()
+  })
+
+  it('accepts a booking at the start of the second interval', async () => {
+    const req = makeRequest('POST', { ...validBody, startTime: new Date('2026-08-01T12:00:00.000Z').toISOString() }, 'token')
+    // 2026-08-01 12:00 UTC = 15:00 Israel time
+    const res = await POST(req)
+    expect(res.status).toBe(201)
+  })
+
+  it('rejects a service that would cross from the first interval into the break', async () => {
+    // 12:30 Israel time, 60-min service would end 13:30 — past the first interval's 13:00 end
+    const req = makeRequest('POST', { ...validBody, startTime: new Date('2026-08-01T09:30:00.000Z').toISOString() }, 'token')
+    const res = await POST(req)
+    expect(res.status).toBe(409)
+  })
+
+  it('accepts a booking that fits entirely inside the first interval', async () => {
+    // 12:00 Israel time, 60-min service ends exactly at 13:00
+    const req = makeRequest('POST', { ...validBody, startTime: new Date('2026-08-01T09:00:00.000Z').toISOString() }, 'token')
+    const res = await POST(req)
+    expect(res.status).toBe(201)
+  })
+
+  it('is backward-compatible: a legacy single-window record still books identically', async () => {
+    collectionStore['workingHours'] = [
+      { __id: 'hours-1', nailistProfileId: 'nailist-profile-1', dayOfWeek: 6, isActive: true, startTime: '09:00', endTime: '19:00' },
+    ]
+    const req = makeRequest('POST', { ...validBody, startTime: new Date('2026-08-01T10:30:00.000Z').toISOString() }, 'token')
+    // 13:30 Israel time — valid under a continuous 09:00-19:00 legacy window
+    const res = await POST(req)
+    expect(res.status).toBe(201)
+  })
+})
+
 describe('GET /api/appointments — edge cases', () => {
   beforeEach(() => {
     jest.clearAllMocks()

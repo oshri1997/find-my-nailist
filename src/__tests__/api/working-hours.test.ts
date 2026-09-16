@@ -68,7 +68,7 @@ jest.mock('@/lib/firebase/admin', () => ({
 }))
 
 jest.mock('firebase-admin/firestore', () => ({
-  FieldValue: { serverTimestamp: jest.fn(() => 'SERVER_TIMESTAMP') },
+  FieldValue: { serverTimestamp: jest.fn(() => 'SERVER_TIMESTAMP'), delete: jest.fn(() => 'FIELD_DELETE') },
 }))
 
 import { GET, PUT } from '@/app/api/working-hours/route'
@@ -246,5 +246,66 @@ describe('PUT /api/working-hours', () => {
     })
     const res = await PUT(req)
     expect(res.status).toBe(400)
+  })
+
+  it('accepts a valid split-shift intervals[] payload', async () => {
+    const req = makeRequest('PUT', {
+      hours: [{
+        dayOfWeek: 0, isActive: true, startTime: '09:00', endTime: '19:00',
+        intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }],
+      }],
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(200)
+    expect(mockBatchCommit).toHaveBeenCalled()
+  })
+
+  it('rejects overlapping intervals server-side even if the client somehow sent them', async () => {
+    const req = makeRequest('PUT', {
+      hours: [{
+        dayOfWeek: 0, isActive: true, startTime: '09:00', endTime: '18:00',
+        intervals: [{ start: '09:00', end: '14:00' }, { start: '13:00', end: '18:00' }],
+      }],
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(400)
+    expect(mockBatchCommit).not.toHaveBeenCalled()
+  })
+
+  it('rejects intervals with start === end server-side', async () => {
+    const req = makeRequest('PUT', {
+      hours: [{
+        dayOfWeek: 0, isActive: true, startTime: '09:00', endTime: '18:00',
+        intervals: [{ start: '09:00', end: '09:00' }],
+      }],
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('clears a stale stored intervals[] when saving back without one (update path)', async () => {
+    collectionStore['workingHours'] = [
+      { __id: 'wh-1', nailistProfileId: 'nailist-profile-1', dayOfWeek: 1, isActive: true, startTime: '09:00', endTime: '19:00', intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }] },
+    ]
+    const req = makeRequest('PUT', {
+      hours: [{ dayOfWeek: 1, isActive: true, startTime: '09:00', endTime: '18:00' }],
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(200)
+    expect(mockBatchUpdate).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ intervals: 'FIELD_DELETE' })
+    )
+  })
+
+  it('does not send an intervals field at all when creating a new single-window day', async () => {
+    const req = makeRequest('PUT', {
+      hours: [{ dayOfWeek: 2, isActive: true, startTime: '09:00', endTime: '18:00' }],
+    })
+    await PUT(req)
+    expect(mockBatchSet).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.not.objectContaining({ intervals: expect.anything() })
+    )
   })
 })

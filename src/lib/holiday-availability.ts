@@ -1,6 +1,6 @@
 import { isYomTov } from 'jewish-holidays'
 import { JewishMonth, toGregorianDate, toJewishDate } from 'jewish-date'
-import type { WorkingHours } from '@/lib/booking-utils'
+import { normalizeDayAvailability, type RawDayAvailability, type TimeInterval } from '@/lib/availability-intervals'
 
 export type AvailabilityOverrideMode = 'OPEN' | 'CLOSED'
 
@@ -9,6 +9,7 @@ export interface AvailabilityOverride {
   mode: AvailabilityOverrideMode
   startTime?: string
   endTime?: string
+  intervals?: TimeInterval[]
 }
 
 export interface IsraeliChag {
@@ -60,21 +61,29 @@ export function isIsraeliChag(date: string): boolean {
   return getIsraeliChag(date) !== null
 }
 
-export function resolveAvailabilityHours(
+// The normalization layer's precedence entry point: resolves whichever
+// source governs a given Israel calendar date into the one representation
+// business logic operates on — TimeInterval[], where [] means closed.
+// Precedence: date override (OPEN or CLOSED) > Israeli holiday auto-closure
+// (unless the nailist opted out) > weekly hours. A date override is always
+// authoritative, including opening a weekly day off; it REPLACES the weekly
+// day's intervals rather than adding to them.
+export function resolveAvailabilityIntervals(
   date: string,
-  weeklyHours: WorkingHours | undefined,
+  weeklyHours: RawDayAvailability | undefined,
   autoCloseHolidays: boolean | undefined,
   override?: AvailabilityOverride,
-): WorkingHours | undefined {
-  // A date override is always authoritative, including opening a weekly day off.
-  if (override?.mode === 'CLOSED') return undefined
+): TimeInterval[] {
+  if (override?.mode === 'CLOSED') return []
   if (override?.mode === 'OPEN') {
-    return override.startTime && override.endTime
-      ? { isActive: true, startTime: override.startTime, endTime: override.endTime }
-      : undefined
+    return normalizeDayAvailability({
+      startTime: override.startTime,
+      endTime: override.endTime,
+      intervals: override.intervals,
+    })
   }
   // Profiles created before this preference existed must follow the Israel
   // holiday policy too. Only an explicit false opts a nailist out.
-  if (autoCloseHolidays !== false && isIsraeliChag(date)) return undefined
-  return weeklyHours?.isActive ? weeklyHours : undefined
+  if (autoCloseHolidays !== false && isIsraeliChag(date)) return []
+  return normalizeDayAvailability(weeklyHours)
 }

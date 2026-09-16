@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { computeDateAvailability, getDayOfWeek, addDays, israelNow } from '@/lib/booking-utils'
-import { resolveAvailabilityHours, type AvailabilityOverride } from '@/lib/holiday-availability'
+import { resolveAvailabilityIntervals, type AvailabilityOverride } from '@/lib/holiday-availability'
+import type { RawDayAvailability } from '@/lib/availability-intervals'
 
 export async function GET(
   request: NextRequest,
@@ -33,12 +34,13 @@ export async function GET(
         .get(),
     ])
 
-    const workingHoursByDay = new Map<number, { startTime: string; endTime: string; isActive: boolean }>()
+    const workingHoursByDay = new Map<number, RawDayAvailability>()
     hoursSnap.docs.forEach((doc) => {
       const data = doc.data()
       workingHoursByDay.set(data.dayOfWeek, {
         startTime: data.startTime,
         endTime: data.endTime,
+        intervals: data.intervals,
         isActive: data.isActive,
       })
     })
@@ -74,7 +76,7 @@ export async function GET(
     for (const date of dates) {
       result[date] = computeDateAvailability(
         date,
-        resolveAvailabilityHours(
+        resolveAvailabilityIntervals(
           date,
           workingHoursByDay.get(getDayOfWeek(date)),
           profileSnap.data()?.autoCloseHolidays,

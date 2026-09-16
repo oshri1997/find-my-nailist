@@ -199,38 +199,39 @@ describe('generateSlots', () => {
 
 describe('isSlotUnavailable', () => {
   const date = '2024-06-15'
+  const oneWindow = [{ start: '09:00', end: '18:00' }]
 
   it('is available when there are no bookings', () => {
-    expect(isSlotUnavailable('09:00', date, 60, '18:00', [])).toBe(false)
+    expect(isSlotUnavailable('09:00', date, 60, oneWindow, [])).toBe(false)
   })
 
   it('is unavailable when slot extends past working hours end', () => {
-    expect(isSlotUnavailable('17:30', date, 60, '18:00', [])).toBe(true)
+    expect(isSlotUnavailable('17:30', date, 60, oneWindow, [])).toBe(true)
   })
 
   it('is available when slot ends exactly at working hours end', () => {
-    expect(isSlotUnavailable('17:00', date, 60, '18:00', [])).toBe(false)
+    expect(isSlotUnavailable('17:00', date, 60, oneWindow, [])).toBe(false)
   })
 
   it('is unavailable when overlapping a booked slot', () => {
     const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '11:00') }]
     // 09:30–10:30 overlaps 10:00–11:00
-    expect(isSlotUnavailable('09:30', date, 60, '18:00', booked)).toBe(true)
+    expect(isSlotUnavailable('09:30', date, 60, oneWindow, booked)).toBe(true)
   })
 
   it('is unavailable when fully inside a booked slot', () => {
     const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '12:00') }]
-    expect(isSlotUnavailable('10:30', date, 30, '18:00', booked)).toBe(true)
+    expect(isSlotUnavailable('10:30', date, 30, oneWindow, booked)).toBe(true)
   })
 
   it('is available immediately after a booked slot ends', () => {
     const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '11:00') }]
-    expect(isSlotUnavailable('11:00', date, 60, '18:00', booked)).toBe(false)
+    expect(isSlotUnavailable('11:00', date, 60, oneWindow, booked)).toBe(false)
   })
 
   it('is available for a slot that ends exactly when a booking starts', () => {
     const booked = [{ startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '11:00') }]
-    expect(isSlotUnavailable('09:00', date, 60, '18:00', booked)).toBe(false)
+    expect(isSlotUnavailable('09:00', date, 60, oneWindow, booked)).toBe(false)
   })
 
   it('handles multiple booked slots', () => {
@@ -238,9 +239,45 @@ describe('isSlotUnavailable', () => {
       { startTime: israelSlot(date, '10:00'), endTime: israelSlot(date, '11:00') },
       { startTime: israelSlot(date, '14:00'), endTime: israelSlot(date, '15:00') },
     ]
-    expect(isSlotUnavailable('10:00', date, 60, '18:00', booked)).toBe(true)
-    expect(isSlotUnavailable('13:00', date, 60, '18:00', booked)).toBe(false)
-    expect(isSlotUnavailable('14:30', date, 60, '18:00', booked)).toBe(true)
+    expect(isSlotUnavailable('10:00', date, 60, oneWindow, booked)).toBe(true)
+    expect(isSlotUnavailable('13:00', date, 60, oneWindow, booked)).toBe(false)
+    expect(isSlotUnavailable('14:30', date, 60, oneWindow, booked)).toBe(true)
+  })
+
+  it('is unavailable for a slot that does not fall inside any interval', () => {
+    expect(isSlotUnavailable('14:00', date, 30, [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }], [])).toBe(true)
+  })
+
+  describe('split-shift intervals — 09:00-13:00, 15:00-19:00, 60-minute service', () => {
+    const split = [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }]
+
+    it('12:00 is valid — fits entirely inside the first interval', () => {
+      expect(isSlotUnavailable('12:00', date, 60, split, [])).toBe(false)
+    })
+
+    it('12:30 is invalid — would cross past the first interval end', () => {
+      expect(isSlotUnavailable('12:30', date, 60, split, [])).toBe(true)
+    })
+
+    it('13:00 is invalid — falls in the gap, not inside any interval', () => {
+      expect(isSlotUnavailable('13:00', date, 60, split, [])).toBe(true)
+    })
+
+    it('13:30 is invalid — falls in the gap', () => {
+      expect(isSlotUnavailable('13:30', date, 60, split, [])).toBe(true)
+    })
+
+    it('14:00 is invalid — falls in the gap', () => {
+      expect(isSlotUnavailable('14:00', date, 60, split, [])).toBe(true)
+    })
+
+    it('14:30 is invalid — falls in the gap', () => {
+      expect(isSlotUnavailable('14:30', date, 60, split, [])).toBe(true)
+    })
+
+    it('15:00 is valid — start of the second interval', () => {
+      expect(isSlotUnavailable('15:00', date, 60, split, [])).toBe(false)
+    })
   })
 })
 
@@ -248,35 +285,30 @@ describe('computeDateAvailability', () => {
   const date = '2024-06-15'
 
   it('returns workingDay:false when no working hours provided', () => {
-    expect(computeDateAvailability(date, undefined, 60, [])).toEqual({ workingDay: false, fullyBooked: false })
-  })
-
-  it('returns workingDay:false when isActive is false', () => {
-    const hours = { startTime: '09:00', endTime: '18:00', isActive: false }
-    expect(computeDateAvailability(date, hours, 60, [])).toEqual({ workingDay: false, fullyBooked: false })
+    expect(computeDateAvailability(date, [], 60, [])).toEqual({ workingDay: false, fullyBooked: false })
   })
 
   it('returns workingDay:true and fullyBooked:false when no appointments', () => {
-    const hours = { startTime: '09:00', endTime: '18:00', isActive: true }
-    const result = computeDateAvailability(date, hours, 60, [])
+    const intervals = [{ start: '09:00', end: '18:00' }]
+    const result = computeDateAvailability(date, intervals, 60, [])
     expect(result.workingDay).toBe(true)
     expect(result.fullyBooked).toBe(false)
   })
 
   it('returns fullyBooked:true when all slots are taken', () => {
-    const hours = { startTime: '09:00', endTime: '10:00', isActive: true }
+    const intervals = [{ start: '09:00', end: '10:00' }]
     // Only slot is 09:00–10:00, which is fully booked
     const booked = [{ startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '10:00') }]
-    const result = computeDateAvailability(date, hours, 60, booked)
+    const result = computeDateAvailability(date, intervals, 60, booked)
     expect(result.workingDay).toBe(true)
     expect(result.fullyBooked).toBe(true)
   })
 
   it('returns fullyBooked:false when at least one slot is free', () => {
-    const hours = { startTime: '09:00', endTime: '11:00', isActive: true }
+    const intervals = [{ start: '09:00', end: '11:00' }]
     // 09:00 is booked but 10:00 is free
     const booked = [{ startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '10:00') }]
-    const result = computeDateAvailability(date, hours, 60, booked)
+    const result = computeDateAvailability(date, intervals, 60, booked)
     expect(result.workingDay).toBe(true)
     expect(result.fullyBooked).toBe(false)
   })
@@ -285,8 +317,17 @@ describe('computeDateAvailability', () => {
     // 09:00–11:00 = slots: 09:00, 09:30, 10:00, 10:30
     // with 90-min duration: 09:00 ok, 09:30 ok, 10:00 extends to 11:30 (over end) → unavailable
     // 09:30 extends to 11:00 → exactly at end → available
-    const hours = { startTime: '09:00', endTime: '11:00', isActive: true }
-    const result = computeDateAvailability(date, hours, 90, [])
+    const intervals = [{ start: '09:00', end: '11:00' }]
+    const result = computeDateAvailability(date, intervals, 90, [])
+    expect(result.workingDay).toBe(true)
+    expect(result.fullyBooked).toBe(false)
+  })
+
+  it('is fullyBooked:true (not workingDay:false) when the only free interval slots are all taken but another is off-hours', () => {
+    // Split shift: morning fully booked, afternoon has room — must report room, not fully booked.
+    const intervals = [{ start: '09:00', end: '10:00' }, { start: '15:00', end: '16:00' }]
+    const booked = [{ startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '10:00') }]
+    const result = computeDateAvailability(date, intervals, 60, booked)
     expect(result.workingDay).toBe(true)
     expect(result.fullyBooked).toBe(false)
   })
@@ -352,35 +393,36 @@ describe('findFirstAvailableSlot', () => {
   const date = '2024-06-15'
 
   it('returns null when no working hours provided', () => {
-    expect(findFirstAvailableSlot(date, undefined, 60, [])).toBeNull()
-  })
-
-  it('returns null when isActive is false', () => {
-    const hours = { startTime: '09:00', endTime: '18:00', isActive: false }
-    expect(findFirstAvailableSlot(date, hours, 60, [])).toBeNull()
+    expect(findFirstAvailableSlot(date, [], 60, [])).toBeNull()
   })
 
   it('returns the first slot of the day when nothing is booked', () => {
-    const hours = { startTime: '09:00', endTime: '18:00', isActive: true }
-    expect(findFirstAvailableSlot(date, hours, 60, [])).toBe('09:00')
+    const intervals = [{ start: '09:00', end: '18:00' }]
+    expect(findFirstAvailableSlot(date, intervals, 60, [])).toBe('09:00')
   })
 
   it('skips booked slots and returns the first free one', () => {
-    const hours = { startTime: '09:00', endTime: '12:00', isActive: true }
+    const intervals = [{ start: '09:00', end: '12:00' }]
     const booked = [{ startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '10:00') }]
-    expect(findFirstAvailableSlot(date, hours, 60, booked)).toBe('10:00')
+    expect(findFirstAvailableSlot(date, intervals, 60, booked)).toBe('10:00')
   })
 
   it('returns null when every slot is booked', () => {
-    const hours = { startTime: '09:00', endTime: '10:00', isActive: true }
+    const intervals = [{ start: '09:00', end: '10:00' }]
     const booked = [{ startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '10:00') }]
-    expect(findFirstAvailableSlot(date, hours, 60, booked)).toBeNull()
+    expect(findFirstAvailableSlot(date, intervals, 60, booked)).toBeNull()
   })
 
   it('skips already-elapsed slots when nowMinutes is given', () => {
-    const hours = { startTime: '09:00', endTime: '12:00', isActive: true }
+    const intervals = [{ start: '09:00', end: '12:00' }]
     // 09:00 and 09:30 have already passed (nowMinutes = 09:45)
-    expect(findFirstAvailableSlot(date, hours, 30, [], 9 * 60 + 45)).toBe('10:00')
+    expect(findFirstAvailableSlot(date, intervals, 30, [], 9 * 60 + 45)).toBe('10:00')
+  })
+
+  it('skips a fully-booked first interval and finds the next one', () => {
+    const intervals = [{ start: '09:00', end: '10:00' }, { start: '15:00', end: '19:00' }]
+    const booked = [{ startTime: israelSlot(date, '09:00'), endTime: israelSlot(date, '10:00') }]
+    expect(findFirstAvailableSlot(date, intervals, 60, booked)).toBe('15:00')
   })
 })
 
@@ -437,14 +479,14 @@ describe('findNextAvailableSlot', () => {
   it("returns today's first slot when today is a working day with room left", () => {
     jest.useFakeTimers()
     jest.setSystemTime(new Date('2026-06-10T05:00:00.000Z')) // ~08:00 Israel time, Wednesday (dayOfWeek 3) — before the day opens
-    const hours = new Map([[3, { startTime: '09:00', endTime: '18:00', isActive: true }]])
+    const hours = new Map([[3, { isActive: true, startTime: '09:00', endTime: '18:00' }]])
     const result = findNextAvailableSlot(hours, [], 60)
     expect(result).toEqual({ date: '2026-06-10', time: '09:00' })
   })
 
   it('skips to the next working day when today is fully booked', () => {
     // Only Thursday (dayOfWeek 4) is a working day, and it's entirely booked
-    const hours = new Map([[4, { startTime: '09:00', endTime: '10:00', isActive: true }]])
+    const hours = new Map([[4, { isActive: true, startTime: '09:00', endTime: '10:00' }]])
     jest.useFakeTimers()
     jest.setSystemTime(new Date('2026-06-11T06:00:00.000Z')) // Thursday morning Israel time
     const booked = [{ startTime: israelSlot('2026-06-11', '09:00'), endTime: israelSlot('2026-06-11', '10:00') }]
@@ -455,7 +497,7 @@ describe('findNextAvailableSlot', () => {
   })
 
   it('returns null when nothing is available within daysToSearch', () => {
-    const hours = new Map([[4, { startTime: '09:00', endTime: '10:00', isActive: true }]])
+    const hours = new Map([[4, { isActive: true, startTime: '09:00', endTime: '10:00' }]])
     jest.useFakeTimers()
     jest.setSystemTime(new Date('2026-06-11T06:00:00.000Z'))
     const booked = [{ startTime: israelSlot('2026-06-11', '09:00'), endTime: israelSlot('2026-06-11', '10:00') }]
@@ -464,12 +506,29 @@ describe('findNextAvailableSlot', () => {
   })
 
   it('excludes already-elapsed slots for today but still finds a later one today', () => {
-    const hours = new Map([[3, { startTime: '09:00', endTime: '18:00', isActive: true }]]) // Wednesday
+    const hours = new Map([[3, { isActive: true, startTime: '09:00', endTime: '18:00' }]]) // Wednesday
     jest.useFakeTimers()
     // 2026-06-10 is a Wednesday, set to 13:45 Israel time (10:45 UTC in summer) —
     // the 14:00 slot hasn't started yet, so it should still be offered.
     jest.setSystemTime(new Date('2026-06-10T10:45:00.000Z'))
     const result = findNextAvailableSlot(hours, [], 30)
     expect(result).toEqual({ date: '2026-06-10', time: '14:00' })
+  })
+
+  it('works from raw intervals[] data (new format) the same as legacy startTime/endTime', () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-06-10T05:00:00.000Z'))
+    const hours = new Map([[3, { isActive: true, intervals: [{ start: '09:00', end: '18:00' }] }]])
+    const result = findNextAvailableSlot(hours, [], 60)
+    expect(result).toEqual({ date: '2026-06-10', time: '09:00' })
+  })
+
+  it('finds an afternoon slot on a split-shift day when the morning is fully booked', () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-06-10T05:00:00.000Z'))
+    const hours = new Map([[3, { isActive: true, intervals: [{ start: '09:00', end: '10:00' }, { start: '15:00', end: '19:00' }] }]])
+    const booked = [{ startTime: israelSlot('2026-06-10', '09:00'), endTime: israelSlot('2026-06-10', '10:00') }]
+    const result = findNextAvailableSlot(hours, booked, 60)
+    expect(result).toEqual({ date: '2026-06-10', time: '15:00' })
   })
 })

@@ -4,8 +4,9 @@ import { COLLECTIONS } from '@/lib/firebase/collections'
 import { z } from 'zod'
 import { FieldValue, Timestamp, type Firestore, type DocumentReference } from 'firebase-admin/firestore'
 import { sendAppointmentRequest, sendReviewRequestEmail, sendCancellationEmail } from '@/lib/email'
-import { addDays, generateSlots, getDayOfWeek, israelDateTimeParts, israelWallClockToUtc, todayInIsrael } from '@/lib/booking-utils'
-import { availabilityOverrideDocumentId, resolveAvailabilityHours, type AvailabilityOverride } from '@/lib/holiday-availability'
+import { addDays, generateSlotsForIntervals, getDayOfWeek, isSlotUnavailable, israelDateTimeParts, israelWallClockToUtc, todayInIsrael } from '@/lib/booking-utils'
+import { availabilityOverrideDocumentId, resolveAvailabilityIntervals, type AvailabilityOverride } from '@/lib/holiday-availability'
+import type { RawDayAvailability } from '@/lib/availability-intervals'
 import { randomUUID } from 'crypto'
 
 // Firestore batched writes cap at 500 operations — split larger update sets into chunks.
@@ -99,10 +100,8 @@ export async function POST(request: NextRequest) {
     ])
     const weeklyHours = hoursSnap.docs
       .map((doc) => doc.data())
-      .find((item) => item.dayOfWeek === getDayOfWeek(bookingDate) && item.isActive) as
-      | { startTime: string; endTime: string; isActive: boolean }
-      | undefined
-    const hours = resolveAvailabilityHours(
+      .find((item) => item.dayOfWeek === getDayOfWeek(bookingDate)) as RawDayAvailability | undefined
+    const intervals = resolveAvailabilityIntervals(
       bookingDate,
       weeklyHours,
       nailistSnap.data()?.autoCloseHolidays,
@@ -110,14 +109,16 @@ export async function POST(request: NextRequest) {
     )
     const expectedStart = israelWallClockToUtc(bookingDate, bookingTime)
     if (
-      !hours ||
       expectedStart.getTime() !== startTime.getTime() ||
-      !generateSlots(hours.startTime, hours.endTime).includes(bookingTime)
+      !generateSlotsForIntervals(intervals).includes(bookingTime)
     ) {
       return NextResponse.json({ error: 'Time slot not available' }, { status: 409 })
     }
     const endTime = new Date(startTime.getTime() + service.durationMinutes * 60 * 1000)
-    if (endTime > israelWallClockToUtc(bookingDate, hours.endTime)) {
+    // The service must fit entirely inside the interval bookingTime starts
+    // in — it can never be offered a start whose duration would carry it
+    // across the gap into a later interval, even one on the same day.
+    if (isSlotUnavailable(bookingTime, bookingDate, service.durationMinutes, intervals, [])) {
       return NextResponse.json({ error: 'Time slot not available' }, { status: 409 })
     }
 
@@ -199,10 +200,8 @@ export async function POST(request: NextRequest) {
         ])
         const transactionWeeklyHours = transactionHoursSnap.docs
           .map((doc) => doc.data())
-          .find((item) => item.dayOfWeek === getDayOfWeek(bookingDate) && item.isActive) as
-          | { startTime: string; endTime: string; isActive: boolean }
-          | undefined
-        const transactionHours = resolveAvailabilityHours(
+          .find((item) => item.dayOfWeek === getDayOfWeek(bookingDate)) as RawDayAvailability | undefined
+        const transactionIntervals = resolveAvailabilityIntervals(
           bookingDate,
           transactionWeeklyHours,
           transactionNailistSnap.data()?.autoCloseHolidays,
@@ -211,9 +210,8 @@ export async function POST(request: NextRequest) {
         if (
           !transactionNailistSnap.exists ||
           transactionNailistSnap.data()?.isActive === false ||
-          !transactionHours ||
-          !generateSlots(transactionHours.startTime, transactionHours.endTime).includes(bookingTime) ||
-          endTime > israelWallClockToUtc(bookingDate, transactionHours.endTime)
+          !generateSlotsForIntervals(transactionIntervals).includes(bookingTime) ||
+          isSlotUnavailable(bookingTime, bookingDate, service.durationMinutes, transactionIntervals, [])
         ) {
           throw new Error('UNAVAILABLE')
         }

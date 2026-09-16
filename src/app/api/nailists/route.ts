@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { isAuthenticatedRequest, computeHasContactInfo, stripNailistContactFields } from '@/lib/nailist-contact'
-import { findNextAvailableSlot, computeDateAvailability, getDayOfWeek, israelNow, type WorkingHours, type BookedSlot } from '@/lib/booking-utils'
-import { resolveAvailabilityHours, type AvailabilityOverride } from '@/lib/holiday-availability'
+import { findNextAvailableSlot, computeDateAvailability, getDayOfWeek, israelNow, type BookedSlot } from '@/lib/booking-utils'
+import { resolveAvailabilityIntervals, type AvailabilityOverride } from '@/lib/holiday-availability'
+import type { RawDayAvailability } from '@/lib/availability-intervals'
 
 import { geohashQueryBounds, distanceBetween } from 'geofire-common'
 import { FieldPath, type Firestore } from 'firebase-admin/firestore'
@@ -84,7 +85,7 @@ async function attachAvailability(
   const ids = nailists.map((n) => n.id as string).filter(Boolean)
   if (ids.length === 0) return
 
-  const workingHoursMap: Record<string, Map<number, WorkingHours>> = {}
+  const workingHoursMap: Record<string, Map<number, RawDayAvailability>> = {}
   const appointmentsMap: Record<string, BookedSlot[]> = {}
   const overridesMap: Record<string, Map<string, AvailabilityOverride>> = {}
 
@@ -107,6 +108,7 @@ async function attachAvailability(
         workingHoursMap[nailistProfileId].set(d.dayOfWeek as number, {
           startTime: d.startTime as string,
           endTime: d.endTime as string,
+          intervals: d.intervals as RawDayAvailability['intervals'],
           isActive: d.isActive as boolean,
         })
       })
@@ -135,7 +137,7 @@ async function attachAvailability(
     const workingHours = workingHoursMap[id] ?? new Map()
     const appointments = appointmentsMap[id] ?? []
     const overrides = overridesMap[id] ?? new Map()
-    const resolveHours = (dateStr: string, weeklyHours: WorkingHours | undefined) => resolveAvailabilityHours(
+    const resolveHours = (dateStr: string, weeklyHours: RawDayAvailability | undefined) => resolveAvailabilityIntervals(
       dateStr, weeklyHours, n.autoCloseHolidays as boolean | undefined, overrides.get(dateStr),
     )
     n.nextAvailableSlot = findNextAvailableSlot(workingHours, appointments, DEFAULT_SLOT_DURATION_MINUTES, 14, resolveHours)

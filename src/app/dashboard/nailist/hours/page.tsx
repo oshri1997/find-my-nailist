@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, Loader2, AlertCircle, Clock, CopyCheck } from 'lucide-react'
+import { CheckCircle2, Loader2, AlertCircle, Clock, CopyCheck, Plus, X } from 'lucide-react'
 import { addDays, todayInIsrael } from '@/lib/booking-utils'
 import { getIsraeliChag } from '@/lib/holiday-availability'
+import { validateIntervals, type TimeInterval } from '@/lib/availability-intervals'
 import { useInvalidateNailistProfile, useNailistProfile } from '@/lib/hooks/use-nailist-profile'
 
 const DAYS = [
@@ -29,12 +30,12 @@ for (let h = 7; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:00`)
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
 }
+const LAST_TIME_OPTION = TIME_OPTIONS[TIME_OPTIONS.length - 1]
 
 interface DayHours {
   dayOfWeek: number
   isActive: boolean
-  startTime: string
-  endTime: string
+  intervals: TimeInterval[]
 }
 
 interface DateOverride {
@@ -42,14 +43,71 @@ interface DateOverride {
   mode: 'OPEN' | 'CLOSED'
   startTime?: string
   endTime?: string
+  intervals?: TimeInterval[]
+}
+
+// Server payload shape for a working-hours day: intervals[] is the source of
+// truth going forward; startTime/endTime stay a best-effort legacy mirror
+// (the single window when there's exactly one interval, or the enclosing
+// span of the whole day otherwise) for old-client/rollback compatibility —
+// see the API route and availability-intervals.ts for the full precedence.
+interface WorkingHoursPayloadItem {
+  dayOfWeek: number
+  isActive: boolean
+  startTime: string
+  endTime: string
+  intervals: TimeInterval[]
 }
 
 const DEFAULT_HOURS: DayHours[] = DAYS.map(({ day }) => ({
   dayOfWeek: day,
   isActive: day <= 4,
-  startTime: '09:00',
-  endTime: '19:00',
+  intervals: [{ start: '09:00', end: '19:00' }],
 }))
+
+// Fetched working-hours docs may still be in the legacy shape (no intervals
+// field, or an empty one) — fall back to the startTime/endTime pair exactly
+// like normalizeDayAvailability does, except a malformed/missing legacy pair
+// falls back to a single default window rather than an empty list, since the
+// editor always needs at least one row to show and edit (even for a
+// currently-closed day, so her previously-configured hours aren't lost the
+// moment she re-opens it — matching the pre-existing behavior of keeping
+// stale startTime/endTime around while isActive is false).
+function intervalsFromFetched(fetched: { startTime?: string; endTime?: string; intervals?: TimeInterval[] }): TimeInterval[] {
+  if (Array.isArray(fetched.intervals) && fetched.intervals.length > 0 && !validateIntervals(fetched.intervals)) {
+    return fetched.intervals
+  }
+  if (fetched.startTime && fetched.endTime && fetched.startTime < fetched.endTime) {
+    return [{ start: fetched.startTime, end: fetched.endTime }]
+  }
+  return [{ start: '09:00', end: '19:00' }]
+}
+
+function toWorkingHoursPayload(h: DayHours): WorkingHoursPayloadItem {
+  return {
+    dayOfWeek: h.dayOfWeek,
+    isActive: h.isActive,
+    startTime: h.intervals[0]?.start ?? '09:00',
+    endTime: h.intervals[h.intervals.length - 1]?.end ?? '19:00',
+    intervals: h.intervals,
+  }
+}
+
+function overrideIntervals(o: DateOverride): TimeInterval[] {
+  if (o.intervals && o.intervals.length > 0) return o.intervals
+  return [{ start: o.startTime ?? '09:00', end: o.endTime ?? '19:00' }]
+}
+
+// Mirrors toWorkingHoursPayload's precedence for a date override: intervals
+// only travels on the wire when there's more than one window, so a plain
+// single-window override keeps sending the exact legacy {date, mode,
+// startTime, endTime} shape unchanged.
+function buildOverridePayload(override: DateOverride): Record<string, unknown> {
+  if (override.mode === 'CLOSED') return { date: override.date, mode: 'CLOSED' }
+  const list = overrideIntervals(override)
+  const base = { date: override.date, mode: 'OPEN', startTime: list[0].start, endTime: list[list.length - 1].end }
+  return list.length > 1 ? { ...base, intervals: list } : base
+}
 
 function formatHolidayDate(date: string): string {
   const [year, month, day] = date.split('-')
@@ -70,6 +128,18 @@ function TimeSelect({ value, onChange, min, max, label }: { value: string; onCha
       {options.map(t => <option key={t} value={t}>{t}</option>)}
     </select>
   )
+}
+
+// Bumps a start time forward past its own end time to the next available
+// grid option, exactly like the previous single-window editor did — shared
+// by the per-day interval editor, the bulk "uniform hours" control and the
+// date-override editor so all three auto-bump identically.
+function bumpedInterval(interval: TimeInterval, field: 'start' | 'end', value: string): TimeInterval {
+  if (field === 'start' && value >= interval.end) {
+    const next = TIME_OPTIONS.find(t => t > value)
+    return { start: value, end: next ?? value }
+  }
+  return { ...interval, [field]: value }
 }
 
 export default function WorkingHoursPage() {
@@ -95,8 +165,10 @@ export default function WorkingHoursPage() {
       if (hoursRes.ok) {
         const { data } = await hoursRes.json()
         if (data?.length) setHours((prev) => prev.map((def) => {
-          const fetched = (data as DayHours[]).find((d) => d.dayOfWeek === def.dayOfWeek)
-          return fetched ? { ...def, ...fetched } : def
+          const fetched = (data as Array<{ dayOfWeek: number; isActive: boolean; startTime?: string; endTime?: string; intervals?: TimeInterval[] }>)
+            .find((d) => d.dayOfWeek === def.dayOfWeek)
+          if (!fetched) return def
+          return { dayOfWeek: def.dayOfWeek, isActive: fetched.isActive, intervals: intervalsFromFetched(fetched) }
         }))
       }
       if (overridesRes.ok) {
@@ -134,7 +206,7 @@ export default function WorkingHoursPage() {
       const res = await fetch(override ? '/api/availability-overrides' : `/api/availability-overrides?date=${date}`, {
         method: override ? 'PUT' : 'DELETE',
         headers: override ? { 'Content-Type': 'application/json' } : undefined,
-        body: override ? JSON.stringify(override) : undefined,
+        body: override ? JSON.stringify(buildOverridePayload(override)) : undefined,
       })
       if (!res.ok) throw new Error()
       setOverrides(prev => {
@@ -148,28 +220,62 @@ export default function WorkingHoursPage() {
     } finally { setSavingHoliday(null) }
   }
 
-  function setOverrideStart(date: string, override: DateOverride, startTime: string) {
-    const currentEnd = override.endTime ?? '19:00'
-    const endTime = startTime >= currentEnd
-      ? TIME_OPTIONS.find((time) => time > startTime) ?? currentEnd
-      : currentEnd
-    setOverrides(prev => ({ ...prev, [date]: { ...override, date, mode: 'OPEN', startTime, endTime } }))
+  function setOverrideIntervalTime(date: string, idx: number, field: 'start' | 'end', value: string) {
+    setOverrides(prev => {
+      const current = prev[date]
+      if (!current) return prev
+      const list = overrideIntervals(current).map((iv, i) => i === idx ? bumpedInterval(iv, field, value) : iv)
+      return { ...prev, [date]: { date, mode: 'OPEN', intervals: list } }
+    })
+  }
+
+  function addOverrideInterval(date: string) {
+    setOverrides(prev => {
+      const current = prev[date]
+      if (!current) return prev
+      const list = overrideIntervals(current)
+      const last = list[list.length - 1]
+      const newStart = last.end
+      const newEnd = TIME_OPTIONS.find(t => t > newStart) ?? newStart
+      return { ...prev, [date]: { date, mode: 'OPEN', intervals: [...list, { start: newStart, end: newEnd }] } }
+    })
+  }
+
+  function removeOverrideInterval(date: string, idx: number) {
+    setOverrides(prev => {
+      const current = prev[date]
+      if (!current) return prev
+      const list = overrideIntervals(current).filter((_, i) => i !== idx)
+      if (list.length === 0) return prev
+      return { ...prev, [date]: { date, mode: 'OPEN', intervals: list } }
+    })
   }
 
   function toggle(day: number) {
     setHours(prev => prev.map(h => h.dayOfWeek === day ? { ...h, isActive: !h.isActive } : h))
   }
 
-  function setTime(day: number, field: 'startTime' | 'endTime', value: string) {
+  function setIntervalTime(day: number, idx: number, field: 'start' | 'end', value: string) {
     setHours(prev => prev.map(h => {
       if (h.dayOfWeek !== day) return h
-      if (field === 'startTime' && value >= h.endTime) {
-        // Pushing startTime past (or equal to) the current endTime would leave
-        // an invalid backwards range — bump endTime to the next available slot.
-        const next = TIME_OPTIONS.find(t => t > value)
-        return { ...h, startTime: value, endTime: next ?? value }
-      }
-      return { ...h, [field]: value }
+      return { ...h, intervals: h.intervals.map((iv, i) => i === idx ? bumpedInterval(iv, field, value) : iv) }
+    }))
+  }
+
+  function addInterval(day: number) {
+    setHours(prev => prev.map(h => {
+      if (h.dayOfWeek !== day) return h
+      const last = h.intervals[h.intervals.length - 1]
+      const newStart = last?.end ?? '09:00'
+      const newEnd = TIME_OPTIONS.find(t => t > newStart) ?? newStart
+      return { ...h, intervals: [...h.intervals, { start: newStart, end: newEnd }] }
+    }))
+  }
+
+  function removeInterval(day: number, idx: number) {
+    setHours(prev => prev.map(h => {
+      if (h.dayOfWeek !== day || h.intervals.length <= 1) return h
+      return { ...h, intervals: h.intervals.filter((_, i) => i !== idx) }
     }))
   }
 
@@ -185,27 +291,41 @@ export default function WorkingHoursPage() {
   }
 
   function applyBulkTimes() {
-    setHours(prev => prev.map(h => ({ ...h, startTime: bulkStart, endTime: bulkEnd })))
+    // A quick uniform preset always resets every day to one plain window —
+    // it's the "start over simply" action, not a merge with split shifts.
+    setHours(prev => prev.map(h => ({ ...h, intervals: [{ start: bulkStart, end: bulkEnd }] })))
   }
 
   function applyPreset(preset: typeof PRESETS[0]) {
     setHours(prev => prev.map(h => ({
       ...h,
       isActive: preset.days.includes(h.dayOfWeek),
-      startTime: preset.days.includes(h.dayOfWeek) ? preset.start : h.startTime,
-      endTime: preset.days.includes(h.dayOfWeek) ? preset.end : h.endTime,
+      intervals: preset.days.includes(h.dayOfWeek) ? [{ start: preset.start, end: preset.end }] : h.intervals,
     })))
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    // Server-side validation is authoritative, but check client-side first
+    // so a mistake shows up immediately instead of after a round trip.
+    for (const h of hours) {
+      if (!h.isActive) continue
+      const validationError = validateIntervals(h.intervals)
+      if (validationError) {
+        const dayLabel = DAYS.find((d) => d.day === h.dayOfWeek)?.label ?? ''
+        setError(`יום ${dayLabel}: ${validationError}`)
+        return
+      }
+    }
+
     setSaving(true)
     try {
       const res = await fetch('/api/working-hours', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hours }),
+        body: JSON.stringify({ hours: hours.map(toWorkingHoursPayload) }),
       })
       if (!res.ok) throw new Error()
       setSaved(true)
@@ -254,14 +374,47 @@ export default function WorkingHoursPage() {
             const override = overrides[holiday.date]
             const open = override?.mode === 'OPEN'
             const displayDate = formatHolidayDate(holiday.date)
+            const intervals = open ? overrideIntervals(override) : []
             return <div key={holiday.date} className="rounded-xl bg-card border border-border p-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-bold">{holiday.name} · {displayDate}</span>
                 <span className="text-xs text-muted-foreground">{override?.mode === 'CLOSED' ? 'סגור ידנית' : open ? 'פתוח בחריגה' : autoCloseHolidays ? 'סגור אוטומטית' : 'לפי שעות שבועיות'}</span>
               </div>
-              {open && <div className="flex gap-2 mt-2">
-                <TimeSelect value={override.startTime ?? '09:00'} onChange={v => setOverrideStart(holiday.date, override, v)} max="23:00" label={`שעת פתיחה חריגה ${displayDate}`} />
-                <TimeSelect value={override.endTime ?? '19:00'} onChange={v => setOverrides(prev => ({ ...prev, [holiday.date]: { ...override, date: holiday.date, mode: 'OPEN', startTime: override.startTime ?? '09:00', endTime: v } }))} min={override.startTime ?? '09:00'} label={`שעת סיום חריגה ${displayDate}`} />
+              {open && <div className="mt-2 space-y-2">
+                {intervals.map((iv, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <TimeSelect
+                      value={iv.start}
+                      onChange={v => setOverrideIntervalTime(holiday.date, idx, 'start', v)}
+                      max="23:00"
+                      label={idx === 0 ? `שעת פתיחה חריגה ${displayDate}` : `שעת פתיחה חריגה ${displayDate} - חלון ${idx + 1}`}
+                    />
+                    <span className="text-muted-foreground/40 font-bold text-sm">—</span>
+                    <TimeSelect
+                      value={iv.end}
+                      onChange={v => setOverrideIntervalTime(holiday.date, idx, 'end', v)}
+                      min={iv.start}
+                      label={idx === 0 ? `שעת סיום חריגה ${displayDate}` : `שעת סיום חריגה ${displayDate} - חלון ${idx + 1}`}
+                    />
+                    {intervals.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeOverrideInterval(holiday.date, idx)}
+                        aria-label={`מחיקת חלון שעות ${idx + 1} — ${displayDate}`}
+                        className="w-7 h-7 flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted transition-colors"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => addOverrideInterval(holiday.date)}
+                  className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                >
+                  <Plus className="h-3 w-3" /> הוספת שעות
+                </button>
               </div>}
               <div className="flex gap-2 mt-2 flex-wrap">
                 {open ? <Button type="button" size="sm" disabled={savingHoliday === holiday.date} onClick={() => saveOverride(overrides[holiday.date], holiday.date)}>שמרי שעות</Button> : <Button type="button" size="sm" variant="outline" disabled={savingHoliday === holiday.date} onClick={() => saveOverride({ date: holiday.date, mode: 'OPEN', startTime: '09:00', endTime: '19:00' }, holiday.date)}>פתיחה ביום הזה</Button>}
@@ -301,7 +454,7 @@ export default function WorkingHoursPage() {
             שעה אחידה לכל הימים
           </p>
           <div className="flex items-center gap-2 flex-wrap">
-            <TimeSelect value={bulkStart} onChange={setBulkStartTime} max={TIME_OPTIONS[TIME_OPTIONS.length - 1]} label="שעת התחלה כללית" />
+            <TimeSelect value={bulkStart} onChange={setBulkStartTime} max={LAST_TIME_OPTION} label="שעת התחלה כללית" />
             <span className="text-muted-foreground/40 font-bold text-sm">—</span>
             <TimeSelect value={bulkEnd} onChange={setBulkEnd} min={bulkStart} label="שעת סיום כללית" />
             <Button
@@ -339,6 +492,11 @@ export default function WorkingHoursPage() {
         <div className="space-y-2">
           {DAYS.map(({ day, label, weekend }, i) => {
             const h = hours.find((x) => x.dayOfWeek === day)!
+            const totalMinutes = h.intervals.reduce((sum, iv) => {
+              const [sh, sm] = iv.start.split(':').map(Number)
+              const [eh, em] = iv.end.split(':').map(Number)
+              return sum + ((eh * 60 + em) - (sh * 60 + sm))
+            }, 0)
             return (
               <motion.div
                 key={day}
@@ -353,13 +511,13 @@ export default function WorkingHoursPage() {
                     : 'bg-muted/50 border-border'
                 }`}
               >
-                <div className="flex items-center gap-3 p-3.5">
+                <div className="flex items-start gap-3 p-3.5">
                   {/* Toggle */}
                   <button
                     type="button"
                     dir="ltr"
                     onClick={() => toggle(day)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none mt-0.5 ${
                       h.isActive
                         ? weekend ? 'bg-primary/70' : 'bg-primary'
                         : 'bg-muted'
@@ -369,7 +527,7 @@ export default function WorkingHoursPage() {
                   </button>
 
                   {/* Day name */}
-                  <span className={`w-14 text-sm font-black shrink-0 ${
+                  <span className={`w-14 text-sm font-black shrink-0 mt-1 ${
                     h.isActive
                       ? weekend ? 'text-primary' : 'text-foreground'
                       : 'text-muted-foreground'
@@ -379,20 +537,39 @@ export default function WorkingHoursPage() {
 
                   {/* Times or closed label */}
                   {h.isActive ? (
-                    <div className="flex items-center gap-2 flex-1">
-                      <TimeSelect value={h.startTime} onChange={v => setTime(day, 'startTime', v)} max={TIME_OPTIONS[TIME_OPTIONS.length - 1]} />
-                      <span className="text-muted-foreground/40 font-bold text-sm">—</span>
-                      <TimeSelect value={h.endTime} onChange={v => setTime(day, 'endTime', v)} min={h.startTime} />
-                      <span className="text-xs text-muted-foreground font-medium hidden sm:block">
-                        ({Math.round(((() => {
-                          const [eh, em] = h.endTime.split(':').map(Number)
-                          const [sh, sm] = h.startTime.split(':').map(Number)
-                          return (eh * 60 + em) - (sh * 60 + sm)
-                        })()) / 60 * 10) / 10} ש׳)
-                      </span>
+                    <div className="flex-1 space-y-2">
+                      {h.intervals.map((iv, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <TimeSelect value={iv.start} onChange={v => setIntervalTime(day, idx, 'start', v)} max={LAST_TIME_OPTION} />
+                          <span className="text-muted-foreground/40 font-bold text-sm">—</span>
+                          <TimeSelect value={iv.end} onChange={v => setIntervalTime(day, idx, 'end', v)} min={iv.start} />
+                          {h.intervals.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeInterval(day, idx)}
+                              aria-label={`מחיקת חלון שעות ${idx + 1} — ${label}`}
+                              className="w-7 h-7 flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted transition-colors"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          {idx === h.intervals.length - 1 && (
+                            <span className="text-xs text-muted-foreground font-medium hidden sm:block">
+                              ({Math.round(totalMinutes / 60 * 10) / 10} ש׳)
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => addInterval(day)}
+                        className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                      >
+                        <Plus className="h-3 w-3" /> הוספת שעות
+                      </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 text-muted-foreground flex-1">
+                    <div className="flex items-center gap-1.5 text-muted-foreground flex-1 mt-1">
                       <span className="text-sm font-medium">סגור</span>
                     </div>
                   )}

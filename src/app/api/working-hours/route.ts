@@ -3,9 +3,20 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { FieldValue } from 'firebase-admin/firestore'
 import { z } from 'zod'
+import { validateIntervals } from '@/lib/availability-intervals'
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
 
+const timeIntervalSchema = z.object({
+  start: z.string().regex(TIME_RE, 'Invalid time format (expected HH:MM)'),
+  end: z.string().regex(TIME_RE, 'Invalid time format (expected HH:MM)'),
+})
+
+// startTime/endTime stay required for backward compatibility (legacy
+// clients, and a best-effort rollback-safety mirror the UI keeps writing
+// alongside intervals — see WorkingHoursDoc). When `intervals` is present
+// and non-empty it is the source of truth and is validated on its own
+// terms; startTime/endTime are otherwise validated exactly as before.
 const hoursSchema = z.object({
   hours: z.array(
     z.object({
@@ -13,8 +24,17 @@ const hoursSchema = z.object({
       isActive: z.boolean(),
       startTime: z.string().regex(TIME_RE, 'Invalid time format (expected HH:MM)'),
       endTime: z.string().regex(TIME_RE, 'Invalid time format (expected HH:MM)'),
-    }).refine((h) => !h.isActive || h.startTime < h.endTime, {
-      message: 'startTime must be before endTime on an active working day',
+      intervals: z.array(timeIntervalSchema).optional(),
+    }).superRefine((h, ctx) => {
+      if (!h.isActive) return
+      if (h.intervals && h.intervals.length > 0) {
+        const error = validateIntervals(h.intervals)
+        if (error) ctx.addIssue({ code: 'custom', message: error, path: ['intervals'] })
+        return
+      }
+      if (h.startTime >= h.endTime) {
+        ctx.addIssue({ code: 'custom', message: 'startTime must be before endTime on an active working day' })
+      }
     })
   ),
 })
@@ -66,13 +86,30 @@ export async function PUT(request: NextRequest) {
 
     const existingByDay = new Map(snap.docs.map((d) => [d.data().dayOfWeek as number, d.ref]))
 
-    for (const h of hours) {
+    for (const { intervals, ...h } of hours) {
+      const hasIntervals = !!intervals && intervals.length > 0
       const existing = existingByDay.get(h.dayOfWeek)
       if (existing) {
-        batch.update(existing, { ...h, updatedAt: now })
+        // A save always fully replaces this day's shape. Writing intervals
+        // as FieldValue.delete() when the caller didn't send a (non-empty)
+        // one prevents a stale intervals[] from a previous save silently
+        // outliving this update and continuing to win under the
+        // normalization precedence (intervals[] > legacy startTime/
+        // endTime) — there must never be two saved shapes for the same day
+        // disagreeing with each other. update() (not a full overwrite)
+        // leaves every other field on the doc untouched.
+        batch.update(existing, { ...h, intervals: hasIntervals ? intervals : FieldValue.delete(), updatedAt: now })
       } else {
-        const ref = db.collection(COLLECTIONS.WORKING_HOURS).doc()
-        batch.set(ref, { nailistProfileId: profileId, ...h, createdAt: now, updatedAt: now })
+        // A brand-new doc has no stale intervals to clear — FieldValue.delete()
+        // is only valid inside update()/merge-set(), so simply omit the key.
+        const newRef = db.collection(COLLECTIONS.WORKING_HOURS).doc()
+        batch.set(newRef, {
+          nailistProfileId: profileId,
+          ...h,
+          ...(hasIntervals ? { intervals } : {}),
+          createdAt: now,
+          updatedAt: now,
+        })
       }
     }
 

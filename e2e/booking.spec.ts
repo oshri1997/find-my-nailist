@@ -107,7 +107,7 @@ test.describe.serial('Booking modal (real session)', () => {
       route.fulfill({ json: { data: {} } })
     )
     await page.route(/\/api\/nailists\/n1\/availability\?/, route =>
-      route.fulfill({ json: { data: { workingDay: true, startTime: '08:00', endTime: '18:00', bookedSlots: [] } } })
+      route.fulfill({ json: { data: { workingDay: true, intervals: [{ start: '08:00', end: '18:00' }], startTime: '08:00', endTime: '18:00', bookedSlots: [] } } })
     )
   })
 

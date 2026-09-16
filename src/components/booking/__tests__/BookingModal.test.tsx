@@ -19,8 +19,7 @@ global.fetch = mockFetch
 
 const mockAvailability = {
   workingDay: true,
-  startTime: '08:00',
-  endTime: '18:00',
+  intervals: [{ start: '08:00', end: '18:00' }],
   bookedSlots: [],
 }
 
@@ -126,6 +125,41 @@ describe('BookingModal', () => {
     fireEvent.click(dateButtons[0])
     await waitFor(() => expect(screen.getByText('08:00')).toBeInTheDocument())
     expect(screen.getByText('09:00')).toBeInTheDocument()
+  })
+
+  it('shows slots from both windows of a split-shift day and hides the break between them', async () => {
+    render(<BookingModal {...defaultProps} />)
+    await navigateToStep2("מניקור ג'ל") // 60-minute service
+
+    const dateButtons = await getEnabledDateButtons()
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        data: {
+          workingDay: true,
+          intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }],
+          bookedSlots: [],
+        },
+      }),
+    })
+    fireEvent.click(dateButtons[0])
+
+    await waitFor(() => expect(screen.getByText('09:00')).toBeInTheDocument())
+    // 12:00 fits entirely inside the first window (12:00-13:00) — bookable.
+    expect(screen.getByText('12:00').closest('button')).not.toBeDisabled()
+    // 12:30 is still a 30-min-grid slot start inside the first window, but a
+    // 60-minute service booked there would cross into the 13:00-15:00 break
+    // — shown, but disabled, never a valid pick.
+    expect(screen.getByText('12:30').closest('button')).toBeDisabled()
+    // 13:00-14:30 fall entirely inside the break, not inside any interval —
+    // never generated as slot starts at all.
+    expect(screen.queryByText('13:00')).not.toBeInTheDocument()
+    expect(screen.queryByText('13:30')).not.toBeInTheDocument()
+    expect(screen.queryByText('14:00')).not.toBeInTheDocument()
+    expect(screen.queryByText('14:30')).not.toBeInTheDocument()
+    // 15:00 is the first slot of the second window — bookable again.
+    expect(screen.getByText('15:00').closest('button')).not.toBeDisabled()
   })
 
   it('shows service name and price in confirmation step', async () => {
@@ -243,8 +277,7 @@ describe('BookingModal', () => {
       json: async () => ({
         data: {
           workingDay: true,
-          startTime: '08:00',
-          endTime: '18:00',
+          intervals: [{ start: '08:00', end: '18:00' }],
           // 60-minute booking at 09:00 ends exactly where this appointment
           // starts — consolidates the schedule instead of fragmenting it.
           bookedSlots: [{

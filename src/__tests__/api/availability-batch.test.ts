@@ -200,6 +200,44 @@ describe('GET /api/nailists/[id]/availability/batch', () => {
     expect(json.data['2026-07-06'].fullyBooked).toBe(false)
   })
 
+  it('reports fullyBooked: false on a split-shift day when the morning is full but the afternoon has room', async () => {
+    collectionStore['workingHours'] = [
+      {
+        __id: 'wh-1', nailistProfileId: 'nailist-1', dayOfWeek: 1, isActive: true,
+        startTime: '09:00', endTime: '19:00',
+        intervals: [{ start: '09:00', end: '10:00' }, { start: '15:00', end: '16:00' }],
+      },
+    ]
+    collectionStore['appointments'] = [
+      {
+        __id: 'apt-1',
+        nailistProfileId: 'nailist-1',
+        status: 'CONFIRMED',
+        startTime: { toDate: () => israelWallClockToUtc('2026-07-06', '09:00') },
+        endTime: { toDate: () => israelWallClockToUtc('2026-07-06', '10:00') },
+      },
+    ]
+    const [req, ctx] = makeRequest('nailist-1', { from: '2026-07-06', days: '1', durationMinutes: '60' })
+    const json = await (await GET(req, ctx)).json()
+    expect(json.data['2026-07-06']).toEqual({ workingDay: true, fullyBooked: false })
+  })
+
+  it('reports workingDay: false for a split-shift day fully replaced by a CLOSED override', async () => {
+    collectionStore['workingHours'] = [
+      {
+        __id: 'wh-1', nailistProfileId: 'nailist-1', dayOfWeek: 1, isActive: true,
+        intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }],
+        startTime: '09:00', endTime: '19:00',
+      },
+    ]
+    collectionStore['availabilityOverrides'] = [
+      { __id: 'nailist-1_2026-07-06', nailistProfileId: 'nailist-1', date: '2026-07-06', mode: 'CLOSED' },
+    ]
+    const [req, ctx] = makeRequest('nailist-1', { from: '2026-07-06', days: '1' })
+    const json = await (await GET(req, ctx)).json()
+    expect(json.data['2026-07-06']).toEqual({ workingDay: false, fullyBooked: false })
+  })
+
   it('returns consecutive date keys starting from the from date', async () => {
     const [req, ctx] = makeRequest('nailist-1', { from: '2026-07-01', days: '3' })
     const res = await GET(req, ctx)

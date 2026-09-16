@@ -221,4 +221,46 @@ describe('GET /api/nailists/[id]/availability', () => {
     const json = await res.json()
     expect(json.data.bookedSlots).toHaveLength(2)
   })
+
+  it('returns intervals[] for a split-shift day, plus a best-effort legacy span', async () => {
+    collectionStore['workingHours'] = [
+      {
+        __id: 'wh-1', nailistProfileId: 'nailist-1', dayOfWeek: 1, isActive: true,
+        startTime: '09:00', endTime: '19:00',
+        intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }],
+      },
+    ]
+    const [req, ctx] = makeRequest('nailist-1', '2026-07-06')
+    const res = await GET(req, ctx)
+    const json = await res.json()
+    expect(json.data.workingDay).toBe(true)
+    expect(json.data.intervals).toEqual([{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }])
+    // Legacy mirror spans the whole day (first start to last end) — display
+    // fallback only, never trusted for booking validation.
+    expect(json.data.startTime).toBe('09:00')
+    expect(json.data.endTime).toBe('19:00')
+  })
+
+  it('a single-interval new-format day returns the exact same intervals/startTime/endTime as legacy', async () => {
+    collectionStore['workingHours'] = [
+      { __id: 'wh-1', nailistProfileId: 'nailist-1', dayOfWeek: 1, isActive: true, startTime: '09:00', endTime: '18:00', intervals: [{ start: '09:00', end: '18:00' }] },
+    ]
+    const [req, ctx] = makeRequest('nailist-1', '2026-07-06')
+    const json = await (await GET(req, ctx)).json()
+    expect(json.data.intervals).toEqual([{ start: '09:00', end: '18:00' }])
+    expect(json.data.startTime).toBe('09:00')
+    expect(json.data.endTime).toBe('18:00')
+  })
+
+  it('supports a multi-interval date override', async () => {
+    collectionStore['nailistProfiles'] = [{ __id: 'nailist-1', autoCloseHolidays: false }]
+    collectionStore['availabilityOverrides'] = [{
+      __id: 'nailist-1_2026-07-06', nailistProfileId: 'nailist-1', date: '2026-07-06', mode: 'OPEN',
+      startTime: '10:00', endTime: '18:00',
+      intervals: [{ start: '10:00', end: '12:00' }, { start: '15:00', end: '18:00' }],
+    }]
+    const [req, ctx] = makeRequest('nailist-1', '2026-07-06')
+    const json = await (await GET(req, ctx)).json()
+    expect(json.data.intervals).toEqual([{ start: '10:00', end: '12:00' }, { start: '15:00', end: '18:00' }])
+  })
 })

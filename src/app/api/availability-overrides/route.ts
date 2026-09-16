@@ -4,17 +4,30 @@ import { COLLECTIONS } from '@/lib/firebase/collections'
 import { FieldValue } from 'firebase-admin/firestore'
 import { z } from 'zod'
 import { availabilityOverrideDocumentId } from '@/lib/holiday-availability'
+import { validateIntervals } from '@/lib/availability-intervals'
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
 const dateRe = /^\d{4}-\d{2}-\d{2}$/
+const timeIntervalSchema = z.object({
+  start: z.string().regex(TIME_RE),
+  end: z.string().regex(TIME_RE),
+})
 const overrideSchema = z.discriminatedUnion('mode', [
   z.object({ date: z.string().regex(dateRe), mode: z.literal('CLOSED') }),
   z.object({
     date: z.string().regex(dateRe), mode: z.literal('OPEN'),
     startTime: z.string().regex(TIME_RE),
     endTime: z.string().regex(TIME_RE),
-  }).refine((override) => override.startTime < override.endTime, {
-    message: 'startTime must be before endTime',
+    intervals: z.array(timeIntervalSchema).optional(),
+  }).superRefine((override, ctx) => {
+    if (override.intervals && override.intervals.length > 0) {
+      const error = validateIntervals(override.intervals)
+      if (error) ctx.addIssue({ code: 'custom', message: error, path: ['intervals'] })
+      return
+    }
+    if (override.startTime >= override.endTime) {
+      ctx.addIssue({ code: 'custom', message: 'startTime must be before endTime' })
+    }
   }),
 ])
 
@@ -52,9 +65,19 @@ export async function PUT(request: NextRequest) {
     const db = adminDb()
     const ref = db.collection(COLLECTIONS.AVAILABILITY_OVERRIDES)
       .doc(availabilityOverrideDocumentId(profileId, override.date))
+    // A save always fully replaces this date's override. On an OPEN save
+    // that didn't send a (non-empty) intervals[], clear any stale one from
+    // a previous save with FieldValue.delete() — otherwise it would keep
+    // winning under normalization precedence even though this save meant
+    // to go back to a single legacy window (see working-hours/route.ts for
+    // the same reasoning).
+    const intervalsField = override.mode === 'OPEN' && !(override.intervals && override.intervals.length > 0)
+      ? FieldValue.delete()
+      : undefined
     await ref.set({
       nailistProfileId: profileId,
       ...override,
+      ...(intervalsField !== undefined ? { intervals: intervalsField } : {}),
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true })

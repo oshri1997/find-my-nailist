@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { israelWallClockToUtc } from '@/lib/booking-utils'
-import { availabilityOverrideDocumentId, resolveAvailabilityHours, type AvailabilityOverride } from '@/lib/holiday-availability'
+import { availabilityOverrideDocumentId, resolveAvailabilityIntervals, type AvailabilityOverride } from '@/lib/holiday-availability'
+import type { RawDayAvailability } from '@/lib/availability-intervals'
 
 // Maps JS getDay() (0=Sun) to our dayOfWeek field (0=Sun)
 function getDayOfWeek(dateStr: string): number {
@@ -42,13 +43,13 @@ export async function GET(
     ])
 
     const override = overridesSnap.exists ? overridesSnap.data() as AvailabilityOverride : undefined
-    const hoursDoc = resolveAvailabilityHours(
+    const intervals = resolveAvailabilityIntervals(
       date,
-      hoursSnap.empty ? undefined : hoursSnap.docs[0].data() as { startTime: string; endTime: string; isActive: boolean },
+      hoursSnap.empty ? undefined : hoursSnap.docs[0].data() as RawDayAvailability,
       profileSnap.data()?.autoCloseHolidays,
       override,
     )
-    if (!hoursDoc) {
+    if (intervals.length === 0) {
       return NextResponse.json({ data: { workingDay: false, bookedSlots: [] } })
     }
 
@@ -81,8 +82,15 @@ export async function GET(
     return NextResponse.json({
       data: {
         workingDay: true,
-        startTime: hoursDoc.startTime, // "09:00"
-        endTime: hoursDoc.endTime,     // "19:00"
+        intervals, // e.g. [{ start: "09:00", end: "13:00" }, { start: "15:00", end: "19:00" }]
+        // Best-effort legacy mirror for old cached client bundles that only
+        // understand a single startTime/endTime window — the enclosing span
+        // of every interval. It is never the source of truth: this route's
+        // own server-side booking validation always re-checks against
+        // `intervals`, so a stale client offering a slot inside a break can
+        // only ever be rejected (409), never allowed to double-book.
+        startTime: intervals[0].start,
+        endTime: intervals[intervals.length - 1].end,
         bookedSlots,
       },
     })

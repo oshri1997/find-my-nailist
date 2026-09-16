@@ -40,6 +40,28 @@ function toDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+// Self-contained copy of booking-utils.ts's israelWallClockToUtc — Playwright
+// spec files run outside the Next.js module graph, so this mirrors the exact
+// algorithm rather than importing app source, and keeps mocked bookedSlots
+// instants correct regardless of DST at whatever date the suite runs on.
+function israelWallClockToUtc(dateStr: string, timeStr: string): Date {
+  const naiveUtc = new Date(`${dateStr}T${timeStr}:00Z`)
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jerusalem',
+    hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).formatToParts(naiveUtc).reduce((acc, p) => {
+    if (p.type !== 'literal') acc[p.type] = p.value
+    return acc
+  }, {} as Record<string, string>)
+  const asIfUtc = Date.UTC(
+    Number(parts.year), Number(parts.month) - 1, Number(parts.day),
+    Number(parts.hour), Number(parts.minute), Number(parts.second)
+  )
+  return new Date(naiveUtc.getTime() - (asIfUtc - naiveUtc.getTime()))
+}
+
 async function openBookingModal(page: Page) {
   await page.goto('/nailists/n1')
   await page.getByRole('button', { name: /שירותים/ }).click()
@@ -93,7 +115,7 @@ test.describe.serial('Booking — full submission flow', () => {
       route.fulfill({ json: { data: {} } })
     )
     await page.route(/\/api\/nailists\/n1\/availability\?/, route =>
-      route.fulfill({ json: { data: { workingDay: true, startTime: '08:00', endTime: '18:00', bookedSlots: [] } } })
+      route.fulfill({ json: { data: { workingDay: true, intervals: [{ start: '08:00', end: '18:00' }], startTime: '08:00', endTime: '18:00', bookedSlots: [] } } })
     )
   })
 
@@ -204,5 +226,135 @@ test.describe.serial('Booking — full submission flow', () => {
       await closeBtn.click()
       await expect(page.getByText('בחרי שירות')).not.toBeVisible({ timeout: 3_000 })
     }
+  })
+})
+
+/**
+ * Split-shift (multiple availability intervals per day) full customer flow:
+ * a nailist working 09:00-13:00 and 15:00-19:00 on the selected day — the
+ * customer sees morning slots, no slots in the 13:00-15:00 break, sees
+ * afternoon slots again, books 15:00, gets a PENDING appointment, and a
+ * second customer opening the same day afterward no longer sees that slot.
+ */
+test.describe.serial('Booking — split-shift (multiple intervals) day', () => {
+  test.skip(() => !hasRealCreds(), 'Skipped — run with valid TEST_USER_EMAIL/TEST_USER_PASSWORD credentials')
+  test.setTimeout(30_000)
+
+  let context: BrowserContext
+  let page: Page
+
+  test.beforeAll(async ({ browser }) => {
+    if (!hasRealCreds()) return
+    ;({ context, page } = await loginAsRealUser(browser))
+  })
+
+  test.afterAll(async () => {
+    if (context) await context.close()
+  })
+
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrowStr = toDateStr(tomorrow)
+
+  test.beforeEach(async () => {
+    await page.unrouteAll({ behavior: 'ignoreErrors' })
+    await page.route('/api/me/role', route =>
+      route.fulfill({ json: { role: 'NAILIST', isAdmin: false } })
+    )
+    await page.route('/api/nailists/n1', route =>
+      route.fulfill({ json: { data: { ...MOCK_PROFILE, services: MOCK_SERVICES, portfolio: [], reviews: [] } } })
+    )
+    await page.route('/api/services**', route =>
+      route.fulfill({ json: { data: MOCK_SERVICES } })
+    )
+    await page.route('/api/me/client-profile', route =>
+      route.fulfill({ json: { data: MOCK_CLIENT_PROFILE } })
+    )
+    await page.route(/\/api\/nailists\/n1\/availability\/batch/, route =>
+      route.fulfill({ json: { data: {} } })
+    )
+    await page.route(/\/api\/nailists\/n1\/availability\?/, route =>
+      route.fulfill({
+        json: {
+          data: {
+            workingDay: true,
+            intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }],
+            startTime: '09:00',
+            endTime: '19:00',
+            bookedSlots: [],
+          },
+        },
+      })
+    )
+  })
+
+  test('shows morning slots, hides the break, shows afternoon slots, and books 15:00', async () => {
+    await openBookingModal(page)
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('button', { name: /מניקור ג'ל/ }).click()
+    await dialog.getByRole('button', { name: /המשך/ }).click()
+    await dialog.locator(`[data-date="${tomorrowStr}"]`).click()
+
+    // Morning window is bookable.
+    await expect(dialog.getByText('09:00', { exact: true })).toBeVisible({ timeout: 10_000 })
+    await expect(dialog.getByText('12:00', { exact: true })).toBeVisible()
+    // The 13:00-15:00 break is off-hours, not a gap — no slot starts inside it.
+    await expect(dialog.getByText('13:00', { exact: true })).not.toBeVisible()
+    await expect(dialog.getByText('13:30', { exact: true })).not.toBeVisible()
+    await expect(dialog.getByText('14:00', { exact: true })).not.toBeVisible()
+    await expect(dialog.getByText('14:30', { exact: true })).not.toBeVisible()
+    // Afternoon window is bookable again.
+    await expect(dialog.getByText('15:00', { exact: true })).toBeVisible()
+
+    await dialog.getByText('15:00', { exact: true }).click()
+    await dialog.getByRole('button', { name: /המשך/ }).click()
+    await expect(dialog.getByText(/אישור הזמנה/)).toBeVisible()
+
+    let sentBody: Record<string, unknown> | null = null
+    await page.route('/api/appointments', async route => {
+      if (route.request().method() === 'POST') {
+        sentBody = route.request().postDataJSON()
+        await route.fulfill({ json: { data: { id: 'appt-split', status: 'PENDING' } } })
+      } else {
+        await route.fulfill({ json: { data: [] } })
+      }
+    })
+    await dialog.getByRole('button', { name: /אישור וקביעת תור/ }).click()
+
+    await expect(page.getByText('בקשת התור נשלחה!')).toBeVisible({ timeout: 10_000 })
+    await expect.poll(() => sentBody).not.toBeNull()
+    expect(sentBody).toMatchObject({ nailistProfileId: 'n1', serviceId: 's1' })
+  })
+
+  test('a second customer opening the same day no longer sees the now-booked 15:00 slot', async () => {
+    // Simulates the state after the first customer's booking above: the
+    // server-side availability response now reports 15:00-16:00 as booked
+    // (PENDING blocks time exactly like CONFIRMED does).
+    await page.route(/\/api\/nailists\/n1\/availability\?/, route =>
+      route.fulfill({
+        json: {
+          data: {
+            workingDay: true,
+            intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }],
+            startTime: '09:00',
+            endTime: '19:00',
+            bookedSlots: [{
+              startTime: israelWallClockToUtc(tomorrowStr, '15:00').toISOString(),
+              endTime: israelWallClockToUtc(tomorrowStr, '16:00').toISOString(),
+            }],
+          },
+        },
+      })
+    )
+
+    await openBookingModal(page)
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('button', { name: /מניקור ג'ל/ }).click()
+    await dialog.getByRole('button', { name: /המשך/ }).click()
+    await dialog.locator(`[data-date="${tomorrowStr}"]`).click()
+
+    await expect(dialog.getByText('15:00', { exact: true })).toBeVisible({ timeout: 10_000 })
+    const slotButton = dialog.getByText('15:00', { exact: true }).locator('..')
+    await expect(slotButton).toBeDisabled()
   })
 })
