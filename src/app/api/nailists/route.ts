@@ -153,6 +153,42 @@ async function attachAvailability(
   })
 }
 
+interface PageOptions {
+  service?: string
+  maxPrice?: number
+  date?: string
+  offset: number
+  pageSize: number
+}
+
+/**
+ * Narrows a verified result set down to the requested page, doing the expensive
+ * per-nailist enrichment only for the rows that actually ship.
+ *
+ * Service names are the exception: filtering by service or price reads them, so
+ * in that case they have to be resolved for the whole set before the slice.
+ * Availability never feeds a filter, so it is always page-only — it is the
+ * costliest attachment (working hours, appointments and overrides per nailist).
+ */
+async function buildPage(
+  db: Firestore,
+  verifiedNailists: Array<Record<string, unknown>>,
+  { service, maxPrice, date, offset, pageSize }: PageOptions,
+) {
+  const serviceNamesFeedFilter = !!service || maxPrice != null
+  if (serviceNamesFeedFilter) await attachServiceNames(db, verifiedNailists)
+
+  const filtered = filterNailists(verifiedNailists, service, maxPrice)
+  const page = filtered.slice(offset, offset + pageSize)
+
+  await Promise.all([
+    serviceNamesFeedFilter ? Promise.resolve() : attachServiceNames(db, page),
+    attachAvailability(db, page, date),
+  ])
+
+  return { page, total: filtered.length, hasMore: filtered.length > offset + pageSize }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -206,16 +242,12 @@ export async function GET(request: NextRequest) {
 
       nailists.sort((a, b) => (a.distanceKm as number) - (b.distanceKm as number))
       const verifiedNailists = await filterVerifiedNailists(nailists)
-      await Promise.all([attachServiceNames(db, verifiedNailists), attachAvailability(db, verifiedNailists, date)])
-      const filtered = filterNailists(verifiedNailists, service, maxPrice)
-      const page = filtered.slice(offset, offset + pageSize)
+      const { page, total, hasMore } = await buildPage(db, verifiedNailists, {
+        service, maxPrice, date, offset, pageSize,
+      })
       sanitizeNailists(page, isAuthenticated)
 
-      return NextResponse.json({
-        data: page,
-        total: filtered.length,
-        hasMore: filtered.length > offset + pageSize,
-      })
+      return NextResponse.json({ data: page, total, hasMore })
     }
 
     // Firestore cannot perform case-insensitive substring search. Fetch the
@@ -241,16 +273,12 @@ export async function GET(request: NextRequest) {
         .sort((a, b) => a.id.localeCompare(b.id))
 
       const verifiedNailists = await filterVerifiedNailists(nailists)
-      await Promise.all([attachServiceNames(db, verifiedNailists), attachAvailability(db, verifiedNailists, date)])
-      const filtered = filterNailists(verifiedNailists, service, maxPrice)
-      const page = filtered.slice(offset, offset + pageSize)
+      const { page, total, hasMore } = await buildPage(db, verifiedNailists, {
+        service, maxPrice, date, offset, pageSize,
+      })
       sanitizeNailists(page, isAuthenticated)
 
-      return NextResponse.json({
-        data: page,
-        total: filtered.length,
-        hasMore: filtered.length > offset + pageSize,
-      })
+      return NextResponse.json({ data: page, total, hasMore })
     }
 
     // No location — paginate active profiles in a stable, deterministic order.
@@ -269,21 +297,12 @@ export async function GET(request: NextRequest) {
 
     const nailists = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
     const verifiedNailists = await filterVerifiedNailists(nailists)
-    if (service || maxPrice != null) await attachServiceNames(db, verifiedNailists)
-    const filtered = filterNailists(verifiedNailists, service, maxPrice)
-    const hasMore = filtered.length > offset + pageSize
-    const page = filtered.slice(offset, offset + pageSize)
-    await Promise.all([
-      service || maxPrice != null ? Promise.resolve() : attachServiceNames(db, page),
-      attachAvailability(db, page, date),
-    ])
+    const { page, total, hasMore } = await buildPage(db, verifiedNailists, {
+      service, maxPrice, date, offset, pageSize,
+    })
     sanitizeNailists(page, isAuthenticated)
 
-    return NextResponse.json({
-      data: page,
-      total: filtered.length,
-      hasMore,
-    })
+    return NextResponse.json({ data: page, total, hasMore })
   } catch (error) {
     console.error('GET /api/nailists error:', error)
     return NextResponse.json({ error: 'Failed to fetch nailists' }, { status: 500 })
