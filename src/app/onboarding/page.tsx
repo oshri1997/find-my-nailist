@@ -125,7 +125,7 @@ export default function OnboardingPage() {
   const [workingHours, setWorkingHours] = useState<DayHours[]>(defaultHours)
   const [autoCloseHolidays, setAutoCloseHolidays] = useState(true)
 
-  const { data: profile, isError: profileError } = useNailistProfile({
+  const { data: profile } = useNailistProfile({
     enabled: !authLoading && !!user,
   })
   const invalidateProfile = useInvalidateNailistProfile()
@@ -133,15 +133,17 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (authLoading) return
+    // Only the signed-out case sends her to /login. A failed profile read must
+    // not: this page is reached right after set-role, before the profile
+    // document exists, so the 404 that answers until then is expected here.
     if (!user) { router.replace('/login'); return }
-    if (profileError) { router.replace('/login'); return }
     // An already-onboarded nailist landing here (e.g. she mistakenly hit
     // "register" again instead of "login") should go straight to her
     // dashboard, not restart the wizard from step 0 with blank local
     // state — that would make her re-upload photos and re-add services,
     // creating duplicates of what she already has.
     if (profile?.onboardingCompleted === true) router.replace('/dashboard/nailist')
-  }, [user, authLoading, router, profile?.onboardingCompleted, profileError])
+  }, [user, authLoading, router, profile?.onboardingCompleted])
 
   function handlePlaceSelect(result: PlaceResult) {
     setAddress(result.address)
