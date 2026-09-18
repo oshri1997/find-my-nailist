@@ -471,6 +471,7 @@ describe('POST /api/appointments', () => {
       userId: 'nailist-user-1',
       depositEnabled: true,
       depositPercentage: 20,
+      bitPhone: '0501234567',
     }
     // service price is 120, currency ILS (seeded in beforeEach)
     const req = makeRequest('POST', validBody, 'valid-token')
@@ -482,6 +483,7 @@ describe('POST /api/appointments', () => {
         depositAmount: 24, // round(120 * 20/100)
         depositCurrency: 'ILS',
         depositStatus: 'AWAITING_PAYMENT',
+        depositBitPhone: '0501234567',
       })
     )
     const json = await res.json()
@@ -491,6 +493,7 @@ describe('POST /api/appointments', () => {
       depositAmount: 24,
       depositCurrency: 'ILS',
       depositStatus: 'AWAITING_PAYMENT',
+      depositBitPhone: '0501234567',
     })
   })
 
@@ -500,6 +503,7 @@ describe('POST /api/appointments', () => {
       userId: 'nailist-user-1',
       depositEnabled: true,
       depositPercentage: 15,
+      bitPhone: '0501234567',
     }
     // 120 * 0.15 = 18 exactly, so use a price that produces a fractional result instead
     docStore['services/service-1'] = { ...docStore['services/service-1'], price: 121 }
@@ -508,6 +512,26 @@ describe('POST /api/appointments', () => {
     expect(mockAppointmentAdd).toHaveBeenCalledWith(
       expect.objectContaining({ depositAmount: Math.round(121 * 0.15) })
     )
+  })
+
+  it('treats a deposit as not required when enabled but the nailist has no Bit phone set — never create a deposit the client cannot be told how to pay', async () => {
+    docStore['nailistProfiles/nailist-profile-1'] = {
+      businessName: 'סטודיו נייל',
+      userId: 'nailist-user-1',
+      depositEnabled: true,
+      depositPercentage: 20,
+      // bitPhone intentionally omitted — a profile predating the settings-page validation
+    }
+    const req = makeRequest('POST', validBody, 'valid-token')
+    const res = await POST(req)
+    expect(res.status).toBe(201)
+    expect(mockAppointmentAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ depositRequired: false })
+    )
+    const addArg = mockAppointmentAdd.mock.calls[0][0]
+    expect(addArg.depositAmount).toBeUndefined()
+    expect(addArg.depositStatus).toBeUndefined()
+    expect(addArg.depositBitPhone).toBeUndefined()
   })
 
   it('ignores CANCELLED conflicts when checking availability', async () => {

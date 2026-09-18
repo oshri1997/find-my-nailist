@@ -94,7 +94,7 @@ describe('NailistSettingsPage — phone validation', () => {
   })
 
   it('allows saving once the number is corrected to a real format', async () => {
-    mockFetch(baseProfile)
+    mockFetch({ ...baseProfile, bitPhone: '0501234567' })
     render(<NailistSettingsPage />)
     await waitFor(() => expect(screen.getByText('הגדרות פרופיל')).toBeInTheDocument())
 
@@ -109,8 +109,8 @@ describe('NailistSettingsPage — phone validation', () => {
     await waitFor(() => expect(patchCalled).toBe(true))
   })
 
-  it('allows saving with all phone fields empty (they are optional)', async () => {
-    mockFetch(baseProfile)
+  it('allows saving with all phone fields empty when deposits are not enabled (they are otherwise optional)', async () => {
+    mockFetch({ ...baseProfile, depositEnabled: false })
     render(<NailistSettingsPage />)
     await waitFor(() => expect(screen.getByText('הגדרות פרופיל')).toBeInTheDocument())
 

@@ -151,12 +151,21 @@ export async function POST(request: NextRequest) {
     // appointment — if she changes her percentage or turns deposits off
     // later, already-booked appointments must keep showing what the client
     // was actually told, same reasoning as price/currency/serviceName below.
-    const depositRequired = nailist?.depositEnabled === true
+    // Also requires a real bitPhone: a profile that enabled deposits without
+    // one (the settings page blocks this going forward, but can't fix data
+    // already in that state) would otherwise create a deposit the client is
+    // never told how to pay — depositStatus stuck at AWAITING_PAYMENT forever
+    // with no phone number ever shown to her.
+    const depositRequired = nailist?.depositEnabled === true && !!(nailist?.bitPhone as string | undefined)?.trim()
     const depositFields = depositRequired
       ? {
           depositAmount: Math.round(service.price * ((nailist?.depositPercentage ?? 0) / 100)),
           depositCurrency: service.currency,
           depositStatus: 'AWAITING_PAYMENT' as const,
+          // Frozen the same way price/serviceName are — if she changes her
+          // Bit number later, an already-booked client must keep seeing the
+          // number she was actually given at booking time.
+          depositBitPhone: nailist!.bitPhone as string,
         }
       : {}
 

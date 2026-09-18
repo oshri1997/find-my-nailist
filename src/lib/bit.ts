@@ -13,11 +13,7 @@
  */
 export function toBitUrl(phone: string, amount?: number): string {
   const digits = phone.replace(/\D/g, '')
-  const international = digits.startsWith('0')
-    ? `972${digits.slice(1)}`
-    : digits.startsWith('972')
-    ? digits
-    : digits
+  const international = digits.startsWith('0') ? `972${digits.slice(1)}` : digits
 
   const params = amount ? `?amount=${amount}` : ''
   return `bit://pay/${international}${params}`

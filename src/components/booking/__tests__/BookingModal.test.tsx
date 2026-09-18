@@ -372,7 +372,7 @@ describe('BookingModal — Bit deposit', () => {
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ message: 'ok' }) })
     fireEvent.click(screen.getByRole('button', { name: /כבר שילמתי/ }))
 
-    await waitFor(() => expect(screen.getByText('סימנת ששילמת')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/סימנת ששילמת/)).toBeInTheDocument())
     expect(mockFetch).toHaveBeenLastCalledWith(
       '/api/appointments/apt1/deposit',
       expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ action: 'MARK_PAID' }) })

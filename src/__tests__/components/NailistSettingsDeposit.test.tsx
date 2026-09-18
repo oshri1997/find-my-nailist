@@ -99,4 +99,22 @@ describe('NailistSettingsPage — Bit deposit', () => {
       })
     })
   })
+
+  it('flags the Bit phone field as required once the toggle is on and it is still empty', async () => {
+    mockFetch({ ...baseProfile, depositEnabled: true, bitPhone: '' })
+    render(<NailistSettingsPage />)
+
+    expect(await screen.findByText('שדה חובה — בלעדיו לקוחות לא יידעו לאן לשלוח את המקדמה')).toBeInTheDocument()
+  })
+
+  it('blocks saving when deposits are enabled but no Bit phone is set, and never sends the request', async () => {
+    mockFetch({ ...baseProfile, depositEnabled: true, bitPhone: '' })
+    render(<NailistSettingsPage />)
+
+    await waitFor(() => expect(screen.getByText('הגדרות פרופיל')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'שמרי שינויים' }))
+
+    expect(await screen.findByText('כדי לדרוש מקדמה יש למלא מספר טלפון לביט')).toBeInTheDocument()
+    expect(lastPatchBody).toBeNull()
+  })
 })

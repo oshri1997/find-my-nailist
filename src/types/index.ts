@@ -143,6 +143,7 @@ export interface AppointmentDoc {
   depositAmount?: number       // present only when depositRequired
   depositCurrency?: string     // present only when depositRequired
   depositStatus?: DepositStatus // present only when depositRequired
+  depositBitPhone?: string     // present only when depositRequired — the nailist's Bit number as it was at booking time
   // Google Calendar event IDs created when the appointment was confirmed —
   // kept per-side so a later cancellation can delete each calendar's own
   // copy (client and nailist each have their own Google account/token).

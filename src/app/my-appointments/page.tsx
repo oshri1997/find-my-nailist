@@ -7,7 +7,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, CalendarDays, Search, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ReviewModal from '@/components/reviews/ReviewModal'
+import { DepositPanel } from '@/components/deposit/DepositPanel'
 import { APPOINTMENT_STATUS_COLORS } from '@/lib/status-styles'
+import type { DepositStatus } from '@/types'
 
 interface Appointment {
   id: string
@@ -22,6 +24,10 @@ interface Appointment {
   currency: string
   hasReview?: boolean
   clientDisplayName?: string
+  depositRequired?: boolean
+  depositAmount?: number
+  depositBitPhone?: string
+  depositStatus?: DepositStatus
 }
 
 const STATUS_LABELS: Record<Appointment['status'], string> = {
@@ -71,6 +77,7 @@ function MyAppointmentsInner() {
   const [error, setError] = useState<string | null>(null)
   const [refetchKey, setRefetchKey] = useState(0)
   const [reviewModal, setReviewModal] = useState<ReviewModalState | null>(null)
+  const [markingDepositId, setMarkingDepositId] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -114,6 +121,22 @@ function MyAppointmentsInner() {
     }
     void load()
   }, [searchParams, refetchKey, router])
+
+  async function markDepositPaid(id: string) {
+    setMarkingDepositId(id)
+    try {
+      const res = await fetch(`/api/appointments/${id}/deposit`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'MARK_PAID' }),
+      })
+      if (res.ok) {
+        setAppointments((prev) => prev.map((a) => a.id === id ? { ...a, depositStatus: 'CLIENT_MARKED_PAID' } : a))
+      }
+    } finally {
+      setMarkingDepositId(null)
+    }
+  }
 
   function openReview(apt: Appointment) {
     setReviewModal({
@@ -228,6 +251,18 @@ function MyAppointmentsInner() {
                     )}
                   </div>
                 </div>
+
+                {apt.depositRequired && apt.depositStatus && apt.depositBitPhone && apt.depositAmount != null && (
+                  <div className="mt-3">
+                    <DepositPanel
+                      amount={apt.depositAmount}
+                      bitPhone={apt.depositBitPhone}
+                      status={apt.depositStatus}
+                      onMarkPaid={() => markDepositPaid(apt.id)}
+                      marking={markingDepositId === apt.id}
+                    />
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>

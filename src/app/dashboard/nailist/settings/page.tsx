@@ -192,6 +192,10 @@ export default function NailistSettingsPage() {
       setActionError('אחד ממספרי הטלפון אינו תקין — בדקי ותקני')
       return
     }
+    if (form.depositEnabled && !form.bitPhone.trim()) {
+      setActionError('כדי לדרוש מקדמה יש למלא מספר טלפון לביט')
+      return
+    }
     setSaving(true)
     try {
       const res = await fetch(`/api/nailists/${profileId}`, {
@@ -433,6 +437,8 @@ export default function NailistSettingsPage() {
                 />
                 {phoneFieldError(form.bitPhone) ? (
                   <p className="text-xs text-red-500 font-semibold mt-1">{phoneFieldError(form.bitPhone)}</p>
+                ) : !form.bitPhone.trim() ? (
+                  <p className="text-xs text-amber-600 font-semibold mt-1">שדה חובה — בלעדיו לקוחות לא יידעו לאן לשלוח את המקדמה</p>
                 ) : (
                   <p className="text-xs text-muted-foreground mt-1 font-medium">לקוחות ישלחו את המקדמה למספר הזה דרך אפליקציית Bit</p>
                 )}

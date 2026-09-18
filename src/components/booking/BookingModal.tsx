@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare, CalendarOff, Copy, Check, Zap } from 'lucide-react'
+import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, Clock, Scissors, Calendar, MessageSquare, CalendarOff, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { generateSlotsForIntervals, isSlotUnavailable, buildMonthCalendarFor, israelNow, israelWallClockToUtc, todayCalendarDateInIsrael, todayInIsrael, toDateStr, type BookedSlot } from '@/lib/booking-utils'
 import type { TimeInterval } from '@/lib/availability-intervals'
-import { toBitUrl, formatBitPhoneDisplay } from '@/lib/bit'
-import { isMobileDevice } from '@/lib/device'
 import { getRecommendedSlots } from '@/lib/slot-recommendation'
+import { DepositPanel } from '@/components/deposit/DepositPanel'
 
 interface Service {
   id: string
@@ -68,11 +67,6 @@ export default function BookingModal({ nailistProfileId, businessName, services,
   const [depositResult, setDepositResult] = useState<DepositResult | null>(null)
   const [markingPaid, setMarkingPaid] = useState(false)
   const [paidMarked, setPaidMarked] = useState(false)
-  const [copiedPhone, setCopiedPhone] = useState(false)
-  const [copiedAmount, setCopiedAmount] = useState(false)
-  // The bit:// deep link only does anything with the Bit app installed —
-  // a dead click on desktop web, so that flow gets plain transfer instructions instead.
-  const [isMobile] = useState(() => typeof navigator !== 'undefined' && isMobileDevice(navigator.userAgent))
   const [selectedService, setSelectedService] = useState<Service | null>(
     initialServiceId ? (services.find(s => s.id === initialServiceId) ?? null) : null
   )
@@ -220,20 +214,6 @@ export default function BookingModal({ nailistProfileId, businessName, services,
     } finally {
       setMarkingPaid(false)
     }
-  }
-
-  async function handleCopyBitPhone() {
-    if (!bitPhone) return
-    await navigator.clipboard.writeText(bitPhone)
-    setCopiedPhone(true)
-    setTimeout(() => setCopiedPhone(false), 2000)
-  }
-
-  async function handleCopyAmount() {
-    if (!depositResult) return
-    await navigator.clipboard.writeText(String(depositResult.amount))
-    setCopiedAmount(true)
-    setTimeout(() => setCopiedAmount(false), 2000)
   }
 
   const dateStr = selectedDate ? toDateStr(selectedDate) : ''
@@ -720,66 +700,14 @@ export default function BookingModal({ nailistProfileId, businessName, services,
                 <p className="text-xs text-muted-foreground mb-6">נעדכן אותך במייל לאחר אישור הנייליסטית</p>
 
                 {depositResult && bitPhone && (
-                  <div className="bg-primary/10 border border-primary/20 rounded-2xl p-5 mb-6 text-right">
-                    <p className="font-black text-foreground text-sm mb-1">
-                      נדרשת מקדמה של ₪{depositResult.amount} דרך Bit
-                    </p>
-                    {isMobile ? (
-                      <>
-                        <p className="text-xs text-muted-foreground mb-3">
-                          לחצי לפתיחת Bit, והדביקי בתוכה את המספר והסכום שהעתקת כאן. בסיום לחצי על &quot;כבר שילמתי&quot;
-                        </p>
-                        <div className="flex items-center gap-2 mb-3">
-                          <a
-                            href={toBitUrl(bitPhone, depositResult.amount)}
-                            className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary/70 text-white rounded-xl h-11 font-bold text-sm"
-                          >
-                            פתחי את Bit
-                          </a>
-                        </div>
-                      </>
-                    ) : (
-                      // bit:// only opens anything with the app installed — on desktop
-                      // web it's a dead click, so send her to her phone instead.
-                      <p className="text-xs text-muted-foreground mb-3">
-                        פתחי את אפליקציית Bit בטלפון שלך והעבירי ₪{depositResult.amount} למספר {formatBitPhoneDisplay(bitPhone)}. בסיום לחצי על &quot;כבר שילמתי&quot;
-                      </p>
-                    )}
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={handleCopyBitPhone}
-                        aria-label="העתקת מספר טלפון לביט"
-                        className="flex items-center justify-center gap-2 bg-card border border-border rounded-xl h-11 font-bold text-sm text-foreground hover:border-primary/40 transition-colors"
-                      >
-                        {copiedPhone ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
-                        {formatBitPhoneDisplay(bitPhone)}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleCopyAmount}
-                        aria-label="העתקת סכום המקדמה"
-                        className="flex items-center justify-center gap-2 bg-card border border-border rounded-xl h-11 font-bold text-sm text-foreground hover:border-primary/40 transition-colors"
-                      >
-                        {copiedAmount ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
-                        ₪{depositResult.amount}
-                      </button>
-                    </div>
-
-                    {paidMarked ? (
-                      <p className="mt-3 flex items-center justify-center gap-1.5 text-sm font-bold text-green-600">
-                        <CheckCircle2 className="h-4 w-4" />
-                        סימנת ששילמת
-                      </p>
-                    ) : (
-                      <Button
-                        onClick={handleMarkPaid}
-                        disabled={markingPaid}
-                        className="w-full mt-3 bg-card border border-primary/30 text-primary hover:bg-primary/10 rounded-xl h-11 font-bold text-sm"
-                      >
-                        {markingPaid ? <Loader2 className="h-4 w-4 animate-spin" /> : 'כבר שילמתי'}
-                      </Button>
-                    )}
+                  <div className="mb-6">
+                    <DepositPanel
+                      amount={depositResult.amount}
+                      bitPhone={bitPhone}
+                      status={paidMarked ? 'CLIENT_MARKED_PAID' : 'AWAITING_PAYMENT'}
+                      onMarkPaid={handleMarkPaid}
+                      marking={markingPaid}
+                    />
                   </div>
                 )}
 
