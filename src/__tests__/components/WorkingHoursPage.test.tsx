@@ -106,11 +106,11 @@ describe('Working hours page — holiday controls', () => {
 
     const toggle = screen.getByRole('button', { name: /חגים וימים לאומיים קרובים/ })
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.queryByText(/חג ישראלי · 21\/09\/2026/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/יום הכיפורים · 21\/09\/2026/)).not.toBeInTheDocument()
 
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
-    expect(await screen.findByText(/חג ישראלי · 21\/09\/2026/)).toBeInTheDocument()
+    expect(await screen.findByText(/יום הכיפורים · 21\/09\/2026/)).toBeInTheDocument()
   })
 
   it('treats a missing automatic Israeli holiday closure preference as enabled and saves opt-out', async () => {
@@ -153,7 +153,7 @@ describe('Working hours page — holiday controls', () => {
     render(<WorkingHoursPage />)
     fireEvent.click(await screen.findByRole('button', { name: /חגים וימים לאומיים קרובים/ }))
 
-    const title = await screen.findByText('חג ישראלי · 21/09/2026')
+    const title = await screen.findByText('יום הכיפורים · 21/09/2026')
     expect(title).toBeInTheDocument()
     const holidayCard = title.closest('.rounded-xl.bg-card') as HTMLElement
     fireEvent.click(within(holidayCard).getByRole('button', { name: 'פתיחה ביום הזה' }))

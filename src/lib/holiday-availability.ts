@@ -1,4 +1,4 @@
-import { isYomTov } from 'jewish-holidays'
+import { getYomTovList } from 'jewish-holidays'
 import { JewishMonth, toGregorianDate, toJewishDate } from 'jewish-date'
 import { normalizeDayAvailability, type RawDayAvailability, type TimeInterval } from '@/lib/availability-intervals'
 
@@ -50,11 +50,18 @@ export function isObservedYomHaAtzmaut(date: string): boolean {
   return jewishDate.day === observedDay
 }
 
+// `false` selects Israel's one-day Yom Tov schedule (as opposed to the
+// two-day diaspora observance) — computed once at module load since the
+// list itself never changes.
+const ISRAEL_YOM_TOV_LIST = getYomTovList(false)
+
 export function getIsraeliChag(date: string): IsraeliChag | null {
-  // `false` selects Israel's one-day Yom Tov schedule. The MIT package's
-  // documented boolean API does not expose a stable public holiday name.
   if (isObservedYomHaAtzmaut(date)) return { date, name: 'יום העצמאות' }
-  return isYomTov(dateAtIsraelNoon(date), false) ? { date, name: 'חג ישראלי' } : null
+  const jewishDate = toJewishDate(dateAtIsraelNoon(date))
+  const match = ISRAEL_YOM_TOV_LIST.find(
+    (holiday) => holiday.day === jewishDate.day && holiday.monthName === jewishDate.monthName
+  )
+  return match ? { date, name: match.hebrewName } : null
 }
 
 export function isIsraeliChag(date: string): boolean {

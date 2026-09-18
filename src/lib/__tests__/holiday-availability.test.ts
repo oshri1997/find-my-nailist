@@ -3,13 +3,22 @@ import { getIsraeliChag, isObservedYomHaAtzmaut, resolveAvailabilityIntervals } 
 const weekly = { isActive: true, startTime: '09:00', endTime: '18:00' }
 
 describe('holiday availability policy', () => {
-  it('recognizes a full Israeli holiday but not a normal weekday', () => {
-    expect(getIsraeliChag('2026-09-21')).toEqual({ date: '2026-09-21', name: 'חג ישראלי' })
+  it('recognizes a full Israeli holiday, by its specific name, but not a normal weekday', () => {
+    expect(getIsraeliChag('2026-09-21')).toEqual({ date: '2026-09-21', name: 'יום הכיפורים' })
     expect(getIsraeliChag('2026-09-22')).toBeNull()
   })
 
   it('calculates Israeli holidays in future years without a network request', () => {
-    expect(getIsraeliChag('2027-10-11')).toEqual({ date: '2027-10-11', name: 'חג ישראלי' })
+    expect(getIsraeliChag('2027-10-11')).toEqual({ date: '2027-10-11', name: 'יום הכיפורים' })
+  })
+
+  it('names each Israeli Yom Tov specifically, not a generic label', () => {
+    expect(getIsraeliChag('2026-09-13')).toEqual({ date: '2026-09-13', name: 'ראש השנה' })
+    expect(getIsraeliChag('2026-09-26')).toEqual({ date: '2026-09-26', name: 'סוכות' })
+    expect(getIsraeliChag('2026-10-03')).toEqual({ date: '2026-10-03', name: 'שמחת תורה' })
+    expect(getIsraeliChag('2027-04-22')).toEqual({ date: '2027-04-22', name: 'פסח' })
+    expect(getIsraeliChag('2027-04-28')).toEqual({ date: '2027-04-28', name: 'שביעי של פסח' })
+    expect(getIsraeliChag('2027-06-11')).toEqual({ date: '2027-06-11', name: 'שבועות' })
   })
 
   it('includes Independence Day on its current observed date rules', () => {
