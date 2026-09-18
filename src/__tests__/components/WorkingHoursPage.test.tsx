@@ -100,6 +100,19 @@ describe('Working hours page — active days indicator', () => {
 })
 
 describe('Working hours page — holiday controls', () => {
+  it('collapses the upcoming-holidays list by default, expanding it on click', async () => {
+    render(<WorkingHoursPage />)
+    await waitFor(() => expect(dayStartSelects().length).toBeGreaterThan(0))
+
+    const toggle = screen.getByRole('button', { name: /חגים וימים לאומיים קרובים/ })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByText(/חג ישראלי · 21\/09\/2026/)).not.toBeInTheDocument()
+
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(await screen.findByText(/חג ישראלי · 21\/09\/2026/)).toBeInTheDocument()
+  })
+
   it('treats a missing automatic Israeli holiday closure preference as enabled and saves opt-out', async () => {
     global.fetch = jest.fn().mockImplementation((url: string) => {
       if (url === '/api/working-hours') return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
@@ -122,6 +135,7 @@ describe('Working hours page — holiday controls', () => {
       return Promise.resolve({ ok: true, json: async () => ({ message: 'ok' }) } as Response)
     })
     render(<WorkingHoursPage />)
+    fireEvent.click(await screen.findByRole('button', { name: /חגים וימים לאומיים קרובים/ }))
     fireEvent.click((await screen.findAllByRole('button', { name: 'פתיחה ביום הזה' }))[0])
     const start = await screen.findByLabelText(/שעת פתיחה חריגה/)
     const end = screen.getByLabelText(/שעת סיום חריגה/)
@@ -137,6 +151,7 @@ describe('Working hours page — holiday controls', () => {
       return Promise.resolve({ ok: true, json: async () => ({ message: 'ok' }) } as Response)
     })
     render(<WorkingHoursPage />)
+    fireEvent.click(await screen.findByRole('button', { name: /חגים וימים לאומיים קרובים/ }))
 
     const title = await screen.findByText('חג ישראלי · 21/09/2026')
     expect(title).toBeInTheDocument()

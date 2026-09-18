@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, Loader2, AlertCircle, Clock, CopyCheck, Plus, X } from 'lucide-react'
+import { CheckCircle2, Loader2, AlertCircle, Clock, CopyCheck, Plus, X, ChevronDown } from 'lucide-react'
 import { addDays, todayInIsrael } from '@/lib/booking-utils'
 import { getIsraeliChag } from '@/lib/holiday-availability'
 import { validateIntervals, type TimeInterval } from '@/lib/availability-intervals'
@@ -153,6 +153,7 @@ export default function WorkingHoursPage() {
   const [autoCloseHolidays, setAutoCloseHolidays] = useState(true)
   const [overrides, setOverrides] = useState<Record<string, DateOverride>>({})
   const [savingHoliday, setSavingHoliday] = useState<string | null>(null)
+  const [holidaysExpanded, setHolidaysExpanded] = useState(false)
 
   const { data: profile } = useNailistProfile()
   const invalidateProfile = useInvalidateNailistProfile()
@@ -368,8 +369,17 @@ export default function WorkingHoursPage() {
             <span className="block text-xs text-muted-foreground mt-0.5">חגים מלאים בישראל ויום העצמאות ייסגרו בכל שנה. ערב חג וחול המועד נשארים לפי השעות השבועיות.</span>
           </span>
         </label>
-        <div className="border-t border-primary/15 pt-3 space-y-2">
-          <p className="text-xs font-black text-muted-foreground">חגים וימים לאומיים קרובים</p>
+        <div className="border-t border-primary/15 pt-3">
+          <button
+            type="button"
+            onClick={() => setHolidaysExpanded(v => !v)}
+            aria-expanded={holidaysExpanded}
+            className="w-full flex items-center justify-between text-xs font-black text-muted-foreground py-0.5"
+          >
+            <span>חגים וימים לאומיים קרובים ({upcomingHolidays.length})</span>
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${holidaysExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          {holidaysExpanded && <div className="space-y-2 mt-2">
           {upcomingHolidays.map((holiday) => {
             const override = overrides[holiday.date]
             const open = override?.mode === 'OPEN'
@@ -423,6 +433,7 @@ export default function WorkingHoursPage() {
               </div>
             </div>
           })}
+          </div>}
         </div>
       </section>
 
