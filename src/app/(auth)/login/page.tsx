@@ -259,11 +259,40 @@ export default function AuthPage() {
     setError('')
     setLoading(true)
     sessionStorage.setItem('pendingMode', mode)
+
+    // Firebase detects a manually-closed popup by polling window.closed on
+    // its own slow interval, so signInWithPopup's promise can take several
+    // seconds to reject after the X is clicked — the full-screen loader
+    // above just sits there meanwhile. Regaining focus on this window
+    // happens the instant the popup closes, which is a much faster signal:
+    // if the popup promise still hasn't settled shortly after focus
+    // returns, treat it as cancelled and let her retry immediately. A
+    // successful sign-in also refocuses this window (Firebase closes the
+    // popup itself), but `settled` is already true by then, so this is a
+    // no-op in that case — it never re-shows the form mid-redirect.
+    let settled = false
+    let focusTimeout: ReturnType<typeof setTimeout> | undefined
+    function onWindowFocus() {
+      if (focusTimeout) clearTimeout(focusTimeout)
+      focusTimeout = setTimeout(() => {
+        if (settled) return
+        settled = true
+        setLoading(false)
+      }, 1000)
+    }
+    window.addEventListener('focus', onWindowFocus)
+
     try {
       await signInWithGoogle()
+      settled = true
     } catch (err: unknown) {
+      if (settled) return
+      settled = true
       setError(friendlyError(err, mode))
       setLoading(false)
+    } finally {
+      window.removeEventListener('focus', onWindowFocus)
+      if (focusTimeout) clearTimeout(focusTimeout)
     }
   }
 
