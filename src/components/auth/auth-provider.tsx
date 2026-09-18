@@ -22,6 +22,13 @@ interface AuthContextValue {
   displayName: string | null
   signOut: () => Promise<void>
   refreshRole: () => Promise<void>
+  // Whether a higher-priority, action-required modal (currently: the
+  // nailist verification reminder) is on screen right now. The global
+  // announcement modal waits for this to go false before it ever opens, so
+  // the two never stack and a concrete action item always wins over a
+  // purely informational one.
+  verificationReminderActive: boolean
+  setVerificationReminderActive: (active: boolean) => void
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -33,6 +40,8 @@ const AuthContext = createContext<AuthContextValue>({
   displayName: null,
   signOut: async () => {},
   refreshRole: async () => {},
+  verificationReminderActive: false,
+  setVerificationReminderActive: () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -42,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [onboardingCompleted, setOnboardingCompleted] = useState(true)
   const [displayName, setDisplayName] = useState<string | null>(null)
+  const [verificationReminderActive, setVerificationReminderActive] = useState(false)
   const skipCallbackRef = useRef(false)
 
   const refreshRole = useCallback(async () => {
@@ -153,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // the server response remains useful to crawlers. A full-screen layer
   // covers it for people until both auth and the initial role data resolve.
   return (
-    <AuthContext.Provider value={{ user, loading, role, isAdmin, onboardingCompleted, displayName, signOut, refreshRole }}>
+    <AuthContext.Provider value={{ user, loading, role, isAdmin, onboardingCompleted, displayName, signOut, refreshRole, verificationReminderActive, setVerificationReminderActive }}>
       {children}
       <AnimatePresence>
         {loading && (

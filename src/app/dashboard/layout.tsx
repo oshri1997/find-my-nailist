@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Loader2, Menu, X, Search, Eye, Shield, MessageCircleMore } from 'lucide-react'
+import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Loader2, Menu, X, Search, Eye, Shield, MessageCircleMore, Megaphone } from 'lucide-react'
 import NextImage from 'next/image'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -23,6 +23,7 @@ const secondaryNavLinks = [
   { href: '/dashboard/nailist/hours', label: 'שעות פעילות', Icon: Clock, dynamic: false },
   { href: '/dashboard/nailist/portfolio', label: 'פורטפוליו', Icon: ImageIcon, dynamic: false },
   { href: '/dashboard/nailist/reviews', label: 'ביקורות', Icon: Star, dynamic: false },
+  { href: '/whats-new', label: 'מה חדש', Icon: Megaphone, dynamic: false },
   // href is resolved at render time from the caller's own nailist profile id — see resolveHref below
   { href: null as string | null, label: 'פרופיל ציבורי', Icon: Eye, dynamic: true },
 ]

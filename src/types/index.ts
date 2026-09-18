@@ -11,6 +11,9 @@ export type DepositStatus = 'AWAITING_PAYMENT' | 'CLIENT_MARKED_PAID' | 'NAILIST
 export type FeedbackType = 'BUG' | 'IDEA' | 'QUESTION' | 'OTHER'
 export type FeedbackStatus = 'NEW' | 'IN_REVIEW' | 'PLANNED' | 'RESOLVED' | 'CLOSED'
 export type FeedbackPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL'
+export type AnnouncementAudience = 'ALL' | 'NAILIST' | 'CLIENT'
+export type AnnouncementPriority = 'MAJOR' | 'MINOR'
+export type AnnouncementStatus = 'PUBLISHED' | 'RETRACTED'
 
 // Firestore document types (timestamps as Firestore Timestamp)
 export interface GoogleCalendarTokens {
@@ -31,6 +34,11 @@ export interface UserDoc {
   // Never sent to the client as-is (contains a live OAuth refresh token) —
   // API routes must strip this field and expose only a derived boolean.
   googleCalendarTokens?: GoogleCalendarTokens
+  // Watermark for the announcement modal: everything PUBLISHED after this
+  // instant is "unseen". Missing on an account that has never dismissed the
+  // modal — callers fall back to this doc's own createdAt so a new signup
+  // never gets the full historical backlog on her first login.
+  lastSeenAnnouncementsAt?: Timestamp
   createdAt: Timestamp
   updatedAt: Timestamp
 }
@@ -166,15 +174,41 @@ export type AuditAction =
   | 'FEEDBACK_UPDATE'
   | 'EMAIL_SEND'
   | 'USER_EMAIL_CHANGE'
+  | 'ANNOUNCEMENT_PUBLISH'
+  | 'ANNOUNCEMENT_RETRACT'
 
 export interface AuditLogDoc {
   actorUid: string
   actorEmail: string
   action: AuditAction
-  targetType: 'user' | 'review' | 'nailistProfile' | 'feedback'
+  targetType: 'user' | 'review' | 'nailistProfile' | 'feedback' | 'announcement'
   targetId: string
   metadata?: Record<string, unknown>
   createdAt: Timestamp
+}
+
+// Immutable once PUBLISHED (title/body are frozen) — a typo or mistake is
+// fixed by retracting this one (status: RETRACTED, hidden everywhere) and
+// publishing a fresh announcement, never by editing in place. There is no
+// DRAFT persisted in Firestore: the admin composer holds unsaved edits in
+// local state and only ever writes a doc at the moment of publish.
+export interface AnnouncementDoc {
+  title: string
+  body: string
+  audience: AnnouncementAudience
+  priority: AnnouncementPriority
+  status: AnnouncementStatus
+  publishedAt: Timestamp
+  createdBy: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+export interface Announcement extends Omit<AnnouncementDoc, 'publishedAt' | 'createdAt' | 'updatedAt'> {
+  id: string
+  publishedAt: string
+  createdAt: string
+  updatedAt: string
 }
 
 export type AvailabilityOverrideMode = 'OPEN' | 'CLOSED'

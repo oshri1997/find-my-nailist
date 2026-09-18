@@ -22,6 +22,7 @@ describe('NailistDashboard — greeting displayName precedence', () => {
     mockUseAuth.mockReturnValue({
       user: { displayName: 'DrakAtos YT', email: 'drakatosyt@gmail.com' },
       displayName: 'ישראלה ישראלית',
+      setVerificationReminderActive: jest.fn(),
     })
     render(<NailistDashboard />)
     await waitFor(() => expect(screen.getByText('שלום, ישראלה')).toBeInTheDocument())
@@ -31,6 +32,7 @@ describe('NailistDashboard — greeting displayName precedence', () => {
     mockUseAuth.mockReturnValue({
       user: { displayName: 'Oshri Test', email: 'oshri@test.com' },
       displayName: null,
+      setVerificationReminderActive: jest.fn(),
     })
     render(<NailistDashboard />)
     await waitFor(() => expect(screen.getByText('שלום, Oshri')).toBeInTheDocument())

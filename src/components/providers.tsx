@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { AuthProvider } from './auth/auth-provider'
 import { OnboardingGuard } from './auth/onboarding-guard'
 import { VisitTracker } from './analytics/visit-tracker'
+import { AnnouncementModal } from './announcements/AnnouncementModal'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -17,6 +18,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <VisitTracker />
         <OnboardingGuard />
         {children}
+        <AnnouncementModal />
       </AuthProvider>
     </QueryClientProvider>
   )

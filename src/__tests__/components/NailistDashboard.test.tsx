@@ -8,7 +8,7 @@ import { fireEvent, render, screen, waitFor } from '@/__tests__/utils/render'
 import NailistDashboard from '@/app/dashboard/nailist/page'
 
 jest.mock('@/components/auth/auth-provider', () => ({
-  useAuth: () => ({ user: { displayName: 'Oshri Test', email: 'oshri@test.com' } }),
+  useAuth: () => ({ user: { displayName: 'Oshri Test', email: 'oshri@test.com' }, setVerificationReminderActive: jest.fn() }),
 }))
 
 const fullProfile = {

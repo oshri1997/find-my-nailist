@@ -159,7 +159,7 @@ function formatReviewerName(displayName?: string) {
 }
 
 export default function NailistDashboard() {
-  const { user, displayName } = useAuth()
+  const { user, displayName, setVerificationReminderActive } = useAuth()
   const firstName = (displayName || user?.displayName)?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
   const { data: fetchedProfile } = useNailistProfile<NailistProfile>()
   const invalidateProfile = useInvalidateNailistProfile()
@@ -194,6 +194,13 @@ export default function NailistDashboard() {
   const verificationDialogRef = useRef<HTMLDivElement>(null)
   const verificationCtaRef = useRef<HTMLAnchorElement>(null)
   const verificationPreviousFocusRef = useRef<HTMLElement | null>(null)
+
+  // Tells the global announcement modal to hold off while this one is on
+  // screen, and to stop holding once it closes or this page is left.
+  useEffect(() => {
+    setVerificationReminderActive(showVerificationReminder)
+    return () => setVerificationReminderActive(false)
+  }, [showVerificationReminder, setVerificationReminderActive])
 
   useEffect(() => {
     const profileId = fetchedProfile?.id

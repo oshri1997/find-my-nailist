@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Users, Scissors, Calendar, Star, LogOut, Shield, Menu, X, ArrowRight, Home, TrendingUp, History, MessageCircleMore, Mail } from 'lucide-react'
+import { LayoutDashboard, Users, Scissors, Calendar, Star, LogOut, Shield, Menu, X, ArrowRight, Home, TrendingUp, History, MessageCircleMore, Mail, Megaphone } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 
 const NAV = [
@@ -13,6 +13,7 @@ const NAV = [
   { href: '/admin/appointments', label: 'הזמנות', icon: Calendar },
   { href: '/admin/reviews', label: 'ביקורות', icon: Star },
   { href: '/admin/feedback', label: 'פניות', icon: MessageCircleMore },
+  { href: '/admin/announcements', label: 'הכרזות', icon: Megaphone },
   { href: '/admin/emails', label: 'שליחת מיילים', icon: Mail },
   { href: '/admin/analytics', label: 'אנלטיקה', icon: TrendingUp },
   { href: '/admin/audit-log', label: 'יומן פעולות', icon: History },

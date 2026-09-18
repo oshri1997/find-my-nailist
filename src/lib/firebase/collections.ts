@@ -16,4 +16,5 @@ export const COLLECTIONS = {
   FEEDBACK: 'feedback',
   FEEDBACK_RATE_LIMITS: 'feedbackRateLimits',
   ADMIN_EMAIL_CHALLENGES: 'adminEmailChallenges',
+  ANNOUNCEMENTS: 'announcements',
 } as const

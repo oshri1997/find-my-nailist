@@ -24,7 +24,7 @@ function isoAt(time: string): string {
 }
 
 jest.mock('@/components/auth/auth-provider', () => ({
-  useAuth: () => ({ user: { displayName: 'Oshri Test', email: 'oshri@test.com' } }),
+  useAuth: () => ({ user: { displayName: 'Oshri Test', email: 'oshri@test.com' }, setVerificationReminderActive: jest.fn() }),
 }))
 
 const fullProfile = { id: 'nailist-1', businessName: 'סטודיו יופי', city: 'תל אביב' }
