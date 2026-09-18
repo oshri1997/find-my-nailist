@@ -353,8 +353,12 @@ test.describe.serial('Booking — split-shift (multiple intervals) day', () => {
     await dialog.getByRole('button', { name: /המשך/ }).click()
     await dialog.locator(`[data-date="${tomorrowStr}"]`).click()
 
-    await expect(dialog.getByText('15:00', { exact: true })).toBeVisible({ timeout: 10_000 })
-    const slotButton = dialog.getByText('15:00', { exact: true }).locator('..')
+    // getByText('15:00') already resolves to the slot <button> itself (its
+    // text has no wrapper element) — use getByRole directly rather than
+    // .locator('..'), which would instead select the button's own parent
+    // (the slots grid <div>) and never observe the disabled state.
+    const slotButton = dialog.getByRole('button', { name: '15:00', exact: true })
+    await expect(slotButton).toBeVisible({ timeout: 10_000 })
     await expect(slotButton).toBeDisabled()
   })
 })
