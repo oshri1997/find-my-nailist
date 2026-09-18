@@ -26,7 +26,7 @@ const baseProfile = {
   businessName: 'סטודיו יופי',
   bio: 'נייליסטית מקצועית',
   city: 'תל אביב',
-  whatsappPhone: '+972501234567',
+  phoneNumber: '+972501234567',
   instagramUrl: 'https://instagram.com/studio',
   tiktokUrl: 'https://tiktok.com/studio',
   hasContactInfo: true,
@@ -106,7 +106,7 @@ describe('NailistProfileClient — contact info gating', () => {
     mockUseAuth.mockReturnValue({ user: null, role: null })
     mockProfileFetch({
       ...baseProfile,
-      whatsappPhone: undefined as unknown as string,
+      phoneNumber: undefined as unknown as string,
       instagramUrl: undefined as unknown as string,
       tiktokUrl: undefined as unknown as string,
       hasContactInfo: false,
@@ -122,12 +122,12 @@ describe('NailistProfileClient — contact info gating', () => {
   })
 
   it('shows the login CTA from hasContactInfo alone, even when the raw fields are already stripped and there are no coordinates', async () => {
-    // Regression: the API strips whatsappPhone/instagramUrl/tiktokUrl for anonymous
+    // Regression: the API strips phoneNumber/instagramUrl/tiktokUrl for anonymous
     // callers, so the CTA must not depend on those fields being present client-side.
     mockUseAuth.mockReturnValue({ user: null, role: null })
     mockProfileFetch({
       ...baseProfile,
-      whatsappPhone: undefined as unknown as string,
+      phoneNumber: undefined as unknown as string,
       instagramUrl: undefined as unknown as string,
       tiktokUrl: undefined as unknown as string,
       hasContactInfo: true,

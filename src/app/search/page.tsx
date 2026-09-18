@@ -58,7 +58,7 @@ interface Nailist {
   bio?: string
   avgRating: number
   reviewCount: number
-  whatsappPhone?: string
+  phoneNumber?: string
   distanceKm?: number
   coverPhotoUrl?: string
   photoUrl?: string
@@ -919,10 +919,10 @@ export default function SearchPage() {
                     </div>
                   )}
 
-                  {nailist.whatsappPhone && (
+                  {nailist.phoneNumber && (
                     <div className="flex justify-end mt-3 pt-3 border-t border-border">
                       <a
-                        href={toWhatsAppUrl(nailist.whatsappPhone, whatsAppBookingMessage(nailist.businessName))}
+                        href={toWhatsAppUrl(nailist.phoneNumber, whatsAppBookingMessage(nailist.businessName))}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}

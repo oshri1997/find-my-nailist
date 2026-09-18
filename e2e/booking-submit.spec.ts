@@ -20,7 +20,7 @@ const MOCK_PROFILE = {
   reviewCount: 10,
   latitude: 32.08,
   longitude: 34.78,
-  whatsappPhone: '0501234567',
+  phoneNumber: '0501234567',
 }
 
 const MOCK_SERVICES = [

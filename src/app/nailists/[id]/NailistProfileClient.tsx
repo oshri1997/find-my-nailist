@@ -42,7 +42,7 @@ interface NailistProfile {
   bio?: string
   city?: string
   address?: string
-  whatsappPhone?: string
+  phoneNumber?: string
   instagramUrl?: string
   tiktokUrl?: string
   hasContactInfo?: boolean
@@ -361,9 +361,9 @@ export default function NailistProfileClient({ id }: { id: string }) {
           <div className="flex flex-wrap justify-center gap-2 mt-4">
             {user ? (
               <>
-                {profile.whatsappPhone && (
+                {profile.phoneNumber && (
                   <a
-                    href={toWhatsAppUrl(profile.whatsappPhone, whatsAppBookingMessage(profile.businessName))}
+                    href={toWhatsAppUrl(profile.phoneNumber, whatsAppBookingMessage(profile.businessName))}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 bg-white/20 backdrop-blur hover:bg-white/30 text-white rounded-2xl px-4 py-2 font-bold text-sm transition-colors border border-white/20"

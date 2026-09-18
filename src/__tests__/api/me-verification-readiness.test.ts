@@ -73,7 +73,7 @@ describe('GET /api/me/verification-readiness', () => {
     expect(response.status).toBe(200)
     expect(whereCalls).toHaveBeenCalledWith('nailistProfiles', 'userId', 'owner-1')
     expect(json.data.checks.filter((check: { passed: boolean }) => !check.passed).map((check: { missing: string }) => check.missing))
-      .toEqual(['טלפון או וואטסאפ', 'הוסיפי עוד 2 תמונות לתיק העבודות'])
+      .toEqual(['מספר טלפון', 'הוסיפי עוד 2 תמונות לתיק העבודות'])
     expect(json.data).toMatchObject({ totalCount: 9, passedCount: 7, isReady: false })
     expect(mockGetUser).toHaveBeenCalledWith('owner-1')
   })

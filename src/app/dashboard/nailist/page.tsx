@@ -90,7 +90,6 @@ interface NailistProfile {
   id?: string
   businessName?: string
   phoneNumber?: string
-  whatsappPhone?: string
   city?: string
   address?: string
   bio?: string

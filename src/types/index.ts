@@ -52,10 +52,9 @@ export interface NailistProfileDoc {
   coverPhotoUrl?: string   // shown on the search-results card; set from Settings or the portfolio picker
   instagramUrl?: string
   tiktokUrl?: string
-  whatsappPhone?: string   // Israeli format: 0501234567 or +972501234567
   depositEnabled?: boolean       // opt-in — nailist requires a Bit deposit before an appointment
   depositPercentage?: number     // 1-100, % of the service price
-  bitPhone?: string               // Israeli format, same shape as whatsappPhone — kept distinct since her Bit-linked number may differ from her WhatsApp line
+  bitPhone?: string               // Israeli format, same shape as phoneNumber — kept distinct since her Bit-linked number may differ from her contact line
   isVerified: boolean
   isActive: boolean
   onboardingCompleted?: boolean   // false right after signup; true once the onboarding wizard's last step (working hours) is saved

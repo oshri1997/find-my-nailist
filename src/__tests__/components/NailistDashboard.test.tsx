@@ -19,7 +19,6 @@ const fullProfile = {
 
 type DashboardProfile = typeof fullProfile & {
   phoneNumber?: string
-  whatsappPhone?: string
 }
 
 const readyReadiness = { isReady: true, checks: [] }

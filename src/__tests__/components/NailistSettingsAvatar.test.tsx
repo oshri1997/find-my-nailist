@@ -21,7 +21,6 @@ const baseProfile = {
   city: 'תל אביב',
   address: '',
   phoneNumber: '',
-  whatsappPhone: '',
   instagramUrl: '',
   tiktokUrl: '',
   isActive: true,

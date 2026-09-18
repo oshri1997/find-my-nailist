@@ -18,7 +18,6 @@ interface FavoriteNailist {
   reviewCount: number
   coverPhotoUrl?: string | null
   photoUrl?: string | null
-  whatsappPhone?: string | null
 }
 
 function CardSkeleton() {

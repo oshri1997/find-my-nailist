@@ -3,7 +3,7 @@ import { adminAuth } from '@/lib/firebase/admin'
 
 // Fields only returned to authenticated callers — keeps the profile itself
 // public for SEO while forcing anonymous visitors through login to see them.
-const CONTACT_FIELDS = ['whatsappPhone', 'instagramUrl', 'tiktokUrl', 'phoneNumber', 'email', 'address', 'userId', 'bitPhone'] as const
+const CONTACT_FIELDS = ['instagramUrl', 'tiktokUrl', 'phoneNumber', 'email', 'address', 'userId', 'bitPhone'] as const
 
 export async function isAuthenticatedRequest(request: NextRequest): Promise<boolean> {
   const token = request.cookies.get('auth-token')?.value
@@ -19,7 +19,7 @@ export async function isAuthenticatedRequest(request: NextRequest): Promise<bool
 // Computed BEFORE stripping so anonymous callers can still know a nailist has
 // contact info (to show a "log in to view" prompt) without receiving it.
 export function computeHasContactInfo(profileData: Record<string, unknown>): boolean {
-  return !!(profileData.whatsappPhone || profileData.instagramUrl || profileData.tiktokUrl || profileData.phoneNumber)
+  return !!(profileData.instagramUrl || profileData.tiktokUrl || profileData.phoneNumber)
 }
 
 export function stripNailistContactFields(profileData: Record<string, unknown>): void {

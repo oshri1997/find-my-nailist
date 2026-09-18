@@ -11,7 +11,7 @@ const MOCK_PROFILE = {
   latitude: 32.08,
   longitude: 34.78,
   instagramHandle: null,
-  whatsappPhone: '0501234567',
+  phoneNumber: '0501234567',
 }
 
 const MOCK_SERVICES = [

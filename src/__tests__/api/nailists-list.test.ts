@@ -2,7 +2,7 @@
  * @jest-environment node
  *
  * Covers the bugfix where the unauthenticated search/list endpoint
- * GET /api/nailists leaked contact info (whatsappPhone/instagramUrl/tiktokUrl/
+ * GET /api/nailists leaked contact info (instagramUrl/tiktokUrl/
  * phoneNumber/email/address/userId) for every returned nailist, bypassing the
  * login gate enforced on GET /api/nailists/[id].
  */
@@ -64,7 +64,6 @@ describe('GET /api/nailists — contact info gating on list results', () => {
       __id: 'nailist-1',
       businessName: 'סטודיו יופי',
       isActive: true,
-      whatsappPhone: '+972501234567',
       instagramUrl: 'https://instagram.com/studio',
       tiktokUrl: 'https://tiktok.com/@studio',
       phoneNumber: '0501234567',
@@ -80,7 +79,6 @@ describe('GET /api/nailists — contact info gating on list results', () => {
     const json = await res.json()
     expect(json.data).toHaveLength(1)
     expect(json.data[0].businessName).toBe('סטודיו יופי')
-    expect(json.data[0].whatsappPhone).toBeUndefined()
     expect(json.data[0].instagramUrl).toBeUndefined()
     expect(json.data[0].tiktokUrl).toBeUndefined()
     expect(json.data[0].phoneNumber).toBeUndefined()
@@ -93,7 +91,7 @@ describe('GET /api/nailists — contact info gating on list results', () => {
   it('includes contact fields for authenticated callers', async () => {
     const res = await GET(makeRequest('valid-token'))
     const json = await res.json()
-    expect(json.data[0].whatsappPhone).toBe('+972501234567')
+    expect(json.data[0].instagramUrl).toBe('https://instagram.com/studio')
     expect(json.data[0].email).toBe('owner@example.com')
   })
 
@@ -101,7 +99,7 @@ describe('GET /api/nailists — contact info gating on list results', () => {
     verifyIdTokenMock.mockRejectedValue(new Error('invalid'))
     const res = await GET(makeRequest('bad-token'))
     const json = await res.json()
-    expect(json.data[0].whatsappPhone).toBeUndefined()
+    expect(json.data[0].instagramUrl).toBeUndefined()
   })
 })
 

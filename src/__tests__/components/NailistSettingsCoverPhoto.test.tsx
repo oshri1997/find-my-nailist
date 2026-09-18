@@ -19,7 +19,6 @@ const profile = {
   city: '',
   address: '',
   phoneNumber: '',
-  whatsappPhone: '',
   instagramUrl: '',
   tiktokUrl: '',
   isActive: true,

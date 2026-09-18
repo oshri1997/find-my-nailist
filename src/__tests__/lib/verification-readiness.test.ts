@@ -11,16 +11,16 @@ describe('evaluateVerificationReadiness', () => {
     expect(evaluateVerificationReadiness(complete)).toMatchObject({ passedCount: 9, totalCount: 9, isReady: true })
   })
 
-  it('reports each missing requirement and accepts allowed alternatives', () => {
+  it('reports each missing requirement and accepts an allowed alternative', () => {
     const result = evaluateVerificationReadiness({
       ...complete, emailVerified: false, businessName: ' ', city: '', address: '', phoneNumber: '', photoUrl: '',
       activeServiceCount: 0, activeWorkingHoursCount: 0, portfolioPhotoCount: 4,
-      whatsappPhone: '0509999999', coverPhotoUrl: 'https://example.com/cover.jpg',
+      coverPhotoUrl: 'https://example.com/cover.jpg',
     })
 
-    expect(result).toMatchObject({ passedCount: 3, totalCount: 9, isReady: false })
+    expect(result).toMatchObject({ passedCount: 2, totalCount: 9, isReady: false })
     expect(result.checks.filter((check) => !check.passed).map((check) => check.missing)).toEqual([
-      'אימות כתובת אימייל', 'שם עסק', 'עיר וכתובת עסק', 'לפחות שירות פעיל אחד', 'לפחות שעת עבודה פעילה אחת', 'הוסיפי עוד 1 תמונה לתיק העבודות',
+      'אימות כתובת אימייל', 'שם עסק', 'עיר וכתובת עסק', 'מספר טלפון', 'לפחות שירות פעיל אחד', 'לפחות שעת עבודה פעילה אחת', 'הוסיפי עוד 1 תמונה לתיק העבודות',
     ])
   })
 

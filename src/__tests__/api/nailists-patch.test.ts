@@ -120,7 +120,7 @@ describe('PATCH /api/nailists/[id]', () => {
     const res = await PATCH(
       makeRequest({
         businessName: 'Studio', bio: 'Bio', city: 'תל אביב', address: 'הרצל 1',
-        phoneNumber: '0501234567', whatsappPhone: '0501234567',
+        phoneNumber: '0501234567',
         instagramUrl: 'https://instagram.com/x', tiktokUrl: 'https://tiktok.com/@x',
         photoUrl: 'https://example.com/avatar.jpg', coverPhotoUrl: 'https://example.com/cover.jpg',
         isActive: true, onboardingCompleted: true, latitude: 32.08, longitude: 34.78,
@@ -141,15 +141,6 @@ describe('PATCH /api/nailists/[id]', () => {
   it('rejects an obviously malformed phone number', async () => {
     const res = await PATCH(
       makeRequest({ phoneNumber: 'not-a-phone-number!!' }, 'token'),
-      mockParams
-    )
-    expect(res.status).toBe(400)
-    expect(mockUpdateFn).not.toHaveBeenCalled()
-  })
-
-  it('rejects an obviously malformed whatsapp number', async () => {
-    const res = await PATCH(
-      makeRequest({ whatsappPhone: 'call me maybe' }, 'token'),
       mockParams
     )
     expect(res.status).toBe(400)
@@ -195,7 +186,7 @@ describe('PATCH /api/nailists/[id]', () => {
   it('accepts empty strings to clear phone/social fields', async () => {
     const res = await PATCH(
       makeRequest(
-        { phoneNumber: '', whatsappPhone: '', instagramUrl: '', tiktokUrl: '' },
+        { phoneNumber: '', instagramUrl: '', tiktokUrl: '' },
         'token'
       ),
       mockParams

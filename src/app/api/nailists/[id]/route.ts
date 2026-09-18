@@ -25,7 +25,6 @@ const patchSchema = z.object({
   city: z.string().optional(),
   address: z.string().optional(),
   phoneNumber: phoneOrEmpty('מספר טלפון').optional(),
-  whatsappPhone: phoneOrEmpty('מספר וואטסאפ').optional(),
   instagramUrl: urlOrEmpty('קישור אינסטגרם').optional(),
   tiktokUrl: urlOrEmpty('קישור טיקטוק').optional(),
   photoUrl: z.string().optional(),

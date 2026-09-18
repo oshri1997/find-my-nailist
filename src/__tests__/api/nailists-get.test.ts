@@ -2,7 +2,7 @@
  * @jest-environment node
  *
  * Covers the bugfix where GET /api/nailists/[id] leaked contact info
- * (whatsappPhone/instagramUrl/tiktokUrl/phoneNumber/email/address/userId) to
+ * (instagramUrl/tiktokUrl/phoneNumber/email/address/userId) to
  * unauthenticated callers even though the UI hides the corresponding buttons
  * behind a login gate, and the `hasContactInfo` flag that lets the anonymous
  * UI show a login CTA without needing the raw (stripped) fields.
@@ -65,7 +65,6 @@ describe('GET /api/nailists/[id] — contact info gating', () => {
     docStore['nailistProfiles/nailist-profile-1'] = {
       businessName: 'סטודיו יופי',
       bio: 'נייליסטית מקצועית',
-      whatsappPhone: '+972501234567',
       instagramUrl: 'https://instagram.com/studio',
       tiktokUrl: 'https://tiktok.com/@studio',
       phoneNumber: '0501234567',
@@ -80,7 +79,6 @@ describe('GET /api/nailists/[id] — contact info gating', () => {
     const json = await res.json()
     expect(json.data.businessName).toBe('סטודיו יופי')
     expect(json.data.bio).toBe('נייליסטית מקצועית')
-    expect(json.data.whatsappPhone).toBeUndefined()
     expect(json.data.instagramUrl).toBeUndefined()
     expect(json.data.tiktokUrl).toBeUndefined()
     expect(json.data.phoneNumber).toBeUndefined()
@@ -93,7 +91,6 @@ describe('GET /api/nailists/[id] — contact info gating', () => {
     verifyIdTokenMock.mockRejectedValue(new Error('invalid token'))
     const res = await GET(makeRequest('bad-token'), mockParams)
     const json = await res.json()
-    expect(json.data.whatsappPhone).toBeUndefined()
     expect(json.data.instagramUrl).toBeUndefined()
     expect(json.data.tiktokUrl).toBeUndefined()
     expect(json.data.email).toBeUndefined()
@@ -102,7 +99,6 @@ describe('GET /api/nailists/[id] — contact info gating', () => {
   it('includes contact fields for authenticated callers', async () => {
     const res = await GET(makeRequest('valid-token'), mockParams)
     const json = await res.json()
-    expect(json.data.whatsappPhone).toBe('+972501234567')
     expect(json.data.instagramUrl).toBe('https://instagram.com/studio')
     expect(json.data.tiktokUrl).toBe('https://tiktok.com/@studio')
     expect(json.data.phoneNumber).toBe('0501234567')
@@ -130,7 +126,7 @@ describe('GET /api/nailists/[id] — contact info gating', () => {
     const res = await GET(makeRequest(), mockParams)
     const json = await res.json()
     expect(json.data.hasContactInfo).toBe(true)
-    expect(json.data.whatsappPhone).toBeUndefined()
+    expect(json.data.instagramUrl).toBeUndefined()
   })
 
   it('reports hasContactInfo=false when the nailist has no contact info at all', async () => {

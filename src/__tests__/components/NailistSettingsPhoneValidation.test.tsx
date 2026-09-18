@@ -1,10 +1,10 @@
 /**
- * Regression: phoneNumber/whatsappPhone/bitPhone on the nailist settings
- * page had no real format check (any 7-20 character string of digits/dashes
- * passed), so an obviously-wrong number sailed through client-side and only
- * got rejected server-side with a generic "שגיאה בשמירה" that didn't say
- * which field was actually wrong. Inline validation catches it before the
- * save request is even sent, and points at the specific field.
+ * Regression: phoneNumber/bitPhone on the nailist settings page had no real
+ * format check (any 7-20 character string of digits/dashes passed), so an
+ * obviously-wrong number sailed through client-side and only got rejected
+ * server-side with a generic "שגיאה בשמירה" that didn't say which field was
+ * actually wrong. Inline validation catches it before the save request is
+ * even sent, and points at the specific field.
  */
 import { render, screen, waitFor, fireEvent } from '@/__tests__/utils/render'
 import NailistSettingsPage from '@/app/dashboard/nailist/settings/page'
@@ -25,7 +25,6 @@ const baseProfile = {
   city: 'תל אביב',
   address: '',
   phoneNumber: '',
-  whatsappPhone: '',
   instagramUrl: '',
   tiktokUrl: '',
   isActive: true,
@@ -71,16 +70,16 @@ describe('NailistSettingsPage — phone validation', () => {
     expect(patchCalled).toBe(false)
   })
 
-  it('shows an inline error under מספר WhatsApp for an invalid number', async () => {
+  it('replaces the helper text under מספר טלפון with the error while it is invalid', async () => {
     mockFetch(baseProfile)
     render(<NailistSettingsPage />)
     await waitFor(() => expect(screen.getByText('הגדרות פרופיל')).toBeInTheDocument())
 
-    fireEvent.change(document.getElementsByName('whatsappPhone')[0], { target: { value: 'call me maybe' } })
+    fireEvent.change(document.getElementsByName('phoneNumber')[0], { target: { value: 'call me maybe' } })
 
     expect(screen.getByText('מספר טלפון אינו תקין')).toBeInTheDocument()
     // the normal helper text is replaced by the error, not shown alongside it
-    expect(screen.queryByText('לקוחות יוכלו לשלוח לך הודעה ישירה')).not.toBeInTheDocument()
+    expect(screen.queryByText('לקוחות יוכלו להתקשר ולשלוח הודעת WhatsApp למספר הזה')).not.toBeInTheDocument()
   })
 
   it('shows an inline error under מספר טלפון לביט for an invalid number', async () => {

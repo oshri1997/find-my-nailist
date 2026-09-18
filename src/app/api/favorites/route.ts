@@ -42,7 +42,6 @@ export async function GET(request: NextRequest) {
         reviewCount: d.reviewCount ?? 0,
         coverPhotoUrl: d.coverPhotoUrl ?? null,
         photoUrl: d.photoUrl ?? null,
-        whatsappPhone: d.whatsappPhone ?? null,
       }
     })
 

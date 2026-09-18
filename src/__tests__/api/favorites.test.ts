@@ -112,7 +112,6 @@ describe('GET /api/favorites', () => {
       reviewCount: 12,
       coverPhotoUrl: null,
       photoUrl: null,
-      whatsappPhone: null,
     }
     const req = makeRequest('GET')
     const res = await getList(req)

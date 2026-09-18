@@ -30,7 +30,6 @@ export interface VerificationReadinessInput {
   city?: unknown
   address?: unknown
   phoneNumber?: unknown
-  whatsappPhone?: unknown
   photoUrl?: unknown
   coverPhotoUrl?: unknown
   activeServiceCount: number
@@ -56,8 +55,8 @@ export function evaluateVerificationReadiness(input: VerificationReadinessInput)
       passed: hasText(input.city) && hasText(input.address), missing: 'עיר וכתובת עסק',
     },
     {
-      key: 'phone', label: 'טלפון או וואטסאפ',
-      passed: hasText(input.phoneNumber) || hasText(input.whatsappPhone), missing: 'טלפון או וואטסאפ',
+      key: 'phone', label: 'מספר טלפון',
+      passed: hasText(input.phoneNumber), missing: 'מספר טלפון',
     },
     {
       key: 'photo', label: 'תמונת פרופיל או קאבר',
