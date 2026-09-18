@@ -181,6 +181,9 @@ export default function NailistDashboard() {
   const [hasPhotos, setHasPhotos] = useState(false)
   const [hasServices, setHasServices] = useState(false)
   const [hasHours, setHasHours] = useState(false)
+  // Starts false so the completion card never flashes on an already-complete
+  // profile while portfolio/services/hours are still loading in below.
+  const [checklistLoaded, setChecklistLoaded] = useState(false)
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([])
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([])
   const [recentReviews, setRecentReviews] = useState<Review[]>([])
@@ -234,6 +237,7 @@ export default function NailistDashboard() {
       setHasHours(hours.some((h) => h.isActive))
       setWorkingHoursFull(hours)
     }
+    setChecklistLoaded(true)
     if (appointmentsRes.ok) {
       const { data } = await appointmentsRes.json()
       const all: Appointment[] = data ?? []
@@ -651,8 +655,10 @@ export default function NailistDashboard() {
           )}
         </motion.div>
 
-        {/* Profile completion — hidden once fully complete */}
-        {completionPct < 100 && <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+        {/* Profile completion — hidden once fully complete, and until the
+            checklist has actually loaded so it never flashes then vanishes
+            on an already-complete profile. */}
+        {checklistLoaded && completionPct < 100 && <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
           className="bg-card rounded-3xl border border-border p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div>

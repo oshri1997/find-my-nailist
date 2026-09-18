@@ -89,8 +89,9 @@ describe('NailistDashboard — profile completion card', () => {
     mockFetchResponses({ hasPhotos: false })
     render(<NailistDashboard />)
 
-    // The card renders immediately at 0% before the async profile/services/photos/hours
-    // fetches resolve — wait for the settled percentage, not just the heading's first paint.
+    // The card only renders once the portfolio/services/hours checklist fetches
+    // have actually settled, never at a transient 0%-before-data value — wait
+    // for the settled percentage, not just the heading's first paint.
     // JSX splits `{completionPct}% הושלם` into sibling text nodes — match on the <p>'s own text.
     await waitFor(() => {
       expect(
@@ -98,6 +99,17 @@ describe('NailistDashboard — profile completion card', () => {
       ).toBeInTheDocument()
     })
     expect(screen.getByText('השלמת פרופיל')).toBeInTheDocument()
+  })
+
+  it('never flashes the card on first paint, before the checklist fetches have resolved', () => {
+    mockFetchResponses() // businessName+city+services+photos+hours -> 100%
+    render(<NailistDashboard />)
+
+    // Checked synchronously, before any of the portfolio/services/hours fetches
+    // have resolved: hasPhotos/hasServices/hasHours are still their false
+    // initial state, which used to compute a false 0% and flash the card even
+    // for an already-complete profile. It must stay absent until data loads.
+    expect(screen.queryByText('השלמת פרופיל')).not.toBeInTheDocument()
   })
 
   it('no longer renders the old "quick actions" card', async () => {
