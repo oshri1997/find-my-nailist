@@ -84,6 +84,13 @@ async function ensureNailistOnboarded(page: Page) {
   // once so AuthProvider re-reads them instead of keeping the CLIENT state
   // captured during the initial sign-in redirect.
   await page.reload({ waitUntil: 'domcontentloaded' })
+
+  // Staging may have a genuine global announcement. A real user can dismiss
+  // it; the unrelated flows below need the same clean interaction surface.
+  const announcementClose = page.getByRole('button', { name: 'סגירה' })
+  if (await announcementClose.waitFor({ state: 'visible', timeout: 2_000 }).then(() => true).catch(() => false)) {
+    await announcementClose.click()
+  }
 }
 
 export async function loginAsRealUser(browser: Browser): Promise<{ context: BrowserContext; page: Page }> {
