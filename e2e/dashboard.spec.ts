@@ -25,7 +25,7 @@ const MOCK_SERVICES = [
  */
 async function closeProductTour(page: Page) {
   const closeButton = page.getByRole('button', { name: 'Close' })
-  if (await closeButton.isVisible({ timeout: 2_000 }).catch(() => false)) {
+  if (await closeButton.waitFor({ state: 'visible', timeout: 2_000 }).then(() => true).catch(() => false)) {
     await closeButton.click()
   }
 }

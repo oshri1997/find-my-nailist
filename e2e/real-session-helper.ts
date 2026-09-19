@@ -68,15 +68,22 @@ async function ensureNailistOnboarded(page: Page) {
     const { data } = await res.json()
     return data
   })
-  if (!profile || profile.onboardingCompleted === true) return
+  if (!profile) throw new Error('E2E test account did not receive a nailist profile')
 
-  await page.evaluate(async (id: string) => {
-    await fetch(`/api/nailists/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ onboardingCompleted: true, isActive: true }),
-    })
-  }, profile.id)
+  if (profile.onboardingCompleted !== true) {
+    await page.evaluate(async (id: string) => {
+      await fetch(`/api/nailists/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ onboardingCompleted: true, isActive: true }),
+      })
+    }, profile.id)
+  }
+
+  // Role and onboarding are changed through direct API calls above. Refresh
+  // once so AuthProvider re-reads them instead of keeping the CLIENT state
+  // captured during the initial sign-in redirect.
+  await page.reload({ waitUntil: 'domcontentloaded' })
 }
 
 export async function loginAsRealUser(browser: Browser): Promise<{ context: BrowserContext; page: Page }> {
