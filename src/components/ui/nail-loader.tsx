@@ -7,7 +7,7 @@ interface NailLoaderProps { text?: string; size?: 'sm' | 'md' | 'lg' }
 const cycle = { duration: 2.65, repeat: Infinity, ease: [0.45, 0, 0.2, 1] as [number, number, number, number] }
 
 /** A studio-style manicure gesture: one finger, glassy lacquer, precise brush. */
-export function NailLoader({ text = 'טוענת…', size = 'md' }: NailLoaderProps) {
+export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderProps) {
   const scale = size === 'sm' ? 0.72 : size === 'lg' ? 1.12 : 0.9
   const reduceMotion = useReducedMotion()
 

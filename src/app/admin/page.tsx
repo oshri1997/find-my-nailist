@@ -194,7 +194,7 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="p-4 md:p-8" aria-label="טוען נתוני דשבורד">
+      <div className="p-4 md:p-8" aria-label="טוענת נתוני דשבורד">
         <div className="animate-pulse space-y-4">
           <div className="h-20 max-w-xl bg-muted" />
           <div className="grid gap-px border border-border bg-border md:grid-cols-3">

@@ -127,7 +127,7 @@ export function Navbar() {
                     every role, not just CLIENT) — a second copy here would
                     just duplicate it. */}
                 {role === 'CLIENT' && (
-                  <Link href="/my-appointments">
+                  <Link href="/my-appointments" data-tour="client-appointments">
                     <Button size="sm" variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground gap-2 cursor-pointer">
                       <CalendarDays className="h-4 w-4" />
                       <span className="hidden sm:inline">התורים שלי</span>
@@ -183,7 +183,7 @@ export function Navbar() {
                         className="flex items-center gap-2 w-full px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted/60 rounded-lg transition-colors"
                       >
                         <MessageCircleMore className="h-4 w-4 text-primary" />
-                        הפניות ששלחתי
+                        הפניות שלי
                       </Link>
                       <Link
                         href="/whats-new"
@@ -221,7 +221,7 @@ export function Navbar() {
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
                       >
                         <CircleHelp className="h-[17px] w-[17px] text-primary" />
-                        הדרכה קצרה
+                        סיור מודרך
                       </button>
                       {isAdmin && (
                         <Link
@@ -238,7 +238,7 @@ export function Navbar() {
                         className="flex items-center gap-2 w-full px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10 rounded-lg transition-colors cursor-pointer"
                       >
                         <LogOut className="h-4 w-4" />
-                        התנתקי
+                        יציאה מהחשבון
                       </button>
                     </div>
                   )}

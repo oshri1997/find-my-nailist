@@ -126,7 +126,7 @@ describe('AdminFeedbackPage', () => {
     render(<AdminFeedbackPage />)
     await screen.findByRole('button', { name: 'פתיחת פנייה אי אפשר לבחור שעה' })
 
-    fireEvent.click(screen.getByRole('button', { name: 'טען עוד' }))
+    fireEvent.click(screen.getByRole('button', { name: 'טעני עוד' }))
     expect(await screen.findAllByText('רעיון לתזכורת')).not.toHaveLength(0)
     expect(screen.getAllByText('אי אפשר לבחור שעה')).not.toHaveLength(0)
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes('cursor=cursor-1'))).toBe(true)

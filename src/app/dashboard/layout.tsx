@@ -193,7 +193,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-all"
             >
               <CircleHelp className="h-4 w-4" />
-              הדרכה קצרה
+              סיור מודרך
             </button>
             {isAdmin && (
               <Link
@@ -213,7 +213,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
-              יציאה
+              יציאה מהחשבון
             </button>
           </div>
         </motion.aside>
@@ -352,7 +352,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
                 >
                   <CircleHelp className="h-4 w-4" />
-                  הדרכה קצרה
+                  סיור מודרך
                 </button>
                 <div className="flex items-center justify-between px-4 py-2.5 rounded-xl">
                   <span className="text-sm font-semibold text-muted-foreground">מצב תצוגה</span>

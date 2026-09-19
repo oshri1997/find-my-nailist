@@ -356,7 +356,7 @@ export function FeedbackLauncher({ compact = false, className, onClose, open: co
                         }}
                       />
                     </label>
-                    {uploadProgress !== null && <p className="mt-1.5 text-xs font-bold text-primary" role="status">מעלים צילום… {uploadProgress}%</p>}
+                    {uploadProgress !== null && <p className="mt-1.5 text-xs font-bold text-primary" role="status">מעלים צילום... {uploadProgress}%</p>}
                   </div>
 
                   <div>
