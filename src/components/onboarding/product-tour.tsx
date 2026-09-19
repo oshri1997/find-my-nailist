@@ -42,15 +42,15 @@ function prefersReducedMotion() {
 const clientSteps: DriveStep[] = [
   {
     popover: {
-      title: 'נראה לך איך זה עובד',
-      description: 'שלושה שלבים קצרים. אפשר לדלג מתי שרוצים.',
+      title: 'איך זה עובד?',
+      description: 'שלושה שלבים קצרים ואנחנו מסיימות (תמיד אפשר לדלג).',
     },
   },
   {
     element: '[data-tour="client-search-filters"]',
     popover: {
-      title: 'קודם מחפשות',
-      description: 'בוחרות אזור, שירות, תאריך או מחיר. לא חייבים למלא הכול.',
+      title: 'קודם כל, מחפשות',
+      description: 'סנני לפי אזור, שירות, תאריך או מחיר — מה שחשוב לך. לא חובה למלא הכול.',
       side: 'bottom',
       align: 'center',
     },
@@ -58,8 +58,8 @@ const clientSteps: DriveStep[] = [
   {
     element: '[data-tour="client-search-results"]',
     popover: {
-      title: 'אחר כך בוחרות',
-      description: 'לוחצות על נייליסטית כדי לראות עבודות, מחירים ושעות פנויות — ומשם מבקשות תור.',
+      title: 'בוחרות וקובעות',
+      description: 'לחצי על נייליסטית כדי לראות עבודות, מחירים ושעות פנויות — ושלחי לה בקשה לתור.',
       side: 'top',
       align: 'center',
     },
@@ -67,8 +67,8 @@ const clientSteps: DriveStep[] = [
   {
     element: '[data-tour="client-appointments"]',
     popover: {
-      title: 'וזה הכל',
-      description: 'הנייליסטית תאשר, יגיע לך מייל, והתור יופיע כאן ב״התורים שלי״.',
+      title: 'וזהו, סיימנו!',
+      description: 'ברגע שהנייליסטית תאשר תקבלי מייל, והתור יחכה לך כאן ב״התורים שלי״.',
       side: 'bottom',
       align: 'end',
     },
@@ -85,17 +85,17 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
   return [
     {
       popover: {
-        title: 'סיור קצר על העסק שלך',
-        description: 'איך בקשה של לקוחה הופכת לתור. אפשר לדלג מתי שרוצים.',
+        title: 'ברוכה הבאה לעסק שלך',
+        description: 'בואי נראה איך בקשה הופכת לתור (אפשר לדלג מתי שרוצים).',
       },
     },
     {
       element: navigationTarget,
       popover: {
-        title: isMobile ? 'הניווט שלך כאן' : 'התפריט הזה הוא כל העסק',
+        title: isMobile ? 'הניווט שלך מתחיל כאן' : 'כל העסק במקום אחד',
         description: isMobile
-          ? 'תמונת מצב, תורים, שירותים ופרטי העסק. ב״עוד״ יש ביקורות, העבודות שלך ושעות הפעילות.'
-          : '״תמונת מצב״ היא דף הבית שלך. מכאן גם לתורים, לשירותים, לפרטי העסק, לשעות, לעבודות ולביקורות.',
+          ? 'תמונת מצב, תורים, שירותים ופרטי העסק. ב״עוד״ יחכו לך הביקורות, העבודות ושעות הפעילות.'
+          : '״תמונת מצב״ היא דף הבית שלך. מכאן מנווטים לתורים, לשירותים, לשעות הפעילות ולביקורות.',
         side: menuSide,
         align: 'center',
       },
@@ -103,8 +103,8 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
     {
       element: appointmentsTarget,
       popover: {
-        title: '1. מגיעה בקשה',
-        description: 'כל בקשה חדשה מופיעה ב״התורים שלי״ כ״ממתינה״ — עם השירות, התאריך, השעה ומי הלקוחה.',
+        title: 'ניהול התורים שלך',
+        description: 'כל בקשה חדשה מגיעה לכאן וממתינה לך. לחיצה אחת לאישור או ביטול — והלקוחה מקבלת עדכון למייל.',
         side: menuSide,
         align: 'center',
       },
@@ -112,26 +112,17 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
     {
       element: '[data-tour="nailist-upcoming-appointments"]',
       popover: {
-        title: '2. רואים הכל גם מכאן',
-        description: 'הבקשות והתורים הקרובים מופיעים גם ב״תמונת מצב״, כדי שלא תפספסי.',
+        title: 'מבט מהיר על היום שלך',
+        description: 'כדי שלא תפספסי כלום, הבקשות החדשות והתורים הקרובים מופיעים גם כאן, בדף הבית.',
         side: 'top',
-        align: 'center',
-      },
-    },
-    {
-      element: appointmentsTarget,
-      popover: {
-        title: '3. מאשרות או מבטלות',
-        description: 'לחיצה אחת ב״התורים שלי״. באישור הלקוחה מקבלת מייל והתור עובר ל״מאושר״. גם ביטול מעדכן אותה.',
-        side: menuSide,
         align: 'center',
       },
     },
     {
       element: servicesTarget,
       popover: {
-        title: '4. מה שהגדרת — זה מה שאפשר להזמין',
-        description: 'לקוחות רואות רק שירותים פעילים ורק שעות שפתחת. כל עדכון מחיר או משך נכנס לתוקף מיד.',
+        title: 'מה שאת מגדירה — זה מה שרואים',
+        description: 'לקוחות יראו רק שירותים פעילים ושעות שפתחת. כל עדכון מחיר או זמן יתעדכן מיד.',
         side: menuSide,
         align: 'center',
       },
@@ -139,8 +130,8 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
     {
       element: '[data-tour="nailist-recent-reviews"]',
       popover: {
-        title: '5. אחרי הטיפול — ביקורת',
-        description: 'כשמסמנים תור כ״הושלם״, הלקוחה מקבלת בקשה לביקורת. האחרונות מופיעות כאן.',
+        title: 'הביקורות שלך',
+        description: 'כשאת מסמנת תור כ״הושלם״, הלקוחה מקבלת בקשה לדרג אותך. הביקורות החדשות יופיעו ממש כאן.',
         side: 'top',
         align: 'center',
       },
@@ -148,16 +139,16 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
     {
       element: settingsTarget,
       popover: {
-        title: '6. הפרופיל שלך',
-        description: 'ב״פרטי העסק״ מעדכנים את הפרטים, ב״העבודות שלי״ מעלים תמונות, וב״הפרופיל שלי״ רואים מה לקוחות רואות.',
+        title: 'חלון הראווה שלך',
+        description: 'כאן מעדכנים פרטים, מעלים תמונות, ורואים בדיוק איך הפרופיל שלך נראה ללקוחות.',
         side: menuSide,
         align: 'center',
       },
     },
     {
       popover: {
-        title: 'זה הכל',
-        description: 'בקשה → ״התורים שלי״ → מאשרות → הלקוחה מתעדכנת. אפשר לפתוח את הסיור שוב מהתפריט בכל רגע.',
+        title: 'זהו, את מוכנה!',
+        description: 'בקשה מגיעה ← את מאשרת ← הלקוחה מתעדכנת. צריכה תזכורת? תמיד אפשר לפתוח את הסיור שוב מהתפריט.',
       },
     },
   ]

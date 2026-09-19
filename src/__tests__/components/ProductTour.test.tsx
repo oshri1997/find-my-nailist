@@ -83,7 +83,7 @@ describe('ProductTour', () => {
 
     const config = lastConfig()
     expect(config.steps).toHaveLength(4)
-    expect(config.steps?.[0].popover?.title).toBe('נראה לך איך זה עובד')
+    expect(config.steps?.[0].popover?.title).toBe('איך זה עובד?')
     expect(config.steps?.[3].element).toBe('[data-tour="client-appointments"]')
   })
 
@@ -102,8 +102,8 @@ describe('ProductTour', () => {
 
     await waitFor(() => expect(mockDriver).toHaveBeenCalledTimes(1))
     const config = lastConfig()
-    expect(config.steps?.length).toBeGreaterThanOrEqual(7)
-    expect(config.steps?.[2].popover?.title).toBe('1. מגיעה בקשה')
+    expect(config.steps).toHaveLength(8)
+    expect(config.steps?.[2].popover?.title).toBe('ניהול התורים שלך')
   })
 
   it('never leaves a step pointing at an anchor that has not rendered', async () => {
