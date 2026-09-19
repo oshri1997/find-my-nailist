@@ -545,7 +545,7 @@ export default function NailistDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5">
         {/* Upcoming appointments */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+        <motion.div data-tour="nailist-upcoming-appointments" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
           className="bg-card rounded-3xl border border-border p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div>

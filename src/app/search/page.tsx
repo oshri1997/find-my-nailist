@@ -459,7 +459,7 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Search controls bar */}
-      <div className="bg-card border-b border-border sticky top-16 z-30 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+      <div data-tour="client-search-filters" className="bg-card border-b border-border sticky top-16 z-30 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
         <div className="container mx-auto max-w-7xl px-6 py-3">
           <div className="rounded-2xl border border-border/80 bg-background/35 p-2 shadow-[0_4px_18px_rgba(0,0,0,0.035)]">
             <div className="flex flex-col gap-2 md:flex-row md:items-center">
@@ -772,7 +772,7 @@ export default function SearchPage() {
 
         {/* Content area */}
         {loading || !imagesReady ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div data-tour="client-search-results" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: loading ? skeletonCount : sorted.length }).map((_, i) => (
               <NailistCardSkeleton key={i} />
             ))}

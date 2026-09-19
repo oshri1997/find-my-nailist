@@ -14,7 +14,7 @@ import type { Announcement } from '@/types'
  * the full design (watermark, priority, immutable-once-published).
  */
 export function AnnouncementModal() {
-  const { user, loading, role, onboardingCompleted, verificationReminderActive } = useAuth()
+  const { user, loading, role, onboardingCompleted, verificationReminderActive, productTourActive } = useAuth()
   const pathname = usePathname()
   const [items, setItems] = useState<Announcement[]>([])
   const [hasMore, setHasMore] = useState(false)
@@ -29,6 +29,7 @@ export function AnnouncementModal() {
     if (isAuthFlow) return
     if (loading || !user || !role || role === 'ADMIN' || !onboardingCompleted) return
     if (verificationReminderActive) return
+    if (productTourActive) return
     if (fetchedRef.current) return
     fetchedRef.current = true
 
@@ -52,7 +53,7 @@ export function AnnouncementModal() {
         console.error('GET /api/announcements failed:', error)
       }
     })()
-  }, [pathname, loading, user, role, onboardingCompleted, verificationReminderActive])
+  }, [pathname, loading, user, role, onboardingCompleted, verificationReminderActive, productTourActive])
 
   function close() {
     setOpen(false)

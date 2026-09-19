@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { LogOut, LayoutDashboard, ChevronDown, CalendarDays, Shield, Heart, Search, Settings, MessageCircleMore, Megaphone, UserRound } from 'lucide-react'
+import { LogOut, LayoutDashboard, ChevronDown, CalendarDays, Shield, Heart, Search, Settings, MessageCircleMore, Megaphone, UserRound, CircleHelp } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -211,6 +211,17 @@ export function Navbar() {
                       >
                         <MessageCircleMore className="h-[17px] w-[17px] text-primary" />
                         עזרה ומשוב
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMenu(false)
+                          window.dispatchEvent(new Event('nailistiot:restart-product-tour'))
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
+                      >
+                        <CircleHelp className="h-[17px] w-[17px] text-primary" />
+                        הדרכה קצרה
                       </button>
                       {isAdmin && (
                         <Link

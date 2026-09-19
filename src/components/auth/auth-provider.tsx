@@ -29,6 +29,8 @@ interface AuthContextValue {
   // purely informational one.
   verificationReminderActive: boolean
   setVerificationReminderActive: (active: boolean) => void
+  productTourActive: boolean
+  setProductTourActive: (active: boolean) => void
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -42,6 +44,8 @@ const AuthContext = createContext<AuthContextValue>({
   refreshRole: async () => {},
   verificationReminderActive: false,
   setVerificationReminderActive: () => {},
+  productTourActive: false,
+  setProductTourActive: () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -52,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [onboardingCompleted, setOnboardingCompleted] = useState(true)
   const [displayName, setDisplayName] = useState<string | null>(null)
   const [verificationReminderActive, setVerificationReminderActive] = useState(false)
+  const [productTourActive, setProductTourActive] = useState(false)
   const skipCallbackRef = useRef(false)
 
   const refreshRole = useCallback(async () => {
@@ -163,7 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // the server response remains useful to crawlers. A full-screen layer
   // covers it for people until both auth and the initial role data resolve.
   return (
-    <AuthContext.Provider value={{ user, loading, role, isAdmin, onboardingCompleted, displayName, signOut, refreshRole, verificationReminderActive, setVerificationReminderActive }}>
+    <AuthContext.Provider value={{ user, loading, role, isAdmin, onboardingCompleted, displayName, signOut, refreshRole, verificationReminderActive, setVerificationReminderActive, productTourActive, setProductTourActive }}>
       {children}
       <AnimatePresence>
         {loading && (

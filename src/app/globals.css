@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "driver.js/dist/driver.css";
 
 /* Class-based dark mode — adds `.dark *` variant */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -102,6 +103,57 @@ body {
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* The tour reuses the product's card language instead of introducing a
+   generic SaaS tooltip. Driver.js owns positioning; these rules only give it
+   the same Hebrew, RTL, pink-on-neutral visual hierarchy as the app. */
+.driver-popover {
+  direction: rtl;
+  max-width: min(22rem, calc(100vw - 2rem));
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 18px 48px rgba(24, 24, 27, 0.28);
+  font-family: inherit;
+}
+
+.driver-popover-title,
+.driver-popover-description,
+.driver-popover-progress-text {
+  color: var(--foreground);
+  text-align: right;
+  font-family: inherit;
+}
+
+.driver-popover-description {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.driver-popover-progress-text {
+  color: var(--muted-foreground);
+}
+
+.driver-popover-prev-btn,
+.driver-popover-next-btn,
+.driver-popover-close-btn {
+  font-family: inherit;
+}
+
+.driver-popover-next-btn {
+  border: 0;
+  border-radius: 0.75rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  text-shadow: none;
+}
+
+.driver-popover-prev-btn {
+  color: var(--muted-foreground);
+  text-shadow: none;
 }
 
 /* Emphasis text — solid vivid pink, no gradient (gradients read poorly on
