@@ -1,5 +1,5 @@
 /**
- * Covers the "הפרופיל המלא שלי" (public profile) shortcut that replaced the old
+ * Covers the "הפרופיל שלי" (public profile) shortcut that replaced the old
  * "quick actions" card on the dashboard home page — it now lives in the
  * dashboard layout's "עוד" (more) menu (mobile) and sidebar (desktop), with
  * its href resolved dynamically from the caller's own nailist profile id.
@@ -68,15 +68,15 @@ describe('Dashboard layout — public profile shortcut', () => {
 
     // Rendered twice (desktop sidebar + mobile "more" sheet) — both driven by the
     // same resolveHref/profileId state, so checking either instance proves the logic.
-    await waitFor(() => expect(screen.getAllByText('הפרופיל המלא שלי').length).toBeGreaterThan(0))
-    const link = screen.getAllByText('הפרופיל המלא שלי')[0].closest('a')!
+    await waitFor(() => expect(screen.getAllByText('הפרופיל שלי').length).toBeGreaterThan(0))
+    const link = screen.getAllByText('הפרופיל שלי')[0].closest('a')!
     expect(link).toHaveAttribute('aria-disabled', 'true')
     expect(link).toHaveAttribute('href', '#')
 
     resolveProfile({ ok: true, json: async () => ({ data: { id: 'nailist-42' } }) })
 
     await waitFor(() => {
-      const resolvedLink = screen.getAllByText('הפרופיל המלא שלי')[0].closest('a')!
+      const resolvedLink = screen.getAllByText('הפרופיל שלי')[0].closest('a')!
       expect(resolvedLink).toHaveAttribute('href', '/nailists/nailist-42')
       expect(resolvedLink).not.toHaveAttribute('aria-disabled', 'true')
     })
@@ -87,7 +87,7 @@ describe('Dashboard layout — public profile shortcut', () => {
     await openMoreMenu()
 
     await waitFor(() => {
-      const link = screen.getAllByText('הפרופיל המלא שלי')[0].closest('a')!
+      const link = screen.getAllByText('הפרופיל שלי')[0].closest('a')!
       expect(link).toHaveAttribute('href', '/nailists/nailist-42')
     })
   })
@@ -128,7 +128,7 @@ describe('Dashboard layout — admin panel entry point', () => {
     mockFetch('nailist-42')
     await openMoreMenu()
 
-    await waitFor(() => expect(screen.getAllByText('הפרופיל המלא שלי').length).toBeGreaterThan(0))
+    await waitFor(() => expect(screen.getAllByText('הפרופיל שלי').length).toBeGreaterThan(0))
     expect(screen.queryByText('פאנל ניהול')).not.toBeInTheDocument()
   })
 })

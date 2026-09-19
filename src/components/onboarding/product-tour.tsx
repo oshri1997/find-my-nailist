@@ -94,8 +94,8 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
       popover: {
         title: isMobile ? 'הניווט שלך כאן' : 'התפריט הזה הוא כל העסק',
         description: isMobile
-          ? 'סקירה, תורים, שירותים ופרטי העסק. ב״עוד״ יש ביקורות, העבודות שלך ושעות הפעילות.'
-          : '״דשבורד כללי״ זה דף הבית שלך. מכאן גם לתורים, לשירותים, לפרטי העסק, לשעות, לעבודות ולביקורות.',
+          ? 'תמונת מצב, תורים, שירותים ופרטי העסק. ב״עוד״ יש ביקורות, העבודות שלך ושעות הפעילות.'
+          : '״תמונת מצב״ היא דף הבית שלך. מכאן גם לתורים, לשירותים, לפרטי העסק, לשעות, לעבודות ולביקורות.',
         side: menuSide,
         align: 'center',
       },
@@ -113,7 +113,7 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
       element: '[data-tour="nailist-upcoming-appointments"]',
       popover: {
         title: '2. רואים הכל גם מכאן',
-        description: 'הבקשות והתורים הקרובים מופיעים גם בדשבורד הכללי, כדי שלא תפספסי.',
+        description: 'הבקשות והתורים הקרובים מופיעים גם ב״תמונת מצב״, כדי שלא תפספסי.',
         side: 'top',
         align: 'center',
       },
@@ -149,7 +149,7 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
       element: settingsTarget,
       popover: {
         title: '6. הפרופיל שלך',
-        description: 'ב״פרטי העסק״ מעדכנים את הפרטים, ב״העבודות שלי״ מעלים תמונות, וב״הפרופיל המלא שלי״ רואים מה לקוחות רואות.',
+        description: 'ב״פרטי העסק״ מעדכנים את הפרטים, ב״העבודות שלי״ מעלים תמונות, וב״הפרופיל שלי״ רואים מה לקוחות רואות.',
         side: menuSide,
         align: 'center',
       },

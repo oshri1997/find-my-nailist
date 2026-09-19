@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Menu, X, Search, Eye, Shield, MessageCircleMore, Megaphone, CircleHelp, Home } from 'lucide-react'
+import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Menu, X, Search, Eye, Shield, MessageCircleMore, Megaphone, CircleHelp, Home, UserCog, Heart } from 'lucide-react'
 import NextImage from 'next/image'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -18,7 +18,7 @@ import { TOUR_RESTART_EVENT, isTourRoute } from '@/lib/product-tour'
 // for the mobile bottom bar, where five items share the screen width and a
 // long label would wrap or be cut off.
 const primaryNavLinks = [
-  { href: '/dashboard/nailist', label: 'דשבורד כללי', tabLabel: 'סקירה', Icon: LayoutDashboard, dynamic: false },
+  { href: '/dashboard/nailist', label: 'תמונת מצב', tabLabel: 'תמונת מצב', Icon: LayoutDashboard, dynamic: false },
   { href: '/dashboard/nailist/appointments', label: 'התורים שלי', tabLabel: 'תורים', Icon: Calendar, dynamic: false },
   { href: '/dashboard/nailist/services', label: 'השירותים שלי', tabLabel: 'שירותים', Icon: Scissors, dynamic: false },
   { href: '/dashboard/nailist/settings', label: 'פרטי העסק', tabLabel: 'פרטי העסק', Icon: Settings, dynamic: false },
@@ -30,7 +30,7 @@ const secondaryNavLinks = [
   { href: '/dashboard/nailist/reviews', label: 'ביקורות', tabLabel: 'ביקורות', Icon: Star, dynamic: false },
   { href: '/whats-new', label: 'מה חדש', tabLabel: 'מה חדש', Icon: Megaphone, dynamic: false },
   // href is resolved at render time from the caller's own nailist profile id — see resolveHref below
-  { href: null as string | null, label: 'הפרופיל המלא שלי', tabLabel: 'הפרופיל שלי', Icon: Eye, dynamic: true },
+  { href: null as string | null, label: 'הפרופיל שלי', tabLabel: 'הפרופיל שלי', Icon: Eye, dynamic: true },
 ]
 
 const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks]
@@ -191,6 +191,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <Search className="h-4 w-4" />
               חיפוש נייליסטיות
+            </Link>
+            <Link
+              href="/settings"
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            >
+              <UserCog className="h-4 w-4" />
+              הגדרות חשבון
+            </Link>
+            <Link
+              href="/my-favorites"
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-all"
+            >
+              <Heart className="h-4 w-4" />
+              המועדפות שלי
             </Link>
             <Link
               href="/my-feedback"
@@ -358,6 +372,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   חיפוש נייליסטיות
                 </Link>
                 <Link
+                  href="/settings"
+                  onClick={() => setShowMoreSheet(false)}
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  <UserCog className="h-4 w-4" />
+                  הגדרות חשבון
+                </Link>
+                <Link
+                  href="/my-favorites"
+                  onClick={() => setShowMoreSheet(false)}
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
+                >
+                  <Heart className="h-4 w-4" />
+                  המועדפות שלי
+                </Link>                <Link
                   href="/my-feedback"
                   onClick={() => setShowMoreSheet(false)}
                   className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
