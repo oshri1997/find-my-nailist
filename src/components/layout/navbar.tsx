@@ -210,7 +210,7 @@ export function Navbar() {
                           setShowMenu(false)
                           setFeedbackOpen(true)
                         }}
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
+                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
                       >
                         <MessageCircleMore className="h-[17px] w-[17px] text-primary" />
                         כתבי לנו
@@ -225,7 +225,7 @@ export function Navbar() {
                             setShowMenu(false)
                             window.dispatchEvent(new Event(TOUR_RESTART_EVENT))
                           }}
-                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
+                          className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
                         >
                           <CircleHelp className="h-[17px] w-[17px] text-primary" />
                           סיור מודרך

@@ -220,7 +220,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new Event(TOUR_RESTART_EVENT))}
-                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-all"
+                className="flex cursor-pointer items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-all"
               >
                 <CircleHelp className="h-4 w-4" />
                 סיור מודרך
@@ -412,7 +412,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       setShowMoreSheet(false)
                       window.dispatchEvent(new Event(TOUR_RESTART_EVENT))
                     }}
-                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
+                    className="flex cursor-pointer items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
                   >
                     <CircleHelp className="h-4 w-4" />
                     סיור מודרך
