@@ -184,6 +184,17 @@ describe('admin email change — confirm step', () => {
     expect(mockUpdateUser).toHaveBeenCalledWith('u1', { email: 'fixed@gmail.com', emailVerified: false })
   })
 
+  it('refuses a challenge when the user document was deleted after it was issued', async () => {
+    const { challengeId, code } = await startChange()
+    delete users['u1']
+
+    const result = await confirmEmailChange({ challengeId, code, targetUid: 'u1', admin })
+
+    expect(result).toMatchObject({ ok: false, status: 503 })
+    expect(mockUpdateUser).not.toHaveBeenCalled()
+    expect(userWrites).toHaveLength(0)
+  })
+
   it('mirrors the new address onto the user doc and clears the stale bounce flag', async () => {
     const { challengeId, code } = await startChange()
     await confirmEmailChange({ challengeId, code, targetUid: 'u1', admin })

@@ -187,7 +187,7 @@ export async function confirmEmailChange(params: {
     return [null, null] as const
   })
 
-  if (!targetSnap || !authUser) {
+  if (!targetSnap?.exists || !authUser) {
     return { ok: false, error: 'לא ניתן לאמת את מצב המשתמש — נסי שוב', status: 503 }
   }
   if (targetSnap.data()?.isAdmin === true) {
