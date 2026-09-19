@@ -120,6 +120,57 @@ function formatReviewerName(displayName?: string) {
   return `${parts[0]} ${parts[1][0]}.`
 }
 
+/**
+ * Mirrors the real dashboard's shape while its data lands, so the page appears
+ * once, complete, instead of reflowing as each banner and card arrives. The
+ * greeting is already known from the session, so it is shown for real.
+ */
+function DashboardSkeleton({ firstName }: { firstName: string }) {
+  return (
+    <div className="p-4 md:p-8" aria-busy="true" aria-live="polite" aria-label="טוענת את הסקירה">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-black text-foreground">שלום, {firstName}</h1>
+        <p className="text-muted-foreground font-medium">הנה סקירה של העסק שלך</p>
+      </div>
+
+      <div className="animate-pulse">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-3xl border-2 border-border bg-muted/40 p-6">
+              <div className="flex items-start justify-between">
+                <div className="h-5 w-5 rounded bg-muted" />
+                <div className="h-5 w-5 rounded bg-muted" />
+              </div>
+              <div className="mt-4 h-8 w-20 rounded bg-muted" />
+              <div className="mt-2 h-4 w-16 rounded bg-muted" />
+              <div className="mt-2 h-3 w-24 rounded bg-muted" />
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="rounded-3xl border border-border bg-card p-6">
+              <div className="mb-5 flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="h-5 w-32 rounded bg-muted" />
+                  <div className="h-3.5 w-40 rounded bg-muted" />
+                </div>
+                <div className="h-5 w-5 rounded bg-muted" />
+              </div>
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((__, j) => (
+                  <div key={j} className="h-16 rounded-2xl bg-muted/70" />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function NailistDashboard() {
   const { user, displayName } = useAuth()
   const firstName = (displayName || user?.displayName)?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
@@ -145,6 +196,11 @@ export default function NailistDashboard() {
   // Starts false so the completion card never flashes on an already-complete
   // profile while portfolio/services/hours are still loading in below.
   const [checklistLoaded, setChecklistLoaded] = useState(false)
+  // The banners above the stats (verification guidance, hidden profile,
+  // schedule gaps) each depend on a different request. Rendering the page as
+  // those landed made it visibly jump as each one pushed the stats down, so
+  // nothing renders until all of them have answered.
+  const [dataReady, setDataReady] = useState(false)
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([])
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([])
   const [recentReviews, setRecentReviews] = useState<Review[]>([])
@@ -209,7 +265,11 @@ export default function NailistDashboard() {
         reviewCount: nailistData.reviewCount,
       })
     }
-    })().catch(() => {})
+    })()
+      // A failed request must still reveal the page — an empty dashboard beats
+      // a skeleton that never resolves.
+      .catch(() => {})
+      .finally(() => setDataReady(true))
   }, [fetchedProfile?.id])
 
   async function activateProfile() {
@@ -305,6 +365,8 @@ export default function NailistDashboard() {
       border: 'border-border',
     },
   ]
+
+  if (!dataReady) return <DashboardSkeleton firstName={firstName} />
 
   return (
     <div className="p-4 md:p-8">

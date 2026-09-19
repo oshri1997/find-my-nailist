@@ -94,8 +94,8 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
       popover: {
         title: isMobile ? 'הניווט שלך כאן' : 'התפריט הזה הוא כל העסק',
         description: isMobile
-          ? 'סקירה, תורים, שירותים והגדרות. ב״עוד״ יש ביקורות, פורטפוליו ושעות פעילות.'
-          : '״סקירה״ זה דף הבית. מכאן גם לתורים, שירותים, הגדרות, שעות, פורטפוליו וביקורות.',
+          ? 'סקירה, תורים, שירותים ופרטי העסק. ב״עוד״ יש ביקורות, העבודות שלך ושעות הפעילות.'
+          : '״דשבורד כללי״ זה דף הבית שלך. מכאן גם לתורים, לשירותים, לפרטי העסק, לשעות, לעבודות ולביקורות.',
         side: menuSide,
         align: 'center',
       },
@@ -104,7 +104,7 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
       element: appointmentsTarget,
       popover: {
         title: '1. מגיעה בקשה',
-        description: 'כל בקשה חדשה מופיעה ב״תורים״ כ״ממתינה״ — עם השירות, התאריך, השעה ומי הלקוחה.',
+        description: 'כל בקשה חדשה מופיעה ב״התורים שלי״ כ״ממתינה״ — עם השירות, התאריך, השעה ומי הלקוחה.',
         side: menuSide,
         align: 'center',
       },
@@ -113,7 +113,7 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
       element: '[data-tour="nailist-upcoming-appointments"]',
       popover: {
         title: '2. רואים הכל גם מכאן',
-        description: 'הבקשות והתורים הקרובים מופיעים גם בדף הראשי, כדי שלא תפספסי.',
+        description: 'הבקשות והתורים הקרובים מופיעים גם בדשבורד הכללי, כדי שלא תפספסי.',
         side: 'top',
         align: 'center',
       },
@@ -122,7 +122,7 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
       element: appointmentsTarget,
       popover: {
         title: '3. מאשרות או מבטלות',
-        description: 'לחיצה אחת ב״תורים״. באישור הלקוחה מקבלת מייל והתור עובר ל״מאושר״. גם ביטול מעדכן אותה.',
+        description: 'לחיצה אחת ב״התורים שלי״. באישור הלקוחה מקבלת מייל והתור עובר ל״מאושר״. גם ביטול מעדכן אותה.',
         side: menuSide,
         align: 'center',
       },
@@ -149,7 +149,7 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
       element: settingsTarget,
       popover: {
         title: '6. הפרופיל שלך',
-        description: 'בהגדרות מעדכנים את פרטי העסק, בפורטפוליו מעלים עבודות, וב״פרופיל ציבורי״ רואים מה לקוחות רואות.',
+        description: 'ב״פרטי העסק״ מעדכנים את הפרטים, ב״העבודות שלי״ מעלים תמונות, וב״הפרופיל המלא שלי״ רואים מה לקוחות רואות.',
         side: menuSide,
         align: 'center',
       },
@@ -157,7 +157,7 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
     {
       popover: {
         title: 'זה הכל',
-        description: 'בקשה → ״תורים״ → מאשרות → הלקוחה מתעדכנת. אפשר לפתוח את הסיור שוב מהתפריט בכל רגע.',
+        description: 'בקשה → ״התורים שלי״ → מאשרות → הלקוחה מתעדכנת. אפשר לפתוח את הסיור שוב מהתפריט בכל רגע.',
       },
     },
   ]
@@ -220,6 +220,8 @@ export function ProductTour() {
         popover.wrapper.setAttribute('role', 'dialog')
         popover.wrapper.setAttribute('aria-modal', 'true')
         popover.wrapper.setAttribute('aria-label', 'סיור מודרך')
+        // Focusable so onHighlighted can move focus into the dialog.
+        popover.wrapper.setAttribute('tabindex', '-1')
         popover.closeButton.setAttribute('aria-label', 'סגירת הסיור')
         popover.description.setAttribute('aria-live', 'polite')
 
@@ -274,8 +276,10 @@ export function ProductTour() {
           }, SETTLE_REFRESH_MS)
 
           // Put keyboard and screen-reader users inside the dialog instead of
-          // leaving focus wherever the page happened to have it.
-          const target = state.popover?.nextButton ?? state.popover?.closeButton
+          // leaving focus wherever the page happened to have it. Focus goes to
+          // the popover itself, not to ״המשך״: a focused button reads as
+          // pressed, and the dialog's title is what should be announced first.
+          const target = state.popover?.wrapper
           window.requestAnimationFrame(() => target?.focus({ preventScroll: true }))
         },
         // Defined here, so driver.js hands the close decision over and every

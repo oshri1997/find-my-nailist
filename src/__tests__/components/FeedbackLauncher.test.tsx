@@ -31,7 +31,7 @@ describe('FeedbackLauncher', () => {
     const user = userEvent.setup()
     render(<FeedbackLauncher />)
 
-    await user.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
+    await user.click(screen.getByRole('button', { name: 'כתבי לנו' }))
 
     expect(screen.getByRole('dialog', { name: 'מה תרצי לשתף?' })).toBeInTheDocument()
     expect(screen.getByPlaceholderText('מה ניסית לעשות, מה קרה בפועל ומה ציפית שיקרה?')).toBeInTheDocument()
@@ -46,7 +46,7 @@ describe('FeedbackLauncher', () => {
     const user = userEvent.setup()
     const { container } = render(<FeedbackLauncher />)
 
-    await user.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
+    await user.click(screen.getByRole('button', { name: 'כתבי לנו' }))
 
     const dialog = screen.getByRole('dialog')
     expect(dialog.parentElement?.parentElement).toBe(document.body)
@@ -57,7 +57,7 @@ describe('FeedbackLauncher', () => {
     const user = userEvent.setup()
     render(<FeedbackLauncher />)
 
-    await user.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
+    await user.click(screen.getByRole('button', { name: 'כתבי לנו' }))
 
     const dialog = screen.getByRole('dialog')
     expect(dialog).toHaveStyle({ maxHeight: 'calc(100dvh - 1.5rem)' })
@@ -73,7 +73,7 @@ describe('FeedbackLauncher', () => {
     })
     render(<FeedbackLauncher />)
 
-    await user.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
+    await user.click(screen.getByRole('button', { name: 'כתבי לנו' }))
     fireEvent.change(screen.getByLabelText('כותרת קצרה'), { target: { value: 'בחירת שעה לא נשמרת' } })
     fireEvent.change(screen.getByLabelText('פרטים'), { target: { value: 'בחרתי שעה, עברתי לשלב הבא והיא נעלמה.' } })
     await user.click(screen.getByRole('button', { name: 'שלחי פנייה' }))
@@ -104,7 +104,7 @@ describe('FeedbackLauncher', () => {
     })
     render(<FeedbackLauncher />)
 
-    await user.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
+    await user.click(screen.getByRole('button', { name: 'כתבי לנו' }))
     fireEvent.change(screen.getByLabelText('כותרת קצרה'), { target: { value: 'רעיון קטן' } })
     fireEvent.change(screen.getByLabelText('פרטים'), { target: { value: 'אשמח לקיצור דרך.' } })
     await user.click(screen.getByRole('button', { name: 'שלחי פנייה' }))
@@ -118,7 +118,7 @@ describe('FeedbackLauncher', () => {
     const user = userEvent.setup()
     const onClose = jest.fn()
     render(<FeedbackLauncher onClose={onClose} />)
-    const launcher = screen.getByRole('button', { name: 'עזרה ומשוב' })
+    const launcher = screen.getByRole('button', { name: 'כתבי לנו' })
 
     await user.click(launcher)
     expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -133,7 +133,7 @@ describe('FeedbackLauncher', () => {
     const user = userEvent.setup()
     render(<FeedbackLauncher />)
 
-    await user.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
+    await user.click(screen.getByRole('button', { name: 'כתבי לנו' }))
     const closeButton = document.querySelector('[data-feedback-close]')
     expect(closeButton).toBeInTheDocument()
     expect(closeButton).not.toHaveClass('rounded-xl')
@@ -146,7 +146,7 @@ describe('FeedbackLauncher', () => {
     ;(uploadFeedbackScreenshot as jest.Mock).mockResolvedValue({ storageKey: 'feedback/user-123/12345678-1234-1234-1234-123456789012.png' })
     ;(global.fetch as jest.Mock).mockResolvedValue({ ok: true, status: 201, json: async () => ({ data: { id: 'feedback-image' } }) })
     render(<FeedbackLauncher />)
-    await user.click(screen.getByRole('button', { name: 'עזרה ומשוב' }))
+    await user.click(screen.getByRole('button', { name: 'כתבי לנו' }))
     fireEvent.change(screen.getByLabelText('כותרת קצרה'), { target: { value: 'צילום תקלה' } })
     fireEvent.change(screen.getByLabelText('פרטים'), { target: { value: 'זה קורה במסך הבחירה.' } })
     const file = new File(['image'], 'bug.png', { type: 'image/png' })

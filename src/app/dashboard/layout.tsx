@@ -4,28 +4,33 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Menu, X, Search, Eye, Shield, MessageCircleMore, Megaphone, CircleHelp } from 'lucide-react'
+import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Menu, X, Search, Eye, Shield, MessageCircleMore, Megaphone, CircleHelp, Home } from 'lucide-react'
 import NextImage from 'next/image'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { EmailVerificationBanner } from '@/components/layout/email-verification-banner'
 import { FeedbackLauncher } from '@/components/feedback/FeedbackLauncher'
 import { useNailistProfile } from '@/lib/hooks/use-nailist-profile'
+import { TOUR_RESTART_EVENT, isTourRoute } from '@/lib/product-tour'
 
+// `label` is the descriptive name used wherever there is room for it — the
+// desktop sidebar and the mobile "more" sheet. `tabLabel` is the short form
+// for the mobile bottom bar, where five items share the screen width and a
+// long label would wrap or be cut off.
 const primaryNavLinks = [
-  { href: '/dashboard/nailist', label: 'סקירה', Icon: LayoutDashboard, dynamic: false },
-  { href: '/dashboard/nailist/appointments', label: 'תורים', Icon: Calendar, dynamic: false },
-  { href: '/dashboard/nailist/services', label: 'שירותים', Icon: Scissors, dynamic: false },
-  { href: '/dashboard/nailist/settings', label: 'הגדרות', Icon: Settings, dynamic: false },
+  { href: '/dashboard/nailist', label: 'דשבורד כללי', tabLabel: 'סקירה', Icon: LayoutDashboard, dynamic: false },
+  { href: '/dashboard/nailist/appointments', label: 'התורים שלי', tabLabel: 'תורים', Icon: Calendar, dynamic: false },
+  { href: '/dashboard/nailist/services', label: 'השירותים שלי', tabLabel: 'שירותים', Icon: Scissors, dynamic: false },
+  { href: '/dashboard/nailist/settings', label: 'פרטי העסק', tabLabel: 'פרטי העסק', Icon: Settings, dynamic: false },
 ]
 
 const secondaryNavLinks = [
-  { href: '/dashboard/nailist/hours', label: 'שעות פעילות', Icon: Clock, dynamic: false },
-  { href: '/dashboard/nailist/portfolio', label: 'פורטפוליו', Icon: ImageIcon, dynamic: false },
-  { href: '/dashboard/nailist/reviews', label: 'ביקורות', Icon: Star, dynamic: false },
-  { href: '/whats-new', label: 'מה חדש', Icon: Megaphone, dynamic: false },
+  { href: '/dashboard/nailist/hours', label: 'שעות פעילות העסק', tabLabel: 'שעות', Icon: Clock, dynamic: false },
+  { href: '/dashboard/nailist/portfolio', label: 'העבודות שלי', tabLabel: 'עבודות', Icon: ImageIcon, dynamic: false },
+  { href: '/dashboard/nailist/reviews', label: 'ביקורות', tabLabel: 'ביקורות', Icon: Star, dynamic: false },
+  { href: '/whats-new', label: 'מה חדש', tabLabel: 'מה חדש', Icon: Megaphone, dynamic: false },
   // href is resolved at render time from the caller's own nailist profile id — see resolveHref below
-  { href: null as string | null, label: 'פרופיל ציבורי', Icon: Eye, dynamic: true },
+  { href: null as string | null, label: 'הפרופיל המלא שלי', tabLabel: 'הפרופיל שלי', Icon: Eye, dynamic: true },
 ]
 
 const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks]
@@ -38,6 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isNailist = !authLoading && !!user && role === 'NAILIST'
   const { data: nailistProfile } = useNailistProfile({ enabled: isNailist })
   const profileId = nailistProfile?.id ?? null
+  const canRunTour = isTourRoute(role, pathname)
 
   useEffect(() => {
     if (authLoading) return
@@ -173,6 +179,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Bottom actions */}
           <div className="p-3 border-t border-border space-y-0.5">
             <Link
+              href="/"
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            >
+              <Home className="h-4 w-4" />
+              דף הבית
+            </Link>
+            <Link
               href="/search"
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
             >
@@ -187,14 +200,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               הפניות שלי
             </Link>
             <FeedbackLauncher compact />
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new Event('nailistiot:restart-product-tour'))}
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-all"
-            >
-              <CircleHelp className="h-4 w-4" />
-              סיור מודרך
-            </button>
+            {/* The tour walks through the overview page, so it is only offered
+                there — from a sub-page the button had nothing to drive. */}
+            {canRunTour && (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event(TOUR_RESTART_EVENT))}
+                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-all"
+              >
+                <CircleHelp className="h-4 w-4" />
+                סיור מודרך
+              </button>
+            )}
             {isAdmin && (
               <Link
                 href="/admin"
@@ -239,7 +256,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 }`}
               >
                 <link.Icon className={`h-5 w-5 transition-transform ${isActive ? 'scale-110' : ''}`} />
-                <span>{link.label}</span>
+                <span>{link.tabLabel}</span>
                 {isActive && (
                   <motion.div
                     layoutId="bottomTab"
@@ -325,6 +342,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               <div className="border-t border-border pt-3 space-y-1">
                 <Link
+                  href="/"
+                  onClick={() => setShowMoreSheet(false)}
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  <Home className="h-4 w-4" />
+                  דף הבית
+                </Link>
+                <Link
+                  href="/search"
+                  onClick={() => setShowMoreSheet(false)}
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  <Search className="h-4 w-4" />
+                  חיפוש נייליסטיות
+                </Link>
+                <Link
                   href="/my-feedback"
                   onClick={() => setShowMoreSheet(false)}
                   className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
@@ -343,17 +376,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </Link>
                 )}
                 <FeedbackLauncher compact onClose={() => setShowMoreSheet(false)} className="px-4 py-3" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMoreSheet(false)
-                    window.dispatchEvent(new Event('nailistiot:restart-product-tour'))
-                  }}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
-                >
-                  <CircleHelp className="h-4 w-4" />
-                  סיור מודרך
-                </button>
+                {canRunTour && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMoreSheet(false)
+                      window.dispatchEvent(new Event(TOUR_RESTART_EVENT))
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
+                  >
+                    <CircleHelp className="h-4 w-4" />
+                    סיור מודרך
+                  </button>
+                )}
                 <div className="flex items-center justify-between px-4 py-2.5 rounded-xl">
                   <span className="text-sm font-semibold text-muted-foreground">מצב תצוגה</span>
                   <ThemeToggle />

@@ -74,6 +74,46 @@ beforeEach(() => {
   window.localStorage.clear()
 })
 
+describe('NailistDashboard — no reflow while the data lands', () => {
+  it('shows a skeleton instead of a half-built page on first paint', () => {
+    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
+    render(<NailistDashboard />)
+
+    // Everything above the stats (verification guidance, hidden-profile and
+    // gap banners) arrives on its own request. Rendering the page before they
+    // answered made each one push the stats down as it landed.
+    expect(screen.getByLabelText('טוענת את הסקירה')).toBeInTheDocument()
+    expect(screen.queryByText('הדרך לתג האימות')).not.toBeInTheDocument()
+    expect(screen.queryByText('תורים קרובים')).not.toBeInTheDocument()
+
+    // The greeting is known from the session, so it is real from the start and
+    // does not move when the rest appears.
+    expect(screen.getByRole('heading', { name: 'שלום, Oshri' })).toBeInTheDocument()
+  })
+
+  it('reveals the whole page at once, guidance banner included', async () => {
+    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
+    render(<NailistDashboard />)
+
+    await waitFor(() => expect(screen.getByText('הדרך לתג האימות')).toBeInTheDocument())
+    expect(screen.queryByLabelText('טוענת את הסקירה')).not.toBeInTheDocument()
+    expect(screen.getByText('תורים קרובים')).toBeInTheDocument()
+  })
+
+  it('reveals the page even when a request fails, rather than holding the skeleton', async () => {
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.includes('/api/me/nailist-profile')) {
+        return Promise.resolve({ ok: true, json: async () => ({ data: fullProfile }) } as Response)
+      }
+      return Promise.reject(new Error('network down'))
+    })
+    render(<NailistDashboard />)
+
+    await waitFor(() => expect(screen.queryByLabelText('טוענת את הסקירה')).not.toBeInTheDocument())
+    expect(screen.getByText('תורים קרובים')).toBeInTheDocument()
+  })
+})
+
 describe('NailistDashboard — profile completion card', () => {
   it('hides the profile completion card once all checklist items are done', async () => {
     mockFetchResponses() // businessName+city+services+photos+hours -> 100%

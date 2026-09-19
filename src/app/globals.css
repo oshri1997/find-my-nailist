@@ -218,9 +218,18 @@ body {
 }
 
 .nailistiot-tour-skip:hover,
+.nailistiot-tour-skip:focus,
 .nailistiot-tour-skip:focus-visible {
   background: none;
   color: var(--primary);
+}
+
+/* The popover is the dialog, so focus lands on it rather than on ״המשך״ —
+   a focused button would read as pressed, and it is the wrong thing for a
+   screen reader to announce first. */
+.driver-popover:focus,
+.driver-popover:focus-visible {
+  outline: none;
 }
 
 .driver-popover-next-btn {
@@ -248,14 +257,23 @@ body {
   transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease;
 }
 
+/* driver.js paints EVERY footer button near-white on :hover and :focus
+   (.driver-popover-footer-btn:focus{background-color:#f7f7f7}). That selector
+   is more specific than the plain .driver-popover-next-btn rule above, so the
+   primary action turned white as soon as anything focused it — which the tour
+   does on every step. Matching :focus here, not only :focus-visible, is what
+   keeps the brand colors. */
 .driver-popover-next-btn:hover,
+.driver-popover-next-btn:focus,
 .driver-popover-next-btn:focus-visible {
   background: var(--accent);
+  color: var(--primary-foreground);
   box-shadow: 0 9px 20px color-mix(in srgb, var(--primary) 38%, transparent);
   transform: translateY(-1px);
 }
 
 .driver-popover-prev-btn:hover,
+.driver-popover-prev-btn:focus,
 .driver-popover-prev-btn:focus-visible {
   border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
   background: color-mix(in srgb, var(--primary) 6%, var(--card));

@@ -110,9 +110,9 @@ describe('Navbar — display name', () => {
     })
     render(<Navbar />)
 
-    expect(screen.queryByText('עזרה ומשוב')).not.toBeInTheDocument()
+    expect(screen.queryByText('כתבי לנו')).not.toBeInTheDocument()
     fireEvent.click(screen.getByText('ישראלה'))
-    const feedbackButton = screen.getByRole('button', { name: 'עזרה ומשוב' })
+    const feedbackButton = screen.getByRole('button', { name: 'כתבי לנו' })
     expect(feedbackButton.querySelector('svg')).toHaveClass('text-primary')
     fireEvent.click(feedbackButton)
 

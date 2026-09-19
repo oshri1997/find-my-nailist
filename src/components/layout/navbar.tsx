@@ -10,6 +10,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { FeedbackLauncher } from '@/components/feedback/FeedbackLauncher'
+import { TOUR_RESTART_EVENT, isTourRoute } from '@/lib/product-tour'
 
 export function Navbar() {
   const { user, loading, role, isAdmin, displayName, signOut } = useAuth()
@@ -51,6 +52,7 @@ export function Navbar() {
   // it) — show the full name there instead of truncating to one word.
   const firstName = resolvedName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? ''
   const fullName = resolvedName || user?.email?.split('@')[0] || ''
+  const canRunTour = isTourRoute(role, pathname)
 
   return (
     <motion.nav
@@ -210,19 +212,24 @@ export function Navbar() {
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
                       >
                         <MessageCircleMore className="h-[17px] w-[17px] text-primary" />
-                        עזרה ומשוב
+                        כתבי לנו
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowMenu(false)
-                          window.dispatchEvent(new Event('nailistiot:restart-product-tour'))
-                        }}
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
-                      >
-                        <CircleHelp className="h-[17px] w-[17px] text-primary" />
-                        סיור מודרך
-                      </button>
+                      {/* The tour explains the page it runs on, so it only
+                          exists on that page. Offering it from the home page
+                          gave a menu item that did nothing when clicked. */}
+                      {canRunTour && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowMenu(false)
+                            window.dispatchEvent(new Event(TOUR_RESTART_EVENT))
+                          }}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
+                        >
+                          <CircleHelp className="h-[17px] w-[17px] text-primary" />
+                          סיור מודרך
+                        </button>
+                      )}
                       {isAdmin && (
                         <Link
                           href="/admin"

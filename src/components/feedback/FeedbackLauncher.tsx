@@ -229,7 +229,7 @@ export function FeedbackLauncher({ compact = false, className, onClose, open: co
           )}
         >
           <MessageCircleMore className={compact ? 'h-4 w-4' : 'h-[17px] w-[17px]'} />
-          עזרה ומשוב
+          כתבי לנו
         </button>
       )}
 

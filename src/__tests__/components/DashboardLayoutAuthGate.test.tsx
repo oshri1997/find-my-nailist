@@ -28,7 +28,7 @@ jest.mock('@/components/layout/email-verification-banner', () => ({
 }))
 
 jest.mock('@/components/feedback/FeedbackLauncher', () => ({
-  FeedbackLauncher: () => <button type="button">עזרה ומשוב</button>,
+  FeedbackLauncher: () => <button type="button">כתבי לנו</button>,
 }))
 
 jest.mock('@/components/theme-toggle', () => ({ ThemeToggle: () => null }))
@@ -73,6 +73,6 @@ describe('DashboardLayout — auth gate', () => {
     })
     const { getByText } = render(<DashboardLayout>child</DashboardLayout>)
 
-    await waitFor(() => expect(getByText('עזרה ומשוב')).toBeInTheDocument())
+    await waitFor(() => expect(getByText('כתבי לנו')).toBeInTheDocument())
   })
 })
