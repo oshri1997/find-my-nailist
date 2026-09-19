@@ -39,7 +39,7 @@ export function AlreadyRegisteredModal({ role, onClose }: { role: 'NAILIST' | 'C
             onClick={onClose}
             className="flex-1 bg-primary text-primary-foreground rounded-xl py-2.5 text-sm font-bold hover:bg-primary/90 transition-colors flex items-center justify-center"
           >
-            {role === 'NAILIST' ? 'לדשבורד שלי' : role === 'CLIENT' ? 'לחיפוש נייליסטיות' : role === 'ADMIN' ? 'לפאנל הניהול' : 'לדף הבית'}
+            {role === 'NAILIST' ? 'ללוח הבקרה שלי' : role === 'CLIENT' ? 'לחיפוש נייליסטיות' : role === 'ADMIN' ? 'לפאנל הניהול' : 'לדף הבית'}
           </Link>
         </div>
       </div>

@@ -53,7 +53,6 @@ export function Navbar() {
   const firstName = resolvedName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? ''
   const fullName = resolvedName || user?.email?.split('@')[0] || ''
   const canRunTour = isTourRoute(role, pathname)
-  const isNailist = role === 'NAILIST'
 
   return (
     <motion.nav
@@ -122,7 +121,7 @@ export function Navbar() {
                   <Link href="/dashboard/nailist">
                     <Button size="sm" variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground gap-2 cursor-pointer">
                       <LayoutDashboard className="h-4 w-4" />
-                      <span className="hidden sm:inline">דשבורד</span>
+                      <span className="hidden sm:inline">לוח בקרה</span>
                     </Button>
                   </Link>
                 )}
@@ -138,33 +137,9 @@ export function Navbar() {
                   </Link>
                 )}
 
-                {/* Profile dropdown.
-
-                    A nailist reaches every one of these from her dashboard
-                    sidebar, so for her this menu is a duplicate and the
-                    avatar is just an identity badge. A client has no
-                    dashboard — this is her only route to favorites, account
-                    settings, feedback and signing out, so she keeps it. */}
+                {/* Profile dropdown — every logged-in role's route to
+                    favorites, account settings, feedback and signing out. */}
                 <div ref={menuRef} className="relative">
-                  {isNailist ? (
-                    <div className="flex items-center gap-2 px-2 py-1.5">
-                      {user.photoURL ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={user.photoURL}
-                          alt={firstName}
-                          className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/30"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center ring-2 ring-primary/30" aria-hidden="true">
-                          <UserRound className="h-4 w-4" />
-                        </div>
-                      )}
-                      <span className="hidden sm:block max-w-[100px] truncate text-sm font-semibold text-foreground/80">
-                        {firstName}
-                      </span>
-                    </div>
-                  ) : (
                   <button
                     ref={profileButtonRef}
                     onClick={() => setShowMenu(v => !v)}
@@ -190,9 +165,8 @@ export function Navbar() {
                     </span>
                     <ChevronDown className={`hidden sm:block h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${showMenu ? 'rotate-180' : ''}`} />
                   </button>
-                  )}
 
-                  {!isNailist && showMenu && (
+                  {showMenu && (
                     <div role="menu" className="absolute top-full mt-2 end-0 w-52 bg-card rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-border p-1 z-50">
                       <div className="px-3 py-2.5 border-b border-border mb-1">
                         <p className="text-sm font-bold text-foreground truncate">{fullName}</p>

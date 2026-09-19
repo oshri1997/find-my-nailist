@@ -36,7 +36,7 @@ describe('JoinLink', () => {
     fireEvent.click(screen.getByText('הצטרפי כנייליסטית'))
 
     expect(screen.getByText('את כבר רשומה כנייליסטית!')).toBeInTheDocument()
-    const dashboardLink = screen.getByText('לדשבורד שלי').closest('a')!
+    const dashboardLink = screen.getByText('ללוח הבקרה שלי').closest('a')!
     expect(dashboardLink).toHaveAttribute('href', '/dashboard/nailist')
   })
 
