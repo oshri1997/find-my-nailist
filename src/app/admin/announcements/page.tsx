@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2, Megaphone, Undo2 } from 'lucide-react'
+import { Eye, Loader2, Megaphone, Undo2 } from 'lucide-react'
+import { AnnouncementModalView } from '@/components/announcements/AnnouncementModalView'
 import type { Announcement, AnnouncementAudience, AnnouncementPriority } from '@/types'
 
 const AUDIENCE_OPTIONS: Array<{ value: AnnouncementAudience; label: string }> = [
@@ -34,6 +35,7 @@ export default function AdminAnnouncementsPage() {
   const [items, setItems] = useState<Announcement[]>([])
   const [loadingList, setLoadingList] = useState(true)
   const [retractingId, setRetractingId] = useState<string | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/announcements')
@@ -160,6 +162,21 @@ export default function AdminAnnouncementsPage() {
                 ? 'עדכון גדול ייפתח כחלון קופץ בכניסה הבאה של הקהל שבחרת.'
                 : 'עדכון קטן יופיע רק בארכיון "מה חדש", בלי לקפוץ בכניסה.'}
             </p>
+            {priority === 'MAJOR' ? (
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(true)}
+                disabled={!title.trim() || !body.trim()}
+                className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-bold text-foreground transition-colors hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Eye className="h-4 w-4" />
+                תצוגה מקדימה — פתחי את החלון בדיוק כפי שהוא ייראה
+              </button>
+            ) : (
+              <p className="mt-3 text-xs font-medium text-muted-foreground/70">
+                אין תצוגה מקדימה של חלון עבור עדכון קטן — הוא לא נפתח כחלון בכלל.
+              </p>
+            )}
           </div>
 
           {error && <p className="text-sm font-semibold text-destructive">{error}</p>}
@@ -229,6 +246,25 @@ export default function AdminAnnouncementsPage() {
           )}
         </div>
       </div>
+
+      {previewOpen && (
+        <AnnouncementModalView
+          items={[{
+            id: 'preview',
+            title: title.trim() || 'כותרת ההכרזה תופיע כאן',
+            body: body.trim() || 'תוכן ההכרזה יופיע כאן.',
+            audience,
+            priority,
+            status: 'PUBLISHED',
+            publishedAt: new Date().toISOString(),
+            createdBy: 'preview',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }]}
+          hasMore={false}
+          onClose={() => setPreviewOpen(false)}
+        />
+      )}
     </div>
   )
 }

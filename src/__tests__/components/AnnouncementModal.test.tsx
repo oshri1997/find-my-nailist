@@ -119,6 +119,24 @@ describe('AnnouncementModal', () => {
     expect(global.fetch).toHaveBeenCalledWith('/api/announcements/seen', { method: 'POST' })
   })
 
+  it('logs a backend failure loudly instead of looking identical to "nothing to show"', async () => {
+    // Regression: a missing Firestore composite index (or any other 500)
+    // rendered exactly like an empty inbox, with no signal anywhere that
+    // something was actually broken.
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+    mockUseAuth.mockReturnValue(baseAuth)
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false, status: 500, text: async () => 'FAILED_PRECONDITION: The query requires an index',
+    } as Response)
+    render(<AnnouncementModal />)
+
+    await waitFor(() => expect(consoleError).toHaveBeenCalledWith(
+      'GET /api/announcements failed:', 500, 'FAILED_PRECONDITION: The query requires an index'
+    ))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    consoleError.mockRestore()
+  })
+
   it('points to the archive, and says more remain when the digest was capped', async () => {
     mockUseAuth.mockReturnValue(baseAuth)
     mockFetch([item], true)

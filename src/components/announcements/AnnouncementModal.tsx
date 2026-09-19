@@ -1,16 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
-import { Sparkles, X } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
+import { AnnouncementModalView } from '@/components/announcements/AnnouncementModalView'
 import type { Announcement } from '@/types'
-
-function formatPublishedDate(iso: string): string {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' })
-}
 
 /**
  * Mounted once, globally (see Providers). Waits for onboarding to complete
@@ -25,9 +18,6 @@ export function AnnouncementModal() {
   const [hasMore, setHasMore] = useState(false)
   const [open, setOpen] = useState(false)
   const fetchedRef = useRef(false)
-  const dialogRef = useRef<HTMLDivElement>(null)
-  const closeButtonRef = useRef<HTMLButtonElement>(null)
-  const previousFocusRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (loading || !user || !role || role === 'ADMIN' || !onboardingCompleted) return
@@ -38,15 +28,21 @@ export function AnnouncementModal() {
     void (async () => {
       try {
         const res = await fetch('/api/announcements')
-        if (!res.ok) return
+        if (!res.ok) {
+          // Never block the app on this, but a silent failure here (e.g. a
+          // missing Firestore composite index) previously looked identical
+          // to "nothing to show" — log it so it's actually diagnosable.
+          console.error('GET /api/announcements failed:', res.status, await res.text().catch(() => ''))
+          return
+        }
         const { data } = await res.json()
         if (data?.items?.length) {
           setItems(data.items)
           setHasMore(!!data.hasMore)
           setOpen(true)
         }
-      } catch {
-        // Silent — a missed announcement is never worth blocking the app for.
+      } catch (error) {
+        console.error('GET /api/announcements failed:', error)
       }
     })()
   }, [loading, user, role, onboardingCompleted, verificationReminderActive])
@@ -56,102 +52,6 @@ export function AnnouncementModal() {
     fetch('/api/announcements/seen', { method: 'POST' }).catch(() => {})
   }
 
-  useEffect(() => {
-    if (!open) return
-
-    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    closeButtonRef.current?.focus()
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        close()
-        return
-      }
-      if (event.key !== 'Tab') return
-
-      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      )
-      if (!focusable?.length) return
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      previousFocusRef.current?.focus()
-    }
-  }, [open])
-
-  if (!open || items.length === 0) return null
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="announcement-modal-title"
-      dir="rtl"
-      ref={dialogRef}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
-    >
-      <div className="w-full max-w-md rounded-t-3xl border border-border bg-card p-6 text-right shadow-2xl sm:rounded-3xl">
-        <div className="mb-4 flex items-center justify-between">
-          <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary">⭐ עדכון גדול</span>
-          <button
-            ref={closeButtonRef}
-            type="button"
-            aria-label="סגירה"
-            onClick={close}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted/70"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <h2 id="announcement-modal-title" className="text-xl font-black text-foreground">
-          ✨ מה חדש בפלטפורמה
-        </h2>
-
-        <div className="mt-4 space-y-4">
-          {items.map((item) => (
-            <div key={item.id} className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                <Sparkles className="h-[18px] w-[18px] text-primary" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-foreground">{item.title}</p>
-                <p className="mt-0.5 text-sm font-medium leading-6 text-muted-foreground">{item.body}</p>
-                <p className="mt-1 text-xs font-semibold text-muted-foreground/70">{formatPublishedDate(item.publishedAt)}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <button
-          type="button"
-          onClick={close}
-          className="mt-6 flex h-12 w-full items-center justify-center rounded-2xl bg-primary text-sm font-black text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          הבנתי, תודה!
-        </button>
-        <Link
-          href="/whats-new"
-          onClick={close}
-          className="mt-3 block text-center text-sm font-bold text-muted-foreground hover:text-foreground"
-        >
-          {hasMore ? 'יש עוד — לצפייה בכל העדכונים' : 'לצפייה בכל העדכונים'}
-        </Link>
-      </div>
-    </div>
-  )
+  if (!open) return null
+  return <AnnouncementModalView items={items} hasMore={hasMore} onClose={close} />
 }
