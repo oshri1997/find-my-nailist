@@ -33,7 +33,7 @@ describe('Navbar — favorites link dedup', () => {
     // as a standalone action-cluster button.
     expect(screen.queryAllByRole('link').filter(a => a.getAttribute('href') === '/my-favorites')).toHaveLength(0)
 
-    fireEvent.click(screen.getByText('שרה'))
+    fireEvent.click(screen.getByRole('button', { name: 'תפריט החשבון של שרה' }))
     const favoritesLinks = screen.getAllByRole('link').filter(a => a.getAttribute('href') === '/my-favorites')
     expect(favoritesLinks).toHaveLength(1)
     expect(favoritesLinks[0]).toHaveTextContent('המועדפות שלי')

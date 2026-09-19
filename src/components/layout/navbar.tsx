@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { LogOut, LayoutDashboard, ChevronDown, CalendarDays, Shield, Heart, Search, Settings, MessageCircleMore, Megaphone } from 'lucide-react'
+import { LogOut, LayoutDashboard, ChevronDown, CalendarDays, Shield, Heart, Search, Settings, MessageCircleMore, Megaphone, UserRound } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -140,6 +140,9 @@ export function Navbar() {
                   <button
                     ref={profileButtonRef}
                     onClick={() => setShowMenu(v => !v)}
+                    aria-label={`תפריט החשבון של ${firstName}`}
+                    aria-expanded={showMenu}
+                    aria-haspopup="menu"
                     className="flex items-center gap-2 hover:bg-muted/60 px-2 py-1.5 rounded-xl transition-colors cursor-pointer"
                   >
                     {user.photoURL ? (
@@ -150,8 +153,8 @@ export function Navbar() {
                         className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/30"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-black">
-                        {firstName[0]?.toUpperCase() ?? '?'}
+                      <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center ring-2 ring-primary/30" aria-hidden="true">
+                        <UserRound className="h-4 w-4" />
                       </div>
                     )}
                     <span className="hidden sm:block max-w-[100px] truncate text-sm font-semibold text-foreground/80">
@@ -161,7 +164,7 @@ export function Navbar() {
                   </button>
 
                   {showMenu && (
-                    <div className="absolute top-full mt-2 end-0 w-52 bg-card rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-border p-1 z-50">
+                    <div role="menu" className="absolute top-full mt-2 end-0 w-52 bg-card rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-border p-1 z-50">
                       <div className="px-3 py-2.5 border-b border-border mb-1">
                         <p className="text-sm font-bold text-foreground truncate">{fullName}</p>
                         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
@@ -180,7 +183,7 @@ export function Navbar() {
                         className="flex items-center gap-2 w-full px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted/60 rounded-lg transition-colors"
                       >
                         <MessageCircleMore className="h-4 w-4 text-primary" />
-                        הפניות שלי
+                        הפניות ששלחתי
                       </Link>
                       <Link
                         href="/whats-new"

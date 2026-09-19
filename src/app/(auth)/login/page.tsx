@@ -306,6 +306,10 @@ export default function AuthPage() {
   // while the *other* (submit) button's "מתחברת..." label doesn't match
   // what was actually clicked.
   if (loading) {
+    // AuthProvider already owns the full-screen loading layer while Firebase
+    // is restoring or synchronizing the account. Rendering this page's
+    // loader at the same time produces two overlapping spinners.
+    if (authLoading) return null
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <NailLoader text="מתחברת..." />

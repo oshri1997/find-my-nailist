@@ -1,6 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@/__tests__/utils/render'
 import { AnnouncementModal } from '@/components/announcements/AnnouncementModal'
 
+let mockPathname = '/'
+jest.mock('next/navigation', () => ({
+  usePathname: () => mockPathname,
+}))
+
 const mockUseAuth = jest.fn()
 jest.mock('@/components/auth/auth-provider', () => ({
   useAuth: () => mockUseAuth(),
@@ -41,6 +46,7 @@ function mockFetch(items: typeof item[], hasMore = false) {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockPathname = '/'
 })
 
 describe('AnnouncementModal', () => {
@@ -74,6 +80,22 @@ describe('AnnouncementModal', () => {
 
     await new Promise((r) => setTimeout(r, 0))
     expect(global.fetch).not.toHaveBeenCalled()
+  })
+
+  it('waits until navigation leaves the login flow before fetching', async () => {
+    mockPathname = '/login'
+    mockUseAuth.mockReturnValue(baseAuth)
+    mockFetch([item])
+    const { rerender } = render(<AnnouncementModal />)
+
+    await new Promise((r) => setTimeout(r, 0))
+    expect(global.fetch).not.toHaveBeenCalled()
+
+    mockPathname = '/'
+    rerender(<AnnouncementModal />)
+
+    expect(await screen.findByText('שעות עבודה מפוצלות')).toBeInTheDocument()
+    expect(global.fetch).toHaveBeenCalledWith('/api/announcements')
   })
 
   it('never shows anything for an ADMIN account', async () => {

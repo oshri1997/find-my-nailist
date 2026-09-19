@@ -28,7 +28,10 @@ describe.each([['CLIENT'], ['NAILIST']])('Navbar — settings link (%s)', (role)
     })
     render(<Navbar />)
 
-    fireEvent.click(screen.getByText('שרה'))
+    const profileMenuButton = screen.getByRole('button', { name: 'תפריט החשבון של שרה' })
+    expect(profileMenuButton).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(profileMenuButton)
+    expect(screen.getByRole('button', { name: 'תפריט החשבון של שרה' })).toHaveAttribute('aria-expanded', 'true')
 
     const link = screen.getByText('הגדרות חשבון').closest('a')!
     expect(link).toHaveAttribute('href', '/settings')

@@ -23,8 +23,9 @@ jest.mock('@/lib/firebase/auth-helpers', () => ({
   signUpWithEmail: jest.fn(),
 }))
 
+let mockAuthLoading = false
 jest.mock('@/components/auth/auth-provider', () => ({
-  useAuth: () => ({ user: null, loading: false }),
+  useAuth: () => ({ user: null, loading: mockAuthLoading }),
 }))
 
 jest.mock('@/components/auth/LegalModal', () => {
@@ -34,6 +35,10 @@ jest.mock('@/components/auth/LegalModal', () => {
 })
 
 describe('Login page — Google sign-in loading state', () => {
+  beforeEach(() => {
+    mockAuthLoading = false
+  })
+
   it('replaces the form with a full-screen loader while signing in with Google', () => {
     render(<LoginPage />)
     expect(document.getElementById('email')).toBeInTheDocument()
@@ -43,9 +48,25 @@ describe('Login page — Google sign-in loading state', () => {
     expect(document.getElementById('email')).not.toBeInTheDocument()
     expect(screen.getByText('מתחברת...')).toBeInTheDocument()
   })
+
+  it('removes its loader when AuthProvider takes ownership of the loading screen', () => {
+    const { rerender } = render(<LoginPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: /כניסה עם Google/ }))
+    expect(screen.getByText('מתחברת...')).toBeInTheDocument()
+
+    mockAuthLoading = true
+    rerender(<LoginPage />)
+
+    expect(document.getElementById('email')).not.toBeInTheDocument()
+    expect(screen.queryByText('מתחברת...')).not.toBeInTheDocument()
+  })
 })
 
 describe('Login page — closing the Google popup', () => {
+  beforeEach(() => {
+    mockAuthLoading = false
+  })
   // signInWithPopup detects a manually-closed popup via its own slow
   // window.closed polling, so the mock here (like the one above) never
   // settles — this suite covers the faster path: this window regaining

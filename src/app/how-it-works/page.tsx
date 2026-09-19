@@ -25,7 +25,7 @@ const clientSteps = [
   {
     step: '02',
     title: 'עיצובים וביקורות אמיתיות',
-    desc: 'עיינו בפורטפוליו, קראו ביקורות של לקוחות אמיתיות והשוו מחירים — הכל במקום אחד.',
+    desc: 'עייני בפורטפוליו, קראי ביקורות של לקוחות אמיתיות והשווי מחירים — הכול במקום אחד.',
     color: 'from-rose-700 to-rose-900',
     bg: 'from-rose-700/10 to-rose-900/10 dark:from-rose-700/15 dark:to-rose-900/15',
     border: 'border-rose-100 dark:border-rose-900/50',

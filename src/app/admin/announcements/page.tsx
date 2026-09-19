@@ -6,7 +6,7 @@ import { AnnouncementModalView } from '@/components/announcements/AnnouncementMo
 import type { Announcement, AnnouncementAudience, AnnouncementPriority } from '@/types'
 
 const AUDIENCE_OPTIONS: Array<{ value: AnnouncementAudience; label: string }> = [
-  { value: 'ALL', label: 'כולן' },
+  { value: 'ALL', label: 'לקוחות ונייליסטיות' },
   { value: 'NAILIST', label: 'נייליסטיות' },
   { value: 'CLIENT', label: 'לקוחות' },
 ]
@@ -16,7 +16,7 @@ const PRIORITY_OPTIONS: Array<{ value: AnnouncementPriority; label: string }> = 
   { value: 'MINOR', label: 'עדכון קטן' },
 ]
 
-const AUDIENCE_LABEL: Record<AnnouncementAudience, string> = { ALL: 'כולן', NAILIST: 'נייליסטיות', CLIENT: 'לקוחות' }
+const AUDIENCE_LABEL: Record<AnnouncementAudience, string> = { ALL: 'לקוחות ונייליסטיות', NAILIST: 'נייליסטיות', CLIENT: 'לקוחות' }
 
 function formatDate(iso: string): string {
   const date = new Date(iso)
@@ -138,6 +138,7 @@ export default function AdminAnnouncementsPage() {
                 </button>
               ))}
             </div>
+            <p className="mt-1.5 text-xs font-medium leading-5 text-muted-foreground">הכרזות אינן מוצגות לחשבונות ניהול.</p>
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-bold text-muted-foreground">חשיבות</label>

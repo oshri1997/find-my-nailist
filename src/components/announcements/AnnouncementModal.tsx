@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { AnnouncementModalView } from '@/components/announcements/AnnouncementModalView'
 import type { Announcement } from '@/types'
@@ -14,12 +15,18 @@ import type { Announcement } from '@/types'
  */
 export function AnnouncementModal() {
   const { user, loading, role, onboardingCompleted, verificationReminderActive } = useAuth()
+  const pathname = usePathname()
   const [items, setItems] = useState<Announcement[]>([])
   const [hasMore, setHasMore] = useState(false)
   const [open, setOpen] = useState(false)
   const fetchedRef = useRef(false)
 
   useEffect(() => {
+    // The login page starts its redirect only after AuthProvider finishes
+    // resolving role data. Without this gate the global modal can win that
+    // race and briefly open on /login before the user reaches her destination.
+    const isAuthFlow = pathname === '/login' || pathname === '/verify-email' || pathname?.startsWith('/onboarding/')
+    if (isAuthFlow) return
     if (loading || !user || !role || role === 'ADMIN' || !onboardingCompleted) return
     if (verificationReminderActive) return
     if (fetchedRef.current) return
@@ -45,7 +52,7 @@ export function AnnouncementModal() {
         console.error('GET /api/announcements failed:', error)
       }
     })()
-  }, [loading, user, role, onboardingCompleted, verificationReminderActive])
+  }, [pathname, loading, user, role, onboardingCompleted, verificationReminderActive])
 
   function close() {
     setOpen(false)

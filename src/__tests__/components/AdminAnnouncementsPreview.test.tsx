@@ -18,6 +18,14 @@ beforeEach(() => {
 })
 
 describe('AdminAnnouncementsPage — live preview', () => {
+  it('labels the shared audience precisely and explains that admins do not receive announcements', async () => {
+    render(<AdminAnnouncementsPage />)
+    await waitFor(() => expect(screen.getByText('עדיין לא פורסמו הכרזות')).toBeInTheDocument())
+
+    expect(screen.getByRole('button', { name: 'לקוחות ונייליסטיות' })).toBeInTheDocument()
+    expect(screen.getByText('הכרזות אינן מוצגות לחשבונות ניהול.')).toBeInTheDocument()
+  })
+
   it('is disabled until both title and body are filled in', async () => {
     render(<AdminAnnouncementsPage />)
     await waitFor(() => expect(screen.getByText('עדיין לא פורסמו הכרזות')).toBeInTheDocument())
