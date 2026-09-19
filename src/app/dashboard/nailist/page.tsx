@@ -609,7 +609,7 @@ export default function NailistDashboard() {
         </motion.div>
 
         {/* Recent reviews */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+        <motion.div data-tour="nailist-recent-reviews" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
           className="bg-card rounded-3xl border border-border p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div>

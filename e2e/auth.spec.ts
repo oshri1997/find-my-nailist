@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test'
 
+const cookieDomain = new URL(process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000').hostname
+
 test.describe('Login page', () => {
   test('renders login form', async ({ page }) => {
     await page.goto('/login')
@@ -35,7 +37,7 @@ test.describe('Login page', () => {
     await page.context().addCookies([{
       name: 'auth-token',
       value: 'fake-token-for-redirect-test',
-      domain: 'localhost',
+      domain: cookieDomain,
       path: '/',
     }])
     await page.goto('/login')

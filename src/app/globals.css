@@ -110,13 +110,26 @@ body {
    the same Hebrew, RTL, pink-on-neutral visual hierarchy as the app. */
 .driver-popover {
   direction: rtl;
-  max-width: min(22rem, calc(100vw - 2rem));
-  border: 1px solid var(--border);
-  border-radius: 1.25rem;
-  background: var(--card);
+  max-width: min(24rem, calc(100vw - 1.5rem));
+  min-width: min(18rem, calc(100vw - 1.5rem));
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 32%),
+    var(--card);
   color: var(--foreground);
-  box-shadow: 0 18px 48px rgba(24, 24, 27, 0.28);
+  box-shadow: 0 24px 64px rgba(24, 24, 27, 0.34), 0 2px 10px color-mix(in srgb, var(--primary) 14%, transparent);
   font-family: inherit;
+  padding: 1.25rem;
+}
+
+.driver-popover::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--primary), #ff9ab4);
 }
 
 .driver-popover-title,
@@ -129,12 +142,27 @@ body {
 
 .driver-popover-description {
   color: var(--muted-foreground);
-  font-size: 0.875rem;
-  line-height: 1.6;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.driver-popover-title {
+  padding-left: 2.5rem;
+  font-size: 1.125rem;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .driver-popover-progress-text {
   color: var(--muted-foreground);
+  flex: none;
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--primary) 7%, var(--card));
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .driver-popover-prev-btn,
@@ -144,16 +172,114 @@ body {
 }
 
 .driver-popover-next-btn {
-  border: 0;
-  border-radius: 0.75rem;
+  min-height: 2.75rem;
+  border: 1px solid var(--primary);
+  border-radius: 0.875rem;
   background: var(--primary);
   color: var(--primary-foreground);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--primary) 30%, transparent);
+  font-size: 0.8125rem;
+  font-weight: 800;
   text-shadow: none;
+  transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
 
 .driver-popover-prev-btn {
+  min-height: 2.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  background: var(--card);
   color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  font-weight: 700;
   text-shadow: none;
+  transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease;
+}
+
+.driver-popover-next-btn:hover,
+.driver-popover-next-btn:focus-visible {
+  background: var(--accent);
+  box-shadow: 0 9px 20px color-mix(in srgb, var(--primary) 38%, transparent);
+  transform: translateY(-1px);
+}
+
+.driver-popover-prev-btn:hover,
+.driver-popover-prev-btn:focus-visible {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+  background: color-mix(in srgb, var(--primary) 6%, var(--card));
+  color: var(--foreground);
+}
+
+.driver-popover-close-btn {
+  left: 0.75rem;
+  right: auto;
+  top: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  color: var(--muted-foreground);
+  background: var(--card);
+  line-height: 1;
+  transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease;
+}
+
+.driver-popover-close-btn:hover,
+.driver-popover-close-btn:focus-visible {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  color: var(--primary);
+}
+
+.driver-popover-footer {
+  direction: rtl;
+  gap: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--primary) 12%, var(--border));
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+}
+
+.driver-popover-navigation-btns {
+  flex-grow: 0;
+  gap: 0.5rem;
+}
+
+.driver-popover-navigation-btns button + button {
+  margin-left: 0;
+}
+
+@media (max-width: 767px) {
+  .driver-popover {
+    border-radius: 1.25rem;
+    padding: 1rem;
+  }
+
+  .driver-popover-title {
+    font-size: 1rem;
+  }
+
+  .driver-popover-description {
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  .driver-popover-footer {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .driver-popover-progress-text {
+    order: 2;
+  }
+
+  .driver-popover-navigation-btns {
+    flex: 1 1 auto;
+  }
+
+  .driver-popover-footer-btn {
+    flex: 1;
+    text-align: center;
+  }
 }
 
 /* Emphasis text — solid vivid pink, no gradient (gradients read poorly on

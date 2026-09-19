@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test'
 
+const cookieDomain = new URL(process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000').hostname
+
 /**
  * Client "my appointments" flow:
  * - View appointment list with status badges
@@ -44,7 +46,7 @@ const CANCELLED_APPT = { ...BASE_APPT, id: 'a5', status: 'CANCELLED' }
 test.describe('Client — My Appointments page', () => {
   test.beforeEach(async ({ page }) => {
     await page.context().addCookies([{
-      name: 'auth-token', value: 'test-token', domain: 'localhost', path: '/',
+      name: 'auth-token', value: 'test-token', domain: cookieDomain, path: '/',
     }])
     await page.route('/api/me/role', route =>
       route.fulfill({ json: { role: 'CLIENT' } })

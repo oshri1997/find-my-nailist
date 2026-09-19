@@ -5,7 +5,7 @@ import { driver, type Driver, type DriveStep } from 'driver.js'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 
-const TOUR_VERSION = 'v1'
+const TOUR_VERSION = 'v2'
 const RESTART_EVENT = 'nailistiot:restart-product-tour'
 
 function storageKey(userId: string) {
@@ -55,29 +55,92 @@ const clientSteps: DriveStep[] = [
   },
 ]
 
-const nailistSteps: DriveStep[] = [
+function nailistSteps(isMobile: boolean): DriveStep[] {
+  const navigationTarget = isMobile ? '[data-tour="nailist-mobile-navigation"]' : '[data-tour="nailist-sidebar"]'
+  const appointmentsTarget = isMobile ? '[data-tour="nailist-mobile-appointments"]' : '[data-tour="nailist-nav-appointments"]'
+  const servicesTarget = isMobile ? '[data-tour="nailist-mobile-services"]' : '[data-tour="nailist-nav-services"]'
+  const settingsTarget = isMobile ? '[data-tour="nailist-mobile-settings"]' : '[data-tour="nailist-nav-settings"]'
+
+  return [
   {
     popover: {
-      title: 'ברוכה הבאה לדשבורד',
-      description: 'כאן מנהלים את העסק, רואים תורים ומעדכנים את הלקוחות.',
+      title: 'ככה בקשה הופכת לתור',
+      description: 'לקוחה בוחרת שעה ושולחת בקשה; את מחליטה אם לאשר. נראה לך בדיוק איפה מנהלות כל שלב.',
+    },
+  },
+  {
+    element: navigationTarget,
+    popover: {
+      title: isMobile ? 'הניווט שלך נמצא כאן' : 'כל העסק שלך נמצא בתפריט הזה',
+      description: isMobile
+        ? 'מכאן מגיעים לסקירה, לתורים, לשירותים ולהגדרות. לחצי על ״עוד״ כדי להגיע לביקורות, לפורטפוליו ולשעות הפעילות.'
+        : 'סקירה היא דף הבית שלך. מכאן מגיעים לתורים, שירותים, הגדרות, שעות פעילות, פורטפוליו וביקורות.',
+      side: isMobile ? 'top' : 'left',
+      align: 'center',
+    },
+  },
+  {
+    element: appointmentsTarget,
+    popover: {
+      title: '1. לקוחה שולחת בקשה',
+      description: 'בקשה חדשה מופיעה בתורים במצב ״ממתינה״. שם רואים את השירות, התאריך, השעה ופרטי הלקוחה לפני שמחליטים.',
+      side: isMobile ? 'top' : 'left',
+      align: 'center',
     },
   },
   {
     element: '[data-tour="nailist-upcoming-appointments"]',
     popover: {
-      title: 'כאן מופיעות בקשות ותורים',
-      description: 'כשלקוחה שולחת בקשת תור, היא מופיעה ברשימת התורים. נשלח אלייך גם עדכון למייל עם פרטי הבקשה.',
+      title: '2. עוקבות גם מהסקירה',
+      description: 'הבקשות והתורים הקרובים מופיעים גם כאן בדף הראשי, כדי שלא תפספסי דבר. אפשר להיכנס מכאן לרשימת כל התורים.',
       side: 'top',
       align: 'center',
     },
   },
   {
+    element: appointmentsTarget,
     popover: {
-      title: 'מה קורה כשמאשרים?',
-      description: 'אחרי אישור הבקשה, הלקוחה מקבלת אישור במייל והתור נשמר אצלך ביומן התורים. שירותים ושעות פעילות שאת מגדירה הם מה שהלקוחות יכולות להזמין.',
+      title: '3. מאשרות או מבטלות',
+      description: 'בתוך ״תורים״ אפשר לאשר או לבטל בקשה. באישור, הלקוחה מקבלת מייל והתור משתנה ל״מאושר״. ביטול מעדכן גם אותה.',
+      side: isMobile ? 'top' : 'left',
+      align: 'center',
     },
   },
-]
+  {
+    element: servicesTarget,
+    popover: {
+      title: '4. השירותים והשעות קובעים מה אפשר להזמין',
+      description: 'לקוחות רואות רק שירותים פעילים ורק שעות שהגדרת. עדכון מחיר, משך טיפול או זמינות משפיע על החיפוש הבא שלהן.',
+      side: isMobile ? 'top' : 'left',
+      align: 'center',
+    },
+  },
+  {
+    element: '[data-tour="nailist-recent-reviews"]',
+    popover: {
+      title: '5. אחרי הטיפול מגיעות ביקורות',
+      description: 'כשתור מסומן כהושלם, הלקוחה מקבלת בקשה להשאיר ביקורת. כאן רואים את האחרונות, ובתפריט ״ביקורות״ רואים את כולן.',
+      side: 'top',
+      align: 'center',
+    },
+  },
+  {
+    element: settingsTarget,
+    popover: {
+      title: '6. שומרות על הפרופיל מעודכן',
+      description: 'בהגדרות מעדכנים את פרטי העסק. בפורטפוליו מציגים עבודות — וב״פרופיל ציבורי״ רואים בדיוק מה לקוחות רואות.',
+      side: isMobile ? 'top' : 'left',
+      align: 'center',
+    },
+  },
+  {
+    popover: {
+      title: 'את מוכנה להתחיל',
+      description: 'בקשה חדשה → בודקים בתורים → מאשרים או מבטלים → הלקוחה מתעדכנת במייל. אפשר לפתוח את ההדרכה שוב בכל עת מהתפריט.',
+    },
+  },
+  ]
+}
 
 /**
  * A compact, role-specific introduction after the required onboarding has
@@ -98,8 +161,9 @@ export function ProductTour() {
 
     setProductTourActive(true)
     const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const isMobile = window.matchMedia?.('(max-width: 767px)').matches === true
     const activeDriver = driver({
-      steps: role === 'NAILIST' ? nailistSteps : clientSteps,
+      steps: role === 'NAILIST' ? nailistSteps(isMobile) : clientSteps,
       animate: !reduceMotion,
       overlayColor: '#09090B',
       overlayOpacity: 0.72,
@@ -127,7 +191,7 @@ export function ProductTour() {
   // first-use guide gets the first, uncluttered moment after onboarding.
   useLayoutEffect(() => {
     if (!eligible || !user || wasCompleted(user.uid)) return
-    const timer = window.setTimeout(() => start(), 450)
+    const timer = window.setTimeout(() => start(), 100)
     return () => window.clearTimeout(timer)
   // `start` intentionally reads the current render's role/path state.
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,16 +1,14 @@
-// Deletes everything the E2E test account created in Firestore in the REAL
-// Firebase project (these tests run against production Firestore, not an
-// emulator — see e2e/real-session-helper.ts). Without this, the nailist
-// profile created by loginAsRealUser()'s registration fallback (displayName
-// "Demo Nailist") persists indefinitely and — once active — shows up as a
-// real result in production search, exactly like the profiles a user
-// actually reported.
+// Deletes everything the E2E test account created in the staging Firebase
+// project. CI asserts that this Admin credential belongs to the same project
+// served by dev.nailistiot.fun before this script can run. Without this, the
+// nailist profile created by loginAsRealUser()'s registration fallback
+// (displayName "Demo Nailist") persists indefinitely in staging.
 //
 // Deliberately does NOT delete the Firebase Auth user itself — only its
 // Firestore docs. TEST_USER_EMAIL/PASSWORD is a fixed, reusable credential;
 // deleting the Auth account here would force every later run to recreate it
-// from scratch, but account (re)creation in a shared/production-linked
-// Firebase project is a manual, deliberate step, not something CI does
+// from scratch, but account (re)creation in the shared staging Firebase
+// project is a manual, deliberate step, not something CI does
 // unattended on every run — see e2e-verify-test-user.mjs. Once the Firestore
 // docs are gone, the next login just gets a fresh, deactivated profile via
 // /api/users' normal auto-provisioning, so the account is just as "clean"

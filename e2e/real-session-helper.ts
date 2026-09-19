@@ -15,7 +15,13 @@ import { Browser, BrowserContext, Page } from '@playwright/test'
  */
 
 export function hasRealCreds() {
-  return !!(process.env.TEST_USER_EMAIL && process.env.TEST_USER_PASSWORD && process.env.NEXT_PUBLIC_FIREBASE_API_KEY)
+  // A remote E2E run receives Firebase config from the deployed app itself;
+  // it must not require a locally baked NEXT_PUBLIC key just to enable login.
+  return !!(
+    process.env.TEST_USER_EMAIL
+    && process.env.TEST_USER_PASSWORD
+    && (process.env.PLAYWRIGHT_BASE_URL || process.env.NEXT_PUBLIC_FIREBASE_API_KEY)
+  )
 }
 
 // e2e-cleanup-test-data.mjs resets this account's Firestore docs after every

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Loader2, Menu, X, Search, Eye, Shield, MessageCircleMore, Megaphone, CircleHelp } from 'lucide-react'
+import { LayoutDashboard, Calendar, Scissors, Image as ImageIcon, Settings, Star, Clock, LogOut, Menu, X, Search, Eye, Shield, MessageCircleMore, Megaphone, CircleHelp } from 'lucide-react'
 import NextImage from 'next/image'
 import { useAuth } from '@/components/auth/auth-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -32,37 +32,23 @@ const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { user, loading: authLoading, isAdmin, displayName: resolvedDisplayName, signOut } = useAuth()
+  const { user, loading: authLoading, role, isAdmin, displayName: resolvedDisplayName, signOut } = useAuth()
   const router = useRouter()
-  const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [showMoreSheet, setShowMoreSheet] = useState(false)
-  const { data: nailistProfile } = useNailistProfile({ enabled: authorized === true })
+  const isNailist = !authLoading && !!user && role === 'NAILIST'
+  const { data: nailistProfile } = useNailistProfile({ enabled: isNailist })
   const profileId = nailistProfile?.id ?? null
 
   useEffect(() => {
     if (authLoading) return
     if (!user) { router.replace('/login'); return }
 
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 8000)
-
-    fetch('/api/me/role', { signal: controller.signal })
-      .then(r => r.json())
-      .then(({ role: fetchedRole }) => {
-        clearTimeout(timeout)
-        if (fetchedRole === 'NAILIST') {
-          setAuthorized(true)
-        } else {
-          router.replace('/search')
-        }
-      })
-      .catch(() => {
-        clearTimeout(timeout)
-        router.replace('/login')
-      })
-
-    return () => { clearTimeout(timeout); controller.abort() }
-  }, [user, authLoading, router])
+    // AuthProvider resolves this role before it releases its only full-screen
+    // loader. Reuse it so onboarding does not hand off to a second spinner.
+    if (role !== 'NAILIST') {
+      router.replace('/search')
+    }
+  }, [user, authLoading, role, router])
 
   // Dynamic entries (public profile link) resolve their href from profileId once it loads.
   function resolveHref(link: { href: string | null; dynamic: boolean }): string | null {
@@ -78,15 +64,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const secondaryActive = secondaryNavLinks.some(l => pathname === l.href)
 
-  if (authorized === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
-  }
-
-  if (!authorized) return null
+  // AuthProvider owns the only full-screen loader. This short handoff frame
+  // intentionally renders nothing instead of briefly showing a second one.
+  if (!isNailist) return null
 
   return (
     <div className="min-h-screen bg-background">
@@ -127,6 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           initial={{ x: 60, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.4 }}
+          data-tour="nailist-sidebar"
           className="hidden md:flex w-60 bg-card border-l border-border flex-col shrink-0 shadow-[1px_0_12px_rgba(0,0,0,0.04)]"
         >
           {/* Logo */}
@@ -169,6 +150,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   transition={{ delay: 0.05 + i * 0.04 }}
                 >
                   <Link
+                    data-tour={link.href === '/dashboard/nailist/appointments' ? 'nailist-nav-appointments' : link.href === '/dashboard/nailist/services' ? 'nailist-nav-services' : link.href === '/dashboard/nailist/settings' ? 'nailist-nav-settings' : link.href === '/dashboard/nailist/reviews' ? 'nailist-nav-reviews' : undefined}
                     href={pending ? '#' : href}
                     aria-disabled={pending}
                     onClick={pending ? (e) => e.preventDefault() : undefined}
@@ -243,13 +225,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Mobile bottom tab bar — 4 primary + More */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+      <nav data-tour="nailist-mobile-navigation" className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
         <div className="flex items-stretch h-16">
           {primaryNavLinks.map((link) => {
             const isActive = pathname === link.href
             return (
               <Link
                 key={link.href}
+                data-tour={link.href === '/dashboard/nailist/appointments' ? 'nailist-mobile-appointments' : link.href === '/dashboard/nailist/services' ? 'nailist-mobile-services' : link.href === '/dashboard/nailist/settings' ? 'nailist-mobile-settings' : undefined}
                 href={link.href}
                 className={`flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-colors relative ${
                   isActive ? 'text-primary' : 'text-muted-foreground'

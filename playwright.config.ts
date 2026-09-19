@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const remoteBaseUrl = process.env.PLAYWRIGHT_BASE_URL
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -8,7 +10,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['html', { open: 'never' }], ['list']],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
+    baseURL: remoteBaseUrl || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     locale: 'he-IL',
@@ -20,7 +22,9 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: {
+  // A supplied base URL means the suite is validating a deployed environment.
+  // Do not also boot a local server: it could use a different Firebase project.
+  webServer: remoteBaseUrl ? undefined : {
     // In CI, run against a production build instead of the dev server:
     // dev mode compiles each route on-demand on its first request, and a
     // cold compile of a route no test has hit yet can exceed a test's

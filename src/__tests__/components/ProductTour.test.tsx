@@ -43,12 +43,12 @@ describe('ProductTour', () => {
     expect(config.steps[0].popover?.title).toBe('כך קובעות תור')
 
     config.onDestroyed()
-    expect(window.localStorage.getItem('nailistiot:product-tour:v1:user-1')).toBe('completed')
+    expect(window.localStorage.getItem('nailistiot:product-tour:v2:user-1')).toBe('completed')
     expect(baseAuth.setProductTourActive).toHaveBeenLastCalledWith(false)
   })
 
   it('does not interrupt a user who already completed the guide', async () => {
-    window.localStorage.setItem('nailistiot:product-tour:v1:user-1', 'completed')
+    window.localStorage.setItem('nailistiot:product-tour:v2:user-1', 'completed')
     render(<ProductTour />)
 
     await new Promise(resolve => setTimeout(resolve, 500))
@@ -62,6 +62,7 @@ describe('ProductTour', () => {
 
     await waitFor(() => expect(mockDriver).toHaveBeenCalledTimes(1))
     const config = (mockDriver.mock.calls as unknown as Array<[TourConfig]>)[0][0]
-    expect(config.steps[1].popover?.title).toBe('כאן מופיעות בקשות ותורים')
+    expect(config.steps.length).toBeGreaterThanOrEqual(7)
+    expect(config.steps[2].popover?.title).toBe('1. לקוחה שולחת בקשה')
   })
 })
