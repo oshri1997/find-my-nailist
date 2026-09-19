@@ -506,7 +506,12 @@ export default function OnboardingPage() {
     }
   }
 
-  if (authLoading || !profileId) {
+  // The global AuthProvider layer covers the Firebase restoration window.
+  // Keep this page quiet until it is done so the route handoff never stacks
+  // a local spinner over the global one.
+  if (authLoading || !user) return null
+
+  if (!profileId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

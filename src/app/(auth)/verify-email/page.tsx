@@ -125,7 +125,12 @@ export default function VerifyEmailPage() {
     }
   }
 
-  if (authLoading || !user || checking) {
+  // AuthProvider owns the one global full-screen loader while Firebase is
+  // restoring the account. Rendering another page-level spinner here at the
+  // same time made a freshly registered user see two loaders before onboarding.
+  if (authLoading || !user) return null
+
+  if (checking) {
     return <main className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-7 w-7 animate-spin text-primary" /></main>
   }
 

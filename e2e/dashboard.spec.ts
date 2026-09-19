@@ -19,6 +19,18 @@ const MOCK_SERVICES = [
 ]
 
 /**
+ * The first dashboard visit intentionally opens the product tour for a new
+ * account. Tests that validate ordinary navigation must close that separate
+ * experience first, just as a user can, before interacting with the page.
+ */
+async function closeProductTour(page: Page) {
+  const closeButton = page.getByRole('button', { name: 'Close' })
+  if (await closeButton.isVisible({ timeout: 2_000 }).catch(() => false)) {
+    await closeButton.click()
+  }
+}
+
+/**
  * Dashboard business data is mocked via page.route() for determinism, but
  * the session itself must be real: these pages gate on the Firebase
  * client-side auth state (useAuth().user), which only a real signed-in
@@ -113,6 +125,7 @@ test.describe.serial('Dashboard (mocked data, real session)', () => {
 
   test('dashboard sidebar navigation works', async () => {
     await page.goto('/dashboard/nailist')
+    await closeProductTour(page)
     // Navigate to services via sidebar
     const servicesLink = page.getByRole('link', { name: /שירותים/ })
     await expect(servicesLink).toBeVisible({ timeout: 10_000 })
@@ -139,6 +152,7 @@ test.describe.serial('Dashboard (real auth, real data)', () => {
 
   test('real user can access dashboard', async () => {
     await page.goto('/dashboard/nailist')
+    await closeProductTour(page)
     await expect(page).not.toHaveURL(/\/login/)
     // No mocks here — hits the real backend. "תורים קרובים" is a static
     // section heading (unconditional, unlike the empty-state message inside
