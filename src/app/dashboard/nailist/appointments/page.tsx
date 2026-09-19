@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Loader2, CheckCircle2, XCircle, Star, Inbox, Wallet } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle, Star, Inbox, Wallet, UserX } from 'lucide-react'
 import { APPOINTMENT_STATUS_COLORS, DEPOSIT_STATUS_COLORS as SHARED_DEPOSIT_STATUS_COLORS } from '@/lib/status-styles'
 
 type DepositStatus = 'AWAITING_PAYMENT' | 'CLIENT_MARKED_PAID' | 'NAILIST_CONFIRMED'
@@ -233,16 +233,34 @@ function AppointmentCard({
               </Button>
             )}
             {apt.status === 'CONFIRMED' && (
-              <Button
-                size="sm"
-                onClick={() => onUpdate(apt.id, 'COMPLETED')}
-                disabled={isUpdating}
-                variant="info"
-                className="rounded-xl font-bold gap-1 text-xs"
-              >
-                {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Star className="h-3 w-3" />}
-                הושלם
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  onClick={() => onUpdate(apt.id, 'COMPLETED')}
+                  disabled={isUpdating}
+                  variant="info"
+                  className="rounded-xl font-bold gap-1 text-xs"
+                >
+                  {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Star className="h-3 w-3" />}
+                  הושלם
+                </Button>
+                {/* The server already accepts this transition (only from
+                    CONFIRMED — a no-show is by definition a booking that was
+                    never cancelled ahead of time) but had no button anywhere
+                    to reach it. Unlike ביטול, this sends no email and keeps
+                    the calendar event: the appointment happened as scheduled,
+                    the client simply didn't show. */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onUpdate(apt.id, 'NO_SHOW')}
+                  disabled={isUpdating}
+                  className="border-border text-muted-foreground hover:bg-muted rounded-xl font-bold gap-1 text-xs"
+                >
+                  <UserX className="h-3 w-3" />
+                  לא הגיע
+                </Button>
+              </>
             )}
             <Button
               size="sm"

@@ -65,6 +65,61 @@ describe('NailistAppointmentsPage — status update rejected by the server', () 
   })
 })
 
+describe('NailistAppointmentsPage — marking a client as a no-show', () => {
+  // The server has always accepted CONFIRMED -> NO_SHOW (see
+  // src/app/api/appointments/[id]/status/route.ts), but nothing in the UI
+  // could ever send it — a booking that ran and the client simply skipped had
+  // no way to be recorded as anything but permanently "מאושר".
+  function mockFetchNoShow(patchOk: boolean) {
+    global.fetch = jest.fn().mockImplementation((url: string, opts?: RequestInit) => {
+      if (url.includes('/api/appointments?role=nailist')) {
+        return Promise.resolve({ ok: true, json: async () => ({ data: [appointment] }) } as Response)
+      }
+      if (opts?.method === 'PATCH') {
+        const body = JSON.parse(opts.body as string)
+        expect(body).toEqual({ status: 'NO_SHOW' })
+        return Promise.resolve({
+          ok: patchOk,
+          json: async () => (patchOk ? { message: 'Status updated' } : { error: 'not allowed' }),
+        } as Response)
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
+    })
+  }
+
+  it('offers a no-show action on a confirmed appointment', async () => {
+    mockFetchNoShow(true)
+    render(<NailistAppointmentsPage />)
+
+    await waitFor(() => expect(screen.getByText('מאושר')).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: /לא הגיע/ })).toBeInTheDocument()
+  })
+
+  it('sends the NO_SHOW transition and reflects it once the server accepts', async () => {
+    mockFetchNoShow(true)
+    render(<NailistAppointmentsPage />)
+
+    await waitFor(() => expect(screen.getByText('מאושר')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /לא הגיע/ }))
+
+    await waitFor(() => expect(screen.queryByText('מאושר')).not.toBeInTheDocument())
+    expect(screen.getAllByText('לא הגיע').length).toBeGreaterThan(0)
+  })
+
+  it('does not offer the action outside CONFIRMED (e.g. a still-pending request)', async () => {
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.includes('/api/appointments?role=nailist')) {
+        return Promise.resolve({ ok: true, json: async () => ({ data: [{ ...appointment, status: 'PENDING' }] }) } as Response)
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response)
+    })
+    render(<NailistAppointmentsPage />)
+
+    await waitFor(() => expect(screen.getByText('ממתין')).toBeInTheDocument())
+    expect(screen.queryByRole('button', { name: /לא הגיע/ })).not.toBeInTheDocument()
+  })
+})
+
 describe('NailistAppointmentsPage — Bit deposit badge/button', () => {
   type DepositStatus = 'AWAITING_PAYMENT' | 'CLIENT_MARKED_PAID' | 'NAILIST_CONFIRMED'
   const depositAppointment: typeof appointment & {
