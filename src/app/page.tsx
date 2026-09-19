@@ -4,6 +4,7 @@ import { HeroSection } from '@/components/home/hero-section'
 import { HowItWorksSection } from '@/components/home/how-it-works'
 import { FeaturesSection } from '@/components/home/features-section'
 import { NailistCtaSection } from '@/components/home/nailist-cta'
+import { serializeJsonLd } from '@/lib/json-ld'
 
 export const metadata: Metadata = {
   title: "נייליסטיות — מצאי נייליסטיות באזורך במהירות ובקלות",
@@ -55,7 +56,7 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col overflow-x-hidden">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
       />
       <HeroSection />
       <HowItWorksSection />

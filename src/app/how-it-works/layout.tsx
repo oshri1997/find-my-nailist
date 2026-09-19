@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { HOW_IT_WORKS_FAQS } from '@/lib/how-it-works-faqs'
+import { serializeJsonLd } from '@/lib/json-ld'
 
 const BASE_URL = 'https://nailistiot.fun'
 const title = 'איך זה עובד — הזמנת תור ופרסום פרופיל בנייליסטיות'
@@ -37,7 +38,7 @@ const faqJsonLd = {
 export default function HowItWorksLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }} />
       {children}
     </>
   )

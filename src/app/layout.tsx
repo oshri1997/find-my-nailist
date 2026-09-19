@@ -4,6 +4,7 @@ import './globals.css'
 import { Providers } from '@/components/providers'
 import { ConditionalNavbar } from '@/components/layout/conditional-navbar'
 import { CookieNotice } from '@/components/layout/cookie-notice'
+import { serializeJsonLd } from '@/lib/json-ld'
 
 const heebo = Heebo({ subsets: ['hebrew', 'latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
 
@@ -83,7 +84,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={heebo.className}>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(orgJsonLd) }}
         />
         <Providers>
           <ConditionalNavbar />

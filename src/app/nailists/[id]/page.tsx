@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import NailistProfileClient from './NailistProfileClient'
+import { serializeJsonLd } from '@/lib/json-ld'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -93,7 +94,7 @@ export default async function NailistProfilePage({ params }: Props) {
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       )}
       <NailistProfileClient id={id} />

@@ -5,6 +5,7 @@ import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { MapPin, Star, Sparkles } from 'lucide-react'
 import { CITIES, type CityEntry } from '@/lib/cities'
+import { serializeJsonLd } from '@/lib/json-ld'
 
 // generateStaticParams below pre-renders every known city slug at build time;
 // force-dynamic would silently defeat that by re-rendering on every request
@@ -138,8 +139,8 @@ export default async function CityPage({ params }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background" dir="rtl">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(cityPageJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(cityPageJsonLd) }} />
 
       <main className="flex-1 container mx-auto max-w-6xl px-6 py-10">
         {/* Breadcrumb */}
