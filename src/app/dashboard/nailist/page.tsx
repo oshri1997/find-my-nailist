@@ -100,47 +100,9 @@ interface NailistProfile {
   reviewCount?: number
 }
 
-const VERIFICATION_REMINDER_KEY_PREFIX = 'nailist-verification-contact-reminder'
-const REMIND_LATER_MS = 7 * 24 * 60 * 60 * 1000
-
-interface VerificationReminderPreference {
-  dismissed?: boolean
-  nextPromptAt?: number
-}
-
 interface VerificationReadiness {
   isReady: boolean
   checks: Array<{ key: string; passed: boolean; missing: string }>
-}
-
-function verificationReminderKey(profileId: string) {
-  return `${VERIFICATION_REMINDER_KEY_PREFIX}:${profileId}`
-}
-
-function getVerificationReminderPreference(profileId: string): VerificationReminderPreference {
-  try {
-    const stored = window.localStorage.getItem(verificationReminderKey(profileId))
-    if (!stored) return {}
-    const parsed: unknown = JSON.parse(stored)
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
-    const preference = parsed as Record<string, unknown>
-    return {
-      dismissed: preference.dismissed === true,
-      nextPromptAt: typeof preference.nextPromptAt === 'number' && Number.isFinite(preference.nextPromptAt)
-        ? preference.nextPromptAt
-        : undefined,
-    }
-  } catch {
-    return {}
-  }
-}
-
-function saveVerificationReminderPreference(profileId: string, preference: VerificationReminderPreference) {
-  try {
-    window.localStorage.setItem(verificationReminderKey(profileId), JSON.stringify(preference))
-  } catch {
-    // A blocked localStorage must not prevent dashboard use.
-  }
 }
 
 function formatGapDate(dateStr: string) {
@@ -159,7 +121,7 @@ function formatReviewerName(displayName?: string) {
 }
 
 export default function NailistDashboard() {
-  const { user, displayName, setVerificationReminderActive } = useAuth()
+  const { user, displayName } = useAuth()
   const firstName = (displayName || user?.displayName)?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'נייליסטית'
   const { data: fetchedProfile } = useNailistProfile<NailistProfile>()
   const invalidateProfile = useInvalidateNailistProfile()
@@ -189,34 +151,18 @@ export default function NailistDashboard() {
   const [activating, setActivating] = useState(false)
   const [workingHoursFull, setWorkingHoursFull] = useState<DayWorkingHours[]>([])
   const [minServiceDuration, setMinServiceDuration] = useState<number | null>(null)
-  const [showVerificationReminder, setShowVerificationReminder] = useState(false)
   const [verificationReadiness, setVerificationReadiness] = useState<VerificationReadiness | null>(null)
-  const verificationDialogRef = useRef<HTMLDivElement>(null)
-  const verificationCtaRef = useRef<HTMLAnchorElement>(null)
-  const verificationPreviousFocusRef = useRef<HTMLElement | null>(null)
-
-  // Tells the global announcement modal to hold off while this one is on
-  // screen, and to stop holding once it closes or this page is left.
-  useEffect(() => {
-    setVerificationReminderActive(showVerificationReminder)
-    return () => setVerificationReminderActive(false)
-  }, [showVerificationReminder, setVerificationReminderActive])
 
   useEffect(() => {
     const profileId = fetchedProfile?.id
     if (!profileId) return
 
     void (async () => {
-    const preference = getVerificationReminderPreference(profileId)
     const readinessRes = await fetch('/api/me/verification-readiness')
     if (readinessRes.ok) {
       const readinessJson = await readinessRes.json()
       const readiness = readinessJson?.data as VerificationReadiness | null
       setVerificationReadiness(readiness)
-      const canShowReminder = !!readiness && !readiness.isReady && readiness.checks.some((check) => !check.passed)
-        && !preference.dismissed
-        && (!preference.nextPromptAt || preference.nextPromptAt <= Date.now())
-      setShowVerificationReminder(canShowReminder)
     }
 
     const [portfolioRes, servicesRes, hoursRes, appointmentsRes, nailistRes] = await Promise.all([
@@ -280,57 +226,6 @@ export default function NailistDashboard() {
       setActivating(false)
     }
   }
-
-  function postponeVerificationReminder(duration: number) {
-    if (!profile?.id) return
-    saveVerificationReminderPreference(profile.id, { nextPromptAt: Date.now() + duration })
-    setShowVerificationReminder(false)
-  }
-
-  function dismissVerificationReminder() {
-    if (!profile?.id) return
-    saveVerificationReminderPreference(profile.id, { dismissed: true })
-    setShowVerificationReminder(false)
-  }
-
-  useEffect(() => {
-    if (!showVerificationReminder) return
-
-    verificationPreviousFocusRef.current = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null
-    verificationCtaRef.current?.focus()
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        postponeVerificationReminder(REMIND_LATER_MS)
-        return
-      }
-      if (event.key !== 'Tab') return
-
-      const focusable = verificationDialogRef.current?.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      )
-      if (!focusable?.length) return
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      verificationPreviousFocusRef.current?.focus()
-    }
-  }, [showVerificationReminder])
 
   const checklist = [
     { label: 'פרטי עסק (שם + כתובת)', done: !!(profile?.businessName && (profile?.city || profile?.address)) },
@@ -413,60 +308,6 @@ export default function NailistDashboard() {
 
   return (
     <div className="p-4 md:p-8">
-      {showVerificationReminder && profile && verificationReadiness && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="verification-reminder-title"
-          dir="rtl"
-          ref={verificationDialogRef}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        >
-          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 text-right shadow-2xl">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-              <CheckCircle2 className="h-6 w-6 text-primary" aria-hidden="true" />
-            </div>
-            <h2 id="verification-reminder-title" className="text-xl font-black text-foreground">
-              עוד צעד קטן לתג אימות
-            </h2>
-            <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">
-              כדי להיות זכאית לבדיקה לתג אימות, השלימי את הפרטים הבאים:
-            </p>
-            <ul className="mt-3 list-disc space-y-1 pr-5 text-sm font-medium leading-6 text-muted-foreground">
-              {verificationReadiness.checks.filter((check) => !check.passed).map((check) => (
-                <li key={check.key}>{check.missing}</li>
-              ))}
-            </ul>
-            <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              השלמת הפרטים אינה מעניקה תג אוטומטית; הפרופיל ייבדק לאחר מכן.
-            </p>
-            <div className="mt-6 space-y-3">
-              <Link
-                href="/dashboard/nailist/settings"
-                ref={verificationCtaRef}
-                onClick={() => postponeVerificationReminder(REMIND_LATER_MS)}
-                className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-black text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                להשלמת הפרופיל
-              </Link>
-              <button
-                type="button"
-                onClick={() => postponeVerificationReminder(REMIND_LATER_MS)}
-                className="w-full rounded-xl border border-border px-4 py-3 text-sm font-bold text-foreground transition-colors hover:bg-muted"
-              >
-                הזכירי לי מאוחר יותר
-              </button>
-              <button
-                type="button"
-                onClick={dismissVerificationReminder}
-                className="w-full px-4 py-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:underline"
-              >
-                לא להציג שוב
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-black text-foreground">שלום, {firstName}</h1>
         <p className="text-muted-foreground font-medium">הנה סקירה של העסק שלך</p>
@@ -495,6 +336,31 @@ export default function NailistDashboard() {
             {activating ? 'מפרסמת...' : 'פרסמי עכשיו'}
           </button>
         </motion.div>
+      )}
+
+      {verificationReadiness && !verificationReadiness.isReady && (
+        <section className="mb-6 rounded-2xl border border-primary/25 bg-primary/5 p-4 md:p-5" aria-labelledby="verification-readiness-title">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <CheckCircle2 className="h-5 w-5 text-primary" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 id="verification-readiness-title" className="font-black text-foreground">הדרך לתג האימות</h2>
+              <p className="mt-0.5 text-sm leading-6 text-muted-foreground">השלימי את הפרטים החסרים, ואז הפרופיל יוכל לעבור בדיקה.</p>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                {verificationReadiness.checks.filter((check) => !check.passed).map((check) => (
+                  <li key={check.key} className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Circle className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+                    {check.missing}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/dashboard/nailist/settings" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-black text-primary-foreground transition-colors hover:bg-primary/90">
+                השלמת פרטי העסק <ChevronLeft className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
       )}
 
       {/* Unfillable gap banner — passive, informational, never blocks anything */}

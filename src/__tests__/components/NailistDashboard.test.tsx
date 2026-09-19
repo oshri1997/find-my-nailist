@@ -4,7 +4,7 @@
  * removed from this page — see NailistLayoutMoreMenu.test.tsx for its
  * replacement in the dashboard layout's "עוד" menu.
  */
-import { fireEvent, render, screen, waitFor } from '@/__tests__/utils/render'
+import { render, screen, waitFor } from '@/__tests__/utils/render'
 import NailistDashboard from '@/app/dashboard/nailist/page'
 
 jest.mock('@/components/auth/auth-provider', () => ({
@@ -124,16 +124,14 @@ describe('NailistDashboard — profile completion card', () => {
 })
 
 describe('NailistDashboard — verification readiness reminder', () => {
-  const reminderKey = 'nailist-verification-contact-reminder:nailist-1'
-
-  it('lists every canonical missing verification requirement', async () => {
+  it('shows every missing verification requirement in a non-blocking dashboard card', async () => {
     mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
     render(<NailistDashboard />)
 
-    expect(await screen.findByRole('dialog', { name: 'עוד צעד קטן לתג אימות' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'הדרך לתג האימות' })).toBeInTheDocument()
     expect(screen.getByText('טלפון או וואטסאפ')).toBeInTheDocument()
     expect(screen.getByText('הוסיפי עוד 2 תמונות לתיק העבודות')).toBeInTheDocument()
-    expect(screen.getByText(/אינה מעניקה תג אוטומטית/)).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('does not show when canonical readiness is complete', async () => {
@@ -141,79 +139,14 @@ describe('NailistDashboard — verification readiness reminder', () => {
     render(<NailistDashboard />)
 
     await waitFor(() => expect(screen.getByText('הנה סקירה של העסק שלך')).toBeInTheDocument())
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'הדרך לתג האימות' })).not.toBeInTheDocument()
   })
 
-  it('saves a seven-day reminder when asked later', async () => {
+  it('links directly to profile settings', async () => {
     mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
     render(<NailistDashboard />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'הזכירי לי מאוחר יותר' }))
-
-    const preference = JSON.parse(window.localStorage.getItem(reminderKey) ?? '{}')
-    expect(preference.nextPromptAt).toBeGreaterThan(Date.now() + (6 * 24 * 60 * 60 * 1000))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  })
-
-  it('does not show again after permanent dismissal', async () => {
-    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
-    const { unmount } = render(<NailistDashboard />)
-    fireEvent.click(await screen.findByRole('button', { name: 'לא להציג שוב' }))
-    unmount()
-
-    render(<NailistDashboard />)
-    await waitFor(() => expect(screen.getByText('הנה סקירה של העסק שלך')).toBeInTheDocument())
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  })
-
-  it('shows again after reminder expiry', async () => {
-    window.localStorage.setItem(reminderKey, JSON.stringify({ nextPromptAt: Date.now() - 1 }))
-    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
-    render(<NailistDashboard />)
-
-    expect(await screen.findByRole('dialog', { name: 'עוד צעד קטן לתג אימות' })).toBeInTheDocument()
-  })
-
-  it.each(['null', '"not an object"', '{broken json'])('ignores invalid stored preference: %s', async (stored) => {
-    window.localStorage.setItem(reminderKey, stored)
-    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
-    render(<NailistDashboard />)
-
-    expect(await screen.findByRole('dialog', { name: 'עוד צעד קטן לתג אימות' })).toBeInTheDocument()
-  })
-
-  it('focuses, traps Tab, and restores focus when closed with Escape', async () => {
-    const previousFocus = document.createElement('button')
-    document.body.appendChild(previousFocus)
-    previousFocus.focus()
-    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
-    render(<NailistDashboard />)
-
-    const cta = await screen.findByRole('link', { name: 'להשלמת הפרופיל' })
-    const dismiss = screen.getByRole('button', { name: 'לא להציג שוב' })
-    expect(document.activeElement).toBe(cta)
-
-    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
-    expect(document.activeElement).toBe(dismiss)
-    fireEvent.keyDown(document, { key: 'Tab' })
-    expect(document.activeElement).toBe(cta)
-
-    fireEvent.keyDown(document, { key: 'Escape' })
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-    expect(document.activeElement).toBe(previousFocus)
-    expect(JSON.parse(window.localStorage.getItem(reminderKey) ?? '{}').dismissed).not.toBe(true)
-    previousFocus.remove()
-  })
-
-  it('links to profile settings and records a reminder cooldown', async () => {
-    mockFetchResponses({ readiness: missingPhoneAndPhotosReadiness })
-    render(<NailistDashboard />)
-
-    const link = await screen.findByRole('link', { name: 'להשלמת הפרופיל' })
+    const link = await screen.findByRole('link', { name: /השלמת פרטי העסק/ })
     expect(link).toHaveAttribute('href', '/dashboard/nailist/settings')
-    fireEvent.click(link)
-
-    const preference = JSON.parse(window.localStorage.getItem(reminderKey) ?? '{}')
-    expect(preference.nextPromptAt).toBeGreaterThan(Date.now())
   })
 })
