@@ -2,6 +2,7 @@ import { render, waitFor, act } from '@testing-library/react'
 import { ProductTour } from '@/components/onboarding/product-tour'
 import { driver } from 'driver.js'
 import type { Config, PopoverDOM } from 'driver.js'
+import { TOUR_RESTART_PENDING_KEY } from '@/lib/product-tour'
 
 let mockPathname = '/search'
 const mockUseAuth = jest.fn()
@@ -69,6 +70,7 @@ beforeEach(() => {
     getActiveIndex: () => 1,
   })
   window.localStorage.clear()
+  window.sessionStorage.clear()
   mockPathname = '/search'
   mockUseAuth.mockReturnValue(baseAuth)
 })
@@ -113,6 +115,19 @@ describe('ProductTour', () => {
     const config = lastConfig()
     expect(config.skipMissingElement).toBe(true)
     expect(config.waitForElement).toBeGreaterThan(0)
+  })
+
+  it('resumes a requested tour after navigating from another dashboard page', async () => {
+    mockPathname = '/dashboard/nailist'
+    mockUseAuth.mockReturnValue({ ...baseAuth, role: 'NAILIST' })
+    window.localStorage.setItem('nailistiot:product-tour:v3:user-1', 'completed')
+    window.sessionStorage.setItem(`${TOUR_RESTART_PENDING_KEY}:user-1`, '1')
+
+    render(<ProductTour />)
+
+    await waitFor(() => expect(mockDriver).toHaveBeenCalledTimes(1))
+    expect(window.sessionStorage.getItem(`${TOUR_RESTART_PENDING_KEY}:user-1`)).toBeNull()
+    expect(lastConfig().steps?.[0].popover?.title).toBe('ברוכה הבאה לעסק שלך')
   })
 
   it('keeps the spotlight tightly scoped to the intended control', async () => {

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import {
   TOUR_RESTART_EVENT,
+  TOUR_RESTART_PENDING_KEY,
   isTourDue,
   isTourRoute,
   markTourCompleted,
@@ -94,8 +95,8 @@ function nailistSteps(isMobile: boolean): DriveStep[] {
       popover: {
         title: isMobile ? 'הניווט שלך מתחיל כאן' : 'כל העסק במקום אחד',
         description: isMobile
-          ? 'תמונת מצב, תורים, שירותים ופרטי העסק. ב״עוד״ יחכו לך הביקורות, העבודות ושעות הפעילות.'
-          : '״תמונת מצב״ היא דף הבית שלך. מכאן מנווטים לתורים, לשירותים, לשעות הפעילות ולביקורות.',
+          ? 'לוח בקרה, תורים, שירותים ופרטי העסק. ב״עוד״ יחכו לך הביקורות, העבודות ושעות הפעילות.'
+          : '״לוח בקרה״ הוא דף הבית שלך. מכאן מנווטים לתורים, לשירותים, לשעות הפעילות ולביקורות.',
         side: menuSide,
         align: 'center',
       },
@@ -312,6 +313,25 @@ export function ProductTour() {
     const timer = window.setTimeout(() => start(), START_DELAY_MS)
     return () => window.clearTimeout(timer)
   }, [due, start])
+
+  useEffect(() => {
+    if (!onRoute || !user || loading || !onboardingCompleted || verificationReminderActive) return
+    try {
+      if (window.sessionStorage.getItem(`${TOUR_RESTART_PENDING_KEY}:${user.uid}`) !== '1') return
+    } catch {
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      try {
+        window.sessionStorage.removeItem(`${TOUR_RESTART_PENDING_KEY}:${user.uid}`)
+      } catch {
+        // Storage can become unavailable between scheduling and starting.
+      }
+      start(true)
+    }, START_DELAY_MS)
+    return () => window.clearTimeout(timer)
+  }, [onRoute, user, loading, onboardingCompleted, verificationReminderActive, start])
 
   useEffect(() => {
     const handleRestart = () => start(true)

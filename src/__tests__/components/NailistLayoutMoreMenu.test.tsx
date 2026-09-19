@@ -6,6 +6,7 @@
  */
 import { render, screen, waitFor, fireEvent } from '@/__tests__/utils/render'
 import DashboardLayout from '@/app/dashboard/layout'
+import { TOUR_RESTART_PENDING_KEY } from '@/lib/product-tour'
 
 // jsdom has no matchMedia — the layout renders <ThemeToggle> which reads it on mount.
 beforeAll(() => {
@@ -24,9 +25,11 @@ beforeAll(() => {
   })
 })
 
+const mockPush = jest.fn()
+let mockPathname = '/dashboard/nailist'
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: jest.fn(), push: jest.fn() }),
-  usePathname: () => '/dashboard/nailist',
+  useRouter: () => ({ replace: jest.fn(), push: mockPush }),
+  usePathname: () => mockPathname,
 }))
 
 const mockUseAuth = jest.fn()
@@ -49,7 +52,30 @@ function mockFetch(profileId: string | null | Promise<unknown>) {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  window.sessionStorage.clear()
+  mockPathname = '/dashboard/nailist'
   mockUseAuth.mockReturnValue({ user: { uid: 'nailist-user-1', displayName: 'Oshri Test', email: 'oshri@example.com' }, role: 'NAILIST', isAdmin: false, signOut: jest.fn() })
+})
+
+describe('Dashboard layout — consistent navigation', () => {
+  it('uses the same dashboard label on desktop and mobile and keeps the sidebar viewport-sized', () => {
+    mockFetch('nailist-42')
+    render(<DashboardLayout>content</DashboardLayout>)
+
+    expect(screen.getAllByRole('link', { name: 'לוח בקרה' })).toHaveLength(2)
+    expect(screen.queryByText('תמונת מצב')).not.toBeInTheDocument()
+    expect(document.querySelector('[data-tour="nailist-sidebar"]')).toHaveClass('md:h-dvh', 'md:overflow-y-auto', 'md:sticky')
+  })
+
+  it('offers the tour on a subpage and starts it from the dashboard', () => {
+    mockPathname = '/dashboard/nailist/settings'
+    mockFetch('nailist-42')
+    render(<DashboardLayout>content</DashboardLayout>)
+
+    fireEvent.click(screen.getByRole('button', { name: 'סיור מודרך' }))
+    expect(window.sessionStorage.getItem(`${TOUR_RESTART_PENDING_KEY}:nailist-user-1`)).toBe('1')
+    expect(mockPush).toHaveBeenCalledWith('/dashboard/nailist')
+  })
 })
 
 async function openMoreMenu() {

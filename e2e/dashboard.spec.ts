@@ -143,6 +143,29 @@ test.describe.serial('Dashboard (mocked data, real session)', () => {
     await servicesLink.click()
     await expect(page).toHaveURL(/\/services/)
   })
+
+  test('sidebar keeps the same size and actions across dashboard pages', async () => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto('/dashboard/nailist')
+    await closeProductTour(page)
+
+    const sidebar = page.locator('[data-tour="nailist-sidebar"]')
+    await expect(sidebar).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: 'לוח בקרה' })).toBeVisible()
+    await expect(sidebar.getByRole('button', { name: 'סיור מודרך' })).toHaveCount(1)
+    const overviewHeight = await sidebar.evaluate(element => element.getBoundingClientRect().height)
+    const overviewTourTop = await sidebar.getByRole('button', { name: 'סיור מודרך' }).evaluate(element => element.getBoundingClientRect().top)
+
+    await page.goto('/dashboard/nailist/settings')
+    await expect(sidebar).toBeVisible()
+    await expect(sidebar.getByRole('button', { name: 'סיור מודרך' })).toHaveCount(1)
+    const settingsHeight = await sidebar.evaluate(element => element.getBoundingClientRect().height)
+    const settingsTourTop = await sidebar.getByRole('button', { name: 'סיור מודרך' }).evaluate(element => element.getBoundingClientRect().top)
+
+    expect(overviewHeight).toBe(900)
+    expect(settingsHeight).toBe(overviewHeight)
+    expect(Math.abs(settingsTourTop - overviewTourTop)).toBeLessThanOrEqual(2)
+  })
 })
 
 test.describe.serial('Dashboard (real auth, real data)', () => {

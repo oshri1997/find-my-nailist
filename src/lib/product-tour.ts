@@ -11,6 +11,7 @@
 
 export const TOUR_VERSION = 'v3'
 export const TOUR_RESTART_EVENT = 'nailistiot:restart-product-tour'
+export const TOUR_RESTART_PENDING_KEY = 'nailistiot:restart-product-tour-on-dashboard'
 
 export type TourRole = 'NAILIST' | 'CLIENT' | 'ADMIN' | null
 

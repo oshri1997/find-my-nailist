@@ -11,14 +11,14 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { EmailVerificationBanner } from '@/components/layout/email-verification-banner'
 import { FeedbackLauncher } from '@/components/feedback/FeedbackLauncher'
 import { useNailistProfile } from '@/lib/hooks/use-nailist-profile'
-import { TOUR_RESTART_EVENT, isTourRoute } from '@/lib/product-tour'
+import { TOUR_RESTART_EVENT, TOUR_RESTART_PENDING_KEY, isTourRoute } from '@/lib/product-tour'
 
 // `label` is the descriptive name used wherever there is room for it — the
 // desktop sidebar and the mobile "more" sheet. `tabLabel` is the short form
 // for the mobile bottom bar, where five items share the screen width and a
 // long label would wrap or be cut off.
 const primaryNavLinks = [
-  { href: '/dashboard/nailist', label: 'תמונת מצב', tabLabel: 'תמונת מצב', Icon: LayoutDashboard, dynamic: false },
+  { href: '/dashboard/nailist', label: 'לוח בקרה', tabLabel: 'לוח בקרה', Icon: LayoutDashboard, dynamic: false },
   { href: '/dashboard/nailist/appointments', label: 'התורים שלי', tabLabel: 'תורים', Icon: Calendar, dynamic: false },
   { href: '/dashboard/nailist/services', label: 'השירותים שלי', tabLabel: 'שירותים', Icon: Scissors, dynamic: false },
   { href: '/dashboard/nailist/settings', label: 'פרטי העסק', tabLabel: 'פרטי העסק', Icon: Settings, dynamic: false },
@@ -68,6 +68,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     signOut().catch(console.error)
   }
 
+  function handleTourRestart() {
+    if (canRunTour) {
+      window.dispatchEvent(new Event(TOUR_RESTART_EVENT))
+      return
+    }
+
+    // The guide's anchors live on the overview page. Keep this action in the
+    // same place on every page and resume it after navigation completes.
+    try {
+      window.sessionStorage.setItem(`${TOUR_RESTART_PENDING_KEY}:${user!.uid}`, '1')
+    } catch {
+      // Navigation remains useful even when browser storage is unavailable.
+    }
+    router.push('/dashboard/nailist')
+  }
+
   const secondaryActive = secondaryNavLinks.some(l => pathname === l.href)
 
   // AuthProvider owns the only full-screen loader. This short handoff frame
@@ -114,7 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.4 }}
           data-tour="nailist-sidebar"
-          className="hidden md:flex w-60 bg-card border-l border-border flex-col shrink-0 shadow-[1px_0_12px_rgba(0,0,0,0.04)]"
+          className="hidden md:sticky md:top-0 md:flex md:h-dvh md:self-start md:overflow-y-auto w-60 bg-card border-l border-border flex-col shrink-0 shadow-[1px_0_12px_rgba(0,0,0,0.04)]"
         >
           {/* Logo */}
           <div className="h-18 flex items-center px-5 border-b border-border py-5">
@@ -214,18 +230,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               הפניות שלי
             </Link>
             <FeedbackLauncher compact />
-            {/* The tour walks through the overview page, so it is only offered
-                there — from a sub-page the button had nothing to drive. */}
-            {canRunTour && (
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new Event(TOUR_RESTART_EVENT))}
-                className="flex cursor-pointer items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-all"
-              >
-                <CircleHelp className="h-4 w-4" />
-                סיור מודרך
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleTourRestart}
+              className="flex cursor-pointer items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-all"
+            >
+              <CircleHelp className="h-4 w-4" />
+              סיור מודרך
+            </button>
             {isAdmin && (
               <Link
                 href="/admin"
@@ -405,19 +417,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </Link>
                 )}
                 <FeedbackLauncher compact onClose={() => setShowMoreSheet(false)} className="px-4 py-3" />
-                {canRunTour && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowMoreSheet(false)
-                      window.dispatchEvent(new Event(TOUR_RESTART_EVENT))
-                    }}
-                    className="flex cursor-pointer items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
-                  >
-                    <CircleHelp className="h-4 w-4" />
-                    סיור מודרך
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMoreSheet(false)
+                    handleTourRestart()
+                  }}
+                  className="flex cursor-pointer items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
+                >
+                  <CircleHelp className="h-4 w-4" />
+                  סיור מודרך
+                </button>
                 <div className="flex items-center justify-between px-4 py-2.5 rounded-xl">
                   <span className="text-sm font-semibold text-muted-foreground">מצב תצוגה</span>
                   <ThemeToggle />
