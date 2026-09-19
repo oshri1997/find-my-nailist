@@ -770,9 +770,13 @@ export default function SearchPage() {
           </div>
         </div>
 
-        {/* Content area */}
+        {/* Content area. The tour anchor sits on this wrapper, not on any one
+            branch below: it used to live on the skeleton grid alone, so the
+            guide's "choose a nailist" step lost its target the moment the real
+            results replaced the skeletons. */}
+        <div data-tour="client-search-results">
         {loading || !imagesReady ? (
-          <div data-tour="client-search-results" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: loading ? skeletonCount : sorted.length }).map((_, i) => (
               <NailistCardSkeleton key={i} />
             ))}
@@ -940,6 +944,7 @@ export default function SearchPage() {
             ))}
           </div>
         )}
+        </div>
 
         {!loading && imagesReady && viewMode === 'grid' && hasMore && (
           <div className="flex justify-center mt-8">

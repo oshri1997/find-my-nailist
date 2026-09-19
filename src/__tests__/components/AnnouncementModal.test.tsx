@@ -159,6 +159,31 @@ describe('AnnouncementModal', () => {
     consoleError.mockRestore()
   })
 
+  it('stays closed while the first-use guide is still owed on its own route', async () => {
+    // Two components' effects have no guaranteed order, so this cannot rely on
+    // ProductTour having set productTourActive first — it answers from the
+    // same state the guide itself reads.
+    mockPathname = '/dashboard/nailist'
+    mockUseAuth.mockReturnValue(baseAuth)
+    mockFetch([item])
+    render(<AnnouncementModal />)
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(global.fetch).not.toHaveBeenCalledWith('/api/announcements')
+  })
+
+  it('opens on that route once the guide has been seen', async () => {
+    mockPathname = '/dashboard/nailist'
+    window.localStorage.setItem('nailistiot:product-tour:v3:nailist-1', 'completed')
+    mockUseAuth.mockReturnValue(baseAuth)
+    mockFetch([item])
+    render(<AnnouncementModal />)
+
+    expect(await screen.findByText('שעות עבודה מפוצלות')).toBeInTheDocument()
+    window.localStorage.clear()
+  })
+
   it('points to the archive, and says more remain when the digest was capped', async () => {
     mockUseAuth.mockReturnValue(baseAuth)
     mockFetch([item], true)

@@ -165,10 +165,62 @@ body {
   white-space: nowrap;
 }
 
+/* driver.js draws the arrow as a CSS border triangle and colors it white. The
+   popover surface here is a card with a tint, so each side has to be re-pointed
+   at the card color or the arrow reads as a stray white notch. */
+.driver-popover-arrow {
+  border-width: 6px;
+}
+
+.driver-popover-arrow-side-left {
+  border-left-color: var(--card);
+}
+
+.driver-popover-arrow-side-right {
+  border-right-color: var(--card);
+}
+
+.driver-popover-arrow-side-top {
+  border-top-color: var(--card);
+}
+
+.driver-popover-arrow-side-bottom {
+  border-bottom-color: var(--card);
+}
+
 .driver-popover-prev-btn,
 .driver-popover-next-btn,
 .driver-popover-close-btn {
   font-family: inherit;
+}
+
+/* Keyboard users navigate this dialog, and focus lands on a button on every
+   step — the ring has to be unmistakable. */
+.driver-popover-footer-btn:focus-visible,
+.driver-popover-close-btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* An X in the corner is not a discoverable exit from a tutorial. This is the
+   named one, kept visually quiet so it never competes with ״המשך״. */
+.nailistiot-tour-skip {
+  min-height: 2.75rem;
+  border: 0;
+  background: none;
+  padding: 0 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 160ms ease;
+}
+
+.nailistiot-tour-skip:hover,
+.nailistiot-tour-skip:focus-visible {
+  background: none;
+  color: var(--primary);
 }
 
 .driver-popover-next-btn {
@@ -254,8 +306,18 @@ body {
     padding: 1rem;
   }
 
+  /* Touch targets: driver.js ships a 32×28 close button, below the 44px
+     minimum. The title's padding grows with it so the two never collide. */
+  .driver-popover-close-btn {
+    left: 0.5rem;
+    top: 0.5rem;
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
   .driver-popover-title {
     font-size: 1rem;
+    padding-left: 3.5rem;
   }
 
   .driver-popover-description {
@@ -279,6 +341,24 @@ body {
   .driver-popover-footer-btn {
     flex: 1;
     text-align: center;
+  }
+
+  /* The skip link shares the footer-btn class for driver's own styling hooks,
+     but it must stay a quiet link beside the progress pill, not stretch into a
+     third button competing with ״המשך״. */
+  .nailistiot-tour-skip {
+    flex: 0 0 auto;
+    order: 3;
+  }
+}
+
+/* The stage and popover both animate; when motion is reduced, driver.js is
+   already configured with animate:false, and this covers its stylesheet's own
+   fade so nothing slides in behind that setting. */
+@media (prefers-reduced-motion: reduce) {
+  .driver-fade .driver-overlay,
+  .driver-fade .driver-popover {
+    animation: none !important;
   }
 }
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { AnnouncementModalView } from '@/components/announcements/AnnouncementModalView'
+import { isTourDue } from '@/lib/product-tour'
 import type { Announcement } from '@/types'
 
 /**
@@ -29,7 +30,15 @@ export function AnnouncementModal() {
     if (isAuthFlow) return
     if (loading || !user || !role || role === 'ADMIN' || !onboardingCompleted) return
     if (verificationReminderActive) return
+    // productTourActive is set from ProductTour's own effect, and React gives
+    // no ordering guarantee between two components' effects — so on the very
+    // commit where the guide becomes due, this one could still see `false` and
+    // open an announcement over it. isTourDue answers from the same state the
+    // guide itself reads, which makes the check independent of effect order.
+    // Once the guide is finished it writes localStorage, productTourActive
+    // flips back and this effect re-runs with a clear path.
     if (productTourActive) return
+    if (isTourDue({ userId: user.uid, role, pathname, authLoading: loading, onboardingCompleted, verificationReminderActive })) return
     if (fetchedRef.current) return
     fetchedRef.current = true
 

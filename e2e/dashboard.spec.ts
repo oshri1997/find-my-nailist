@@ -24,9 +24,20 @@ const MOCK_SERVICES = [
  * experience first, just as a user can, before interacting with the page.
  */
 async function closeProductTour(page: Page) {
-  const closeButton = page.getByRole('button', { name: 'Close' })
-  if (await closeButton.waitFor({ state: 'visible', timeout: 2_000 }).then(() => true).catch(() => false)) {
-    await closeButton.click()
+  // The tour's own named exit. It replaced driver.js's unlabelled "Close"
+  // button, which is what this used to look for.
+  const skipButton = page.getByRole('button', { name: 'דילוג על הסיור' })
+  if (await skipButton.waitFor({ state: 'visible', timeout: 2_000 }).then(() => true).catch(() => false)) {
+    await skipButton.click()
+    await expect(page.locator('.driver-popover')).toHaveCount(0)
+    return
+  }
+
+  // Last step: the skip control gives way to the done button.
+  const doneButton = page.getByRole('button', { name: 'סיימתי' })
+  if (await doneButton.isVisible().catch(() => false)) {
+    await doneButton.click()
+    await expect(page.locator('.driver-popover')).toHaveCount(0)
   }
 }
 
