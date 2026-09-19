@@ -12,6 +12,7 @@ import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
 import { useAuth } from '@/components/auth/auth-provider'
 import { isValidIsraeliPhone, PHONE_INVALID_MESSAGE } from '@/lib/phone'
 import { useInvalidateNailistProfile, useNailistProfile } from '@/lib/hooks/use-nailist-profile'
+import { validateIntervals, type TimeInterval } from '@/lib/availability-intervals'
 
 const STEPS = [
   { label: 'כתובת העסק' },
@@ -49,14 +50,13 @@ function normalizeServiceName(name: string) {
 
 interface Photo { id: string; url: string }
 interface Service { id: string; name: string; durationMinutes: number; price: number }
-interface DayHours { dayOfWeek: number; isActive: boolean; startTime: string; endTime: string }
+interface DayHours { dayOfWeek: number; isActive: boolean; intervals: TimeInterval[] }
 
 function defaultHours(): DayHours[] {
   return DAYS_HE.map((_, i) => ({
     dayOfWeek: i,
     isActive: i < 6,
-    startTime: '09:00',
-    endTime: '18:00',
+    intervals: [{ start: '09:00', end: '18:00' }],
   }))
 }
 
@@ -438,17 +438,37 @@ export default function OnboardingPage() {
     setWorkingHours(prev => prev.map((d, idx) => idx === i ? { ...d, isActive: !d.isActive } : d))
   }
 
-  function updateTime(i: number, field: 'startTime' | 'endTime', value: string) {
+  function updateInterval(i: number, intervalIndex: number, field: 'start' | 'end', value: string) {
     setWorkingHours(prev => prev.map((d, idx) => {
       if (idx !== i) return d
-      if (field === 'startTime' && value >= d.endTime) {
-        // Pushing startTime past (or equal to) the current endTime would leave
-        // an invalid backwards range — bump endTime to the next available slot.
+      const intervals = d.intervals.map((interval, currentIndex) => {
+        if (currentIndex !== intervalIndex) return interval
+        if (field === 'start' && value >= interval.end) {
         const next = TIME_OPTIONS.find(t => t > value)
-        return { ...d, startTime: value, endTime: next ?? value }
-      }
-      return { ...d, [field]: value }
+          return { start: value, end: next ?? value }
+        }
+        return { ...interval, [field]: value }
+      })
+      return { ...d, intervals }
     }))
+  }
+
+  function addInterval(i: number) {
+    setWorkingHours(prev => prev.map((day, index) => {
+      if (index !== i) return day
+      const last = day.intervals[day.intervals.length - 1]
+      const start = last?.end ?? '09:00'
+      const end = TIME_OPTIONS.find(time => time > start) ?? start
+      return { ...day, intervals: [...day.intervals, { start, end }] }
+    }))
+  }
+
+  function removeInterval(i: number, intervalIndex: number) {
+    setWorkingHours(prev => prev.map((day, index) => (
+      index === i && day.intervals.length > 1
+        ? { ...day, intervals: day.intervals.filter((_, currentIndex) => currentIndex !== intervalIndex) }
+        : day
+    )))
   }
 
   async function saveSocialLinks() {
@@ -474,6 +494,14 @@ export default function OnboardingPage() {
   }
 
   async function saveWorkingHours() {
+    for (const day of workingHours) {
+      if (!day.isActive) continue
+      const validationError = validateIntervals(day.intervals)
+      if (validationError) {
+        setError(`${DAYS_HE[day.dayOfWeek]}: ${validationError}`)
+        return
+      }
+    }
     setSaving(true)
     setError('')
     try {
@@ -481,7 +509,11 @@ export default function OnboardingPage() {
         fetch('/api/working-hours', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ hours: workingHours }),
+          body: JSON.stringify({ hours: workingHours.map(day => ({
+            ...day,
+            startTime: day.intervals[0].start,
+            endTime: day.intervals[day.intervals.length - 1].end,
+          })) }),
         }),
         profileId
           ? fetch(`/api/nailists/${profileId}`, {
@@ -1056,22 +1088,36 @@ export default function OnboardingPage() {
                           {DAYS_HE[i]}
                         </span>
                         {day.isActive && (
-                          <div className="flex items-center gap-2 flex-1">
-                            <select
-                              value={day.startTime}
-                              onChange={e => updateTime(i, 'startTime', e.target.value)}
-                              className="flex-1 h-8 rounded-lg border border-border bg-card px-1 text-xs font-semibold focus:outline-none focus:border-primary cursor-pointer"
-                            >
-                              {TIME_OPTIONS.slice(0, -1).map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                            <span className="text-xs text-muted-foreground">—</span>
-                            <select
-                              value={day.endTime}
-                              onChange={e => updateTime(i, 'endTime', e.target.value)}
-                              className="flex-1 h-8 rounded-lg border border-border bg-card px-1 text-xs font-semibold focus:outline-none focus:border-primary cursor-pointer"
-                            >
-                              {TIME_OPTIONS.filter(t => t > day.startTime).map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
+                          <div className="flex-1 space-y-2">
+                            {day.intervals.map((interval, intervalIndex) => (
+                              <div key={intervalIndex} className="flex items-center gap-2">
+                                <select
+                                  value={interval.start}
+                                  aria-label={`תחילת חלון ${intervalIndex + 1} ביום ${DAYS_HE[i]}`}
+                                  onChange={e => updateInterval(i, intervalIndex, 'start', e.target.value)}
+                                  className="flex-1 h-8 rounded-lg border border-border bg-card px-1 text-xs font-semibold focus:outline-none focus:border-primary cursor-pointer"
+                                >
+                                  {TIME_OPTIONS.slice(0, -1).map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                                <span className="text-xs text-muted-foreground">—</span>
+                                <select
+                                  value={interval.end}
+                                  aria-label={`סיום חלון ${intervalIndex + 1} ביום ${DAYS_HE[i]}`}
+                                  onChange={e => updateInterval(i, intervalIndex, 'end', e.target.value)}
+                                  className="flex-1 h-8 rounded-lg border border-border bg-card px-1 text-xs font-semibold focus:outline-none focus:border-primary cursor-pointer"
+                                >
+                                  {TIME_OPTIONS.filter(t => t > interval.start).map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                                {day.intervals.length > 1 && (
+                                  <button type="button" onClick={() => removeInterval(i, intervalIndex)} aria-label={`מחיקת חלון ${intervalIndex + 1} ביום ${DAYS_HE[i]}`} className="h-7 w-7 shrink-0 rounded-full text-muted-foreground hover:bg-muted">
+                                    <X className="mx-auto h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                            <button type="button" onClick={() => addInterval(i)} className="flex items-center gap-1 text-xs font-bold text-primary hover:underline">
+                              <Plus className="h-3 w-3" /> הוספת חלון הזמנות
+                            </button>
                           </div>
                         )}
                         {!day.isActive && (
