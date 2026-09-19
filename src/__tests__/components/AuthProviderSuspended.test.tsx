@@ -15,6 +15,8 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { AuthProvider, useAuth } from '@/components/auth/auth-provider'
 
+jest.mock('next/navigation', () => ({ usePathname: () => '/login' }))
+
 // AuthProvider always renders `children` now (it used to hide them behind a
 // full-screen spinner while `loading` was true — removed because that made
 // server-rendered HTML for every route just the spinner, invisible to

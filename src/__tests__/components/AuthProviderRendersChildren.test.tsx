@@ -7,6 +7,8 @@
 import { render, screen } from '@testing-library/react'
 import { AuthProvider } from '@/components/auth/auth-provider'
 
+jest.mock('next/navigation', () => ({ usePathname: () => '/login' }))
+
 jest.mock('@/lib/firebase/client', () => ({
   // Never resolves within the test's lifetime — simulates the SSR/initial-
   // paint window where Firebase auth state is still unresolved.

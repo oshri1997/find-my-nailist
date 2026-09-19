@@ -12,7 +12,6 @@ import { useAuth } from '@/components/auth/auth-provider'
 import Link from 'next/link'
 import LegalModal from '@/components/auth/LegalModal'
 import { sanitizeRedirect } from '@/lib/sanitize-redirect'
-import { PageLoader } from '@/components/ui/page-loader'
 import { AUTH_TAB_TRANSITION, getAuthContentVariants } from '@/lib/auth-motion'
 import { suggestEmailCorrection } from '@/lib/email-suggestion'
 
@@ -34,7 +33,7 @@ const PANEL_CONTENT = {
 export default function AuthPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, setSignInPending } = useAuth()
   const reducedMotion = useReducedMotion()
   const contentVariants = getAuthContentVariants(Boolean(reducedMotion))
 
@@ -188,6 +187,7 @@ export default function AuthPage() {
     }
 
     setLoading(true)
+    setSignInPending(true)
     handlingFormRef.current = true
     try {
       if (mode === 'login') {
@@ -246,18 +246,19 @@ export default function AuthPage() {
 
         router.push('/verify-email')
         handlingFormRef.current = false
-        setLoading(false)
       }
     } catch (err: unknown) {
       setError(friendlyError(err, mode))
       handlingFormRef.current = false
       setLoading(false)
+      setSignInPending(false)
     }
   }
 
   async function handleGoogle() {
     setError('')
     setLoading(true)
+    setSignInPending(true)
     sessionStorage.setItem('pendingMode', mode)
 
     // Firebase detects a manually-closed popup by polling window.closed on
@@ -278,6 +279,7 @@ export default function AuthPage() {
         if (settled) return
         settled = true
         setLoading(false)
+        setSignInPending(false)
       }, 1000)
     }
     window.addEventListener('focus', onWindowFocus)
@@ -290,6 +292,7 @@ export default function AuthPage() {
       settled = true
       setError(friendlyError(err, mode))
       setLoading(false)
+      setSignInPending(false)
     } finally {
       window.removeEventListener('focus', onWindowFocus)
       if (focusTimeout) clearTimeout(focusTimeout)
@@ -298,16 +301,9 @@ export default function AuthPage() {
 
   const panel = PANEL_CONTENT[mode]
 
-  // `loading` stays true for the entire post-sign-in window — Firebase's own
-  // auth-state sync, then the /api/users upsert + router.replace in the
-  // effect above — not just the initial popup. Replacing the whole form with
-  // a clear full-screen loader avoids the confusing alternative: a static,
-  // seemingly-idle page with only a disabled Google button as feedback,
-  // while the *other* (submit) button's "מתחברת..." label doesn't match
-  // what was actually clicked.
-  // PageLoader renders nothing while AuthProvider's own full-screen layer is
-  // up, so the two never overlap into a pair of spinners for one wait.
-  if (loading) return <PageLoader text="מתחברת..." />
+  // AuthProvider owns one continuous overlay from the click through the
+  // Firebase callback and redirect. Keep the form out of sight beneath it.
+  if (loading) return null
 
   return (
     <>

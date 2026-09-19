@@ -331,11 +331,44 @@ body {
     top: 0.5rem;
     width: 2.75rem;
     height: 2.75rem;
+    /* Retain a 44px touch target, but make the visible X affordance quieter
+       than the primary action. The old full-size outlined circle pulled the
+       eye away from the tour title on narrow screens. */
+    border: 0;
+    background: transparent;
+    font-size: 1rem;
+    color: var(--muted-foreground);
+  }
+
+  .driver-popover-close-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    background: var(--card);
+    z-index: -1;
+  }
+
+  .driver-popover-close-btn:hover,
+  .driver-popover-close-btn:focus-visible {
+    border: 0;
+    background: transparent;
+    color: var(--primary);
+  }
+
+  .driver-popover-close-btn:hover::before,
+  .driver-popover-close-btn:focus-visible::before {
+    border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+    background: color-mix(in srgb, var(--primary) 8%, var(--card));
   }
 
   .driver-popover-title {
     font-size: 1rem;
-    padding-left: 3.5rem;
+    padding-left: 3rem;
   }
 
   .driver-popover-description {

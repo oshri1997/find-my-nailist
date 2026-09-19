@@ -18,7 +18,7 @@ jest.mock('@/lib/firebase/auth-helpers', () => ({
 }))
 
 jest.mock('@/components/auth/auth-provider', () => ({
-  useAuth: () => ({ user: null, loading: false }),
+  useAuth: () => ({ user: null, loading: false, setSignInPending: jest.fn() }),
 }))
 
 jest.mock('@/components/auth/LegalModal', () => {

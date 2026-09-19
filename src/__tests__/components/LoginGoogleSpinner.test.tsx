@@ -17,15 +17,17 @@ jest.mock('next/navigation', () => ({
 // Never resolves — simulates the real window where `loading` stays true
 // through the popup + the subsequent auth-state/redirect handling.
 const mockSignInWithGoogle = jest.fn(() => new Promise(() => {}))
+const mockSignInWithEmail = jest.fn(() => new Promise(() => {}))
 jest.mock('@/lib/firebase/auth-helpers', () => ({
-  signInWithEmail: jest.fn(),
+  signInWithEmail: () => mockSignInWithEmail(),
   signInWithGoogle: () => mockSignInWithGoogle(),
   signUpWithEmail: jest.fn(),
 }))
 
 let mockAuthLoading = false
+const mockSetSignInPending = jest.fn()
 jest.mock('@/components/auth/auth-provider', () => ({
-  useAuth: () => ({ user: null, loading: mockAuthLoading }),
+  useAuth: () => ({ user: null, loading: mockAuthLoading, setSignInPending: mockSetSignInPending }),
 }))
 
 jest.mock('@/components/auth/LegalModal', () => {
@@ -46,14 +48,27 @@ describe('Login page — Google sign-in loading state', () => {
     fireEvent.click(screen.getByRole('button', { name: /כניסה עם Google/ }))
 
     expect(document.getElementById('email')).not.toBeInTheDocument()
-    expect(screen.getByText('מתחברת...')).toBeInTheDocument()
+    expect(mockSetSignInPending).toHaveBeenCalledWith(true)
+  })
+
+  it('uses the same global loader for email sign-in', () => {
+    render(<LoginPage />)
+    fireEvent.change(document.getElementById('email')!, { target: { value: 'user@example.com' } })
+    fireEvent.change(document.getElementById('password')!, { target: { value: 'password123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'התחברי' }))
+
+    expect(mockSignInWithEmail).toHaveBeenCalled()
+    expect(mockSetSignInPending).toHaveBeenCalledWith(true)
+    expect(document.getElementById('email')).not.toBeInTheDocument()
+    expect(screen.queryByText('מתחברת...')).not.toBeInTheDocument()
   })
 
   it('removes its loader when AuthProvider takes ownership of the loading screen', () => {
     const { rerender } = render(<LoginPage />)
 
     fireEvent.click(screen.getByRole('button', { name: /כניסה עם Google/ }))
-    expect(screen.getByText('מתחברת...')).toBeInTheDocument()
+    expect(mockSetSignInPending).toHaveBeenCalledWith(true)
+    expect(screen.queryByText('מתחברת...')).not.toBeInTheDocument()
 
     mockAuthLoading = true
     rerender(<LoginPage />)
@@ -83,16 +98,17 @@ describe('Login page — closing the Google popup', () => {
   it('returns to the form shortly after this window regains focus, without waiting for the popup promise', () => {
     render(<LoginPage />)
     fireEvent.click(screen.getByRole('button', { name: /כניסה עם Google/ }))
-    expect(screen.getByText('מתחברת...')).toBeInTheDocument()
+    expect(document.getElementById('email')).not.toBeInTheDocument()
 
     fireEvent.focus(window)
     // Not yet — this is a debounce against the window also regaining focus
     // on a *successful* sign-in (Firebase closes the popup itself there too).
-    expect(screen.getByText('מתחברת...')).toBeInTheDocument()
+    expect(document.getElementById('email')).not.toBeInTheDocument()
 
     act(() => { jest.advanceTimersByTime(1000) })
     expect(document.getElementById('email')).toBeInTheDocument()
     expect(screen.queryByText('מתחברת...')).not.toBeInTheDocument()
+    expect(mockSetSignInPending).toHaveBeenLastCalledWith(false)
   })
 
   it('does not show an error message from a cancelled popup — only a silent return to the form', () => {

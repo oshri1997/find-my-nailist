@@ -1,10 +1,11 @@
 'use client'
 
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react'
 import type { User } from 'firebase/auth'
 import * as Sentry from '@sentry/nextjs'
 import { NailLoader } from '@/components/ui/nail-loader'
+import { usePathname } from 'next/navigation'
 
 type UserRole = 'NAILIST' | 'CLIENT' | 'ADMIN' | null
 
@@ -22,6 +23,8 @@ interface AuthContextValue {
   displayName: string | null
   signOut: () => Promise<void>
   refreshRole: () => Promise<void>
+  signInPending: boolean
+  setSignInPending: (pending: boolean) => void
   // Whether a higher-priority, action-required modal (currently: the
   // nailist verification reminder) is on screen right now. The global
   // announcement modal waits for this to go false before it ever opens, so
@@ -42,6 +45,8 @@ const AuthContext = createContext<AuthContextValue>({
   displayName: null,
   signOut: async () => {},
   refreshRole: async () => {},
+  signInPending: false,
+  setSignInPending: () => {},
   verificationReminderActive: false,
   setVerificationReminderActive: () => {},
   productTourActive: false,
@@ -51,6 +56,8 @@ const AuthContext = createContext<AuthContextValue>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [signInPending, setSignInPending] = useState(false)
+  const pathname = usePathname()
   const [role, setRole] = useState<UserRole>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [onboardingCompleted, setOnboardingCompleted] = useState(true)
@@ -58,6 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [verificationReminderActive, setVerificationReminderActive] = useState(false)
   const [productTourActive, setProductTourActive] = useState(false)
   const skipCallbackRef = useRef(false)
+
+  // Keep the same overlay mounted from the first sign-in click through the
+  // Firebase callback and route handoff. Once the destination has mounted,
+  // the login transition is over.
+  useEffect(() => {
+    if (pathname === '/login') return
+    const timer = window.setTimeout(() => setSignInPending(false), 0)
+    return () => window.clearTimeout(timer)
+  }, [pathname])
 
   const refreshRole = useCallback(async () => {
     try {
@@ -174,27 +190,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // their full-screen loading state through <PageLoader>, which stands down
   // while this layer is up.
   return (
-    <AuthContext.Provider value={{ user, loading, role, isAdmin, onboardingCompleted, displayName, signOut, refreshRole, verificationReminderActive, setVerificationReminderActive, productTourActive, setProductTourActive }}>
+    <AuthContext.Provider value={{ user, loading, role, isAdmin, onboardingCompleted, displayName, signOut, refreshRole, signInPending, setSignInPending, verificationReminderActive, setVerificationReminderActive, productTourActive, setProductTourActive }}>
       {children}
-      <AnimatePresence>
-        {loading && (
-          <motion.div
-            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-background px-6"
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22, ease: 'easeOut' }}
-            role="status"
-            aria-live="polite"
-            aria-label="טוענת את החשבון"
-          >
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(245,23,92,0.15),transparent_38%),radial-gradient(circle_at_18%_78%,rgba(157,23,77,0.08),transparent_28%)]" />
-            <div className="relative flex flex-col items-center">
-              <NailLoader size="lg" text="מכינות לך את החוויה" />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {(loading || signInPending) && (
+        <motion.div
+          className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-background px-6"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 1 }}
+          role="status"
+          aria-live="polite"
+          aria-label="טוענת את החשבון"
+        >
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(245,23,92,0.15),transparent_38%),radial-gradient(circle_at_18%_78%,rgba(157,23,77,0.08),transparent_28%)]" />
+          <div className="relative flex flex-col items-center">
+            <NailLoader size="lg" text="מכינות לך את החוויה" />
+          </div>
+        </motion.div>
+      )}
     </AuthContext.Provider>
   )
 }

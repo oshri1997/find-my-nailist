@@ -20,9 +20,9 @@ interface PageLoaderProps {
  * load. Pages should never hand-roll a full-screen loader instead of this.
  */
 export function PageLoader({ text, className }: PageLoaderProps) {
-  const { loading: authLoading } = useAuth()
+  const { loading: authLoading, signInPending } = useAuth()
 
-  if (authLoading) return null
+  if (authLoading || signInPending) return null
 
   return (
     <div className={cn('min-h-screen flex items-center justify-center bg-background', className)}>

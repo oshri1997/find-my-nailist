@@ -6,11 +6,14 @@
  * stands down while that layer is up. These tests lock that invariant in: a
  * regression here is exactly the "two spinners after logging in" bug.
  */
-import { render, screen, waitFor } from '@testing-library/react'
-import { AuthProvider } from '@/components/auth/auth-provider'
+import { act, render, screen, waitFor } from '@testing-library/react'
+import { AuthProvider, useAuth } from '@/components/auth/auth-provider'
 import { PageLoader } from '@/components/ui/page-loader'
 
 const initFirebase = jest.fn()
+let mockPathname = '/login'
+
+jest.mock('next/navigation', () => ({ usePathname: () => mockPathname }))
 
 jest.mock('@/lib/firebase/client', () => ({
   initFirebase: (...args: unknown[]) => initFirebase(...args),
@@ -22,8 +25,16 @@ function loaderCount(container: HTMLElement) {
   return container.querySelectorAll('[data-testid="nail-polish-brush"]').length
 }
 
+function SignInProbe() {
+  const { setSignInPending } = useAuth()
+  return <button onClick={() => setSignInPending(true)}>התחברי</button>
+}
+
 describe('single global loader', () => {
-  beforeEach(() => jest.clearAllMocks())
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockPathname = '/login'
+  })
 
   it('shows only the global loader while the account is still resolving', () => {
     // Never resolves — the window where AuthProvider's own layer is visible.
@@ -67,5 +78,27 @@ describe('single global loader', () => {
     const overlay = container.querySelector('.fixed.inset-0')
     expect(overlay).toHaveClass('bg-background')
     expect(overlay?.className).not.toMatch(/bg-background\//)
+  })
+
+  it('uses one uninterrupted global loader from sign-in until the destination mounts', async () => {
+    initFirebase.mockResolvedValue(null)
+
+    const content = <><SignInProbe /><PageLoader text="מתחברת..." /></>
+    const { container, rerender } = render(<AuthProvider>{content}</AuthProvider>)
+
+    await waitFor(() => expect(screen.getByText('מתחברת...')).toBeInTheDocument())
+    act(() => screen.getByRole('button', { name: 'התחברי' }).click())
+
+    expect(screen.getByText('מכינות לך את החוויה')).toBeInTheDocument()
+    expect(screen.queryByText('מתחברת...')).not.toBeInTheDocument()
+    expect(loaderCount(container)).toBe(1)
+
+    rerender(<AuthProvider>{content}</AuthProvider>)
+    expect(screen.getByText('מכינות לך את החוויה')).toBeInTheDocument()
+    expect(loaderCount(container)).toBe(1)
+
+    mockPathname = '/'
+    rerender(<AuthProvider>{content}</AuthProvider>)
+    await waitFor(() => expect(screen.queryByText('מכינות לך את החוויה')).not.toBeInTheDocument())
   })
 })

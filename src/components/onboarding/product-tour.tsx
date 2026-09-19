@@ -236,8 +236,12 @@ export function ProductTour() {
         duration: reduceMotion ? 0 : 280,
         overlayColor: '#09090B',
         overlayOpacity: 0.7,
-        stagePadding: 8,
-        stageRadius: 16,
+        // Keep the cut-out snug to the actual control. With an 8px halo,
+        // compact sidebar items looked like the tour was pointing at their
+        // neighbours as well; 4px still gives the focus shape breathing room
+        // without blurring what the next action is.
+        stagePadding: 4,
+        stageRadius: 12,
         popoverOffset: 12,
         allowClose: true,
         allowKeyboardControl: true,

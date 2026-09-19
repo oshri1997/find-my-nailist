@@ -32,6 +32,26 @@ test.describe('Login page', () => {
     ).toBeVisible({ timeout: 10_000 })
   })
 
+  test('keeps one loading screen throughout a real email sign-in', async ({ page }) => {
+    test.skip(!process.env.TEST_USER_EMAIL || !process.env.TEST_USER_PASSWORD, 'Requires the staging test account')
+
+    // Hold the Firebase response briefly so the first loading frame is
+    // observable even on a fast staging connection.
+    await page.route('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword**', async route => {
+      await new Promise(resolve => setTimeout(resolve, 500))
+      await route.continue()
+    })
+    await page.goto('/login')
+    await page.getByLabel('אימייל').fill(process.env.TEST_USER_EMAIL!)
+    await page.getByLabel('סיסמה', { exact: true }).fill(process.env.TEST_USER_PASSWORD!)
+    await page.getByRole('button', { name: 'התחברי' }).click()
+
+    await expect(page.getByText('מכינות לך את החוויה')).toBeVisible()
+    await expect(page.getByText('מתחברת...')).toHaveCount(0)
+    await page.waitForURL(url => !url.pathname.startsWith('/login'), { timeout: 20_000 })
+    await expect(page.getByText('מתחברת...')).toHaveCount(0)
+  })
+
   test('redirects logged-in users away from /login', async ({ page }) => {
     // If already authenticated (cookie present), middleware redirects to dashboard
     await page.context().addCookies([{

@@ -115,6 +115,15 @@ describe('ProductTour', () => {
     expect(config.waitForElement).toBeGreaterThan(0)
   })
 
+  it('keeps the spotlight tightly scoped to the intended control', async () => {
+    render(<ProductTour />)
+    await waitFor(() => expect(mockDriver).toHaveBeenCalledTimes(1))
+
+    const config = lastConfig()
+    expect(config.stagePadding).toBe(4)
+    expect(config.stageRadius).toBe(12)
+  })
+
   it('treats a stray click on the backdrop as "next", not as ending the guide', async () => {
     render(<ProductTour />)
     await waitFor(() => expect(mockDriver).toHaveBeenCalledTimes(1))
