@@ -13,5 +13,5 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Understand the relevant code before editing. Preserve unrelated user changes.
 - Add meaningful unit tests for product behavior and run the relevant checks before committing or pushing. Run `npm test` before a push unless the user explicitly asks to skip it.
 - Use Jest and Testing Library for React components; use Jest for utilities and API logic.
-- Do not create a git tag or release unless the user explicitly asks. When creating one, first align `package.json` version with the tag, commit and push, then create the tag.
+- Only create a git tag when the user explicitly asks for it, and always create the accompanying release at the same time. When doing so, first align `package.json` version with the tag, commit and push, then create the tag and release together.
 - Keep user-facing text in Hebrew when the feature is in Hebrew; keep code and comments clear and professional.
