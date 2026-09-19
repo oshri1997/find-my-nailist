@@ -6,6 +6,7 @@ import { CheckCircle2, Loader2, Mail, Pencil, Send } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PageLoader } from '@/components/ui/page-loader'
 import { suggestEmailCorrection } from '@/lib/email-suggestion'
 
 function changeEmailError(error: unknown): string {
@@ -130,9 +131,7 @@ export default function VerifyEmailPage() {
   // same time made a freshly registered user see two loaders before onboarding.
   if (authLoading || !user) return null
 
-  if (checking) {
-    return <main className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-7 w-7 animate-spin text-primary" /></main>
-  }
+  if (checking) return <PageLoader text="בודקת את האימות" />
 
   return (
     <main className="min-h-screen bg-background px-4 py-16">

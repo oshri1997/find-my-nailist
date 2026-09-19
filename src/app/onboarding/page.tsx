@@ -9,6 +9,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PlacesInput, type PlaceResult } from '@/components/ui/places-input'
+import { PageLoader } from '@/components/ui/page-loader'
 import { useAuth } from '@/components/auth/auth-provider'
 import { isValidIsraeliPhone, PHONE_INVALID_MESSAGE } from '@/lib/phone'
 import { useInvalidateNailistProfile, useNailistProfile } from '@/lib/hooks/use-nailist-profile'
@@ -543,13 +544,7 @@ export default function OnboardingPage() {
   // a local spinner over the global one.
   if (authLoading || !user) return null
 
-  if (!profileId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
-  }
+  if (!profileId) return <PageLoader text="מכינות את האשף" />
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">

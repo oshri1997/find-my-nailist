@@ -12,7 +12,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import Link from 'next/link'
 import LegalModal from '@/components/auth/LegalModal'
 import { sanitizeRedirect } from '@/lib/sanitize-redirect'
-import { NailLoader } from '@/components/ui/nail-loader'
+import { PageLoader } from '@/components/ui/page-loader'
 import { AUTH_TAB_TRANSITION, getAuthContentVariants } from '@/lib/auth-motion'
 import { suggestEmailCorrection } from '@/lib/email-suggestion'
 
@@ -305,17 +305,9 @@ export default function AuthPage() {
   // seemingly-idle page with only a disabled Google button as feedback,
   // while the *other* (submit) button's "מתחברת..." label doesn't match
   // what was actually clicked.
-  if (loading) {
-    // AuthProvider already owns the full-screen loading layer while Firebase
-    // is restoring or synchronizing the account. Rendering this page's
-    // loader at the same time produces two overlapping spinners.
-    if (authLoading) return null
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <NailLoader text="מתחברת..." />
-      </div>
-    )
-  }
+  // PageLoader renders nothing while AuthProvider's own full-screen layer is
+  // up, so the two never overlap into a pair of spinners for one wait.
+  if (loading) return <PageLoader text="מתחברת..." />
 
   return (
     <>

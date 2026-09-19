@@ -295,7 +295,12 @@ export default function SettingsPage() {
     }
   }
 
-  if (authLoading || loading) {
+  // AuthProvider's global layer already covers the account-restore window;
+  // adding this page's own indicator underneath it showed two spinners for
+  // one wait. Only the genuinely page-specific fetch gets an indicator here.
+  if (authLoading) return null
+
+  if (loading) {
     return (
       <div className="p-8 flex items-center gap-3 text-muted-foreground font-medium">
         <Loader2 className="h-5 w-5 animate-spin" />

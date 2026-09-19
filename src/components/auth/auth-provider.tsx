@@ -167,20 +167,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Keep the actual page in the DOM while Firebase restores the session, so
   // the server response remains useful to crawlers. A full-screen layer
   // covers it for people until both auth and the initial role data resolve.
+  //
+  // This is the app's ONLY global loading layer, and it is fully opaque on
+  // purpose: a translucent one let a page's own loading state show through
+  // underneath, which read as two spinners for a single wait. Pages render
+  // their full-screen loading state through <PageLoader>, which stands down
+  // while this layer is up.
   return (
     <AuthContext.Provider value={{ user, loading, role, isAdmin, onboardingCompleted, displayName, signOut, refreshRole, verificationReminderActive, setVerificationReminderActive, productTourActive, setProductTourActive }}>
       {children}
       <AnimatePresence>
         {loading && (
           <motion.div
-            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-background/95 px-6 backdrop-blur-md"
+            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-background px-6"
             initial={{ opacity: 1 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
             role="status"
             aria-live="polite"
-            aria-label="טוען את החשבון"
+            aria-label="טוענת את החשבון"
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(245,23,92,0.15),transparent_38%),radial-gradient(circle_at_18%_78%,rgba(157,23,77,0.08),transparent_28%)]" />
             <div className="relative flex flex-col items-center">

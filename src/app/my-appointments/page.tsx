@@ -8,6 +8,7 @@ import { Loader2, CalendarDays, Search, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ReviewModal from '@/components/reviews/ReviewModal'
 import { DepositPanel } from '@/components/deposit/DepositPanel'
+import { PageLoader } from '@/components/ui/page-loader'
 import { APPOINTMENT_STATUS_COLORS } from '@/lib/status-styles'
 import type { DepositStatus } from '@/types'
 
@@ -166,7 +167,7 @@ function MyAppointmentsInner() {
         <div className="mb-8">
           <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
             <CalendarDays className="h-6 w-6 text-primary" />
-            ההזמנות שלי
+            התורים שלי
           </h1>
           <p className="text-muted-foreground text-sm mt-1">היסטוריית התורים שלך</p>
         </div>
@@ -284,11 +285,7 @@ function MyAppointmentsInner() {
 
 export default function MyAppointmentsPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    }>
+    <Suspense fallback={<PageLoader text="טוענת את התורים שלך" />}>
       <MyAppointmentsInner />
     </Suspense>
   )

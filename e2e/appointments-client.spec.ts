@@ -63,7 +63,7 @@ test.describe('Client — My Appointments page', () => {
       route.fulfill({ json: { data: [] } })
     )
     await page.goto('/my-appointments')
-    await expect(page.getByText('ההזמנות שלי')).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByText('התורים שלי')).toBeVisible({ timeout: 8_000 })
   })
 
   test('empty state shows search CTA', async ({ page }) => {

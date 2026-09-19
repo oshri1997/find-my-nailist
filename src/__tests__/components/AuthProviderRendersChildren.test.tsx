@@ -35,6 +35,6 @@ describe('AuthProvider — renders children immediately', () => {
 
     expect(screen.getByTestId('page-content')).toBeInTheDocument()
     expect(container.querySelector('.fixed.inset-0')).toBeInTheDocument()
-    expect(screen.getByRole('status', { name: 'טוען את החשבון' })).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'טוענת את החשבון' })).toBeInTheDocument()
   })
 })

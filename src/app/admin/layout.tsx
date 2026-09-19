@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { LayoutDashboard, Users, Scissors, Calendar, Star, LogOut, Shield, Menu, X, ArrowRight, Home, TrendingUp, History, MessageCircleMore, Mail, Megaphone } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
+import { PageLoader } from '@/components/ui/page-loader'
 
 const NAV = [
   { href: '/admin', label: 'דשבורד', icon: LayoutDashboard, exact: true },
@@ -62,12 +63,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     void close()
   }, [pathname])
 
+  // PageLoader renders nothing while AuthProvider's global layer is still up,
+  // so the admin panel never stacks a second spinner on top of it — and once
+  // that layer is gone (non-admin visitor being redirected away) it shows the
+  // same branded loader the rest of the app uses, not a bare CSS ring.
   if (loading || !user || !isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
+    return <PageLoader text="טוענת את פאנל הניהול" />
   }
 
   return (
