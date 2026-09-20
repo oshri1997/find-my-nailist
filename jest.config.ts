@@ -11,6 +11,10 @@ const config: Config = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testMatch: ['<rootDir>/src/**/*.test.{ts,tsx}', '<rootDir>/__tests__/**/*.{ts,tsx}'],
+  // Component tests share JSDOM and React Query work; restricting parallelism
+  // keeps legitimate async assertions from timing out under CI load.
+  maxWorkers: '50%',
+  testTimeout: 10_000,
 }
 
 export default createJestConfig(config)
