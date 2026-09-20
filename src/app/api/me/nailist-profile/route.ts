@@ -8,7 +8,16 @@ export async function GET(request: NextRequest) {
     const token = request.cookies.get('auth-token')?.value
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const decoded = await adminAuth().verifyIdToken(token)
+    let decoded: Awaited<ReturnType<ReturnType<typeof adminAuth>['verifyIdToken']>>
+    try {
+      decoded = await adminAuth().verifyIdToken(token)
+    } catch (error) {
+      const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : ''
+      if (code === 'auth/id-token-expired' || code === 'auth/argument-error') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      throw error
+    }
     const db = adminDb()
 
     const snap = await db

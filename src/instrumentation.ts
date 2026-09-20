@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs'
+import { shouldDropSentryEvent } from '@/lib/sentry-event-filter'
 
 // Runs once per server instance (Node + Edge) before it starts handling
 // requests. captureConsoleIntegration turns every existing console.error(...)
@@ -17,6 +18,9 @@ export async function register() {
       release,
       tracesSampleRate: 1,
       integrations: [Sentry.captureConsoleIntegration({ levels: ['error'] })],
+      beforeSend(event) {
+        return shouldDropSentryEvent(event) ? null : event
+      },
     })
   }
 
@@ -26,6 +30,9 @@ export async function register() {
       environment,
       release,
       tracesSampleRate: 1,
+      beforeSend(event) {
+        return shouldDropSentryEvent(event) ? null : event
+      },
     })
   }
 }

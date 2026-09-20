@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server'
 
 const mockVerifyIdToken = jest.fn().mockResolvedValue({ uid: 'user-123', email: 'user@test.com', name: 'Test User', email_verified: false })
 const mockDocUpdate = jest.fn().mockResolvedValue(undefined)
+const mockDocSet = jest.fn().mockResolvedValue(undefined)
 const mockAdd = jest.fn().mockResolvedValue({ id: 'new-profile-id' })
 const mockProfileUpdate = jest.fn().mockResolvedValue(undefined)
 const mockSendRoleAwareVerificationEmail = jest.fn().mockResolvedValue({ ok: true })
@@ -23,6 +24,7 @@ function makeDocRef(collection: string, id: string) {
       })
     ),
     update: mockDocUpdate,
+    set: mockDocSet,
   }
 }
 
@@ -225,6 +227,23 @@ describe('PATCH /api/me/set-role', () => {
     const req = makeRequest({ role: 'CLIENT' })
     await PATCH(req)
     expect(mockSendRoleAwareVerificationEmail).toHaveBeenCalledWith('user-123', 'user@test.com', 'CLIENT')
+  })
+
+  it('creates the user document when role selection races signup persistence', async () => {
+    docStore['users/user-123'] = null
+    const res = await PATCH(makeRequest({ role: 'NAILIST' }))
+
+    expect(res.status).toBe(200)
+    expect(mockDocSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role: 'NAILIST',
+        roleChosen: true,
+        email: 'user@test.com',
+        displayName: 'Test User',
+      }),
+      { merge: true },
+    )
+    expect(mockDocUpdate).not.toHaveBeenCalled()
   })
 
   it('sends one role-specific welcome email after selecting either role, including Google accounts', async () => {

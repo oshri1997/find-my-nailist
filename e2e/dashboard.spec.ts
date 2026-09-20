@@ -166,6 +166,17 @@ test.describe.serial('Dashboard (mocked data, real session)', () => {
     expect(settingsHeight).toBe(overviewHeight)
     expect(Math.abs(settingsTourTop - overviewTourTop)).toBeLessThanOrEqual(2)
   })
+
+  test('published announcement history is available in staging', async () => {
+    const responsePromise = page.waitForResponse(request =>
+      new URL(request.url()).pathname === '/api/announcements/archive' && request.request().method() === 'GET',
+    )
+    await page.goto('/whats-new')
+    const response = await responsePromise
+
+    expect(response.status()).toBe(200)
+    await expect(page.getByRole('heading', { name: 'מה חדש' })).toBeVisible()
+  })
 })
 
 test.describe.serial('Dashboard (real auth, real data)', () => {

@@ -24,8 +24,25 @@ export async function PATCH(request: NextRequest) {
     const db = adminDb()
     const now = FieldValue.serverTimestamp()
     const uid = decoded.uid
+    const userRef = db.collection(COLLECTIONS.USERS).doc(uid)
+    const existingUser = await userRef.get()
 
-    await db.collection(COLLECTIONS.USERS).doc(uid).update({ role, roleChosen: true, updatedAt: now })
+    // A role choice can race the first Firestore user-document write after
+    // Firebase signup. `update` turns that recoverable race into a 500; use a
+    // merge-create only for the missing-document case and preserve all data
+    // already collected for an existing account.
+    if (existingUser.exists) {
+      await userRef.update({ role, roleChosen: true, updatedAt: now })
+    } else {
+      await userRef.set({
+        role,
+        roleChosen: true,
+        email: decoded.email ?? '',
+        displayName: decoded.name ?? '',
+        createdAt: now,
+        updatedAt: now,
+      }, { merge: true })
+    }
 
     if (role === 'NAILIST') {
       const existing = await db
@@ -35,7 +52,7 @@ export async function PATCH(request: NextRequest) {
         .get()
 
       if (existing.empty) {
-        const userSnap = await db.collection(COLLECTIONS.USERS).doc(uid).get()
+        const userSnap = await userRef.get()
         const userData = userSnap.data()
         await db.collection(COLLECTIONS.NAILIST_PROFILES).add({
           userId: uid,
@@ -111,7 +128,6 @@ export async function PATCH(request: NextRequest) {
     // mail-provider latency or failure affect a completed role update.
     if (decoded.email) {
       try {
-        const userRef = db.collection(COLLECTIONS.USERS).doc(uid)
         const shouldSendWelcome = await db.runTransaction(async (transaction) => {
           const userSnap = await transaction.get(userRef)
           if (userSnap.data()?.welcomeEmailSentAt) return false

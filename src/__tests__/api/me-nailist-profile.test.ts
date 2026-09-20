@@ -169,4 +169,10 @@ describe('GET /api/me/nailist-profile', () => {
     const res = await GET(req)
     expect(res.status).toBe(500)
   })
+
+  it('returns 401, without treating an expired Firebase token as a server failure', async () => {
+    mockVerifyIdToken.mockRejectedValueOnce({ code: 'auth/id-token-expired' })
+    const res = await GET(makeRequest())
+    expect(res.status).toBe(401)
+  })
 })

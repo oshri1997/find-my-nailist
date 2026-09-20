@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs'
+import { shouldDropSentryEvent } from '@/lib/sentry-event-filter'
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -17,6 +18,9 @@ Sentry.init({
     Sentry.replayIntegration(),
     Sentry.captureConsoleIntegration({ levels: ['error'] }),
   ],
+  beforeSend(event) {
+    return shouldDropSentryEvent(event) ? null : event
+  },
   // Routes client-side error/replay ingest through our own domain
   // (/monitoring, wired up by withSentryConfig in next.config.ts) so ad
   // blockers that block sentry.io outright don't silently drop crash reports
