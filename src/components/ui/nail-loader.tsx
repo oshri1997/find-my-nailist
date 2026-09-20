@@ -36,7 +36,6 @@ export function NailLoader({ text = 'טוענת...', size = 'md' }: NailLoaderPr
         <path d="M70 35H106L101 52H75L70 35Z" fill="#292A35" /><rect x="82" y="50" width="12" height="37" rx="3" fill="#F5175C" />
         <path d="M77 85H99L97 99C94 105 82 105 79 99L77 85Z" fill="#231E2B" /><path d="M81 97H95L93 108C90 112 86 112 83 108L81 97Z" fill="#F5175C" />
       </motion.g>
-      <text x="88" y="202" textAnchor="middle" className="fill-muted-foreground" fontSize="9" fontWeight="700" letterSpacing="1.8">NAILISTIOT</text>
     </svg>
     {text && <p className="text-sm font-semibold text-primary/85">{text}</p>}
   </div>
