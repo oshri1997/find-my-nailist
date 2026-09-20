@@ -106,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let unsub: (() => void) | undefined
+    let onVisible: (() => void) | undefined
 
     async function init() {
       const { initFirebase } = await import('@/lib/firebase/client')
@@ -174,10 +175,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       })
+
+      // The ID token backing the auth-token cookie is short-lived, and
+      // Firebase's own proactive refresh timer runs on a setTimeout that
+      // browsers throttle once the tab is backgrounded — so a tab left
+      // open but unfocused for a while can come back with a token that's
+      // already expired, and every admin/dashboard fetch made before the
+      // timer catches up fails. Forcing a refresh right when the tab
+      // becomes visible again closes that gap; the refreshed token flows
+      // through the onIdTokenChanged handler above, which re-syncs the cookie.
+      onVisible = () => {
+        if (document.visibilityState === 'visible') {
+          clients.auth.currentUser?.getIdToken(true).catch(() => {})
+        }
+      }
+      document.addEventListener('visibilitychange', onVisible)
     }
 
     init()
-    return () => unsub?.()
+    return () => {
+      unsub?.()
+      if (onVisible) document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [])
 
   // Keep the actual page in the DOM while Firebase restores the session, so
