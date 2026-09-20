@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Sparkles, X } from 'lucide-react'
+import { AnnouncementBody } from '@/components/announcements/AnnouncementBody'
 import type { Announcement } from '@/types'
 
 function formatPublishedDate(iso: string): string {
@@ -101,7 +102,7 @@ export function AnnouncementModalView({ items, hasMore, onClose }: AnnouncementM
               </div>
               <div>
                 <p className="text-sm font-bold text-foreground">{item.title}</p>
-                <p className="mt-0.5 text-sm font-medium leading-6 text-muted-foreground">{item.body}</p>
+                <AnnouncementBody body={item.body} className="mt-0.5 text-sm font-medium leading-6 text-muted-foreground" />
                 <p className="mt-1 text-xs font-semibold text-muted-foreground/70">{formatPublishedDate(item.publishedAt)}</p>
               </div>
             </div>

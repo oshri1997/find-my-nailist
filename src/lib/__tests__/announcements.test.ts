@@ -49,4 +49,15 @@ describe('serializeAnnouncement', () => {
     expect(result.createdBy).toBe('')
     expect(result.publishedAt).toBe('')
   })
+
+  it('passes a well-formed rich body doc through unchanged', () => {
+    const richBody = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'תוכן עשיר' }] }] }
+    const result = serializeAnnouncement('ann-3', { title: 'כותרת', body: richBody })
+    expect(result.body).toEqual(richBody)
+  })
+
+  it('falls back to an empty string for a malformed rich body rather than trusting untyped Firestore data', () => {
+    const result = serializeAnnouncement('ann-4', { title: 'כותרת', body: { type: 'not-a-doc' } })
+    expect(result.body).toBe('')
+  })
 })

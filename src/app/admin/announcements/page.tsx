@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { Eye, Loader2, Megaphone, Undo2 } from 'lucide-react'
 import { AnnouncementModalView } from '@/components/announcements/AnnouncementModalView'
-import type { Announcement, AnnouncementAudience, AnnouncementPriority } from '@/types'
+import { AnnouncementBody } from '@/components/announcements/AnnouncementBody'
+import { AnnouncementRichTextEditor } from '@/components/announcements/AnnouncementRichTextEditor'
+import type { Announcement, AnnouncementAudience, AnnouncementBody as AnnouncementBodyValue, AnnouncementPriority } from '@/types'
 
 const AUDIENCE_OPTIONS: Array<{ value: AnnouncementAudience; label: string }> = [
   { value: 'ALL', label: 'לקוחות ונייליסטיות' },
@@ -26,7 +28,8 @@ function formatDate(iso: string): string {
 
 export default function AdminAnnouncementsPage() {
   const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
+  const [body, setBody] = useState<AnnouncementBodyValue | null>(null)
+  const [editorResetKey, setEditorResetKey] = useState(0)
   const [audience, setAudience] = useState<AnnouncementAudience>('ALL')
   const [priority, setPriority] = useState<AnnouncementPriority>('MAJOR')
   const [saving, setSaving] = useState(false)
@@ -46,14 +49,14 @@ export default function AdminAnnouncementsPage() {
   }, [])
 
   async function publish() {
-    if (!title.trim() || !body.trim()) return
+    if (!title.trim() || !body) return
     setSaving(true)
     setError('')
     try {
       const res = await fetch('/api/admin/announcements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), body: body.trim(), audience, priority }),
+        body: JSON.stringify({ title: title.trim(), body, audience, priority }),
       })
       const json = await res.json()
       if (!res.ok) {
@@ -62,7 +65,8 @@ export default function AdminAnnouncementsPage() {
       }
       setItems((prev) => [json.data, ...prev])
       setTitle('')
-      setBody('')
+      setBody(null)
+      setEditorResetKey((k) => k + 1)
     } catch {
       setError('הפרסום נכשל — נסי שוב')
     } finally {
@@ -112,13 +116,13 @@ export default function AdminAnnouncementsPage() {
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-bold text-muted-foreground">תוכן ההכרזה</label>
-            <textarea
-              rows={4}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="ספרי בקצרה מה השתנה ולמה זה עוזר..."
-              className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium text-foreground focus:border-primary focus:outline-none"
+            <AnnouncementRichTextEditor
+              onChange={setBody}
+              resetKey={editorResetKey}
             />
+            <p className="mt-1.5 text-xs font-medium leading-5 text-muted-foreground">
+              ספרי בקצרה מה השתנה ולמה זה עוזר — אפשר להדגיש, להוסיף כותרת ורשימות.
+            </p>
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-bold text-muted-foreground">קהל יעד</label>
@@ -167,7 +171,7 @@ export default function AdminAnnouncementsPage() {
               <button
                 type="button"
                 onClick={() => setPreviewOpen(true)}
-                disabled={!title.trim() || !body.trim()}
+                disabled={!title.trim() || !body}
                 className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-bold text-foreground transition-colors hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Eye className="h-4 w-4" />
@@ -185,7 +189,7 @@ export default function AdminAnnouncementsPage() {
           <button
             type="button"
             onClick={publish}
-            disabled={saving || !title.trim() || !body.trim()}
+            disabled={saving || !title.trim() || !body}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-black text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'פרסמי הכרזה'}
@@ -227,7 +231,7 @@ export default function AdminAnnouncementsPage() {
                       )}
                     </div>
                     <p className="mt-2 text-base font-black text-foreground">{item.title}</p>
-                    <p className="mt-1 text-sm font-medium leading-6 text-muted-foreground">{item.body}</p>
+                    <AnnouncementBody body={item.body} className="mt-1 text-sm font-medium leading-6 text-muted-foreground" />
                     <p className="mt-2 text-xs font-semibold text-muted-foreground/70">{formatDate(item.publishedAt)}</p>
                   </div>
                   {item.status === 'PUBLISHED' && (
@@ -253,7 +257,7 @@ export default function AdminAnnouncementsPage() {
           items={[{
             id: 'preview',
             title: title.trim() || 'כותרת ההכרזה תופיע כאן',
-            body: body.trim() || 'תוכן ההכרזה יופיע כאן.',
+            body: body ?? 'תוכן ההכרזה יופיע כאן.',
             audience,
             priority,
             status: 'PUBLISHED',

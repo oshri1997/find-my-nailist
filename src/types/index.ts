@@ -188,6 +188,53 @@ export interface AuditLogDoc {
   createdAt: Timestamp
 }
 
+// The rich body format the admin composer's editor (Tiptap) produces and
+// the announcement renderer consumes. Deliberately a small, flat whitelist
+// (no nested lists, no images/tables/links) rather than arbitrary Tiptap
+// JSON or HTML — the renderer maps exactly these node/mark types to JSX, so
+// there is never a raw-HTML injection surface to sanitize against.
+export interface AnnouncementRichMark {
+  type: 'bold' | 'italic'
+}
+export interface AnnouncementRichTextNode {
+  type: 'text'
+  text: string
+  marks?: AnnouncementRichMark[]
+}
+export interface AnnouncementRichListItem {
+  type: 'listItem'
+  content: AnnouncementRichParagraph[]
+}
+export interface AnnouncementRichParagraph {
+  type: 'paragraph'
+  content?: AnnouncementRichTextNode[]
+}
+export interface AnnouncementRichHeading {
+  type: 'heading'
+  attrs: { level: 2 | 3 }
+  content?: AnnouncementRichTextNode[]
+}
+export interface AnnouncementRichBulletList {
+  type: 'bulletList'
+  content: AnnouncementRichListItem[]
+}
+export interface AnnouncementRichOrderedList {
+  type: 'orderedList'
+  content: AnnouncementRichListItem[]
+}
+export type AnnouncementRichBlockNode =
+  | AnnouncementRichParagraph
+  | AnnouncementRichHeading
+  | AnnouncementRichBulletList
+  | AnnouncementRichOrderedList
+export interface AnnouncementRichDoc {
+  type: 'doc'
+  content: AnnouncementRichBlockNode[]
+}
+// A plain string is the legacy format (announcements published before the
+// rich editor existed) — both are rendered by the same AnnouncementBody component.
+export type AnnouncementBody = string | AnnouncementRichDoc
+
 // Immutable once PUBLISHED (title/body are frozen) — a typo or mistake is
 // fixed by retracting this one (status: RETRACTED, hidden everywhere) and
 // publishing a fresh announcement, never by editing in place. There is no
@@ -195,7 +242,7 @@ export interface AuditLogDoc {
 // local state and only ever writes a doc at the moment of publish.
 export interface AnnouncementDoc {
   title: string
-  body: string
+  body: AnnouncementBody
   audience: AnnouncementAudience
   priority: AnnouncementPriority
   status: AnnouncementStatus

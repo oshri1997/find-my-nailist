@@ -7,6 +7,18 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import AdminAnnouncementsPage from '@/app/admin/announcements/page'
 
+// Requiring inside the factory (rather than importing at module scope) is
+// required here — jest hoists jest.mock() calls above all imports, so an
+// imported binding would still be in its temporal dead zone when the
+// (lazily-invoked) factory below first runs.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+jest.mock('@tiptap/react', () => require('@/__tests__/utils/tiptap-mock'))
+jest.mock('@tiptap/starter-kit', () => ({ __esModule: true, default: { configure: () => ({}) } }))
+
+function typeBody(text: string) {
+  fireEvent.input(screen.getByTestId('tiptap-content'), { target: { textContent: text } })
+}
+
 beforeEach(() => {
   jest.clearAllMocks()
   global.fetch = jest.fn().mockImplementation((url: string) => {
@@ -33,7 +45,7 @@ describe('AdminAnnouncementsPage — live preview', () => {
     expect(screen.getByRole('button', { name: /תצוגה מקדימה/ })).toBeDisabled()
 
     fireEvent.change(screen.getByPlaceholderText('לדוגמה: שעות עבודה מפוצלות'), { target: { value: 'כותרת' } })
-    fireEvent.change(screen.getByPlaceholderText('ספרי בקצרה מה השתנה ולמה זה עוזר...'), { target: { value: 'תוכן' } })
+    typeBody('תוכן')
 
     expect(screen.getByRole('button', { name: /תצוגה מקדימה/ })).not.toBeDisabled()
   })
@@ -43,7 +55,7 @@ describe('AdminAnnouncementsPage — live preview', () => {
     await waitFor(() => expect(screen.getByText('עדיין לא פורסמו הכרזות')).toBeInTheDocument())
 
     fireEvent.change(screen.getByPlaceholderText('לדוגמה: שעות עבודה מפוצלות'), { target: { value: 'שעות עבודה מפוצלות' } })
-    fireEvent.change(screen.getByPlaceholderText('ספרי בקצרה מה השתנה ולמה זה עוזר...'), { target: { value: 'אפשר להגדיר כמה חלונות זמינות ביום' } })
+    typeBody('אפשר להגדיר כמה חלונות זמינות ביום')
     fireEvent.click(screen.getByRole('button', { name: /תצוגה מקדימה/ }))
 
     const dialog = within(screen.getByRole('dialog'))
@@ -62,5 +74,23 @@ describe('AdminAnnouncementsPage — live preview', () => {
 
     expect(screen.queryByRole('button', { name: /תצוגה מקדימה/ })).not.toBeInTheDocument()
     expect(screen.getByText('אין תצוגה מקדימה של חלון עבור עדכון קטן — הוא לא נפתח כחלון בכלל.')).toBeInTheDocument()
+  })
+
+  it('publishes the rich-text doc (with a toggled bold mark) as the body, not a plain string', async () => {
+    render(<AdminAnnouncementsPage />)
+    await waitFor(() => expect(screen.getByText('עדיין לא פורסמו הכרזות')).toBeInTheDocument())
+
+    fireEvent.change(screen.getByPlaceholderText('לדוגמה: שעות עבודה מפוצלות'), { target: { value: 'כותרת' } })
+    typeBody('טקסט מודגש')
+    fireEvent.click(screen.getByRole('button', { name: 'מודגש' }))
+    fireEvent.click(screen.getByRole('button', { name: 'פרסמי הכרזה' }))
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledWith('/api/admin/announcements', expect.objectContaining({ method: 'POST' })))
+    const call = (global.fetch as jest.Mock).mock.calls.find(([url, opts]) => url === '/api/admin/announcements' && opts?.method === 'POST')
+    const sentBody = JSON.parse(call![1].body)
+    expect(sentBody.body).toEqual({
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'טקסט מודגש', marks: [{ type: 'bold' }] }] }],
+    })
   })
 })

@@ -123,6 +123,28 @@ describe('POST /api/admin/announcements', () => {
     const res = await POST(postRequest({ title: 'x', body: 'y', audience: 'ALL', priority: 'MAJOR', status: 'PUBLISHED' }))
     expect(res.status).toBe(400)
   })
+
+  it('accepts a well-formed rich-text body from the editor and stores it as-is', async () => {
+    const richBody = {
+      type: 'doc',
+      content: [
+        { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'כותרת פנימית' }] },
+        { type: 'paragraph', content: [{ type: 'text', text: 'מודגש', marks: [{ type: 'bold' }] }] },
+      ],
+    }
+    const res = await POST(postRequest({ title: 'x', body: richBody, audience: 'ALL', priority: 'MAJOR' }))
+    const json = await res.json()
+
+    expect(res.status).toBe(201)
+    expect(json.data.body).toEqual(richBody)
+  })
+
+  it('rejects a rich body with a node type outside the whitelist', async () => {
+    const res = await POST(postRequest({
+      title: 'x', body: { type: 'doc', content: [{ type: 'image', attrs: { src: 'x' } }] }, audience: 'ALL', priority: 'MAJOR',
+    }))
+    expect(res.status).toBe(400)
+  })
 })
 
 describe('PATCH /api/admin/announcements/[id] (retract)', () => {

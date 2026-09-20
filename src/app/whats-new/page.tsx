@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Megaphone, Sparkles } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
+import { AnnouncementBody } from '@/components/announcements/AnnouncementBody'
 import type { Announcement } from '@/types'
 
 // Full published history for the caller's audience — no read/unread state
@@ -93,7 +94,7 @@ export default function WhatsNewPage() {
                   <span className="text-xs font-semibold text-muted-foreground">{formatPublishedDate(item.publishedAt)}</span>
                 </div>
                 <p className="mt-3 text-base font-black text-foreground">{item.title}</p>
-                <p className="mt-1.5 text-sm font-medium leading-6 text-muted-foreground">{item.body}</p>
+                <AnnouncementBody body={item.body} className="mt-1.5 text-sm font-medium leading-6 text-muted-foreground" />
               </motion.div>
             ))}
           </div>

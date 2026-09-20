@@ -3,12 +3,13 @@ import { z } from 'zod'
 import { adminDb } from '@/lib/firebase/admin'
 import { COLLECTIONS } from '@/lib/firebase/collections'
 import { verifyAdmin, adminUnauthorized } from '@/lib/admin-auth'
+import { announcementBodySchema } from '@/lib/announcement-body'
 import { serializeAnnouncement } from '@/lib/announcements'
 import { writeAuditLog } from '@/lib/audit-log'
 
 const createSchema = z.object({
   title: z.string().trim().min(1, 'כותרת נדרשת').max(200),
-  body: z.string().trim().min(1, 'תוכן נדרש').max(2000),
+  body: announcementBodySchema,
   audience: z.enum(['ALL', 'NAILIST', 'CLIENT']),
   priority: z.enum(['MAJOR', 'MINOR']),
 }).strict()
